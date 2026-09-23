@@ -1,10 +1,14 @@
 # PIM DSML
 
-The Platform-Independent Model refines CIM intent into a generic serverless architecture that can be reviewed without binding the design to AWS resource classes.
+The Platform-Independent Model is the architectural middle level of MODRISS. It refines business intent into a serverless design that can be reviewed in terms of services, functions, APIs, data, contracts, integrations, workflows, policies, identity, configuration, and external systems. PIM is specific enough to reason about reachability, state access, failure handling, and deployment boundaries. It remains independent of Lambda, API Gateway, DynamoDB, or another cloud provider's resource vocabulary.
+
+The PIM metamodel keeps several decisions separate because they answer different questions. A `Function` describes computation, a `ServerlessService` describes responsibility, and a `DeploymentUnit` describes release ownership. A `Flow` describes an interaction, while an `EventChannel` or `Api` describes a delivery boundary. A `DataStore` records storage intent, while `DataModel`, `DataField`, and `AccessPattern` explain the shape and use of that data.
 
 ## How to use this reference
 
-Start with the root page, then follow the module that owns the class you are modeling. Each class section includes declared attributes, accepted values or examples, and relationships. Attributes inherited from the shared kernel are documented once and apply to every subtype.
+Begin with the root and deployment pages. Decide which PIM elements belong to a service and which belong to a deployment unit before refining detailed integrations. Use compute, API, contracts, data, and workflow pages together because a function is meaningful only in relation to its entry points, state, payloads, and failure paths. Use policy, security, configuration, and external pages to record cross-cutting decisions that should survive provider mapping.
+
+Each class section includes declared attributes, accepted values or examples, and relationships. Attributes inherited from the shared kernel are documented once and apply to every subtype. The reference describes the relationship between architecture objects as well as the objects themselves, since those connections are what ETL uses to construct a provider-specific design.
 
 ## Module map
 
@@ -27,9 +31,11 @@ Start with the root page, then follow the module that owns the class you are mod
 ## Model-level guidance
 
 - Treat the Emfatic declarations as the abstract-syntax authority. EVL adds semantic constraints; it does not introduce attributes that are absent from the metamodel.
-- Use containment (`val`) for objects owned by the containing element and references (`ref`) for shared or cross-cutting concepts.
-- Keep provider-neutral intent in CIM/PIM. Put AWS names, ARNs, SAM/CloudFormation properties, and service-specific operational decisions in AWS PSM.
-- Preserve traceability and rationale when refining or transforming a model. They are part of the engineering record, not merely editor decoration.
+- Give every externally reachable operation exactly one backend integration. A route, function, contract, and authorization policy should agree on what enters the system and what response or event leaves it.
+- Describe state use through `DataAccess` and `AccessPattern`. The storage choice should be explainable from the way the architecture reads, writes, searches, and protects information.
+- Keep asynchronous behavior explicit. Queues, topics, event buses, subscriptions, schedules, routing rules, retry policies, and dead-letter decisions carry different operational meanings.
+- Use workflows when the business progression requires orchestration, waiting, human approval, compensation, or escalation. Do not hide those decisions inside an opaque function description.
+- Keep provider-neutral intent in PIM. AWS names, ARNs, SAM or CloudFormation properties, and service-specific operational decisions belong in AWS PSM.
 
 ## Additional resources
 

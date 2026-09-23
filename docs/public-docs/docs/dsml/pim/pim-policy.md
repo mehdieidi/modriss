@@ -1,12 +1,14 @@
 # Architecture, business, resilience, and operational policies
 
-Policy concepts capture non-functional and behavioral decisions that shape reliability, security, cost, observability, and runtime behavior.
+Policy objects turn cross-cutting expectations into attachable model elements. An `ArchitecturePolicy` states its scope and targets, while the concrete policies describe data protection, quality, compliance, resilience, timeout, idempotency, concurrency, rate limiting, batching, ordering, caching, backup, retention, cost, observability, and browser-origin access. `PolicySetting` subtypes belong inside a broader policy when they have no independent attachment boundary.
+
+Business behavior is represented separately through `BusinessRule` and `DecisionModel`. The former can preserve a natural-language rule together with a structured expression and its enforcing functions. The latter owns ordered decision rules with explicit conditions and outcomes. This makes behavioral intent available to transformation and review without mixing it with operational configuration.
 
 Source: `mde/metamodels/pim/pim-policy.emf`.
 
 ## `ArchitecturePolicy`
 
-An abstract architecture policy concept. Use one of its concrete subtypes when creating a model instance; the shared attributes and relationships defined here still apply.
+The abstract base for policies that may be attached to any kernel `PolicyTarget`. `policyScope` explains the boundary of application, while `productionRequired` distinguishes a production obligation from guidance used in earlier environments.
 
 Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -19,13 +21,13 @@ Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilit
 
 ### Relationships
 
-| Relationship                  | Kind and multiplicity | Meaning in the model                                                                                                                      |
-| ----------------------------- | --------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
-| `attachedTo` → `PolicyTarget` | reference, [*]        | References the policy target element(s) used as attached to by this architecture policy; the target may be shared elsewhere in the model. |
+| Relationship                  | Kind and multiplicity | Meaning in the model                                                                                                                                                                                                               |
+| ----------------------------- | --------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `attachedTo` → `PolicyTarget` | reference, [*]        | The `attachedTo` reference on `ArchitecturePolicy` connects the policy to the element whose behavior or configuration it governs. A `PolicyTarget` can remain independently owned and can participate in other parts of the model. |
 
 ## `PolicySetting`
 
-An abstract policy setting concept. Use one of its concrete subtypes when creating a model instance; the shared attributes and relationships defined here still apply.
+The abstract base for settings that exist inside a larger architecture policy. Retry, dead-letter, logging, metric, tracing, and alert records inherit traceability here without becoming independently attachable policies.
 
 Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -39,7 +41,7 @@ This class declares no direct relationships.
 
 ## `DataProtectionPolicy`
 
-Represents data protection policy in the PIM vocabulary. It specializes `ArchitecturePolicy` with the details needed for this modeling concern.
+A PIM policy describing how classified or sensitive data must be protected. It is the architectural form that later maps to encryption, masking, access, and audit controls.
 
 Direct supertypes: `ArchitecturePolicy`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -62,7 +64,7 @@ This class declares no direct relationships.
 
 ## `DataQualityPolicy`
 
-Represents data quality policy in the PIM vocabulary. It specializes `ArchitecturePolicy` with the details needed for this modeling concern.
+A policy for the quality characteristics expected of stored or exchanged data. It connects measurement and validation expectations to data models and readiness evidence.
 
 Direct supertypes: `ArchitecturePolicy`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -83,7 +85,7 @@ This class declares no direct relationships.
 
 ## `CompliancePolicy`
 
-Represents compliance policy in the PIM vocabulary. It specializes `ArchitecturePolicy` with the details needed for this modeling concern.
+A PIM realization of a compliance obligation. It preserves the control, evidence, audit, and scope decisions before they become provider-specific resources or generated documents.
 
 Direct supertypes: `ArchitecturePolicy`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -102,7 +104,7 @@ This class declares no direct relationships.
 
 ## `BusinessRule`
 
-Represents business rule in the PIM vocabulary. It specializes `TraceableElement`, `PolicyTarget` with the details needed for this modeling concern.
+A PIM rule that constrains or reacts to application behavior. It is the architectural counterpart of a CIM policy when the rule must be attached to functions, data, contracts, or workflows.
 
 Direct supertypes: `TraceableElement`, `PolicyTarget`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -114,16 +116,16 @@ Direct supertypes: `TraceableElement`, `PolicyTarget`. Inherited attributes and 
 
 ### Relationships
 
-| Relationship                    | Kind and multiplicity | Meaning in the model                                                                                                                  |
-| ------------------------------- | --------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
-| `expression` → `Expression`     | containment, [?]      | Contains the expression element(s) that make up this business rule; the contained objects belong to this model element.               |
-| `inputSchemas` → `Schema`       | reference, [*]        | References the schema element(s) used as input schemas by this business rule; the target may be shared elsewhere in the model.        |
-| `outputSchemas` → `Schema`      | reference, [*]        | References the schema element(s) used as output schemas by this business rule; the target may be shared elsewhere in the model.       |
-| `enforcedBy` → `FunctionTarget` | reference, [*]        | References the function target element(s) used as enforced by by this business rule; the target may be shared elsewhere in the model. |
+| Relationship                    | Kind and multiplicity | Meaning in the model                                                                                                                                                                        |
+| ------------------------------- | --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `expression` → `Expression`     | containment, [?]      | Owns the structured form of the rule or predicate. The contained `Expression` records form part of the `BusinessRule` model subtree and follow its lifecycle.                               |
+| `inputSchemas` → `Schema`       | reference, [*]        | Associates `BusinessRule` with the data shapes available to rule evaluation. The referenced `Schema` remains independently owned and may be reused elsewhere in the model.                  |
+| `outputSchemas` → `Schema`      | reference, [*]        | Associates `BusinessRule` with the shapes produced after rule evaluation. The referenced `Schema` remains independently owned and may be reused elsewhere in the model.                     |
+| `enforcedBy` → `FunctionTarget` | reference, [*]        | Associates `BusinessRule` with the executable targets that enforce the business rule. The referenced `FunctionTarget` remains independently owned and may be reused elsewhere in the model. |
 
 ## `DecisionModel`
 
-Represents decision model in the PIM vocabulary. It specializes `TraceableElement`, `DeployableElement`, `PolicyTarget` with the details needed for this modeling concern.
+A provider-independent decision structure used by a policy or workflow. It separates decision inputs and outputs from the implementation mechanism that evaluates them.
 
 Direct supertypes: `TraceableElement`, `DeployableElement`, `PolicyTarget`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -135,15 +137,15 @@ Direct supertypes: `TraceableElement`, `DeployableElement`, `PolicyTarget`. Inhe
 
 ### Relationships
 
-| Relationship             | Kind and multiplicity | Meaning in the model                                                                                                        |
-| ------------------------ | --------------------- | --------------------------------------------------------------------------------------------------------------------------- |
-| `rules` → `DecisionRule` | containment, [+]      | Contains the decision rule element(s) that make up this decision model; the contained objects belong to this model element. |
-| `inputs` → `Schema`      | reference, [*]        | References the schema element(s) used as inputs by this decision model; the target may be shared elsewhere in the model.    |
-| `outputs` → `Schema`     | reference, [*]        | References the schema element(s) used as outputs by this decision model; the target may be shared elsewhere in the model.   |
+| Relationship             | Kind and multiplicity | Meaning in the model                                                                                                                                                                                |
+| ------------------------ | --------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `rules` → `DecisionRule` | containment, [+]      | The `rules` containment on `DecisionModel` owns the ordered rule records that determine the behavior. The `DecisionRule` objects are owned by `DecisionModel` and remain part of its model subtree. |
+| `inputs` → `Schema`      | reference, [*]        | Associates `DecisionModel` with the schemas supplying decision-model facts. The referenced `Schema` remains independently owned and may be reused elsewhere in the model.                           |
+| `outputs` → `Schema`     | reference, [*]        | Associates `DecisionModel` with the schemas containing decision results. The referenced `Schema` remains independently owned and may be reused elsewhere in the model.                              |
 
 ## `DecisionRule`
 
-Represents decision rule in the PIM vocabulary. It specializes `TraceableElement` with the details needed for this modeling concern.
+A PIM decision row used by a provider-independent policy or workflow. It keeps inputs, condition logic, and resulting architecture behavior separate from the service that will execute the decision.
 
 Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -153,14 +155,14 @@ This class declares no attributes of its own. It inherits the attributes of its 
 
 ### Relationships
 
-| Relationship               | Kind and multiplicity | Meaning in the model                                                                                                    |
-| -------------------------- | --------------------- | ----------------------------------------------------------------------------------------------------------------------- |
-| `condition` → `Expression` | containment, [1]      | Contains the expression element(s) that make up this decision rule; the contained objects belong to this model element. |
-| `outcome` → `Expression`   | containment, [1]      | Contains the expression element(s) that make up this decision rule; the contained objects belong to this model element. |
+| Relationship               | Kind and multiplicity | Meaning in the model                                                                                                                                                                                 |
+| -------------------------- | --------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `condition` → `Expression` | containment, [1]      | The `condition` containment on `DecisionRule` provides the predicate used to choose or qualify this path. The `Expression` objects are owned by `DecisionRule` and remain part of its model subtree. |
+| `outcome` → `Expression`   | containment, [1]      | Owns the expression returned when the decision rule matches. The contained `Expression` records form part of the `DecisionRule` model subtree and follow its lifecycle.                              |
 
 ## `ResiliencePolicy`
 
-Represents resilience policy in the PIM vocabulary. It specializes `ArchitecturePolicy` with the details needed for this modeling concern.
+A policy grouping the failure-handling expectations for a PIM element. It provides the context for timeout, retry, dead-letter, idempotency, and compensation decisions.
 
 Direct supertypes: `ArchitecturePolicy`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -176,15 +178,15 @@ Direct supertypes: `ArchitecturePolicy`. Inherited attributes and marker capabil
 
 ### Relationships
 
-| Relationship                      | Kind and multiplicity | Meaning in the model                                                                                                                 |
-| --------------------------------- | --------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
-| `retry` → `RetryPolicy`           | containment, [?]      | Contains the retry policy element(s) that make up this resilience policy; the contained objects belong to this model element.        |
-| `deadLetter` → `DeadLetterPolicy` | containment, [?]      | Contains the dead letter policy element(s) that make up this resilience policy; the contained objects belong to this model element.  |
-| `timeout` → `TimeoutPolicy`       | reference, [?]        | References the timeout policy element(s) used as timeout by this resilience policy; the target may be shared elsewhere in the model. |
+| Relationship                      | Kind and multiplicity | Meaning in the model                                                                                                                                                                          |
+| --------------------------------- | --------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `retry` → `RetryPolicy`           | containment, [?]      | The `retry` containment on `ResiliencePolicy` keeps the retry policies applied to this state. The `RetryPolicy` objects are owned by `ResiliencePolicy` and remain part of its model subtree. |
+| `deadLetter` → `DeadLetterPolicy` | containment, [?]      | Owns the owned failed-delivery settings. The contained `DeadLetterPolicy` records form part of the `ResiliencePolicy` model subtree and follow its lifecycle.                                 |
+| `timeout` → `TimeoutPolicy`       | reference, [?]        | Associates `ResiliencePolicy` with the applicable execution or waiting limit. The referenced `TimeoutPolicy` remains independently owned and may be reused elsewhere in the model.            |
 
 ## `RetryPolicy`
 
-Represents retry policy in the PIM vocabulary. It specializes `PolicySetting` with the details needed for this modeling concern.
+The retry algorithm for a failed operation. It defines the attempt ceiling, delay and backoff progression, maximum delay, and the error categories that may or may not be retried.
 
 Direct supertypes: `PolicySetting`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -205,7 +207,7 @@ This class declares no direct relationships.
 
 ## `DeadLetterPolicy`
 
-Represents dead letter policy in the PIM vocabulary. It specializes `PolicySetting` with the details needed for this modeling concern.
+The handling decision for work that cannot be processed successfully. It records why dead-letter handling is needed, how long failed items should remain, whether an alarm is required, and which event carrier receives them.
 
 Direct supertypes: `PolicySetting`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -220,13 +222,13 @@ Direct supertypes: `PolicySetting`. Inherited attributes and marker capabilities
 
 ### Relationships
 
-| Relationship                         | Kind and multiplicity | Meaning in the model                                                                                                                             |
-| ------------------------------------ | --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `deadLetterChannel` → `EventCarrier` | reference, [?]        | References the event carrier element(s) used as dead letter channel by this dead letter policy; the target may be shared elsewhere in the model. |
+| Relationship                         | Kind and multiplicity | Meaning in the model                                                                                                                                                                              |
+| ------------------------------------ | --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `deadLetterChannel` → `EventCarrier` | reference, [?]        | Associates `DeadLetterPolicy` with the queue or event carrier receiving exhausted deliveries. The referenced `EventCarrier` remains independently owned and may be reused elsewhere in the model. |
 
 ## `TimeoutPolicy`
 
-Represents timeout policy in the PIM vocabulary. It specializes `ArchitecturePolicy` with the details needed for this modeling concern.
+A pair of timing boundaries for an operation and its caller. `timeoutSeconds` limits server-side execution, while `clientTimeoutSeconds` records the external waiting budget that must remain coherent with it.
 
 Direct supertypes: `ArchitecturePolicy`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -243,7 +245,7 @@ This class declares no direct relationships.
 
 ## `IdempotencyPolicy`
 
-Represents idempotency policy in the PIM vocabulary. It specializes `ArchitecturePolicy` with the details needed for this modeling concern.
+The duplicate-suppression contract for state-changing or retryable work. It identifies the key source, storage and expiry of idempotency records, their scope, and whether the guarantee covers retries and repeated client requests.
 
 Direct supertypes: `ArchitecturePolicy`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -264,7 +266,7 @@ This class declares no direct relationships.
 
 ## `ConcurrencyPolicy`
 
-Represents concurrency policy in the PIM vocabulary. It specializes `ArchitecturePolicy` with the details needed for this modeling concern.
+The workload concurrency boundary used for capacity and isolation decisions. It combines maximum and reserved hints with burst assumptions, optional per-source limiting, and the rationale that explains why those values are suitable.
 
 Direct supertypes: `ArchitecturePolicy`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -284,7 +286,7 @@ This class declares no direct relationships.
 
 ## `RateLimitPolicy`
 
-Represents rate limit policy in the PIM vocabulary. It specializes `ArchitecturePolicy` with the details needed for this modeling concern.
+The admission limit applied to a policy target. It states steady and burst request capacity, the identity or field used to partition the limit, and whether different clients receive separate quotas.
 
 Direct supertypes: `ArchitecturePolicy`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -303,7 +305,7 @@ This class declares no direct relationships.
 
 ## `BatchPolicy`
 
-Represents batch policy in the PIM vocabulary. It specializes `ArchitecturePolicy` with the details needed for this modeling concern.
+The consumption policy for grouped records. It controls batch size, collection time, parallel processing, and the explicit decisions for splitting failed batches and reporting partial failures.
 
 Direct supertypes: `ArchitecturePolicy`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -324,17 +326,17 @@ This class declares no direct relationships.
 
 ## `OrderingPolicy`
 
-Represents ordering policy in the PIM vocabulary. It specializes `ArchitecturePolicy` with the details needed for this modeling concern.
+The ordering contract for a channel or flow. It identifies the key used to form an ordered sequence and distinguishes no ordering, ordering within each key, and a single global order.
 
 Direct supertypes: `ArchitecturePolicy`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
-| Attribute                | Type and multiplicity     | What it captures and why it exists                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        | Accepted values and example                                                                                 |
-| ------------------------ | ------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
-| `orderingKey`            | `String` [1]              | Records precedence value for ordering key for ordering policy. It keeps deterministic ordering or precedence explicit during review and transformation, so later steps do not have to infer it. Transformation role: ETL rule `TemporalConstraint2TimeoutPolicy` in `mde/transformations/cim-to-pim/process-policy.etl` assigns or materializes this feature while refining `OrderingPolicy`.                                                                                                                                             | A free-form `String`, subject to this class's semantic meaning and any EVL constraints. Example: `orderId`. |
-| `strictOrderingRequired` | `Boolean` [1]             | Stores the precedence value for strict ordering required on the ordering policy. The field records deterministic ordering or precedence as an explicit, reviewable input. Transformation role: ETL rule `TemporalConstraint2TimeoutPolicy` in `mde/transformations/cim-to-pim/process-policy.etl` assigns or materializes this feature while refining `OrderingPolicy`. ETL rule `TemporalConstraint2TimeoutPolicy` in `mde/transformations/cim-to-pim/process-policy.etl` reads or derives this feature while refining `OrderingPolicy`. | Either `true` or `false`. Example: `true`.                                                                  |
-| `orderingRequirement`    | `OrderingRequirement` [1] | Records precedence value for ordering requirement for ordering policy. It keeps deterministic ordering or precedence explicit during review and transformation, so later steps do not have to infer it. Transformation role: ETL rule `TemporalConstraint2TimeoutPolicy` in `mde/transformations/cim-to-pim/process-policy.etl` assigns or materializes this feature while refining `OrderingPolicy`.                                                                                                                                     | Exactly one of: `NONE`, `PER_KEY`, `GLOBAL`. Example: `NONE`.                                               |
+| Attribute                | Type and multiplicity     | What it captures and why it exists                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        | Accepted values and example                                   |
+| ------------------------ | ------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------- |
+| `orderingKey`            | `String` [1]              | Records precedence value for ordering key for ordering policy. It keeps deterministic ordering or precedenc…1369 tokens truncated…remain unchanged. Transformation role: ETL rule `PerformanceNfr2TimeoutPolicy` in `mde/transformations/cim-to-pim/process-policy.etl` assigns or materializes this feature while refining `CachePolicy`.                                                                                                                                                                                                | Either `true` or `false`. Example: `false`.                   |
+| `strictOrderingRequired` | `Boolean` [1]             | Stores the precedence value for strict ordering required on the ordering policy. The field records deterministic ordering or precedence as an explicit, reviewable input. Transformation role: ETL rule `TemporalConstraint2TimeoutPolicy` in `mde/transformations/cim-to-pim/process-policy.etl` assigns or materializes this feature while refining `OrderingPolicy`. ETL rule `TemporalConstraint2TimeoutPolicy` in `mde/transformations/cim-to-pim/process-policy.etl` reads or derives this feature while refining `OrderingPolicy`. | Either `true` or `false`. Example: `true`.                    |
+| `orderingRequirement`    | `OrderingRequirement` [1] | The controlled value used for ordering requirement on this ordering policy. It keeps the distinction explicit in the abstract syntax so later rules can interpret it consistently.                                                                                                                                                                                                                                                                                                                                                        | Exactly one of: `NONE`, `PER_KEY`, `GLOBAL`. Example: `NONE`. |
 
 ### Relationships
 
@@ -342,18 +344,18 @@ This class declares no direct relationships.
 
 ## `CachePolicy`
 
-Represents cache policy in the PIM vocabulary. It specializes `ArchitecturePolicy` with the details needed for this modeling concern.
+The caching decision attached to an architectural target. It records whether caching is required, how long entries live, which value forms the cache key, and whether entries are private to a caller or context.
 
 Direct supertypes: `ArchitecturePolicy`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
-| Attribute       | Type and multiplicity | What it captures and why it exists                                                                                                                                                                                                                                                                                                                                                      | Accepted values and example                                                                                 |
-| --------------- | --------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
-| `cacheRequired` | `Boolean` [1]         | Records whether cache required applies to cache policy. It preserves an explicit architectural or governance decision through review and transformation, so later steps do not have to infer it. Transformation role: ETL rule `PerformanceNfr2TimeoutPolicy` in `mde/transformations/cim-to-pim/process-policy.etl` assigns or materializes this feature while refining `CachePolicy`. | Either `true` or `false`. Example: `true`.                                                                  |
-| `ttlSeconds`    | `Integer` [1]         | Records the ttl seconds duration or limit, expressed in seconds for the cache policy. This keeps the decision explicit even when the element's class or relationships remain unchanged. Transformation role: ETL rule `PerformanceNfr2TimeoutPolicy` in `mde/transformations/cim-to-pim/process-policy.etl` assigns or materializes this feature while refining `CachePolicy`.          | A numeric `Integer` value; use the unit or boundary documented for this attribute. Example: `1`.            |
-| `cacheKey`      | `String` [1]          | Records stable name/key/code used for cache key for cache policy. It keeps this decision explicit during review and transformation, so later steps do not have to infer it. Transformation role: ETL rule `PerformanceNfr2TimeoutPolicy` in `mde/transformations/cim-to-pim/process-policy.etl` assigns or materializes this feature while refining `CachePolicy`.                      | A free-form `String`, subject to this class's semantic meaning and any EVL constraints. Example: `orderId`. |
-| `privateCache`  | `Boolean` [1]         | Records whether private cache applies to cache policy. This keeps the decision explicit even when the element's class or relationships remain unchanged. Transformation role: ETL rule `PerformanceNfr2TimeoutPolicy` in `mde/transformations/cim-to-pim/process-policy.etl` assigns or materializes this feature while refining `CachePolicy`.                                         | Either `true` or `false`. Example: `false`.                                                                 |
+| Attribute       | Type and multiplicity | What it captures and why it exists                                                                                                                                                                                                                                                                                                                                                          | Accepted values and example                                                                                 |
+| --------------- | --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| `cacheRequired` | `Boolean` [1]         | States whether the attached target is expected to use a cache. A false value records a deliberate no-cache decision; a true value makes the remaining TTL and key settings architecturally relevant. Transformation role: ETL rule `PerformanceNfr2TimeoutPolicy` in `mde/transformations/cim-to-pim/process-policy.etl` assigns or materializes this feature while refining `CachePolicy`. | Either `true` or `false`. Example: `true`.                                                                  |
+| `ttlSeconds`    | `Integer` [1]         | The numeric value used for ttl seconds on this cache policy. Keeping the quantity in the model lets validation and generation apply the same boundary consistently.                                                                                                                                                                                                                         | A numeric `Integer` value; use the unit or boundary documented for this attribute. Example: `1`.            |
+| `cacheKey`      | `String` [1]          | The model text for cache key on this cache policy. It carries the meaning needed by reviewers and downstream transformations without inventing a provider-specific structure. Transformation role: ETL rule `PerformanceNfr2TimeoutPolicy` in `mde/transformations/cim-to-pim/process-policy.etl` assigns or materializes this feature while refining `CachePolicy`.                        | A free-form `String`, subject to this class's semantic meaning and any EVL constraints. Example: `orderId`. |
+| `privateCache`  | `Boolean` [1]         | Indicates that cached entries are specific to a caller, tenant, or protected context and must not be served as generally shared results.                                                                                                                                                                                                                                                    | Either `true` or `false`. Example: `false`.                                                                 |
 
 ### Relationships
 
@@ -361,7 +363,7 @@ This class declares no direct relationships.
 
 ## `BackupPolicy`
 
-Represents backup policy in the PIM vocabulary. It specializes `ArchitecturePolicy` with the details needed for this modeling concern.
+The recovery policy for persistent storage. It records whether backups are required, their expected frequency, and the recovery point and recovery time objectives that a platform mapping must satisfy.
 
 Direct supertypes: `ArchitecturePolicy`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -380,7 +382,7 @@ This class declares no direct relationships.
 
 ## `RetentionPolicy`
 
-Represents retention policy in the PIM vocabulary. It specializes `ArchitecturePolicy` with the details needed for this modeling concern.
+The lifecycle rule for retained data or messages. It states the retention duration, whether automatic deletion follows, and whether legal hold can suspend that deletion.
 
 Direct supertypes: `ArchitecturePolicy`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -398,7 +400,7 @@ This class declares no direct relationships.
 
 ## `CostPolicy`
 
-Represents cost policy in the PIM vocabulary. It specializes `ArchitecturePolicy` with the details needed for this modeling concern.
+A cost constraint or optimization intention attached to part of the architecture. It records the budget, the workload characteristic expected to drive expenditure, the desired optimization, and whether budget alarms are required.
 
 Direct supertypes: `ArchitecturePolicy`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -417,7 +419,7 @@ This class declares no direct relationships.
 
 ## `ObservabilityConfig`
 
-Represents observability config in the PIM vocabulary. It specializes `ArchitecturePolicy` with the details needed for this modeling concern.
+The observability contract for an architectural target. Its flags state which telemetry capabilities are expected, while the owned logging, metric, tracing, alert, and SLO records define the details that should survive platform mapping.
 
 Direct supertypes: `ArchitecturePolicy`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -435,17 +437,17 @@ Direct supertypes: `ArchitecturePolicy`. Inherited attributes and marker capabil
 
 ### Relationships
 
-| Relationship                | Kind and multiplicity                      | Meaning in the model                                                                                                               |
-| --------------------------- | ------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------- |
-| `logging` → `LoggingPolicy` | containment, [?]                           | Contains the logging policy element(s) that make up this observability config; the contained objects belong to this model element. |
-| `metrics` → `MetricPolicy`  | containment, [*]; opposite `observability` | Contains the metric policy element(s) that make up this observability config; the contained objects belong to this model element.  |
-| `tracing` → `TracingPolicy` | containment, [?]                           | Contains the tracing policy element(s) that make up this observability config; the contained objects belong to this model element. |
-| `alerts` → `AlertPolicy`    | containment, [*]; opposite `observability` | Contains the alert policy element(s) that make up this observability config; the contained objects belong to this model element.   |
-| `slos` → `Slo`              | containment, [*]; opposite `observability` | Contains the slo element(s) that make up this observability config; the contained objects belong to this model element.            |
+| Relationship                | Kind and multiplicity                      | Meaning in the model                                                                                                                                                                                                     |
+| --------------------------- | ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `logging` → `LoggingPolicy` | containment, [?]                           | The `logging` containment on `ObservabilityConfig` attaches the state-machine logging configuration. The `LoggingPolicy` objects are owned by `ObservabilityConfig` and remain part of its model subtree.                |
+| `metrics` → `MetricPolicy`  | containment, [*]; opposite `observability` | Owns the metrics required by the observability configuration. The contained `MetricPolicy` records form part of the `ObservabilityConfig` model subtree and follow its lifecycle.                                        |
+| `tracing` → `TracingPolicy` | containment, [?]                           | The `tracing` containment on `ObservabilityConfig` attaches the tracing configuration for this executable resource. The `TracingPolicy` objects are owned by `ObservabilityConfig` and remain part of its model subtree. |
+| `alerts` → `AlertPolicy`    | containment, [*]; opposite `observability` | Owns the alert conditions evaluated from telemetry. The contained `AlertPolicy` records form part of the `ObservabilityConfig` model subtree and follow its lifecycle.                                                   |
+| `slos` → `Slo`              | containment, [*]; opposite `observability` | Owns the measurable service-level objectives. The contained `Slo` records form part of the `ObservabilityConfig` model subtree and follow its lifecycle.                                                                 |
 
 ## `LoggingPolicy`
 
-Represents logging policy in the PIM vocabulary. It specializes `PolicySetting` with the details needed for this modeling concern.
+The logging requirements for a target, including representation, severity threshold, structure, correlation identifiers, sensitive-value masking, and log retention.
 
 Direct supertypes: `PolicySetting`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -466,7 +468,7 @@ This class declares no direct relationships.
 
 ## `MetricPolicy`
 
-Represents metric policy in the PIM vocabulary. It specializes `PolicySetting` with the details needed for this modeling concern.
+One metric required from an observed target. It defines the metric identity, unit, aggregation statistic, business significance, and the dimensions by which measurements are separated.
 
 Direct supertypes: `PolicySetting`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -481,14 +483,14 @@ Direct supertypes: `PolicySetting`. Inherited attributes and marker capabilities
 
 ### Relationships
 
-| Relationship                            | Kind and multiplicity                         | Meaning in the model                                                                                                                         |
-| --------------------------------------- | --------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
-| `observability` → `ObservabilityConfig` | reference; read-only, [1]; opposite `metrics` | References the observability config element(s) used as observability by this metric policy; the target may be shared elsewhere in the model. |
-| `dimensions` → `MetricDimension`        | containment, [*]; opposite `metric`           | Contains the metric dimension element(s) that make up this metric policy; the contained objects belong to this model element.                |
+| Relationship                            | Kind and multiplicity                         | Meaning in the model                                                                                                                                                   |
+| --------------------------------------- | --------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `observability` → `ObservabilityConfig` | reference; read-only, [1]; opposite `metrics` | Derived back-reference to the telemetry and operational-visibility requirements. It mirrors the opposite containment and is not set independently on `MetricPolicy`.   |
+| `dimensions` → `MetricDimension`        | containment, [*]; opposite `metric`           | Owns the labels used to partition metric observations. The contained `MetricDimension` records form part of the `MetricPolicy` model subtree and follow its lifecycle. |
 
 ## `MetricDimension`
 
-Represents metric dimension in the PIM vocabulary. It specializes `TraceableElement` with the details needed for this modeling concern.
+A PIM metric dimension that partitions an operational measurement by a named business or runtime value. It keeps the intended slice visible before a monitoring provider is selected.
 
 Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -501,13 +503,13 @@ Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilit
 
 ### Relationships
 
-| Relationship              | Kind and multiplicity                            | Meaning in the model                                                                                                              |
-| ------------------------- | ------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------- |
-| `metric` → `MetricPolicy` | reference; read-only, [1]; opposite `dimensions` | References the metric policy element(s) used as metric by this metric dimension; the target may be shared elsewhere in the model. |
+| Relationship              | Kind and multiplicity                            | Meaning in the model                                                                                                                                         |
+| ------------------------- | ------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `metric` → `MetricPolicy` | reference; read-only, [1]; opposite `dimensions` | Derived back-reference to the metric policy that owns this dimension. It mirrors the opposite containment and is not set independently on `MetricDimension`. |
 
 ## `TracingPolicy`
 
-Represents tracing policy in the PIM vocabulary. It specializes `PolicySetting` with the details needed for this modeling concern.
+The distributed-tracing decision for a target. It records whether traces are required, how sampling should be governed, and whether trace context must cross calls and asynchronous boundaries.
 
 Direct supertypes: `PolicySetting`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -525,7 +527,7 @@ This class declares no direct relationships.
 
 ## `AlertPolicy`
 
-Represents alert policy in the PIM vocabulary. It specializes `PolicySetting` with the details needed for this modeling concern.
+A condition that should create an operational notification. It identifies the metric, comparison, threshold, evaluation window, severity, and recipient, with an optional structured expression for the same condition.
 
 Direct supertypes: `PolicySetting`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -542,14 +544,14 @@ Direct supertypes: `PolicySetting`. Inherited attributes and marker capabilities
 
 ### Relationships
 
-| Relationship                            | Kind and multiplicity                        | Meaning in the model                                                                                                                        |
-| --------------------------------------- | -------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
-| `conditionExpression` → `Expression`    | containment, [?]                             | Contains the expression element(s) that make up this alert policy; the contained objects belong to this model element.                      |
-| `observability` → `ObservabilityConfig` | reference; read-only, [1]; opposite `alerts` | References the observability config element(s) used as observability by this alert policy; the target may be shared elsewhere in the model. |
+| Relationship                            | Kind and multiplicity                        | Meaning in the model                                                                                                                                                |
+| --------------------------------------- | -------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `conditionExpression` → `Expression`    | containment, [?]                             | Owns the structured alert or routing condition. The contained `Expression` records form part of the `AlertPolicy` model subtree and follow its lifecycle.           |
+| `observability` → `ObservabilityConfig` | reference; read-only, [1]; opposite `alerts` | Derived back-reference to the telemetry and operational-visibility requirements. It mirrors the opposite containment and is not set independently on `AlertPolicy`. |
 
 ## `Slo`
 
-Represents slo in the PIM vocabulary. It specializes `TraceableElement` with the details needed for this modeling concern.
+A measurable service-level objective. It binds an objective name to a metric, target, measurement window, and the policy for acting when the available error budget is consumed.
 
 Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -565,13 +567,13 @@ Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilit
 
 ### Relationships
 
-| Relationship                            | Kind and multiplicity                      | Meaning in the model                                                                                                               |
-| --------------------------------------- | ------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------- |
-| `observability` → `ObservabilityConfig` | reference; read-only, [1]; opposite `slos` | References the observability config element(s) used as observability by this slo; the target may be shared elsewhere in the model. |
+| Relationship                            | Kind and multiplicity                      | Meaning in the model                                                                                                                                        |
+| --------------------------------------- | ------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `observability` → `ObservabilityConfig` | reference; read-only, [1]; opposite `slos` | Derived back-reference to the telemetry and operational-visibility requirements. It mirrors the opposite containment and is not set independently on `Slo`. |
 
 ## `CorsPolicy`
 
-Represents cors policy in the PIM vocabulary. It specializes `ArchitecturePolicy` with the details needed for this modeling concern.
+The browser cross-origin access contract for an API. It enumerates permitted origins, methods, request and response headers, credentials behavior, and the duration for which a preflight result may be cached.
 
 Direct supertypes: `ArchitecturePolicy`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 

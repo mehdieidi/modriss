@@ -1,8 +1,10 @@
 # MODRISS DSML reference
 
-This is the complete modeler-facing reference for MODRISS's three serverless domain-specific modeling languages. It explains the abstract syntax declared in Emfatic, the role of every declared attribute, accepted value shapes and examples, containment/reference relationships, and the way each level participates in refinement and generation.
+MODRISS is a model-driven framework for serverless software development. The landing site presents it as two connected research artefacts: an explicit development process and a modeling framework. This section documents the modeling framework itself. Its purpose is to preserve the meaning of the models at the point where a researcher, modeler, or reviewer needs to make a decision.
 
-The reference is intentionally split into module pages. Use the page for the concern you are modeling, then follow the links in its relationship tables to understand how the element connects to the rest of the model.
+The three DSMLs are deliberately different. CIM speaks about the problem domain and the organization that owns it. PIM expresses a serverless architecture without naming a cloud provider. AWS PSM describes the concrete AWS resources, policies, documents, and integration wiring that can be turned into deployment and application artifacts. The levels are connected through ETL transformations, then EGX and EGL coordinate model-to-text generation from the AWS PSM.
+
+The pages below are a semantic reference, rather than a list of class names. Every declared class, attribute, containment, and reference is retained. The prose explains the decision represented by that feature and the connections through which the feature participates in the larger model.
 
 ## The three modeling levels
 
@@ -19,6 +21,14 @@ flowchart LR
   PSM -->|EGX/EGL generation| ART["AWS/SAM artifacts\ncode, infrastructure, contracts, tests"]
 ```
 
+## The distinction between syntax, meaning, and output
+
+The `.emf` files define abstract syntax. A class declaration determines which concepts can exist; an attribute gives a concept a value; `val` creates an owned model object; and `ref` connects independently modeled objects. Multiplicities are part of this contract. The combined `.ecore` files are the compiled form used by EMF and the workbench.
+
+The abstract syntax intentionally carries more than the minimum needed to draw a diagram. Rationale, source references, trace links, readiness records, policy decisions, and manual decisions preserve why a model has its current form. They are important when a transformation cannot infer an answer safely or when a generated project needs human completion.
+
+EVL supplies semantic validation. It checks relationships between features and asks whether a model expresses enough information for the current workflow. A structurally valid model can still fail EVL because a business rule, security decision, contract, or readiness condition is missing. ETL reads the source model and creates a refined model, often carrying traceability and creating explicit assumptions or hotspots where a decision remains open. Generation acts on the refined AWS PSM and produces reviewable artifacts such as infrastructure, handlers, contracts, tests, scripts, and documentation.
+
 ## Start here
 
 - [CIM reference](cim/index.md): begin with business and domain vocabulary.
@@ -33,19 +43,21 @@ flowchart LR
 
 ## How to read an element page
 
-Each class section contains two tables. **Declared attributes** lists every attribute written directly on that class. The type and multiplicity come from the Emfatic declaration; enum-typed attributes list their complete controlled vocabulary, while primitive and string attributes include a valid shape and representative example. **Relationships** lists every `val` containment and `ref` reference, including multiplicity, opposite role where declared, and whether the relationship is derived or read-only.
+Each class section begins with its role in the DSML and names its direct supertypes. **Declared attributes** lists every attribute written directly on that class. The type and multiplicity come from the Emfatic declaration; enum-typed attributes list their complete controlled vocabulary, while primitive and string attributes include a valid shape and representative example. The explanation also records relevant EVL, ETL, and generator use where that evidence exists.
+
+**Relationships** lists every `val` containment and `ref` reference, including multiplicity, opposite role where declared, and whether the relationship is derived or read-only. A containment answers “which object owns this part of the model?” A reference answers “which separately modeled concept does this object depend on or describe?” That difference matters during transformation, synchronization, and deletion.
 
 Inherited attributes are not copied into every class table because that would obscure the class-specific vocabulary and make the reference difficult to maintain. A class section names all direct supertypes and links to the shared-kernel page; the inherited fields remain part of that class's effective Ecore API.
 
 ## Source-of-truth boundaries
 
-The reference is derived from the `.emf` files under `mde/metamodels/`. The combined `.ecore` files are the compiled abstract syntax. EVL files add semantic constraints and readiness rules, ETL files refine one model level into the next, and EGX/EGL files generate implementation artifacts. A value being syntactically accepted by the metamodel does not by itself mean it will pass EVL or produce a deployable artifact.
+The reference follows the `.emf` files under `mde/metamodels/`. The combined `.ecore` files are the compiled abstract syntax. EVL files add semantic constraints and readiness rules, ETL files refine one model level into the next, and EGX/EGL files generate implementation artifacts. A value being syntactically accepted by the metamodel does not by itself mean it will pass EVL or produce a deployable artifact.
 
 For chatbot assistant apply, repair, and commit paths, generated model output is gated by structural Ecore/EMF conformance through `ModelService.validateStructural(...)`. EVL semantic validation remains part of explicit user/model validation workflows outside that assistant apply boundary.
 
 ## Coverage
 
-The reference covers the current repository definitions: 56 CIM classes, 110 PIM classes, 214 AWS PSM classes, 76 shared-kernel attributes, and the declared attributes and relationships in every module. Regenerate the pages after a metamodel change with `scripts/generate-dsml-reference.py`; review the resulting patch together with the `.emf` change.
+The reference covers the current repository definitions: 56 CIM classes, 110 PIM classes, 214 AWS PSM classes, and the shared kernel used by all three levels. It includes the declared attributes and relationships in every module. When a metamodel changes, update the affected semantic prose together with the `.emf` declaration, the combined Ecore model, EVL rules, transformations, notation, samples, and generation behavior.
 
 ## Additional resources
 

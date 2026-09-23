@@ -1,12 +1,14 @@
 # Schemas and contracts
 
-Contracts make payload shape and compatibility explicit for APIs, events, messages, and function boundaries.
+Contracts give architectural boundaries a shared account of the data they exchange. `Schema` is the reusable document definition; `SchemaField` builds its structure, including nested objects, arrays, maps, enumerations, cardinality, sensitivity, and validation. Field-level and schema-level constraints retain rules that primitive types alone cannot express.
+
+The remaining classes apply those schemas to interactions. `FunctionContract` describes inputs, outputs, failures, and emitted events. `ApiContract` collects the documents published at an API boundary. `EventType` combines a payload schema with subject, source, version, producer, consumer, and optional envelope conventions. Compatibility and validation settings therefore remain visible before OpenAPI, JSON Schema, or event documents are generated.
 
 Source: `mde/metamodels/pim/pim-contracts.emf`.
 
 ## `Schema`
 
-Represents schema in the PIM vocabulary. It specializes `TraceableElement`, `PolicyTarget` with the details needed for this modeling concern.
+A reusable description of structured data. It is the shared vocabulary used by API, event, message, function, and data-model contracts, with fields and constraints kept explicit.
 
 Direct supertypes: `TraceableElement`, `PolicyTarget`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -23,14 +25,14 @@ Direct supertypes: `TraceableElement`, `PolicyTarget`. Inherited attributes and 
 
 ### Relationships
 
-| Relationship                       | Kind and multiplicity                    | Meaning in the model                                                                                                    |
-| ---------------------------------- | ---------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
-| `fields` → `SchemaField`           | containment, [*]; opposite `ownerSchema` | Contains the schema field element(s) that make up this schema; the contained objects belong to this model element.      |
-| `constraints` → `SchemaConstraint` | containment, [*]; opposite `ownerSchema` | Contains the schema constraint element(s) that make up this schema; the contained objects belong to this model element. |
+| Relationship                       | Kind and multiplicity                    | Meaning in the model                                                                                                                                                                                                                                                  |
+| ---------------------------------- | ---------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `fields` → `SchemaField`           | containment, [*]; opposite `ownerSchema` | The `fields` containment on `Schema` owns the members that define the structured shape. The `SchemaField` objects are owned by `Schema` and remain part of its model subtree. Its opposite `ownerSchema` exposes the same connection from the target side.            |
+| `constraints` → `SchemaConstraint` | containment, [*]; opposite `ownerSchema` | The `constraints` containment on `Schema` keeps the validation rules attached to the element. The `SchemaConstraint` objects are owned by `Schema` and remain part of its model subtree. Its opposite `ownerSchema` exposes the same connection from the target side. |
 
 ## `SchemaField`
 
-Represents schema field in the PIM vocabulary. It specializes `TraceableElement` with the details needed for this modeling concern.
+One named member of a schema. It carries type, requiredness, nullability, sensitivity, examples, defaults, bounds, and links to nested or enumerated structure.
 
 Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -58,19 +60,19 @@ Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilit
 
 ### Relationships
 
-| Relationship                                 | Kind and multiplicity                        | Meaning in the model                                                                                                                     |
-| -------------------------------------------- | -------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
-| `cardinality` → `Cardinality`                | containment, [?]                             | Contains the cardinality element(s) that make up this schema field; the contained objects belong to this model element.                  |
-| `enumValues` → `SchemaEnumLiteral`           | containment, [*]; opposite `field`           | Contains the schema enum literal element(s) that make up this schema field; the contained objects belong to this model element.          |
-| `constraints` → `SchemaValidationConstraint` | containment, [*]                             | Contains the schema validation constraint element(s) that make up this schema field; the contained objects belong to this model element. |
-| `arrayItem` → `SchemaField`                  | containment, [?]                             | Contains the schema field element(s) that make up this schema field; the contained objects belong to this model element.                 |
-| `mapValue` → `SchemaField`                   | containment, [?]                             | Contains the schema field element(s) that make up this schema field; the contained objects belong to this model element.                 |
-| `ownerSchema` → `Schema`                     | reference; read-only, [1]; opposite `fields` | References the schema element(s) used as owner schema by this schema field; the target may be shared elsewhere in the model.             |
-| `objectSchema` → `Schema`                    | reference, [?]                               | References the schema element(s) used as object schema by this schema field; the target may be shared elsewhere in the model.            |
+| Relationship                                 | Kind and multiplicity                        | Meaning in the model                                                                                                                                                                                         |
+| -------------------------------------------- | -------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `cardinality` → `Cardinality`                | containment, [?]                             | Owns the lower and upper occurrence bounds. The contained `Cardinality` records form part of the `SchemaField` model subtree and follow its lifecycle.                                                       |
+| `enumValues` → `SchemaEnumLiteral`           | containment, [*]; opposite `field`           | Owns the allowed literals for an enumeration field. The contained `SchemaEnumLiteral` records form part of the `SchemaField` model subtree and follow its lifecycle.                                         |
+| `constraints` → `SchemaValidationConstraint` | containment, [*]                             | The `constraints` containment on `SchemaField` keeps the validation rules attached to the element. The `SchemaValidationConstraint` objects are owned by `SchemaField` and remain part of its model subtree. |
+| `arrayItem` → `SchemaField`                  | containment, [?]                             | Owns the schema of each array member. The contained `SchemaField` records form part of the `SchemaField` model subtree and follow its lifecycle.                                                             |
+| `mapValue` → `SchemaField`                   | containment, [?]                             | Owns the schema of each map value. The contained `SchemaField` records form part of the `SchemaField` model subtree and follow its lifecycle.                                                                |
+| `ownerSchema` → `Schema`                     | reference; read-only, [1]; opposite `fields` | Derived back-reference to the schema that owns this field or constraint. It mirrors the opposite containment and is not set independently on `SchemaField`.                                                  |
+| `objectSchema` → `Schema`                    | reference, [?]                               | Associates `SchemaField` with the schema defining the nested object. The referenced `Schema` remains independently owned and may be reused elsewhere in the model.                                           |
 
 ## `SchemaEnumLiteral`
 
-Represents schema enum literal in the PIM vocabulary. It specializes `TraceableElement` with the details needed for this modeling concern.
+A permitted literal for an enumerated schema field. Keeping literals as model elements allows their meaning and field ownership to be reviewed rather than buried in a string.
 
 Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -84,13 +86,13 @@ Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilit
 
 ### Relationships
 
-| Relationship            | Kind and multiplicity                            | Meaning in the model                                                                                                               |
-| ----------------------- | ------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------- |
-| `field` → `SchemaField` | reference; read-only, [1]; opposite `enumValues` | References the schema field element(s) used as field by this schema enum literal; the target may be shared elsewhere in the model. |
+| Relationship            | Kind and multiplicity                            | Meaning in the model                                                                                                                                             |
+| ----------------------- | ------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `field` → `SchemaField` | reference; read-only, [1]; opposite `enumValues` | Derived back-reference to the enumeration field that owns this literal. It mirrors the opposite containment and is not set independently on `SchemaEnumLiteral`. |
 
 ## `SchemaValidationConstraint`
 
-Represents schema validation constraint in the PIM vocabulary. It specializes `TraceableElement` with the details needed for this modeling concern.
+A field-level validation rule expressed in the shared, language-neutral expression model. Its message explains the failure to a contract consumer, while `expression` carries the condition that a validator or later transformation can interpret.
 
 Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -105,13 +107,13 @@ Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilit
 
 ### Relationships
 
-| Relationship                | Kind and multiplicity | Meaning in the model                                                                                                                   |
-| --------------------------- | --------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
-| `expression` → `Expression` | containment, [?]      | Contains the expression element(s) that make up this schema validation constraint; the contained objects belong to this model element. |
+| Relationship                | Kind and multiplicity | Meaning in the model                                                                                                                                                        |
+| --------------------------- | --------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `expression` → `Expression` | containment, [?]      | Owns the structured form of the rule or predicate. The contained `Expression` records form part of the `SchemaValidationConstraint` model subtree and follow its lifecycle. |
 
 ## `SchemaConstraint`
 
-Represents schema constraint in the PIM vocabulary. It specializes `TraceableElement` with the details needed for this modeling concern.
+A validation rule that applies to a schema as a whole, including rules that compare several fields. The textual language and expression preserve the portable contract, and `expressionModel` can hold the same rule as a structured kernel expression.
 
 Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -126,14 +128,14 @@ Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilit
 
 ### Relationships
 
-| Relationship                     | Kind and multiplicity                             | Meaning in the model                                                                                                              |
-| -------------------------------- | ------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
-| `expressionModel` → `Expression` | containment, [?]                                  | Contains the expression element(s) that make up this schema constraint; the contained objects belong to this model element.       |
-| `ownerSchema` → `Schema`         | reference; read-only, [1]; opposite `constraints` | References the schema element(s) used as owner schema by this schema constraint; the target may be shared elsewhere in the model. |
+| Relationship                     | Kind and multiplicity                             | Meaning in the model                                                                                                                                                   |
+| -------------------------------- | ------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `expressionModel` → `Expression` | containment, [?]                                  | Owns the language-neutral form of the schema-wide rule. The contained `Expression` records form part of the `SchemaConstraint` model subtree and follow its lifecycle. |
+| `ownerSchema` → `Schema`         | reference; read-only, [1]; opposite `constraints` | Derived back-reference to the schema that owns this field or constraint. It mirrors the opposite containment and is not set independently on `SchemaConstraint`.       |
 
 ## `FunctionContract`
 
-Represents function contract in the PIM vocabulary. It specializes `TraceableElement` with the details needed for this modeling concern.
+The input, output, and error contract at a function boundary. It gives a function a stable interface for callers, validation, correlation, and idempotency decisions.
 
 Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -151,16 +153,16 @@ Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilit
 
 ### Relationships
 
-| Relationship                  | Kind and multiplicity | Meaning in the model                                                                                                                    |
-| ----------------------------- | --------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
-| `inputSchema` → `Schema`      | reference, [?]        | References the schema element(s) used as input schema by this function contract; the target may be shared elsewhere in the model.       |
-| `outputSchema` → `Schema`     | reference, [?]        | References the schema element(s) used as output schema by this function contract; the target may be shared elsewhere in the model.      |
-| `errorSchemas` → `Schema`     | reference, [*]        | References the schema element(s) used as error schemas by this function contract; the target may be shared elsewhere in the model.      |
-| `emittedEvents` → `EventType` | reference, [*]        | References the event type element(s) used as emitted events by this function contract; the target may be shared elsewhere in the model. |
+| Relationship                  | Kind and multiplicity | Meaning in the model                                                                                                                                                                   |
+| ----------------------------- | --------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `inputSchema` → `Schema`      | reference, [?]        | Associates `FunctionContract` with the function input contract. The referenced `Schema` remains independently owned and may be reused elsewhere in the model.                          |
+| `outputSchema` → `Schema`     | reference, [?]        | Associates `FunctionContract` with the function result contract. The referenced `Schema` remains independently owned and may be reused elsewhere in the model.                         |
+| `errorSchemas` → `Schema`     | reference, [*]        | Associates `FunctionContract` with the declared failure payloads. The referenced `Schema` remains independently owned and may be reused elsewhere in the model.                        |
+| `emittedEvents` → `EventType` | reference, [*]        | Associates `FunctionContract` with the events that successful processing may publish. The referenced `EventType` remains independently owned and may be reused elsewhere in the model. |
 
 ## `ApiContract`
 
-Represents api contract in the PIM vocabulary. It specializes `TraceableElement` with the details needed for this modeling concern.
+The collection of request, response, and error schemas associated with an API. It separates payload compatibility from the route or transport that exposes it.
 
 Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -173,15 +175,15 @@ Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilit
 
 ### Relationships
 
-| Relationship                 | Kind and multiplicity | Meaning in the model                                                                                                             |
-| ---------------------------- | --------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
-| `requestSchemas` → `Schema`  | reference, [*]        | References the schema element(s) used as request schemas by this api contract; the target may be shared elsewhere in the model.  |
-| `responseSchemas` → `Schema` | reference, [*]        | References the schema element(s) used as response schemas by this api contract; the target may be shared elsewhere in the model. |
-| `errorSchemas` → `Schema`    | reference, [*]        | References the schema element(s) used as error schemas by this api contract; the target may be shared elsewhere in the model.    |
+| Relationship                 | Kind and multiplicity | Meaning in the model                                                                                                                                                                |
+| ---------------------------- | --------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `requestSchemas` → `Schema`  | reference, [*]        | Associates `ApiContract` with the request documents published by the API. The referenced `Schema` remains independently owned and may be reused elsewhere in the model.             |
+| `responseSchemas` → `Schema` | reference, [*]        | Associates `ApiContract` with the successful response documents published by the API. The referenced `Schema` remains independently owned and may be reused elsewhere in the model. |
+| `errorSchemas` → `Schema`    | reference, [*]        | Associates `ApiContract` with the declared failure payloads. The referenced `Schema` remains independently owned and may be reused elsewhere in the model.                          |
 
 ## `EventEnvelope`
 
-Represents event envelope in the PIM vocabulary. It specializes `TraceableElement` with the details needed for this modeling concern.
+The metadata wrapper around an event payload. It gives correlation, causation, identity, time, and version information a defined place alongside the business data.
 
 Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -205,7 +207,7 @@ This class declares no direct relationships.
 
 ## `EventType`
 
-Represents event type in the PIM vocabulary. It specializes `TraceableElement`, `FlowEndpoint`, `PolicyTarget` with the details needed for this modeling concern.
+A named asynchronous contract in the PIM. It connects event meaning to a schema and envelope, then allows functions, channels, flows, and object stores to publish or consume it.
 
 Direct supertypes: `TraceableElement`, `FlowEndpoint`, `PolicyTarget`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -225,9 +227,9 @@ Direct supertypes: `TraceableElement`, `FlowEndpoint`, `PolicyTarget`. Inherited
 
 ### Relationships
 
-| Relationship                    | Kind and multiplicity | Meaning in the model                                                                                                               |
-| ------------------------------- | --------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
-| `envelope` → `EventEnvelope`    | containment, [?]      | Contains the event envelope element(s) that make up this event type; the contained objects belong to this model element.           |
-| `schema` → `Schema`             | reference, [1]        | References the schema element(s) used as schema by this event type; the target may be shared elsewhere in the model.               |
-| `producedBy` → `FunctionTarget` | reference, [*]        | References the function target element(s) used as produced by by this event type; the target may be shared elsewhere in the model. |
-| `consumedBy` → `FunctionTarget` | reference, [*]        | References the function target element(s) used as consumed by by this event type; the target may be shared elsewhere in the model. |
+| Relationship                    | Kind and multiplicity | Meaning in the model                                                                                                                                                                   |
+| ------------------------------- | --------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `envelope` → `EventEnvelope`    | containment, [?]      | Owns the metadata wrapper surrounding the event payload. The contained `EventEnvelope` records form part of the `EventType` model subtree and follow its lifecycle.                    |
+| `schema` → `Schema`             | reference, [1]        | The `schema` reference on `EventType` attaches the structured shape expected for this data. A `Schema` can remain independently owned and can participate in other parts of the model. |
+| `producedBy` → `FunctionTarget` | reference, [*]        | Associates `EventType` with the function targets allowed to publish the event. The referenced `FunctionTarget` remains independently owned and may be reused elsewhere in the model.   |
+| `consumedBy` → `FunctionTarget` | reference, [*]        | Associates `EventType` with the function targets expected to handle the event. The referenced `FunctionTarget` remains independently owned and may be reused elsewhere in the model.   |

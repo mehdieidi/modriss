@@ -1,12 +1,14 @@
 # External endpoints and adapters
 
-External concepts identify systems outside the modeled application and the adapters needed to call or receive from them.
+An `ExternalEndpoint` names a capability outside the modeled application, including its protocol, ownership, availability expectation, data sensitivity, and authentication need. It is a description of the remote boundary, not executable integration code.
+
+`ExternalAdapter` is the internal architectural element responsible for crossing that boundary. It binds an endpoint to adapter functions, credential requirements, timeout and resilience behavior, observability, idempotency, and a service owner. Flows and workflow tasks refer to the adapter so these concerns are not scattered across callers.
 
 Source: `mde/metamodels/pim/pim-external.emf`.
 
 ## `ExternalEndpoint`
 
-Represents external endpoint in the PIM vocabulary. It specializes `TraceableElement`, `ExternalCallTarget`, `PolicyTarget`, `ProtectedResource` with the details needed for this modeling concern.
+A provider-independent description of a system outside the modeled application. It records endpoint, protocol, trust, network, rate, and credential expectations without embedding a vendor resource.
 
 Direct supertypes: `TraceableElement`, `ExternalCallTarget`, `PolicyTarget`, `ProtectedResource`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -30,7 +32,7 @@ This class declares no direct relationships.
 
 ## `ExternalAdapter`
 
-Represents external adapter in the PIM vocabulary. It specializes `TraceableElement`, `DeployableElement`, `FlowEndpoint`, `InvocationTarget`, `FunctionTarget`, `SubscriptionTarget`, `RoutingTarget`, `ExternalCallTarget`, `ProtectedResource`, `PolicyTarget`, `ConfigurableElement` with the details needed for this modeling concern.
+The integration boundary used by the PIM to call or receive from an external endpoint. It captures protocol behavior, resilience, credentials, and the endpoint mapping in one place.
 
 Direct supertypes: `TraceableElement`, `DeployableElement`, `FlowEndpoint`, `InvocationTarget`, `FunctionTarget`, `SubscriptionTarget`, `RoutingTarget`, `ExternalCallTarget`, `ProtectedResource`, `PolicyTarget`, `ConfigurableElement`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -42,12 +44,12 @@ Direct supertypes: `TraceableElement`, `DeployableElement`, `FlowEndpoint`, `Inv
 
 ### Relationships
 
-| Relationship                            | Kind and multiplicity                          | Meaning in the model                                                                                                                            |
-| --------------------------------------- | ---------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
-| `credentials` → `CredentialRequirement` | containment, [*]                               | Contains the credential requirement element(s) that make up this external adapter; the contained objects belong to this model element.          |
-| `service` → `ServerlessService`         | reference; read-only, [1]; opposite `adapters` | References the serverless service element(s) used as service by this external adapter; the target may be shared elsewhere in the model.         |
-| `endpoint` → `ExternalEndpoint`         | reference, [1]                                 | References the external endpoint element(s) used as endpoint by this external adapter; the target may be shared elsewhere in the model.         |
-| `adapterFunctions` → `FunctionTarget`   | reference, [*]                                 | References the function target element(s) used as adapter functions by this external adapter; the target may be shared elsewhere in the model.  |
-| `resilience` → `ResiliencePolicy`       | reference, [?]                                 | References the resilience policy element(s) used as resilience by this external adapter; the target may be shared elsewhere in the model.       |
-| `observability` → `ObservabilityConfig` | reference, [?]                                 | References the observability config element(s) used as observability by this external adapter; the target may be shared elsewhere in the model. |
-| `idempotency` → `IdempotencyPolicy`     | reference, [?]                                 | References the idempotency policy element(s) used as idempotency by this external adapter; the target may be shared elsewhere in the model.     |
+| Relationship                            | Kind and multiplicity                          | Meaning in the model                                                                                                                                                                                |
+| --------------------------------------- | ---------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `credentials` → `CredentialRequirement` | containment, [*]                               | Owns the credential needs for calling the remote endpoint. The contained `CredentialRequirement` records form part of the `ExternalAdapter` model subtree and follow its lifecycle.                 |
+| `service` → `ServerlessService`         | reference; read-only, [1]; opposite `adapters` | Derived back-reference to the service boundary responsible for this element. It mirrors the opposite containment and is not set independently on `ExternalAdapter`.                                 |
+| `endpoint` → `ExternalEndpoint`         | reference, [1]                                 | Associates `ExternalAdapter` with the external endpoint implemented by the adapter. The referenced `ExternalEndpoint` remains independently owned and may be reused elsewhere in the model.         |
+| `adapterFunctions` → `FunctionTarget`   | reference, [*]                                 | Associates `ExternalAdapter` with the functions implementing adapter behavior. The referenced `FunctionTarget` remains independently owned and may be reused elsewhere in the model.                |
+| `resilience` → `ResiliencePolicy`       | reference, [?]                                 | Associates `ExternalAdapter` with the retry, fallback, and failure-handling policy. The referenced `ResiliencePolicy` remains independently owned and may be reused elsewhere in the model.         |
+| `observability` → `ObservabilityConfig` | reference, [?]                                 | Associates `ExternalAdapter` with the telemetry and operational-visibility requirements. The referenced `ObservabilityConfig` remains independently owned and may be reused elsewhere in the model. |
+| `idempotency` → `IdempotencyPolicy`     | reference, [?]                                 | Associates `ExternalAdapter` with the duplicate-processing guarantee. The referenced `IdempotencyPolicy` remains independently owned and may be reused elsewhere in the model.                      |

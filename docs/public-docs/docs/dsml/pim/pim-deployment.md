@@ -1,12 +1,14 @@
 # Services, deployment units, and platform mapping
 
-Deployment concepts divide the provider-independent architecture into services, units, environments, and explicit platform-mapping decisions.
+Deployment concepts answer three distinct ownership questions. `ServerlessService` groups architecture by responsibility, `ServiceElementMembership` records how a deployable element participates in that service, and `DeploymentUnit` defines what is released together. Keeping these concepts separate allows a shared resource to support several services without pretending that it has several containment owners.
+
+`Environment` captures stage characteristics and overrides. `ImplementationProfile` records the language, package, source-layout, build, test, and contract-generation expectations that guide later artifacts. `PlatformCapability` and `PlatformMappingAssessment` document whether the chosen target can realize each PIM concern directly, with assumptions, through a manual decision, as metadata only, or not at all.
 
 Source: `mde/metamodels/pim/pim-deployment.emf`.
 
 ## `ServerlessService`
 
-Represents serverless service in the PIM vocabulary. It specializes `TraceableElement`, `PolicyTarget`, `ConfigurableElement` with the details needed for this modeling concern.
+A provider-independent service boundary that groups related PIM elements around a responsibility. It is a candidate unit of architecture and ownership, with deployment units kept as a separate decision.
 
 Direct supertypes: `TraceableElement`, `PolicyTarget`, `ConfigurableElement`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -23,20 +25,20 @@ Direct supertypes: `TraceableElement`, `PolicyTarget`, `ConfigurableElement`. In
 
 ### Relationships
 
-| Relationship                           | Kind and multiplicity                | Meaning in the model                                                                                                                              |
-| -------------------------------------- | ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `functions` → `Function`               | containment, [*]; opposite `service` | Contains the function element(s) that make up this serverless service; the contained objects belong to this model element.                        |
-| `apis` → `Api`                         | containment, [*]; opposite `service` | Contains the api element(s) that make up this serverless service; the contained objects belong to this model element.                             |
-| `channels` → `EventChannel`            | containment, [*]; opposite `service` | Contains the event channel element(s) that make up this serverless service; the contained objects belong to this model element.                   |
-| `schedules` → `Schedule`               | containment, [*]; opposite `service` | Contains the schedule element(s) that make up this serverless service; the contained objects belong to this model element.                        |
-| `stores` → `StorageElement`            | containment, [*]; opposite `service` | Contains the storage element element(s) that make up this serverless service; the contained objects belong to this model element.                 |
-| `workflows` → `Workflow`               | containment, [*]; opposite `service` | Contains the workflow element(s) that make up this serverless service; the contained objects belong to this model element.                        |
-| `adapters` → `ExternalAdapter`         | containment, [*]; opposite `service` | Contains the external adapter element(s) that make up this serverless service; the contained objects belong to this model element.                |
-| `constrainedBy` → `ArchitecturePolicy` | reference, [*]                       | References the architecture policy element(s) used as constrained by by this serverless service; the target may be shared elsewhere in the model. |
+| Relationship                           | Kind and multiplicity                | Meaning in the model                                                                                                                                                                                                                                                                               |
+| -------------------------------------- | ------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `functions` → `Function`               | containment, [*]; opposite `service` | The `functions` containment on `ServerlessService` keeps the executable functions owned by the service inside its boundary. The `Function` objects are owned by `ServerlessService` and remain part of its model subtree. Its opposite `service` exposes the same connection from the target side. |
+| `apis` → `Api`                         | containment, [*]; opposite `service` | The `apis` containment on `ServerlessService` keeps the APIs exposed by the service inside the service boundary. The `Api` objects are owned by `ServerlessService` and remain part of its model subtree. Its opposite `service` exposes the same connection from the target side.                 |
+| `channels` → `EventChannel`            | containment, [*]; opposite `service` | The `channels` containment on `ServerlessService` keeps the asynchronous delivery channels in the model. The `EventChannel` objects are owned by `ServerlessService` and remain part of its model subtree. Its opposite `service` exposes the same connection from the target side.                |
+| `schedules` → `Schedule`               | containment, [*]; opposite `service` | Owns the time-based invocation sources owned by the service. The contained `Schedule` records form part of the `ServerlessService` model subtree and follow its lifecycle.                                                                                                                         |
+| `stores` → `StorageElement`            | containment, [*]; opposite `service` | Owns the persistent resources owned by the service. The contained `StorageElement` records form part of the `ServerlessService` model subtree and follow its lifecycle.                                                                                                                            |
+| `workflows` → `Workflow`               | containment, [*]; opposite `service` | Owns the orchestrations owned by the service. The contained `Workflow` records form part of the `ServerlessService` model subtree and follow its lifecycle.                                                                                                                                        |
+| `adapters` → `ExternalAdapter`         | containment, [*]; opposite `service` | Owns the external-boundary adapters owned by the service. The contained `ExternalAdapter` records form part of the `ServerlessService` model subtree and follow its lifecycle.                                                                                                                     |
+| `constrainedBy` → `ArchitecturePolicy` | reference, [*]                       | The `constrainedBy` reference on `ServerlessService` connects the capability to the quality or governance requirements it must respect. An `ArchitecturePolicy` can remain independently owned and can participate in other parts of the model.                                                    |
 
 ## `ServiceElementMembership`
 
-Represents service element membership in the PIM vocabulary. It specializes `TraceableElement` with the details needed for this modeling concern.
+The record that places a PIM element inside a serverless service. It makes service ownership explicit when the same architecture also has deployment and integration boundaries.
 
 Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -48,14 +50,14 @@ Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilit
 
 ### Relationships
 
-| Relationship                    | Kind and multiplicity | Meaning in the model                                                                                                                              |
-| ------------------------------- | --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `service` → `ServerlessService` | reference, [1]        | References the serverless service element(s) used as service by this service element membership; the target may be shared elsewhere in the model. |
-| `element` → `DeployableElement` | reference, [1]        | References the deployable element element(s) used as element by this service element membership; the target may be shared elsewhere in the model. |
+| Relationship                    | Kind and multiplicity | Meaning in the model                                                                                                                                                                                                  |
+| ------------------------------- | --------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `service` → `ServerlessService` | reference, [1]        | Associates `ServiceElementMembership` with the service boundary responsible for this element. The referenced `ServerlessService` remains independently owned and may be reused elsewhere in the model.                |
+| `element` → `DeployableElement` | reference, [1]        | Associates `ServiceElementMembership` with the deployable architecture element whose membership is recorded. The referenced `DeployableElement` remains independently owned and may be reused elsewhere in the model. |
 
 ## `DeploymentUnit`
 
-Represents deployment unit in the PIM vocabulary. It specializes `TraceableElement`, `PolicyTarget`, `ConfigurableElement` with the details needed for this modeling concern.
+A release and deployment boundary for PIM elements. It connects owned architecture content to an environment and release strategy without naming an AWS resource.
 
 Direct supertypes: `TraceableElement`, `PolicyTarget`, `ConfigurableElement`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -71,15 +73,15 @@ Direct supertypes: `TraceableElement`, `PolicyTarget`, `ConfigurableElement`. In
 
 ### Relationships
 
-| Relationship                         | Kind and multiplicity | Meaning in the model                                                                                                                        |
-| ------------------------------------ | --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
-| `services` → `ServerlessService`     | reference, [*]        | References the serverless service element(s) used as services by this deployment unit; the target may be shared elsewhere in the model.     |
-| `contains` → `DeployableElement`     | reference, [*]        | References the deployable element element(s) used as contains by this deployment unit; the target may be shared elsewhere in the model.     |
-| `targetEnvironments` → `Environment` | reference, [*]        | References the environment element(s) used as target environments by this deployment unit; the target may be shared elsewhere in the model. |
+| Relationship                         | Kind and multiplicity | Meaning in the model                                                                                                                                                                                                   |
+| ------------------------------------ | --------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `services` → `ServerlessService`     | reference, [*]        | Associates `DeploymentUnit` with the service boundaries represented in this release unit. The referenced `ServerlessService` remains independently owned and may be reused elsewhere in the model.                     |
+| `contains` → `DeployableElement`     | reference, [*]        | Associates `DeploymentUnit` with the deployable elements released by this unit. The referenced `DeployableElement` remains independently owned and may be reused elsewhere in the model.                               |
+| `targetEnvironments` → `Environment` | reference, [*]        | The `targetEnvironments` reference on `DeploymentUnit` identifies the destination represented by target environments. An `Environment` can remain independently owned and can participate in other parts of the model. |
 
 ## `Environment`
 
-Represents environment in the PIM vocabulary. It specializes `TraceableElement`, `EnvironmentTarget`, `PolicyTarget` with the details needed for this modeling concern.
+A named execution context such as development, test, or production. It carries the assumptions and configuration targets that make the same architecture deployable in more than one setting.
 
 Direct supertypes: `TraceableElement`, `EnvironmentTarget`, `PolicyTarget`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -94,15 +96,15 @@ Direct supertypes: `TraceableElement`, `EnvironmentTarget`, `PolicyTarget`. Inhe
 
 ### Relationships
 
-| Relationship                             | Kind and multiplicity | Meaning in the model                                                                                                                         |
-| ---------------------------------------- | --------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
-| `configurationSets` → `ConfigurationSet` | reference, [*]        | References the configuration set element(s) used as configuration sets by this environment; the target may be shared elsewhere in the model. |
-| `parameters` → `ConfigParameter`         | reference, [*]        | References the config parameter element(s) used as parameters by this environment; the target may be shared elsewhere in the model.          |
-| `variables` → `EnvironmentVariable`      | reference, [*]        | References the environment variable element(s) used as variables by this environment; the target may be shared elsewhere in the model.       |
+| Relationship                             | Kind and multiplicity | Meaning in the model                                                                                                                                                                                                         |
+| ---------------------------------------- | --------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `configurationSets` → `ConfigurationSet` | reference, [*]        | The `configurationSets` reference on `Environment` attaches the configuration record represented by configuration sets. A `ConfigurationSet` can remain independently owned and can participate in other parts of the model. |
+| `parameters` → `ConfigParameter`         | reference, [*]        | The `parameters` reference on `Environment` keeps the named configuration inputs in the configuration set. A `ConfigParameter` can remain independently owned and can participate in other parts of the model.               |
+| `variables` → `EnvironmentVariable`      | reference, [*]        | Associates `Environment` with the environment-specific variable overrides. The referenced `EnvironmentVariable` remains independently owned and may be reused elsewhere in the model.                                        |
 
 ## `ImplementationProfile`
 
-Represents implementation profile in the PIM vocabulary. It specializes `TraceableElement` with the details needed for this modeling concern.
+The provider-independent implementation preferences used when a PIM model is prepared for a target platform. It holds choices that guide mapping without turning the PIM itself into an AWS model.
 
 Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -128,7 +130,7 @@ This class declares no direct relationships.
 
 ## `PlatformCapability`
 
-Represents platform capability in the PIM vocabulary. It specializes `TraceableElement` with the details needed for this modeling concern.
+A capability expected from the target platform. It records what the architecture needs so a platform mapping can distinguish supported, substituted, and unresolved concerns.
 
 Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -143,13 +145,13 @@ Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilit
 
 ### Relationships
 
-| Relationship                            | Kind and multiplicity | Meaning in the model                                                                                                                                 |
-| --------------------------------------- | --------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `supportedPimConcepts` → `ModelElement` | reference, [*]        | References the model element element(s) used as supported pim concepts by this platform capability; the target may be shared elsewhere in the model. |
+| Relationship                            | Kind and multiplicity | Meaning in the model                                                                                                                                                                           |
+| --------------------------------------- | --------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `supportedPimConcepts` → `ModelElement` | reference, [*]        | Associates `PlatformCapability` with the PIM concepts covered by this platform capability. The referenced `ModelElement` remains independently owned and may be reused elsewhere in the model. |
 
 ## `PlatformMappingAssessment`
 
-Represents platform mapping assessment in the PIM vocabulary. It specializes `TraceableElement` with the details needed for this modeling concern.
+The review record for mapping a PIM concern to platform capabilities. It captures evidence and unresolved gaps instead of treating provider mapping as automatic.
 
 Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -163,6 +165,6 @@ Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilit
 
 ### Relationships
 
-| Relationship              | Kind and multiplicity | Meaning in the model                                                                                                                         |
-| ------------------------- | --------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
-| `source` → `ModelElement` | reference, [1]        | References the model element element(s) used as source by this platform mapping assessment; the target may be shared elsewhere in the model. |
+| Relationship              | Kind and multiplicity | Meaning in the model                                                                                                                                                                                |
+| ------------------------- | --------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `source` → `ModelElement` | reference, [1]        | The `source` reference on `PlatformMappingAssessment` marks the origin of a directed relationship. A `ModelElement` can remain independently owned and can participate in other parts of the model. |

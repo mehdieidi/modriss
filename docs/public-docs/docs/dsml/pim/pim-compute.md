@@ -1,12 +1,14 @@
 # Provider-independent compute
 
-Compute elements describe what runs and why without committing to Lambda, containers, or another provider-specific runtime.
+Compute elements describe executable responsibility without selecting a provider runtime. A `Function` states what work occurs, how it is invoked, its workload characteristics, and whether it reads state, writes state, publishes events, or crosses a network boundary. Its relationships then name the actual stores, event types, adapters, contracts, secrets, and policies involved.
+
+These declarations are meant to agree with one another. A state-reading flag is incomplete without a referenced store, an event-publishing function needs an event type, and retryable state changes need an idempotency decision. `Trigger` represents an owned entry mechanism and must resolve to one function or one workflow target.
 
 Source: `mde/metamodels/pim/pim-compute.emf`.
 
 ## `ComputeElement`
 
-An abstract compute element concept. Use one of its concrete subtypes when creating a model instance; the shared attributes and relationships defined here still apply.
+The abstract base for executable PIM computation. It gives every compute subtype a responsibility statement and a workload profile, while the inherited endpoint and policy roles allow computation to participate in flows and receive protection policies.
 
 Direct supertypes: `TraceableElement`, `FlowEndpoint`, `PolicyTarget`, `ProtectedResource`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -29,7 +31,7 @@ This class declares no direct relationships.
 
 ## `Function`
 
-Represents function in the PIM vocabulary. It specializes `ComputeElement`, `DeployableElement`, `InvocationTarget`, `FunctionTarget`, `SubscriptionTarget`, `RoutingTarget`, `ConfigurableElement` with the details needed for this modeling concern.
+A provider-independent unit of serverless computation. It describes responsibility, state access, events, contracts, resilience, security, and runtime expectations without choosing Lambda or another provider runtime.
 
 Direct supertypes: `ComputeElement`, `DeployableElement`, `InvocationTarget`, `FunctionTarget`, `SubscriptionTarget`, `RoutingTarget`, `ConfigurableElement`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -52,28 +54,28 @@ Direct supertypes: `ComputeElement`, `DeployableElement`, `InvocationTarget`, `F
 
 ### Relationships
 
-| Relationship                                   | Kind and multiplicity                           | Meaning in the model                                                                                                                            |
-| ---------------------------------------------- | ----------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
-| `contract` → `FunctionContract`                | containment, [1]                                | Contains the function contract element(s) that make up this function; the contained objects belong to this model element.                       |
-| `triggers` → `Trigger`                         | containment, [*]; opposite `function`           | Contains the trigger element(s) that make up this function; the contained objects belong to this model element.                                 |
-| `service` → `ServerlessService`                | reference; read-only, [1]; opposite `functions` | References the serverless service element(s) used as service by this function; the target may be shared elsewhere in the model.                 |
-| `reads` → `StorageElement`                     | reference, [*]                                  | References the storage element element(s) used as reads by this function; the target may be shared elsewhere in the model.                      |
-| `writes` → `StorageElement`                    | reference, [*]                                  | References the storage element element(s) used as writes by this function; the target may be shared elsewhere in the model.                     |
-| `publishes` → `EventType`                      | reference, [*]                                  | References the event type element(s) used as publishes by this function; the target may be shared elsewhere in the model.                       |
-| `subscribesTo` → `EventType`                   | reference, [*]                                  | References the event type element(s) used as subscribes to by this function; the target may be shared elsewhere in the model.                   |
-| `callsAdapters` → `ExternalAdapter`            | reference, [*]                                  | References the external adapter element(s) used as calls adapters by this function; the target may be shared elsewhere in the model.            |
-| `usesSecrets` → `Secret`                       | reference, [*]                                  | References the secret element(s) used as uses secrets by this function; the target may be shared elsewhere in the model.                        |
-| `environmentVariables` → `EnvironmentVariable` | reference, [*]                                  | References the environment variable element(s) used as environment variables by this function; the target may be shared elsewhere in the model. |
-| `idempotency` → `IdempotencyPolicy`            | reference, [?]                                  | References the idempotency policy element(s) used as idempotency by this function; the target may be shared elsewhere in the model.             |
-| `timeout` → `TimeoutPolicy`                    | reference, [?]                                  | References the timeout policy element(s) used as timeout by this function; the target may be shared elsewhere in the model.                     |
-| `resilience` → `ResiliencePolicy`              | reference, [?]                                  | References the resilience policy element(s) used as resilience by this function; the target may be shared elsewhere in the model.               |
-| `concurrency` → `ConcurrencyPolicy`            | reference, [?]                                  | References the concurrency policy element(s) used as concurrency by this function; the target may be shared elsewhere in the model.             |
-| `observability` → `ObservabilityConfig`        | reference, [?]                                  | References the observability config element(s) used as observability by this function; the target may be shared elsewhere in the model.         |
-| `securityPolicies` → `SecurityPolicy`          | reference, [*]                                  | References the security policy element(s) used as security policies by this function; the target may be shared elsewhere in the model.          |
+| Relationship                                   | Kind and multiplicity                           | Meaning in the model                                                                                                                                                                                                                                          |
+| ---------------------------------------------- | ----------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `contract` → `FunctionContract`                | containment, [1]                                | The `contract` containment on `Function` attaches the payload contract used at this boundary. The `FunctionContract` objects are owned by `Function` and remain part of its model subtree.                                                                    |
+| `triggers` → `Trigger`                         | containment, [*]; opposite `function`           | The `triggers` containment on `Function` keeps the invocation sources attached to the function. The `Trigger` objects are owned by `Function` and remain part of its model subtree. Its opposite `function` exposes the same connection from the target side. |
+| `service` → `ServerlessService`                | reference; read-only, [1]; opposite `functions` | Derived back-reference to the service boundary responsible for this element. It mirrors the opposite containment and is not set independently on `Function`.                                                                                                  |
+| `reads` → `StorageElement`                     | reference, [*]                                  | The `reads` reference on `Function` identifies the data models read by this computation. A `StorageElement` can remain independently owned and can participate in other parts of the model.                                                                   |
+| `writes` → `StorageElement`                    | reference, [*]                                  | The `writes` reference on `Function` identifies the data models changed by this computation. A `StorageElement` can remain independently owned and can participate in other parts of the model.                                                               |
+| `publishes` → `EventType`                      | reference, [*]                                  | The `publishes` reference on `Function` records the event types published by the function. An `EventType` can remain independently owned and can participate in other parts of the model.                                                                     |
+| `subscribesTo` → `EventType`                   | reference, [*]                                  | The `subscribesTo` reference on `Function` records the event types consumed by the function. An `EventType` can remain independently owned and can participate in other parts of the model.                                                                   |
+| `callsAdapters` → `ExternalAdapter`            | reference, [*]                                  | Associates `Function` with the external boundaries called during execution. The referenced `ExternalAdapter` remains independently owned and may be reused elsewhere in the model.                                                                            |
+| `usesSecrets` → `Secret`                       | reference, [*]                                  | Associates `Function` with the protected values needed at runtime. The referenced `Secret` remains independently owned and may be reused elsewhere in the model.                                                                                              |
+| `environmentVariables` → `EnvironmentVariable` | reference, [*]                                  | The `environmentVariables` reference on `Function` keeps the runtime bindings that use the configuration set. An `EnvironmentVariable` can remain independently owned and can participate in other parts of the model.                                        |
+| `idempotency` → `IdempotencyPolicy`            | reference, [?]                                  | Associates `Function` with the duplicate-processing guarantee. The referenced `IdempotencyPolicy` remains independently owned and may be reused elsewhere in the model.                                                                                       |
+| `timeout` → `TimeoutPolicy`                    | reference, [?]                                  | Associates `Function` with the applicable execution or waiting limit. The referenced `TimeoutPolicy` remains independently owned and may be reused elsewhere in the model.                                                                                    |
+| `resilience` → `ResiliencePolicy`              | reference, [?]                                  | Associates `Function` with the retry, fallback, and failure-handling policy. The referenced `ResiliencePolicy` remains independently owned and may be reused elsewhere in the model.                                                                          |
+| `concurrency` → `ConcurrencyPolicy`            | reference, [?]                                  | Associates `Function` with the workload concurrency boundary. The referenced `ConcurrencyPolicy` remains independently owned and may be reused elsewhere in the model.                                                                                        |
+| `observability` → `ObservabilityConfig`        | reference, [?]                                  | Associates `Function` with the telemetry and operational-visibility requirements. The referenced `ObservabilityConfig` remains independently owned and may be reused elsewhere in the model.                                                                  |
+| `securityPolicies` → `SecurityPolicy`          | reference, [*]                                  | Associates `Function` with the security obligations applied to the function. The referenced `SecurityPolicy` remains independently owned and may be reused elsewhere in the model.                                                                            |
 
 ## `Trigger`
 
-Represents trigger in the PIM vocabulary. It specializes `TraceableElement`, `PolicyTarget` with the details needed for this modeling concern.
+The condition or source that invokes a function or workflow. It keeps invocation intent, enablement, input, and target explicit instead of hiding the entry point in an integration diagram.
 
 Direct supertypes: `TraceableElement`, `PolicyTarget`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -89,11 +91,11 @@ Direct supertypes: `TraceableElement`, `PolicyTarget`. Inherited attributes and 
 
 ### Relationships
 
-| Relationship                        | Kind and multiplicity                          | Meaning in the model                                                                                                                |
-| ----------------------------------- | ---------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
-| `filter` → `Expression`             | containment, [?]                               | Contains the expression element(s) that make up this trigger; the contained objects belong to this model element.                   |
-| `function` → `Function`             | reference; read-only, [1]; opposite `triggers` | References the function element(s) used as function by this trigger; the target may be shared elsewhere in the model.               |
-| `source` → `InvocationSource`       | reference, [1]                                 | References the invocation source element(s) used as source by this trigger; the target may be shared elsewhere in the model.        |
-| `startsWorkflow` → `WorkflowTarget` | reference, [?]                                 | References the workflow target element(s) used as starts workflow by this trigger; the target may be shared elsewhere in the model. |
-| `resilience` → `ResiliencePolicy`   | reference, [?]                                 | References the resilience policy element(s) used as resilience by this trigger; the target may be shared elsewhere in the model.    |
-| `batchPolicy` → `BatchPolicy`       | reference, [?]                                 | References the batch policy element(s) used as batch policy by this trigger; the target may be shared elsewhere in the model.       |
+| Relationship                        | Kind and multiplicity                          | Meaning in the model                                                                                                                                                                                             |
+| ----------------------------------- | ---------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `filter` → `Expression`             | containment, [?]                               | Owns the predicate that admits matching input. The contained `Expression` records form part of the `Trigger` model subtree and follow its lifecycle.                                                             |
+| `function` → `Function`             | reference; read-only, [1]; opposite `triggers` | Derived back-reference to the function invoked or described by this record. It mirrors the opposite containment and is not set independently on `Trigger`.                                                       |
+| `source` → `InvocationSource`       | reference, [1]                                 | The `source` reference on `Trigger` marks the origin of a directed relationship. An `InvocationSource` can remain independently owned and can participate in other parts of the model.                           |
+| `startsWorkflow` → `WorkflowTarget` | reference, [?]                                 | Associates `Trigger` with the workflow target started by the trigger. The referenced `WorkflowTarget` remains independently owned and may be reused elsewhere in the model.                                      |
+| `resilience` → `ResiliencePolicy`   | reference, [?]                                 | Associates `Trigger` with the retry, fallback, and failure-handling policy. The referenced `ResiliencePolicy` remains independently owned and may be reused elsewhere in the model.                              |
+| `batchPolicy` → `BatchPolicy`       | reference, [?]                                 | The `batchPolicy` reference on `Trigger` attaches the access or governance decision represented by batch policy. A `BatchPolicy` can remain independently owned and can participate in other parts of the model. |

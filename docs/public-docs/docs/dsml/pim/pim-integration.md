@@ -1,12 +1,14 @@
 # Channels, flows, and integrations
 
-Integration concepts describe asynchronous channels, schedules, subscriptions, and flow intent independently of AWS resource names.
+The integration module distinguishes communication infrastructure from the interaction it supports. `EventChannel` and its queue, topic, and event-bus specializations describe delivery guarantees, ordering, retention, encryption, producers, and consumers. `Schedule` supplies a time-based invocation source. `Subscription` and `EventRoutingRule` make filtering and target selection explicit.
+
+`Flow` describes an architectural conversation between endpoints. Its specialized forms identify request-response routes, event movement, queued messages, publish-subscribe fan-out, workflow orchestration, or an external adapter. A flow can therefore remain stable when platform refinement changes the concrete channel resources used to deliver it.
 
 Source: `mde/metamodels/pim/pim-integration.emf`.
 
 ## `IntegrationElement`
 
-An abstract integration element concept. Use one of its concrete subtypes when creating a model instance; the shared attributes and relationships defined here still apply.
+The common base for provider-independent integration resources. Its inherited endpoint, policy-target, and protected-resource roles let channels and schedules enter flows, receive operational policies, and be governed as architectural boundaries.
 
 Direct supertypes: `TraceableElement`, `FlowEndpoint`, `PolicyTarget`, `ProtectedResource`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -22,7 +24,7 @@ This class declares no direct relationships.
 
 ## `EventChannel`
 
-An abstract event channel concept. Use one of its concrete subtypes when creating a model instance; the shared attributes and relationships defined here still apply.
+A provider-independent route for asynchronous event delivery. It separates the channel's delivery semantics from the functions, workflows, or external systems that use it.
 
 Direct supertypes: `IntegrationElement`, `DeployableElement`, `InvocationSource`, `SubscriptionTarget`, `RoutingTarget`, `EventCarrier`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -40,21 +42,21 @@ Direct supertypes: `IntegrationElement`, `DeployableElement`, `InvocationSource`
 
 ### Relationships
 
-| Relationship                            | Kind and multiplicity                          | Meaning in the model                                                                                                                          |
-| --------------------------------------- | ---------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
-| `service` → `ServerlessService`         | reference; read-only, [1]; opposite `channels` | References the serverless service element(s) used as service by this event channel; the target may be shared elsewhere in the model.          |
-| `eventTypes` → `EventType`              | reference, [*]                                 | References the event type element(s) used as event types by this event channel; the target may be shared elsewhere in the model.              |
-| `producers` → `Function`                | reference, [*]                                 | References the function element(s) used as producers by this event channel; the target may be shared elsewhere in the model.                  |
-| `consumers` → `Function`                | reference, [*]                                 | References the function element(s) used as consumers by this event channel; the target may be shared elsewhere in the model.                  |
-| `workflowConsumers` → `Workflow`        | reference, [*]                                 | References the workflow element(s) used as workflow consumers by this event channel; the target may be shared elsewhere in the model.         |
-| `externalProducers` → `ExternalAdapter` | reference, [*]                                 | References the external adapter element(s) used as external producers by this event channel; the target may be shared elsewhere in the model. |
-| `externalConsumers` → `ExternalAdapter` | reference, [*]                                 | References the external adapter element(s) used as external consumers by this event channel; the target may be shared elsewhere in the model. |
-| `resilience` → `ResiliencePolicy`       | reference, [?]                                 | References the resilience policy element(s) used as resilience by this event channel; the target may be shared elsewhere in the model.        |
-| `observability` → `ObservabilityConfig` | reference, [?]                                 | References the observability config element(s) used as observability by this event channel; the target may be shared elsewhere in the model.  |
+| Relationship                            | Kind and multiplicity                          | Meaning in the model                                                                                                                                                                             |
+| --------------------------------------- | ---------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `service` → `ServerlessService`         | reference; read-only, [1]; opposite `channels` | Derived back-reference to the service boundary responsible for this element. It mirrors the opposite containment and is not set independently on `EventChannel`.                                 |
+| `eventTypes` → `EventType`              | reference, [*]                                 | Associates `EventChannel` with the event contracts carried or matched here. The referenced `EventType` remains independently owned and may be reused elsewhere in the model.                     |
+| `producers` → `Function`                | reference, [*]                                 | Associates `EventChannel` with the functions that place events on the channel. The referenced `Function` remains independently owned and may be reused elsewhere in the model.                   |
+| `consumers` → `Function`                | reference, [*]                                 | Associates `EventChannel` with the functions that handle channel deliveries. The referenced `Function` remains independently owned and may be reused elsewhere in the model.                     |
+| `workflowConsumers` → `Workflow`        | reference, [*]                                 | Associates `EventChannel` with the workflows started by channel deliveries. The referenced `Workflow` remains independently owned and may be reused elsewhere in the model.                      |
+| `externalProducers` → `ExternalAdapter` | reference, [*]                                 | Associates `EventChannel` with the adapters that introduce events from external systems. The referenced `ExternalAdapter` remains independently owned and may be reused elsewhere in the model.  |
+| `externalConsumers` → `ExternalAdapter` | reference, [*]                                 | Associates `EventChannel` with the adapters that deliver events outside the application. The referenced `ExternalAdapter` remains independently owned and may be reused elsewhere in the model.  |
+| `resilience` → `ResiliencePolicy`       | reference, [?]                                 | Associates `EventChannel` with the retry, fallback, and failure-handling policy. The referenced `ResiliencePolicy` remains independently owned and may be reused elsewhere in the model.         |
+| `observability` → `ObservabilityConfig` | reference, [?]                                 | Associates `EventChannel` with the telemetry and operational-visibility requirements. The referenced `ObservabilityConfig` remains independently owned and may be reused elsewhere in the model. |
 
 ## `Queue`
 
-Represents queue in the PIM vocabulary. It specializes `EventChannel` with the details needed for this modeling concern.
+A buffered asynchronous channel with delivery and retry expectations. It models ordering, visibility, dead-letter, retention, and consumer behavior before an AWS queue is selected.
 
 Direct supertypes: `EventChannel`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -71,14 +73,14 @@ Direct supertypes: `EventChannel`. Inherited attributes and marker capabilities 
 
 ### Relationships
 
-| Relationship                  | Kind and multiplicity | Meaning in the model                                                                                                        |
-| ----------------------------- | --------------------- | --------------------------------------------------------------------------------------------------------------------------- |
-| `deadLetterChannel` → `Queue` | reference, [?]        | References the queue element(s) used as dead letter channel by this queue; the target may be shared elsewhere in the model. |
-| `batchPolicy` → `BatchPolicy` | reference, [?]        | References the batch policy element(s) used as batch policy by this queue; the target may be shared elsewhere in the model. |
+| Relationship                  | Kind and multiplicity | Meaning in the model                                                                                                                                                                                           |
+| ----------------------------- | --------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `deadLetterChannel` → `Queue` | reference, [?]        | Associates `Queue` with the queue or event carrier receiving exhausted deliveries. The referenced `Queue` remains independently owned and may be reused elsewhere in the model.                                |
+| `batchPolicy` → `BatchPolicy` | reference, [?]        | The `batchPolicy` reference on `Queue` attaches the access or governance decision represented by batch policy. A `BatchPolicy` can remain independently owned and can participate in other parts of the model. |
 
 ## `Topic`
 
-Represents topic in the PIM vocabulary. It specializes `EventChannel` with the details needed for this modeling concern.
+A fan-out publication channel. It expresses ordering, delivery, filtering, and subscription intent for a set of consumers.
 
 Direct supertypes: `EventChannel`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -91,13 +93,13 @@ Direct supertypes: `EventChannel`. Inherited attributes and marker capabilities 
 
 ### Relationships
 
-| Relationship                     | Kind and multiplicity                   | Meaning in the model                                                                                              |
-| -------------------------------- | --------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
-| `subscriptions` → `Subscription` | containment, [*]; opposite `ownerTopic` | Contains the subscription element(s) that make up this topic; the contained objects belong to this model element. |
+| Relationship                     | Kind and multiplicity                   | Meaning in the model                                                                                                                                                                                                                                               |
+| -------------------------------- | --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `subscriptions` → `Subscription` | containment, [*]; opposite `ownerTopic` | The `subscriptions` containment on `Topic` keeps the consumers enrolled in the topic or channel. The `Subscription` objects are owned by `Topic` and remain part of its model subtree. Its opposite `ownerTopic` exposes the same connection from the target side. |
 
 ## `EventBus`
 
-Represents event bus in the PIM vocabulary. It specializes `EventChannel` with the details needed for this modeling concern.
+A named routing boundary for events. It keeps event ownership and rule-based delivery distinct from a queue or a direct function trigger.
 
 Direct supertypes: `EventChannel`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -109,13 +111,13 @@ Direct supertypes: `EventChannel`. Inherited attributes and marker capabilities 
 
 ### Relationships
 
-| Relationship                        | Kind and multiplicity                 | Meaning in the model                                                                                                        |
-| ----------------------------------- | ------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
-| `routingRules` → `EventRoutingRule` | containment, [*]; opposite `eventBus` | Contains the event routing rule element(s) that make up this event bus; the contained objects belong to this model element. |
+| Relationship                        | Kind and multiplicity                 | Meaning in the model                                                                                                                                             |
+| ----------------------------------- | ------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `routingRules` → `EventRoutingRule` | containment, [*]; opposite `eventBus` | Owns the event matching and target-selection rules. The contained `EventRoutingRule` records form part of the `EventBus` model subtree and follow its lifecycle. |
 
 ## `Schedule`
 
-Represents schedule in the PIM vocabulary. It specializes `IntegrationElement`, `DeployableElement`, `InvocationSource` with the details needed for this modeling concern.
+A time-based source of invocations. It states when and how often work should start, as well as whether the schedule is enabled and what it targets.
 
 Direct supertypes: `IntegrationElement`, `DeployableElement`, `InvocationSource`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -129,14 +131,14 @@ Direct supertypes: `IntegrationElement`, `DeployableElement`, `InvocationSource`
 
 ### Relationships
 
-| Relationship                    | Kind and multiplicity                           | Meaning in the model                                                                                                            |
-| ------------------------------- | ----------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
-| `service` → `ServerlessService` | reference; read-only, [1]; opposite `schedules` | References the serverless service element(s) used as service by this schedule; the target may be shared elsewhere in the model. |
-| `targets` → `RoutingTarget`     | reference, [*]                                  | References the routing target element(s) used as targets by this schedule; the target may be shared elsewhere in the model.     |
+| Relationship                    | Kind and multiplicity                           | Meaning in the model                                                                                                                                                                                |
+| ------------------------------- | ----------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `service` → `ServerlessService` | reference; read-only, [1]; opposite `schedules` | Derived back-reference to the service boundary responsible for this element. It mirrors the opposite containment and is not set independently on `Schedule`.                                        |
+| `targets` → `RoutingTarget`     | reference, [*]                                  | The `targets` reference on `Schedule` lists the destinations that receive this event or schedule. A `RoutingTarget` can remain independently owned and can participate in other parts of the model. |
 
 ## `Subscription`
 
-Represents subscription in the PIM vocabulary. It specializes `TraceableElement` with the details needed for this modeling concern.
+A consumer's enrollment in an event channel. It carries protocol, filtering, delivery, retry, dead-letter, and endpoint decisions for one relationship between a channel and a consumer.
 
 Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -150,16 +152,16 @@ Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilit
 
 ### Relationships
 
-| Relationship                    | Kind and multiplicity                               | Meaning in the model                                                                                                                |
-| ------------------------------- | --------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
-| `filter` → `Expression`         | containment, [?]                                    | Contains the expression element(s) that make up this subscription; the contained objects belong to this model element.              |
-| `ownerTopic` → `Topic`          | reference; read-only, [1]; opposite `subscriptions` | References the topic element(s) used as owner topic by this subscription; the target may be shared elsewhere in the model.          |
-| `channel` → `EventChannel`      | reference, [1]                                      | References the event channel element(s) used as channel by this subscription; the target may be shared elsewhere in the model.      |
-| `target` → `SubscriptionTarget` | reference, [1]                                      | References the subscription target element(s) used as target by this subscription; the target may be shared elsewhere in the model. |
+| Relationship                    | Kind and multiplicity                               | Meaning in the model                                                                                                                                                                              |
+| ------------------------------- | --------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `filter` → `Expression`         | containment, [?]                                    | Owns the predicate that admits matching input. The contained `Expression` records form part of the `Subscription` model subtree and follow its lifecycle.                                         |
+| `ownerTopic` → `Topic`          | reference; read-only, [1]; opposite `subscriptions` | Derived back-reference to the topic that owns this subscription. It mirrors the opposite containment and is not set independently on `Subscription`.                                              |
+| `channel` → `EventChannel`      | reference, [1]                                      | Associates `Subscription` with the channel on which the subscription or flow operates. The referenced `EventChannel` remains independently owned and may be reused elsewhere in the model.        |
+| `target` → `SubscriptionTarget` | reference, [1]                                      | The `target` reference on `Subscription` marks the destination of a directed relationship. A `SubscriptionTarget` can remain independently owned and can participate in other parts of the model. |
 
 ## `EventRoutingRule`
 
-Represents event routing rule in the PIM vocabulary. It specializes `TraceableElement`, `InvocationSource`, `PolicyTarget` with the details needed for this modeling concern.
+A rule that selects events and directs them to integration targets. It makes event-pattern, enablement, retry, and target behavior explicit.
 
 Direct supertypes: `TraceableElement`, `InvocationSource`, `PolicyTarget`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -174,16 +176,16 @@ Direct supertypes: `TraceableElement`, `InvocationSource`, `PolicyTarget`. Inher
 
 ### Relationships
 
-| Relationship                      | Kind and multiplicity                              | Meaning in the model                                                                                                                        |
-| --------------------------------- | -------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
-| `eventBus` → `EventBus`           | reference; read-only, [1]; opposite `routingRules` | References the event bus element(s) used as event bus by this event routing rule; the target may be shared elsewhere in the model.          |
-| `eventTypes` → `EventType`        | reference, [*]                                     | References the event type element(s) used as event types by this event routing rule; the target may be shared elsewhere in the model.       |
-| `targets` → `RoutingTarget`       | reference, [+]                                     | References the routing target element(s) used as targets by this event routing rule; the target may be shared elsewhere in the model.       |
-| `resilience` → `ResiliencePolicy` | reference, [?]                                     | References the resilience policy element(s) used as resilience by this event routing rule; the target may be shared elsewhere in the model. |
+| Relationship                      | Kind and multiplicity                              | Meaning in the model                                                                                                                                                                                                                                                                       |
+| --------------------------------- | -------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `eventBus` → `EventBus`           | reference; read-only, [1]; opposite `routingRules` | The `eventBus` reference on `EventRoutingRule` identifies the event bus on which this rule or target operates. An `EventBus` can remain independently owned and can participate in other parts of the model. Its opposite `routingRules` exposes the same connection from the target side. |
+| `eventTypes` → `EventType`        | reference, [*]                                     | Associates `EventRoutingRule` with the event contracts carried or matched here. The referenced `EventType` remains independently owned and may be reused elsewhere in the model.                                                                                                           |
+| `targets` → `RoutingTarget`       | reference, [+]                                     | The `targets` reference on `EventRoutingRule` lists the destinations that receive this event or schedule. A `RoutingTarget` can remain independently owned and can participate in other parts of the model.                                                                                |
+| `resilience` → `ResiliencePolicy` | reference, [?]                                     | Associates `EventRoutingRule` with the retry, fallback, and failure-handling policy. The referenced `ResiliencePolicy` remains independently owned and may be reused elsewhere in the model.                                                                                               |
 
 ## `Flow`
 
-An abstract flow concept. Use one of its concrete subtypes when creating a model instance; the shared attributes and relationships defined here still apply.
+The abstract common form for a PIM interaction path. It provides purpose, contract, direction, resilience, and traceability fields shared by request-response and event-oriented flows.
 
 Direct supertypes: `TraceableElement`, `PolicyTarget`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -197,17 +199,17 @@ Direct supertypes: `TraceableElement`, `PolicyTarget`. Inherited attributes and 
 
 ### Relationships
 
-| Relationship                            | Kind and multiplicity | Meaning in the model                                                                                                                |
-| --------------------------------------- | --------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
-| `source` → `FlowEndpoint`               | reference, [1]        | References the flow endpoint element(s) used as source by this flow; the target may be shared elsewhere in the model.               |
-| `target` → `FlowEndpoint`               | reference, [1]        | References the flow endpoint element(s) used as target by this flow; the target may be shared elsewhere in the model.               |
-| `resilience` → `ResiliencePolicy`       | reference, [?]        | References the resilience policy element(s) used as resilience by this flow; the target may be shared elsewhere in the model.       |
-| `observability` → `ObservabilityConfig` | reference, [?]        | References the observability config element(s) used as observability by this flow; the target may be shared elsewhere in the model. |
-| `policies` → `ArchitecturePolicy`       | reference, [*]        | References the architecture policy element(s) used as policies by this flow; the target may be shared elsewhere in the model.       |
+| Relationship                            | Kind and multiplicity | Meaning in the model                                                                                                                                                                         |
+| --------------------------------------- | --------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `source` → `FlowEndpoint`               | reference, [1]        | The `source` reference on `Flow` marks the origin of a directed relationship. A `FlowEndpoint` can remain independently owned and can participate in other parts of the model.               |
+| `target` → `FlowEndpoint`               | reference, [1]        | The `target` reference on `Flow` marks the destination of a directed relationship. A `FlowEndpoint` can remain independently owned and can participate in other parts of the model.          |
+| `resilience` → `ResiliencePolicy`       | reference, [?]        | Associates `Flow` with the retry, fallback, and failure-handling policy. The referenced `ResiliencePolicy` remains independently owned and may be reused elsewhere in the model.             |
+| `observability` → `ObservabilityConfig` | reference, [?]        | Associates `Flow` with the telemetry and operational-visibility requirements. The referenced `ObservabilityConfig` remains independently owned and may be reused elsewhere in the model.     |
+| `policies` → `ArchitecturePolicy`       | reference, [*]        | The `policies` reference on `Flow` places rules inside the proposed bounded context. An `ArchitecturePolicy` can remain independently owned and can participate in other parts of the model. |
 
 ## `RequestResponseFlow`
 
-Represents request response flow in the PIM vocabulary. It specializes `Flow` with the details needed for this modeling concern.
+A synchronous or asynchronous request-response connection between a source and target. It records the request and response contracts and the API context that carries them.
 
 Direct supertypes: `Flow`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -219,13 +221,13 @@ Direct supertypes: `Flow`. Inherited attributes and marker capabilities are docu
 
 ### Relationships
 
-| Relationship            | Kind and multiplicity | Meaning in the model                                                                                                                  |
-| ----------------------- | --------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
-| `apiRoute` → `ApiRoute` | reference, [1]        | References the api route element(s) used as api route by this request response flow; the target may be shared elsewhere in the model. |
+| Relationship            | Kind and multiplicity | Meaning in the model                                                                                                                                                                 |
+| ----------------------- | --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `apiRoute` → `ApiRoute` | reference, [1]        | Associates `RequestResponseFlow` with the route to which this error mapping belongs. The referenced `ApiRoute` remains independently owned and may be reused elsewhere in the model. |
 
 ## `EventFlow`
 
-Represents event flow in the PIM vocabulary. It specializes `Flow` with the details needed for this modeling concern.
+A flow driven by one declared event type. It makes event delivery, filtering, and downstream handling visible across the integration model.
 
 Direct supertypes: `Flow`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -235,14 +237,14 @@ This class declares no attributes of its own. It inherits the attributes of its 
 
 ### Relationships
 
-| Relationship               | Kind and multiplicity | Meaning in the model                                                                                                         |
-| -------------------------- | --------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
-| `eventType` → `EventType`  | reference, [1]        | References the event type element(s) used as event type by this event flow; the target may be shared elsewhere in the model. |
-| `channel` → `EventChannel` | reference, [1]        | References the event channel element(s) used as channel by this event flow; the target may be shared elsewhere in the model. |
+| Relationship               | Kind and multiplicity | Meaning in the model                                                                                                                                                                    |
+| -------------------------- | --------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `eventType` → `EventType`  | reference, [1]        | Associates `EventFlow` with the event type associated with this element. The referenced `EventType` remains independently owned and may be reused elsewhere in the model.               |
+| `channel` → `EventChannel` | reference, [1]        | Associates `EventFlow` with the channel on which the subscription or flow operates. The referenced `EventChannel` remains independently owned and may be reused elsewhere in the model. |
 
 ## `MessageFlow`
 
-Represents message flow in the PIM vocabulary. It specializes `Flow` with the details needed for this modeling concern.
+A message exchange that carries a schema through a channel or external boundary. It keeps message shape and delivery purpose explicit.
 
 Direct supertypes: `Flow`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -252,14 +254,14 @@ This class declares no attributes of its own. It inherits the attributes of its 
 
 ### Relationships
 
-| Relationship               | Kind and multiplicity | Meaning in the model                                                                                                           |
-| -------------------------- | --------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
-| `messageSchema` → `Schema` | reference, [1]        | References the schema element(s) used as message schema by this message flow; the target may be shared elsewhere in the model. |
-| `queue` → `Queue`          | reference, [1]        | References the queue element(s) used as queue by this message flow; the target may be shared elsewhere in the model.           |
+| Relationship               | Kind and multiplicity | Meaning in the model                                                                                                                                                         |
+| -------------------------- | --------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `messageSchema` → `Schema` | reference, [1]        | Associates `MessageFlow` with the payload shape carried by the queued message. The referenced `Schema` remains independently owned and may be reused elsewhere in the model. |
+| `queue` → `Queue`          | reference, [1]        | Associates `MessageFlow` with the queue used for message delivery. The referenced `Queue` remains independently owned and may be reused elsewhere in the model.              |
 
 ## `PubSubFlow`
 
-Represents pub sub flow in the PIM vocabulary. It specializes `Flow` with the details needed for this modeling concern.
+A flow that records publication through one topic and the subscriptions that distribute it. It exposes the intended fan-out topology independently of the concrete topic and subscription resources selected later.
 
 Direct supertypes: `Flow`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -269,14 +271,14 @@ This class declares no attributes of its own. It inherits the attributes of its 
 
 ### Relationships
 
-| Relationship                     | Kind and multiplicity | Meaning in the model                                                                                                                |
-| -------------------------------- | --------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
-| `topic` → `Topic`                | reference, [1]        | References the topic element(s) used as topic by this pub sub flow; the target may be shared elsewhere in the model.                |
-| `subscriptions` → `Subscription` | reference, [*]        | References the subscription element(s) used as subscriptions by this pub sub flow; the target may be shared elsewhere in the model. |
+| Relationship                     | Kind and multiplicity | Meaning in the model                                                                                                                                                                                 |
+| -------------------------------- | --------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `topic` → `Topic`                | reference, [1]        | Associates `PubSubFlow` with the publication topic used by the flow. The referenced `Topic` remains independently owned and may be reused elsewhere in the model.                                    |
+| `subscriptions` → `Subscription` | reference, [*]        | The `subscriptions` reference on `PubSubFlow` keeps the consumers enrolled in the topic or channel. A `Subscription` can remain independently owned and can participate in other parts of the model. |
 
 ## `OrchestrationFlow`
 
-Represents orchestration flow in the PIM vocabulary. It specializes `Flow` with the details needed for this modeling concern.
+A flow whose interaction is coordinated by a `Workflow`. The reference identifies the orchestration boundary responsible for sequencing the participating endpoints.
 
 Direct supertypes: `Flow`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -286,13 +288,13 @@ This class declares no attributes of its own. It inherits the attributes of its 
 
 ### Relationships
 
-| Relationship            | Kind and multiplicity | Meaning in the model                                                                                                             |
-| ----------------------- | --------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
-| `workflow` → `Workflow` | reference, [1]        | References the workflow element(s) used as workflow by this orchestration flow; the target may be shared elsewhere in the model. |
+| Relationship            | Kind and multiplicity | Meaning in the model                                                                                                                                                                          |
+| ----------------------- | --------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `workflow` → `Workflow` | reference, [1]        | Associates `OrchestrationFlow` with the orchestration represented by this flow or owned step. The referenced `Workflow` remains independently owned and may be reused elsewhere in the model. |
 
 ## `ExternalIntegrationFlow`
 
-Represents external integration flow in the PIM vocabulary. It specializes `Flow` with the details needed for this modeling concern.
+A flow that crosses the modeled system boundary through an `ExternalAdapter`. It keeps the architectural interaction tied to the adapter that owns protocol, credential, timeout, and resilience concerns.
 
 Direct supertypes: `Flow`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -302,6 +304,6 @@ This class declares no attributes of its own. It inherits the attributes of its 
 
 ### Relationships
 
-| Relationship                  | Kind and multiplicity | Meaning in the model                                                                                                                           |
-| ----------------------------- | --------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
-| `adapter` → `ExternalAdapter` | reference, [1]        | References the external adapter element(s) used as adapter by this external integration flow; the target may be shared elsewhere in the model. |
+| Relationship                  | Kind and multiplicity | Meaning in the model                                                                                                                                                                                        |
+| ----------------------------- | --------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `adapter` → `ExternalAdapter` | reference, [1]        | Associates `ExternalIntegrationFlow` with the adapter through which the external interaction passes. The referenced `ExternalAdapter` remains independently owned and may be reused elsewhere in the model. |

@@ -1,10 +1,14 @@
 # AWS PSM DSML
 
-The AWS Platform-Specific Model turns the provider-independent architecture into explicit AWS resources, CloudFormation/SAM settings, integration wiring, and operational controls.
+The AWS Platform-Specific Model is the deployment vocabulary of the current MODRISS target platform. It turns PIM architecture into explicit AWS resources, SAM and CloudFormation settings, IAM and KMS policy objects, integration wiring, and operational controls. The PSM is where provider commitments become visible and reviewable. A generated template is an output of this model, not a substitute for understanding it.
+
+The model is organized around AWS resources and the documents that configure them. Core classes provide logical IDs, physical names, tags, conditions, imports, parameters, outputs, expressions, stacks, and stages. Service modules then describe Lambda, API Gateway, EventBridge, SQS, SNS, DynamoDB, S3, Cognito, networking, IAM, KMS, Step Functions, and CloudWatch. Integration views make important cross-resource connections inspectable when the same connection would otherwise be scattered across several resource classes.
 
 ## How to use this reference
 
-Start with the root page, then follow the module that owns the class you are modeling. Each class section includes declared attributes, accepted values or examples, and relationships. Attributes inherited from the shared kernel are documented once and apply to every subtype.
+Start with the root, core, and stage pages to understand the deployment frame. Then follow the resource that realizes the PIM element you are refining. Read security, networking, storage, messaging, events, workflow, and observability pages together when a resource crosses service boundaries. The integration-view page is useful for checking that the references among those resources describe one coherent path.
+
+Each class section includes declared attributes, accepted values or examples, and relationships. Attributes inherited from the shared kernel are documented once and apply to every subtype. Provider details are intentionally kept in the class that owns them, while shared documents such as IAM policies and ASL definitions remain structured model elements that can be referenced from their resource.
 
 ## Module map
 
@@ -28,9 +32,11 @@ Start with the root page, then follow the module that owns the class you are mod
 ## Model-level guidance
 
 - Treat the Emfatic declarations as the abstract-syntax authority. EVL adds semantic constraints; it does not introduce attributes that are absent from the metamodel.
-- Use containment (`val`) for objects owned by the containing element and references (`ref`) for shared or cross-cutting concepts.
-- Keep provider-neutral intent in CIM/PIM. Put AWS names, ARNs, SAM/CloudFormation properties, and service-specific operational decisions in AWS PSM.
-- Preserve traceability and rationale when refining or transforming a model. They are part of the engineering record, not merely editor decoration.
+- Distinguish a resource from its configuration objects. A Lambda function owns its environment and event configuration, while a role, key, queue, table, or log group can be referenced by several resources.
+- Keep logical identity, physical naming, tags, dependencies, conditions, and imports explicit. These details affect template stability and deployment behavior even when the runtime architecture appears unchanged.
+- Read IAM, KMS, network placement, data protection, retry, dead-letter, logging, tracing, and alarm settings as part of the resource design. They are not post-generation decoration.
+- Use `AwsNativeResource` only where the current metamodel has no dedicated resource concept. Its presence signals that provider detail is being carried explicitly without claiming dedicated semantic support.
+- Preserve traceability and rationale when refining or transforming a model. They are part of the engineering record and the main way to explain why a generated resource exists.
 
 ## Additional resources
 

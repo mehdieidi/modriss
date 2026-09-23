@@ -1,12 +1,14 @@
 # Identity, principals, and authorization
 
-Security concepts model identities, principals, permissions, and authorization expectations before they are mapped to AWS IAM or Cognito.
+Security modeling separates the source of identity, the actor, the permitted operation, and the policy applied at a protected boundary. `IdentityProvider` describes how identities are issued and validated. `Principal` represents a human, role, service, group, external system, or anonymous actor. Its owned `Permission` records an effect, portable action kind, target resource, conditions, and least-privilege review status.
+
+`SecurityPolicy` captures general protection expectations. `AuthPolicy` specializes it for authentication schemes, claims, scopes, MFA, and identity-provider selection. `AuthorizationPolicy` describes the rule applied after authentication and links the allowed principals and permissions. These elements retain security intent before refinement creates provider identities and access policies.
 
 Source: `mde/metamodels/pim/pim-security.emf`.
 
 ## `IdentityProvider`
 
-Represents identity provider in the PIM vocabulary. It specializes `TraceableElement`, `DeployableElement`, `PolicyTarget`, `ProtectedResource` with the details needed for this modeling concern.
+The provider-independent identity service expected to authenticate users or callers. It records identity, federation, MFA, token, recovery, and client-facing requirements before Cognito mapping.
 
 Direct supertypes: `TraceableElement`, `DeployableElement`, `PolicyTarget`, `ProtectedResource`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -27,13 +29,13 @@ Direct supertypes: `TraceableElement`, `DeployableElement`, `PolicyTarget`, `Pro
 
 ### Relationships
 
-| Relationship               | Kind and multiplicity | Meaning in the model                                                                                                               |
-| -------------------------- | --------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
-| `principals` → `Principal` | reference, [*]        | References the principal element(s) used as principals by this identity provider; the target may be shared elsewhere in the model. |
+| Relationship               | Kind and multiplicity | Meaning in the model                                                                                                                                                                                            |
+| -------------------------- | --------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `principals` → `Principal` | reference, [*]        | The `principals` reference on `IdentityProvider` identifies the identities to which the policy statement applies. A `Principal` can remain independently owned and can participate in other parts of the model. |
 
 ## `Principal`
 
-Represents principal in the PIM vocabulary. It specializes `TraceableElement`, `PolicyTarget`, `ProtectedResource` with the details needed for this modeling concern.
+An identity or service principal that can receive permissions. It is the PIM security subject from which IAM roles and policy statements are later derived.
 
 Direct supertypes: `TraceableElement`, `PolicyTarget`, `ProtectedResource`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -47,13 +49,13 @@ Direct supertypes: `TraceableElement`, `PolicyTarget`, `ProtectedResource`. Inhe
 
 ### Relationships
 
-| Relationship                 | Kind and multiplicity                  | Meaning in the model                                                                                                |
-| ---------------------------- | -------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
-| `permissions` → `Permission` | containment, [*]; opposite `principal` | Contains the permission element(s) that make up this principal; the contained objects belong to this model element. |
+| Relationship                 | Kind and multiplicity                  | Meaning in the model                                                                                                                                         |
+| ---------------------------- | -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `permissions` → `Permission` | containment, [*]; opposite `principal` | Owns the actions granted or denied to the principal. The contained `Permission` records form part of the `Principal` model subtree and follow its lifecycle. |
 
 ## `Permission`
 
-Represents permission in the PIM vocabulary. It specializes `TraceableElement` with the details needed for this modeling concern.
+An allowed or denied action over a resource or capability. It captures authorization intent independently from IAM JSON syntax.
 
 Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -74,14 +76,14 @@ Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilit
 
 ### Relationships
 
-| Relationship                           | Kind and multiplicity                             | Meaning in the model                                                                                                                      |
-| -------------------------------------- | ------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
-| `principal` → `Principal`              | reference; read-only, [1]; opposite `permissions` | References the principal element(s) used as principal by this permission; the target may be shared elsewhere in the model.                |
-| `targetResource` → `ProtectedResource` | reference, [1]                                    | References the protected resource element(s) used as target resource by this permission; the target may be shared elsewhere in the model. |
+| Relationship                           | Kind and multiplicity                             | Meaning in the model                                                                                                                                                                                                            |
+| -------------------------------------- | ------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `principal` → `Principal`              | reference; read-only, [1]; opposite `permissions` | Derived back-reference to the principal that owns this permission. It mirrors the opposite containment and is not set independently on `Permission`.                                                                            |
+| `targetResource` → `ProtectedResource` | reference, [1]                                    | The `targetResource` reference on `Permission` identifies the concrete resource that receives this integration or policy. A `ProtectedResource` can remain independently owned and can participate in other parts of the model. |
 
 ## `SecurityPolicy`
 
-Represents security policy in the PIM vocabulary. It specializes `ArchitecturePolicy` with the details needed for this modeling concern.
+A provider-independent security policy that gathers authentication, authorization, encryption, audit, and network expectations for a protected target.
 
 Direct supertypes: `ArchitecturePolicy`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -104,7 +106,7 @@ This class declares no direct relationships.
 
 ## `AuthPolicy`
 
-Represents auth policy in the PIM vocabulary. It specializes `SecurityPolicy` with the details needed for this modeling concern.
+The policy governing how a caller proves identity before reaching an API or function. It keeps authentication method and failure behavior separate from route definitions.
 
 Direct supertypes: `SecurityPolicy`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -120,13 +122,13 @@ Direct supertypes: `SecurityPolicy`. Inherited attributes and marker capabilitie
 
 ### Relationships
 
-| Relationship                            | Kind and multiplicity | Meaning in the model                                                                                                                        |
-| --------------------------------------- | --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
-| `identityProvider` → `IdentityProvider` | reference, [?]        | References the identity provider element(s) used as identity provider by this auth policy; the target may be shared elsewhere in the model. |
+| Relationship                            | Kind and multiplicity | Meaning in the model                                                                                                                                                             |
+| --------------------------------------- | --------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `identityProvider` → `IdentityProvider` | reference, [?]        | Associates `AuthPolicy` with the authority used to authenticate callers. The referenced `IdentityProvider` remains independently owned and may be reused elsewhere in the model. |
 
 ## `AuthorizationPolicy`
 
-Represents authorization policy in the PIM vocabulary. It specializes `SecurityPolicy` with the details needed for this modeling concern.
+The decision policy for what an authenticated principal may do. It provides a place for role, permission, condition, and resource scope before IAM or Cognito details.
 
 Direct supertypes: `SecurityPolicy`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -140,8 +142,8 @@ Direct supertypes: `SecurityPolicy`. Inherited attributes and marker capabilitie
 
 ### Relationships
 
-| Relationship                      | Kind and multiplicity | Meaning in the model                                                                                                                          |
-| --------------------------------- | --------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
-| `rule` → `Expression`             | containment, [?]      | Contains the expression element(s) that make up this authorization policy; the contained objects belong to this model element.                |
-| `allowedPrincipals` → `Principal` | reference, [*]        | References the principal element(s) used as allowed principals by this authorization policy; the target may be shared elsewhere in the model. |
-| `permissions` → `Permission`      | reference, [*]        | References the permission element(s) used as permissions by this authorization policy; the target may be shared elsewhere in the model.       |
+| Relationship                      | Kind and multiplicity | Meaning in the model                                                                                                                                                                    |
+| --------------------------------- | --------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `rule` → `Expression`             | containment, [?]      | Owns the structured authorization predicate. The contained `Expression` records form part of the `AuthorizationPolicy` model subtree and follow its lifecycle.                          |
+| `allowedPrincipals` → `Principal` | reference, [*]        | Associates `AuthorizationPolicy` with the actors admitted by the authorization rule. The referenced `Principal` remains independently owned and may be reused elsewhere in the model.   |
+| `permissions` → `Permission`      | reference, [*]        | Associates `AuthorizationPolicy` with the actions granted or denied to the principal. The referenced `Permission` remains independently owned and may be reused elsewhere in the model. |

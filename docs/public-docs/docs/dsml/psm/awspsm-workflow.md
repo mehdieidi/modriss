@@ -6,7 +6,7 @@ Source: `mde/metamodels/psm/awspsm-workflow.emf`.
 
 ## `StepFunctionStateMachine`
 
-The AWS resource that hosts the deployed orchestration. It chooses the concrete definition source, execution type, alias strategy, execution role, logging, tracing, and SAM event bindings for the workflow.
+An AWS Step Functions state-machine resource. It binds the provider-independent workflow to an ASL document, IAM role, logging, tracing, aliases, and SAM event sources.
 
 Direct supertypes: `AwsResource`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -18,23 +18,23 @@ Direct supertypes: `AwsResource`. Inherited attributes and marker capabilities a
 | `definitionUri`               | `String` [1]           | The artifact location containing the ASL definition when the state machine is not assembled from the typed `AslDocument`. EVL requires exactly one definition source, preventing a file and modeled states from silently disagreeing. Semantic validation: `StateMachineHasDefinition` (state machine has definition) in `mde/validation/psm/rules/workflow.evl` the rule's diagnostic or remediation guidance refers to this feature. `StateMachineShouldUseSingleDefinitionSource` (state machine should use single definition source) in `mde/validation/psm/rules/workflow.evl` the rule's diagnostic or remediation guidance refers to this feature.                                                                                                                                                                                                                                          | A free-form `String`, subject to this class's semantic meaning and any EVL constraints. Example: `https://example.com/orders`.                                         |
 | `definitionString`            | `String` [1]           | An inline ASL definition supplied directly to the resource. It is useful for a deliberately external/hand-authored definition, but it competes with `definitionUri` and `aslDocument`, so PSM validation treats multiple sources as ambiguous. Semantic validation: `StateMachineHasDefinition` (state machine has definition) in `mde/validation/psm/rules/workflow.evl` the rule's diagnostic or remediation guidance refers to this feature. `StateMachineShouldUseSingleDefinitionSource` (state machine should use single definition source) in `mde/validation/psm/rules/workflow.evl` the rule's diagnostic or remediation guidance refers to this feature. Generation role: The artifact generator references this feature in `mde/generation/awspsm-to-artifacts/lib/cfn.eol`. The artifact generator references this feature in `mde/generation/awspsm-to-artifacts/lib/validation.eol`. | A free-form `String`, subject to this class's semantic meaning and any EVL constraints. Example: `A confirmed order is one accepted for fulfillment by the business.`. |
 | `definitionSubstitutionsJson` | `String` [1]           | The substitution map applied while materializing the state-machine definition, typically for resource ARNs or stage-specific values. Keeping substitutions explicit lets generation bind deployment values without embedding environment-specific strings in business workflow logic. Generation role: The artifact generator references this feature in `mde/generation/awspsm-to-artifacts/lib/cfn.eol`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         | A free-form `String`, subject to this class's semantic meaning and any EVL constraints. Example: `{"enabled":true}`.                                                   |
-| `publishAlias`                | `Boolean` [1]          | Whether a named state-machine alias should be published. It expresses the release-management decision to address a workflow version through an alias; PSM validation requires `aliasName` when enabled. Semantic validation: `PublishAliasRequiresAliasName` (publish alias requires alias name) in `mde/validation/psm/rules/workflow.evl` the flag must be enabled for this rule to pass. Transformation role: ETL rule `Workflow2StepFunctionStateMachine` in `mde/transformations/pim-to-awspsm/workflow-security-config.etl` assigns or materializes this feature while refining `StepFunctionStateMachine`. Generation role: The artifact generator references this feature in `mde/generation/awspsm-to-artifacts/lib/cfn.eol`.                                                                                                                                                             | Either `true` or `false`. Example: `false`.                                                                                                                            |
+| `publishAlias`                | `Boolean` [1]          | The boolean decision for publish alias on this step function state machine. It keeps an important design choice explicit for review and transformation. Semantic validation: `PublishAliasRequiresAliasName` (publish alias requires alias name) in `mde/validation/psm/rules/workflow.evl` the flag must be enabled for this rule to pass. Transformation role: ETL rule `Workflow2StepFunctionStateMachine` in `mde/transformations/pim-to-awspsm/workflow-security-config.etl` assigns or materializes this feature while refining `StepFunctionStateMachine`. Generation role: The artifact generator references this feature in `mde/generation/awspsm-to-artifacts/lib/cfn.eol`.                                                                                                                                                                                                             | Either `true` or `false`. Example: `false`.                                                                                                                            |
 | `aliasName`                   | `String` [1]           | The stable alias through which executions address a published state-machine version. It is required only when alias publication is requested and supports controlled promotion/rollback independently of the latest definition. Semantic validation: `PublishAliasRequiresAliasName` (publish alias requires alias name) in `mde/validation/psm/rules/workflow.evl` the value must be present and non-blank. Transformation role: ETL rule `Workflow2StepFunctionStateMachine` in `mde/transformations/pim-to-awspsm/workflow-security-config.etl` assigns or materializes this feature while refining `StepFunctionStateMachine`.                                                                                                                                                                                                                                                                 | A free-form `String`, subject to this class's semantic meaning and any EVL constraints. Example: `StepFunctionStateMachineExample`.                                    |
 | `stateMachineType`            | `StepFunctionType` [1] | The AWS execution type, such as Standard or Express. This is where the provider-specific durability, history, latency, and pricing choice becomes concrete after PIM workflow intent has been evaluated. Transformation role: ETL rule `Workflow2StepFunctionStateMachine` in `mde/transformations/pim-to-awspsm/workflow-security-config.etl` assigns or materializes this feature while refining `StepFunctionStateMachine`. Generation role: The artifact generator references this feature in `mde/generation/awspsm-to-artifacts/lib/cfn.eol`.                                                                                                                                                                                                                                                                                                                                                | Exactly one of: `STANDARD`, `EXPRESS`. Example: `STANDARD`.                                                                                                            |
 
 ### Relationships
 
-| Relationship                            | Kind and multiplicity | Meaning in the model                                                                                                                                    |
-| --------------------------------------- | --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `logging` → `StepFunctionLoggingConfig` | containment, [?]      | Contains the step function logging config element(s) that make up this step function state machine; the contained objects belong to this model element. |
-| `tracing` → `StepFunctionTracingConfig` | containment, [?]      | Contains the step function tracing config element(s) that make up this step function state machine; the contained objects belong to this model element. |
-| `aslDocument` → `AslDocument`           | containment, [?]      | Contains the asl document element(s) that make up this step function state machine; the contained objects belong to this model element.                 |
-| `samEvents` → `SamStateMachineEvent`    | containment, [*]      | Contains the sam state machine event element(s) that make up this step function state machine; the contained objects belong to this model element.      |
-| `role` → `IamRole`                      | reference, [1]        | References the iam role element(s) used as role by this step function state machine; the target may be shared elsewhere in the model.                   |
+| Relationship                            | Kind and multiplicity | Meaning in the model                                                                                                                                                                                                                                     |
+| --------------------------------------- | --------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `logging` → `StepFunctionLoggingConfig` | containment, [?]      | The `logging` containment on `StepFunctionStateMachine` attaches the state-machine logging configuration. The `StepFunctionLoggingConfig` objects are owned by `StepFunctionStateMachine` and remain part of its model subtree.                          |
+| `tracing` → `StepFunctionTracingConfig` | containment, [?]      | The `tracing` containment on `StepFunctionStateMachine` attaches the tracing configuration for this executable resource. The `StepFunctionTracingConfig` objects are owned by `StepFunctionStateMachine` and remain part of its model subtree.           |
+| `aslDocument` → `AslDocument`           | containment, [?]      | The `aslDocument` containment on `StepFunctionStateMachine` attaches the structured ASL state graph generated for the workflow. The `AslDocument` objects are owned by `StepFunctionStateMachine` and remain part of its model subtree.                  |
+| `samEvents` → `SamStateMachineEvent`    | containment, [*]      | The `samEvents` containment on `StepFunctionStateMachine` connects this element to the event or message path represented by sam events. The `SamStateMachineEvent` objects are owned by `StepFunctionStateMachine` and remain part of its model subtree. |
+| `role` → `IamRole`                      | reference, [1]        | The `role` reference on `StepFunctionStateMachine` attaches the execution role that grants the resource its AWS permissions. An `IamRole` can remain independently owned and can participate in other parts of the model.                                |
 
 ## `AslDocument`
 
-The typed Amazon States Language document used when the PSM owns the state graph rather than importing an external definition. `startAt` and contained states form the executable graph that AWS validates.
+The structured Amazon States Language document owned by a Step Functions state machine. It supplies the start state and the contained state graph that generation renders as JSON.
 
 Direct supertypes: `StructuredDocument`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -48,13 +48,13 @@ Direct supertypes: `StructuredDocument`. Inherited attributes and marker capabil
 
 ### Relationships
 
-| Relationship          | Kind and multiplicity | Meaning in the model                                                                                                  |
-| --------------------- | --------------------- | --------------------------------------------------------------------------------------------------------------------- |
-| `states` → `AslState` | containment, [+]      | Contains the asl state element(s) that make up this asl document; the contained objects belong to this model element. |
+| Relationship          | Kind and multiplicity | Meaning in the model                                                                                                                                                                                |
+| --------------------- | --------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `states` → `AslState` | containment, [+]      | The `states` containment on `AslDocument` owns the state objects that form the document's executable graph. The `AslState` objects are owned by `AslDocument` and remain part of its model subtree. |
 
 ## `AslState`
 
-The common provider-specific state record from which task, choice, wait, pass, succeed, fail, parallel, and map states inherit. It contains the ASL data-flow, timeout, transition, retry, and catch properties shared by those state kinds.
+The common state representation for an ASL document. It carries paths, transitions, timeout, retry, catch, branch, map, and invoked-resource details shared by concrete state types.
 
 Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -78,19 +78,19 @@ Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilit
 
 ### Relationships
 
-| Relationship                      | Kind and multiplicity | Meaning in the model                                                                                                                |
-| --------------------------------- | --------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
-| `retry` → `AslRetryRule`          | containment, [*]      | Contains the asl retry rule element(s) that make up this asl state; the contained objects belong to this model element.             |
-| `catch` → `AslCatchRule`          | containment, [*]      | Contains the asl catch rule element(s) that make up this asl state; the contained objects belong to this model element.             |
-| `choices` → `AslChoiceRule`       | containment, [*]      | Contains the asl choice rule element(s) that make up this asl state; the contained objects belong to this model element.            |
-| `branches` → `AslBranch`          | containment, [*]      | Contains the asl branch element(s) that make up this asl state; the contained objects belong to this model element.                 |
-| `mapConfig` → `AslMapConfig`      | containment, [?]      | Contains the asl map config element(s) that make up this asl state; the contained objects belong to this model element.             |
-| `nextState` → `AslState`          | reference, [?]        | References the asl state element(s) used as next state by this asl state; the target may be shared elsewhere in the model.          |
-| `invokedResource` → `AwsResource` | reference, [?]        | References the aws resource element(s) used as invoked resource by this asl state; the target may be shared elsewhere in the model. |
+| Relationship                      | Kind and multiplicity | Meaning in the model                                                                                                                                                                                  |
+| --------------------------------- | --------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `retry` → `AslRetryRule`          | containment, [*]      | The `retry` containment on `AslState` keeps the retry policies applied to this state. The `AslRetryRule` objects are owned by `AslState` and remain part of its model subtree.                        |
+| `catch` → `AslCatchRule`          | containment, [*]      | The `catch` containment on `AslState` keeps the failure redirections applied to this state. The `AslCatchRule` objects are owned by `AslState` and remain part of its model subtree.                  |
+| `choices` → `AslChoiceRule`       | containment, [*]      | The `choices` containment on `AslState` keeps the conditional branches available from this state. The `AslChoiceRule` objects are owned by `AslState` and remain part of its model subtree.           |
+| `branches` → `AslBranch`          | containment, [*]      | The `branches` containment on `AslState` owns the parallel or mapped workflow branches. The `AslBranch` objects are owned by `AslState` and remain part of its model subtree.                         |
+| `mapConfig` → `AslMapConfig`      | containment, [?]      | The `mapConfig` containment on `AslState` attaches the collection-processing configuration to the map state. The `AslMapConfig` objects are owned by `AslState` and remain part of its model subtree. |
+| `nextState` → `AslState`          | reference, [?]        | The state entered after this state or rule completes.                                                                                                                                                 |
+| `invokedResource` → `AwsResource` | reference, [?]        | The `invokedResource` reference on `AslState` identifies the source represented by invoked resource. An `AwsResource` can remain independently owned and can participate in other parts of the model. |
 
 ## `AslPassState`
 
-Represents asl pass state in the PSM vocabulary. It specializes `AslState` with the details needed for this modeling concern.
+`AslPassState` is a Step Functions deployment record in the AWS platform-specific model. It carries the orchestration setting for asl pass state. Its declaration gives the concept a precise home through its declared properties. Its references provide the wiring that lets generation assemble the corresponding AWS design.
 
 Direct supertypes: `AslState`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -104,7 +104,7 @@ This class declares no direct relationships.
 
 ## `AslTaskState`
 
-Represents asl task state in the PSM vocabulary. It specializes `AslState` with the details needed for this modeling concern.
+An ASL task state that invokes work or an AWS integration. It is where the generated state machine connects an orchestration step to a function or resource.
 
 Direct supertypes: `AslState`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -118,7 +118,7 @@ This class declares no direct relationships.
 
 ## `AslChoiceState`
 
-Represents asl choice state in the PSM vocabulary. It specializes `AslState` with the details needed for this modeling concern.
+An ASL choice state that selects a next state using choice rules. It gives generated routing a structured home instead of leaving the branch as raw JSON.
 
 Direct supertypes: `AslState`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -132,7 +132,7 @@ This class declares no direct relationships.
 
 ## `AslWaitState`
 
-Represents asl wait state in the PSM vocabulary. It specializes `AslState` with the details needed for this modeling concern.
+`AslWaitState` is a Step Functions deployment record in the AWS platform-specific model. It carries the orchestration setting for asl wait state. Its declaration gives the concept a precise home through its declared properties. Its references provide the wiring that lets generation assemble the corresponding AWS design.
 
 Direct supertypes: `AslState`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -146,7 +146,7 @@ This class declares no direct relationships.
 
 ## `AslSucceedState`
 
-Represents asl succeed state in the PSM vocabulary. It specializes `AslState` with the details needed for this modeling concern.
+`AslSucceedState` is a Step Functions deployment record in the AWS platform-specific model. It carries the orchestration setting for asl succeed state. Its declaration gives the concept a precise home through its declared properties. Its references provide the wiring that lets generation assemble the corresponding AWS design.
 
 Direct supertypes: `AslState`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -160,7 +160,7 @@ This class declares no direct relationships.
 
 ## `AslFailState`
 
-Represents asl fail state in the PSM vocabulary. It specializes `AslState` with the details needed for this modeling concern.
+`AslFailState` is a Step Functions deployment record in the AWS platform-specific model. It carries the orchestration setting for asl fail state. Its declaration gives the concept a precise home through its declared properties. Its references provide the wiring that lets generation assemble the corresponding AWS design.
 
 Direct supertypes: `AslState`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -174,7 +174,7 @@ This class declares no direct relationships.
 
 ## `AslParallelState`
 
-Represents asl parallel state in the PSM vocabulary. It specializes `AslState` with the details needed for this modeling concern.
+An ASL parallel state that runs branches concurrently. Its branch containments preserve the parallel structure that came from the PIM workflow.
 
 Direct supertypes: `AslState`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -188,7 +188,7 @@ This class declares no direct relationships.
 
 ## `AslMapState`
 
-Represents asl map state in the PSM vocabulary. It specializes `AslState` with the details needed for this modeling concern.
+An ASL map state that processes collection items. Its map configuration controls item selection, processor branches, concurrency, distribution, and result writing.
 
 Direct supertypes: `AslState`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -202,7 +202,7 @@ This class declares no direct relationships.
 
 ## `AslBranch`
 
-A self-contained ASL state graph executed as one branch of a parallel state. Its own `startAt` is required because branch entry is independent of the parent document's entry state.
+`AslBranch` is a Step Functions deployment record in the AWS platform-specific model. It carries the orchestration setting for asl branch. Its declaration gives the concept a precise home through states. Its references provide the wiring that lets generation assemble the corresponding AWS design.
 
 Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -214,13 +214,13 @@ Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilit
 
 ### Relationships
 
-| Relationship          | Kind and multiplicity | Meaning in the model                                                                                                |
-| --------------------- | --------------------- | ------------------------------------------------------------------------------------------------------------------- |
-| `states` → `AslState` | containment, [+]      | Contains the asl state element(s) that make up this asl branch; the contained objects belong to this model element. |
+| Relationship          | Kind and multiplicity | Meaning in the model                                                                                                                                                                            |
+| --------------------- | --------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `states` → `AslState` | containment, [+]      | The `states` containment on `AslBranch` owns the state objects that form the document's executable graph. The `AslState` objects are owned by `AslBranch` and remain part of its model subtree. |
 
 ## `AslMapConfig`
 
-The AWS-specific map execution settings emitted into a typed ASL map state, including item selection, iterator input, concurrency, distributed mode, and result writer behavior.
+`AslMapConfig` is a Step Functions deployment record in the AWS platform-specific model. It carries the orchestration setting for asl map config. Its declaration gives the concept a precise home through item processor. Its references provide the wiring that lets generation assemble the corresponding AWS design.
 
 Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -231,18 +231,18 @@ Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilit
 | `itemsPath`        | `String` [1]          | The JSONPath selecting the collection over which the map state iterates. It is the PSM realization of PIM `MapStateConfig.itemsPath`; changing it changes the set of business items processed by the state machine. Generation role: The artifact generator references this feature in `mde/generation/awspsm-to-artifacts/lib/contracts.eol`. | A free-form `String`, subject to this class's semantic meaning and any EVL constraints. Example: `/orders/{orderId}`. |
 | `itemSelectorJson` | `String` [1]          | The JSON object used to construct each iterator's input. It makes parent context and item shape explicit at the ASL boundary rather than relying on worker-specific conventions. Generation role: The artifact generator references this feature in `mde/generation/awspsm-to-artifacts/lib/contracts.eol`.                                    | A free-form `String`, subject to this class's semantic meaning and any EVL constraints. Example: `{"enabled":true}`.  |
 | `maxConcurrency`   | `Integer` [1]         | The upper bound on simultaneous map iterations. It is an AWS execution-control setting derived from PIM concurrency intent and protects downstream services from uncontrolled fan-out. Generation role: The artifact generator references this feature in `mde/generation/awspsm-to-artifacts/lib/contracts.eol`.                              | A numeric `Integer` value; use the unit or boundary documented for this attribute. Example: `1`.                      |
-| `distributed`      | `Boolean` [1]         | Whether this map uses Distributed Map execution. It selects a materially different Step Functions execution model with different scale, observability, and result-storage behavior; it must not be confused with a normal inline map.                                                                                                          | Either `true` or `false`. Example: `false`.                                                                           |
+| `distributed`      | `Boolean` [1]         | The boolean decision for distributed on this asl map config. It keeps an important design choice explicit for review and transformation.                                                                                                                                                                                                       | Either `true` or `false`. Example: `false`.                                                                           |
 | `resultWriterJson` | `String` [1]          | The AWS result-writer configuration for a distributed map. It tells Step Functions where to persist iterator results when returning all results in parent state would be too large or expensive.                                                                                                                                               | A free-form `String`, subject to this class's semantic meaning and any EVL constraints. Example: `{"enabled":true}`.  |
 
 ### Relationships
 
-| Relationship                  | Kind and multiplicity | Meaning in the model                                                                                                     |
-| ----------------------------- | --------------------- | ------------------------------------------------------------------------------------------------------------------------ |
-| `itemProcessor` → `AslBranch` | containment, [?]      | Contains the asl branch element(s) that make up this asl map config; the contained objects belong to this model element. |
+| Relationship                  | Kind and multiplicity | Meaning in the model                                           |
+| ----------------------------- | --------------------- | -------------------------------------------------------------- |
+| `itemProcessor` → `AslBranch` | containment, [?]      | The branch that processes each item selected by the Map state. |
 
 ## `AslRetryRule`
 
-One ASL retry clause that names the errors it handles and the backoff curve it applies. Its numeric bounds are validated because retry timing directly affects reliability, cost, and workflow duration.
+An ASL retry rule attached to a state. It specifies which errors are retried and how interval, attempts, backoff, delay, and jitter are applied.
 
 Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -263,7 +263,7 @@ This class declares no direct relationships.
 
 ## `AslCatchRule`
 
-One ASL catch clause that routes named failures to a recovery state and optionally stores the error in a result path. It is the provider-specific form of workflow error handling.
+An ASL catch rule that redirects a failed state to a recovery state. It records matching errors and the result path used to preserve failure data.
 
 Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -276,13 +276,13 @@ Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilit
 
 ### Relationships
 
-| Relationship             | Kind and multiplicity | Meaning in the model                                                                                                            |
-| ------------------------ | --------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
-| `nextState` → `AslState` | reference, [1]        | References the asl state element(s) used as next state by this asl catch rule; the target may be shared elsewhere in the model. |
+| Relationship             | Kind and multiplicity | Meaning in the model                                  |
+| ------------------------ | --------------------- | ----------------------------------------------------- |
+| `nextState` → `AslState` | reference, [1]        | The state entered after this state or rule completes. |
 
 ## `AslChoiceRule`
 
-One ASL choice branch, represented by its condition/variable and target state. It is the provider-specific executable counterpart to a PIM workflow transition condition.
+`AslChoiceRule` is a Step Functions deployment record in the AWS platform-specific model. It carries the orchestration setting for asl choice rule. Its declaration gives the concept a precise home through next state. Its references provide the wiring that lets generation assemble the corresponding AWS design.
 
 Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -295,13 +295,13 @@ Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilit
 
 ### Relationships
 
-| Relationship             | Kind and multiplicity | Meaning in the model                                                                                                             |
-| ------------------------ | --------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
-| `nextState` → `AslState` | reference, [1]        | References the asl state element(s) used as next state by this asl choice rule; the target may be shared elsewhere in the model. |
+| Relationship             | Kind and multiplicity | Meaning in the model                                  |
+| ------------------------ | --------------------- | ----------------------------------------------------- |
+| `nextState` → `AslState` | reference, [1]        | The state entered after this state or rule completes. |
 
 ## `StepFunctionLoggingConfig`
 
-The execution-history logging policy for a Step Functions state machine, including detail level, payload inclusion, and the CloudWatch destination. It makes observability and sensitive-data exposure explicit.
+`StepFunctionLoggingConfig` is a Step Functions deployment record in the AWS platform-specific model. It carries the orchestration setting for step function logging config. Its declaration gives the concept a precise home through log group. Its references provide the wiring that lets generation assemble the corresponding AWS design.
 
 Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -309,18 +309,18 @@ Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilit
 
 | Attribute              | Type and multiplicity | What it captures and why it exists                                                                                                                                                                                                                                                                                                                                                                                             | Accepted values and example                                                                              |
 | ---------------------- | --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------- |
-| `includeExecutionData` | `Boolean` [1]         | Whether execution input and output data are included in Step Functions logs. It is a sensitive-data and troubleshooting trade-off, so production configuration should set it deliberately rather than inheriting an opaque default. Generation role: The artifact generator references this feature in `mde/generation/awspsm-to-artifacts/lib/cfn.eol`.                                                                       | Either `true` or `false`. Example: `false`.                                                              |
+| `includeExecutionData` | `Boolean` [1]         | The boolean decision for include execution data on this step function logging config. It keeps an important design choice explicit for review and transformation. Generation role: The artifact generator references this feature in `mde/generation/awspsm-to-artifacts/lib/cfn.eol`.                                                                                                                                         | Either `true` or `false`. Example: `false`.                                                              |
 | `level`                | `String` [1]          | The Step Functions event severity level sent to the log group. It balances diagnostic detail against log volume and cost and is emitted as the provider logging configuration. Generation role: The artifact generator references this feature in `mde/generation/awspsm-to-artifacts/lib/cfn.eol`. The artifact generator references this feature in `mde/generation/awspsm-to-artifacts/templates/lambda/shared-logger.egl`. | A free-form `String`, subject to this class's semantic meaning and any EVL constraints. Example: `INFO`. |
 
 ### Relationships
 
-| Relationship                      | Kind and multiplicity | Meaning in the model                                                                                                                                     |
-| --------------------------------- | --------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `logGroup` → `CloudWatchLogGroup` | reference, [1]        | References the cloud watch log group element(s) used as log group by this step function logging config; the target may be shared elsewhere in the model. |
+| Relationship                      | Kind and multiplicity | Meaning in the model                                                                                                                                                                                                                   |
+| --------------------------------- | --------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `logGroup` → `CloudWatchLogGroup` | reference, [1]        | The `logGroup` reference on `StepFunctionLoggingConfig` selects the CloudWatch log group that receives this resource's records. A `CloudWatchLogGroup` can remain independently owned and can participate in other parts of the model. |
 
 ## `StepFunctionTracingConfig`
 
-Represents step function tracing config in the PSM vocabulary. It specializes `TracingConfig` with the details needed for this modeling concern.
+`StepFunctionTracingConfig` is a Step Functions deployment record in the AWS platform-specific model. It carries the orchestration setting for step function tracing config. Its declaration gives the concept a precise home through its declared properties. Its references provide the wiring that lets generation assemble the corresponding AWS design.
 
 Direct supertypes: `TracingConfig`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -334,7 +334,7 @@ This class declares no direct relationships.
 
 ## `SamStateMachineEvent`
 
-A SAM event binding that starts the state machine from an external trigger. Its event type selects the native event contract, while native properties preserve provider details that are not yet typed.
+A SAM event declaration owned by a Step Functions state machine. Its type selects the trigger mechanism and its native properties retain the provider configuration.
 
 Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -347,6 +347,6 @@ Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilit
 
 ### Relationships
 
-| Relationship                    | Kind and multiplicity | Meaning in the model                                                                                                                   |
-| ------------------------------- | --------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
-| `properties` → `NativeProperty` | containment, [*]      | Contains the native property element(s) that make up this sam state machine event; the contained objects belong to this model element. |
+| Relationship                    | Kind and multiplicity | Meaning in the model                                                             |
+| ------------------------------- | --------------------- | -------------------------------------------------------------------------------- |
+| `properties` → `NativeProperty` | containment, [*]      | Provider-native properties retained for the selected SAM event or resource form. |

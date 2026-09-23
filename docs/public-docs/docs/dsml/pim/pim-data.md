@@ -1,12 +1,14 @@
 # Stores, data models, and access patterns
 
-Data concepts capture storage intent, data shapes, change streams, indexes, access patterns, and the link between reads/writes and compute.
+The data module separates the reason for persistence from a provider product. `DataStore` characterizes structured storage and owns the models and candidate indexes associated with it. `ObjectStore` covers key-addressed binary or document objects and their notification rules. Their common `StorageElement` base carries persistence, encryption, sensitivity, retention, backup, and service-ownership concerns.
+
+`DataModel` and `DataField` describe the stored representation, while `AccessPattern` explains how the application expects to find or change it. `IndexCandidate` exists because an index should be justified by those access patterns rather than guessed from field names. `DataAccess` closes the loop by recording which function performs which mode of access against which store and logical models.
 
 Source: `mde/metamodels/pim/pim-data.emf`.
 
 ## `StorageElement`
 
-An abstract storage element concept. Use one of its concrete subtypes when creating a model instance; the shared attributes and relationships defined here still apply.
+The abstract base for provider-independent storage. It records persistence, encryption, and personal-data intent once for both structured data stores and object stores, and provides common links to ownership, retention, backup, and data-protection policies.
 
 Direct supertypes: `TraceableElement`, `DeployableElement`, `FlowEndpoint`, `PolicyTarget`, `ProtectedResource`, `DataAccessTarget`, `ConfigurableElement`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -20,16 +22,16 @@ Direct supertypes: `TraceableElement`, `DeployableElement`, `FlowEndpoint`, `Pol
 
 ### Relationships
 
-| Relationship                                      | Kind and multiplicity                        | Meaning in the model                                                                                                                                        |
-| ------------------------------------------------- | -------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `service` → `ServerlessService`                   | reference; read-only, [1]; opposite `stores` | References the serverless service element(s) used as service by this storage element; the target may be shared elsewhere in the model.                      |
-| `retentionPolicy` → `RetentionPolicy`             | reference, [?]                               | References the retention policy element(s) used as retention policy by this storage element; the target may be shared elsewhere in the model.               |
-| `backupPolicy` → `BackupPolicy`                   | reference, [?]                               | References the backup policy element(s) used as backup policy by this storage element; the target may be shared elsewhere in the model.                     |
-| `dataProtectionPolicies` → `DataProtectionPolicy` | reference, [*]                               | References the data protection policy element(s) used as data protection policies by this storage element; the target may be shared elsewhere in the model. |
+| Relationship                                      | Kind and multiplicity                        | Meaning in the model                                                                                                                                                                                                                |
+| ------------------------------------------------- | -------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `service` → `ServerlessService`                   | reference; read-only, [1]; opposite `stores` | Derived back-reference to the service boundary responsible for this element. It mirrors the opposite containment and is not set independently on `StorageElement`.                                                                  |
+| `retentionPolicy` → `RetentionPolicy`             | reference, [?]                               | The `retentionPolicy` reference on `StorageElement` attaches the access or governance decision represented by retention policy. A `RetentionPolicy` can remain independently owned and can participate in other parts of the model. |
+| `backupPolicy` → `BackupPolicy`                   | reference, [?]                               | The `backupPolicy` reference on `StorageElement` attaches the access or governance decision represented by backup policy. A `BackupPolicy` can remain independently owned and can participate in other parts of the model.          |
+| `dataProtectionPolicies` → `DataProtectionPolicy` | reference, [*]                               | Associates `StorageElement` with the privacy and protection obligations for stored data. The referenced `DataProtectionPolicy` remains independently owned and may be reused elsewhere in the model.                                |
 
 ## `DataStore`
 
-Represents data store in the PIM vocabulary. It specializes `StorageElement`, `RoutingTarget`, `SubscriptionTarget` with the details needed for this modeling concern.
+A provider-independent persistent or transient store. It records ownership, persistence, consistency, protection, access patterns, data models, backup, retention, and change-stream expectations.
 
 Direct supertypes: `StorageElement`, `RoutingTarget`, `SubscriptionTarget`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -50,16 +52,16 @@ Direct supertypes: `StorageElement`, `RoutingTarget`, `SubscriptionTarget`. Inhe
 
 ### Relationships
 
-| Relationship                         | Kind and multiplicity                  | Meaning in the model                                                                                                         |
-| ------------------------------------ | -------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
-| `ownedDataModels` → `DataModel`      | containment, [*]; opposite `dataStore` | Contains the data model element(s) that make up this data store; the contained objects belong to this model element.         |
-| `accessPatterns` → `AccessPattern`   | containment, [*]; opposite `dataStore` | Contains the access pattern element(s) that make up this data store; the contained objects belong to this model element.     |
-| `indexCandidates` → `IndexCandidate` | containment, [*]; opposite `dataStore` | Contains the index candidate element(s) that make up this data store; the contained objects belong to this model element.    |
-| `changeStream` → `DataChangeStream`  | containment, [?]; opposite `dataStore` | Contains the data change stream element(s) that make up this data store; the contained objects belong to this model element. |
+| Relationship                         | Kind and multiplicity                  | Meaning in the model                                                                                                                                                                                                                                                                                  |
+| ------------------------------------ | -------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `ownedDataModels` → `DataModel`      | containment, [*]; opposite `dataStore` | The `ownedDataModels` containment on `DataStore` keeps the logical data models owned by the store. The `DataModel` objects are owned by `DataStore` and remain part of its model subtree. Its opposite `dataStore` exposes the same connection from the target side.                                  |
+| `accessPatterns` → `AccessPattern`   | containment, [*]; opposite `dataStore` | The `accessPatterns` containment on `DataStore` connects the data use to the read or write shapes that justify storage choices. The `AccessPattern` objects are owned by `DataStore` and remain part of its model subtree. Its opposite `dataStore` exposes the same connection from the target side. |
+| `indexCandidates` → `IndexCandidate` | containment, [*]; opposite `dataStore` | Owns the proposed indexes justified by access patterns. The contained `IndexCandidate` records form part of the `DataStore` model subtree and follow its lifecycle.                                                                                                                                   |
+| `changeStream` → `DataChangeStream`  | containment, [?]; opposite `dataStore` | Owns the change feed owned by the data store. The contained `DataChangeStream` records form part of the `DataStore` model subtree and follow its lifecycle.                                                                                                                                           |
 
 ## `DataChangeStream`
 
-Represents data change stream in the PIM vocabulary. It specializes `TraceableElement`, `DeployableElement`, `InvocationSource`, `EventCarrier`, `FlowEndpoint`, `PolicyTarget` with the details needed for this modeling concern.
+The change feed associated with a `DataStore`. It says which event types are emitted when stored data changes, allowing downstream consumers to be designed without selecting a provider-specific stream service.
 
 Direct supertypes: `TraceableElement`, `DeployableElement`, `InvocationSource`, `EventCarrier`, `FlowEndpoint`, `PolicyTarget`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -73,14 +75,14 @@ Direct supertypes: `TraceableElement`, `DeployableElement`, `InvocationSource`, 
 
 ### Relationships
 
-| Relationship                  | Kind and multiplicity                              | Meaning in the model                                                                                                                     |
-| ----------------------------- | -------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
-| `dataStore` → `DataStore`     | reference; read-only, [1]; opposite `changeStream` | References the data store element(s) used as data store by this data change stream; the target may be shared elsewhere in the model.     |
-| `emittedEvents` → `EventType` | reference, [*]                                     | References the event type element(s) used as emitted events by this data change stream; the target may be shared elsewhere in the model. |
+| Relationship                  | Kind and multiplicity                              | Meaning in the model                                                                                                                                                                   |
+| ----------------------------- | -------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `dataStore` → `DataStore`     | reference; read-only, [1]; opposite `changeStream` | Derived back-reference to the structured store to which this element belongs. It mirrors the opposite containment and is not set independently on `DataChangeStream`.                  |
+| `emittedEvents` → `EventType` | reference, [*]                                     | Associates `DataChangeStream` with the events that successful processing may publish. The referenced `EventType` remains independently owned and may be reused elsewhere in the model. |
 
 ## `ObjectStore`
 
-Represents object store in the PIM vocabulary. It specializes `StorageElement`, `InvocationSource`, `RoutingTarget`, `SubscriptionTarget`, `EventCarrier` with the details needed for this modeling concern.
+A provider-independent object-oriented store for files or blobs. Its versioning, lifecycle, notifications, encryption, and retention decisions describe object storage intent before S3 is chosen.
 
 Direct supertypes: `StorageElement`, `InvocationSource`, `RoutingTarget`, `SubscriptionTarget`, `EventCarrier`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -96,15 +98,15 @@ Direct supertypes: `StorageElement`, `InvocationSource`, `RoutingTarget`, `Subsc
 
 ### Relationships
 
-| Relationship                                   | Kind and multiplicity                    | Meaning in the model                                                                                                                    |
-| ---------------------------------------------- | ---------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
-| `notificationRules` → `ObjectNotificationRule` | containment, [*]; opposite `objectStore` | Contains the object notification rule element(s) that make up this object store; the contained objects belong to this model element.    |
-| `objectMetadataSchemas` → `Schema`             | reference, [*]                           | References the schema element(s) used as object metadata schemas by this object store; the target may be shared elsewhere in the model. |
-| `emittedEvents` → `EventType`                  | reference, [*]                           | References the event type element(s) used as emitted events by this object store; the target may be shared elsewhere in the model.      |
+| Relationship                                   | Kind and multiplicity                    | Meaning in the model                                                                                                                                                              |
+| ---------------------------------------------- | ---------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `notificationRules` → `ObjectNotificationRule` | containment, [*]; opposite `objectStore` | Owns the object-change routing rules. The contained `ObjectNotificationRule` records form part of the `ObjectStore` model subtree and follow its lifecycle.                       |
+| `objectMetadataSchemas` → `Schema`             | reference, [*]                           | Associates `ObjectStore` with the schemas attached to object metadata. The referenced `Schema` remains independently owned and may be reused elsewhere in the model.              |
+| `emittedEvents` → `EventType`                  | reference, [*]                           | Associates `ObjectStore` with the events that successful processing may publish. The referenced `EventType` remains independently owned and may be reused elsewhere in the model. |
 
 ## `ObjectNotificationRule`
 
-Represents object notification rule in the PIM vocabulary. It specializes `TraceableElement` with the details needed for this modeling concern.
+A routing rule for changes in an `ObjectStore`. It narrows notifications by event and key patterns, declares the emitted event contracts, and names the invocation targets that should receive matching object activity.
 
 Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -118,15 +120,15 @@ Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilit
 
 ### Relationships
 
-| Relationship                  | Kind and multiplicity                                   | Meaning in the model                                                                                                                           |
-| ----------------------------- | ------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
-| `objectStore` → `ObjectStore` | reference; read-only, [1]; opposite `notificationRules` | References the object store element(s) used as object store by this object notification rule; the target may be shared elsewhere in the model. |
-| `emittedEvents` → `EventType` | reference, [*]                                          | References the event type element(s) used as emitted events by this object notification rule; the target may be shared elsewhere in the model. |
-| `targets` → `RoutingTarget`   | reference, [*]                                          | References the routing target element(s) used as targets by this object notification rule; the target may be shared elsewhere in the model.    |
+| Relationship                  | Kind and multiplicity                                   | Meaning in the model                                                                                                                                                                                              |
+| ----------------------------- | ------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `objectStore` → `ObjectStore` | reference; read-only, [1]; opposite `notificationRules` | Derived back-reference to the object store associated with this element. It mirrors the opposite containment and is not set independently on `ObjectNotificationRule`.                                            |
+| `emittedEvents` → `EventType` | reference, [*]                                          | Associates `ObjectNotificationRule` with the events that successful processing may publish. The referenced `EventType` remains independently owned and may be reused elsewhere in the model.                      |
+| `targets` → `RoutingTarget`   | reference, [*]                                          | The `targets` reference on `ObjectNotificationRule` lists the destinations that receive this event or schedule. A `RoutingTarget` can remain independently owned and can participate in other parts of the model. |
 
 ## `DataModel`
 
-Represents data model in the PIM vocabulary. It specializes `TraceableElement`, `FlowEndpoint`, `PolicyTarget` with the details needed for this modeling concern.
+The logical shape and ownership of data held in a store. It connects a schema to storage fields, source-of-truth status, and access patterns.
 
 Direct supertypes: `TraceableElement`, `FlowEndpoint`, `PolicyTarget`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -143,16 +145,16 @@ Direct supertypes: `TraceableElement`, `FlowEndpoint`, `PolicyTarget`. Inherited
 
 ### Relationships
 
-| Relationship                       | Kind and multiplicity                                 | Meaning in the model                                                                                                                  |
-| ---------------------------------- | ----------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
-| `storageFields` → `DataField`      | containment, [*]; opposite `dataModel`                | Contains the data field element(s) that make up this data model; the contained objects belong to this model element.                  |
-| `dataStore` → `DataStore`          | reference; read-only, [1]; opposite `ownedDataModels` | References the data store element(s) used as data store by this data model; the target may be shared elsewhere in the model.          |
-| `schema` → `Schema`                | reference, [1]                                        | References the schema element(s) used as schema by this data model; the target may be shared elsewhere in the model.                  |
-| `accessPatterns` → `AccessPattern` | reference, [*]                                        | References the access pattern element(s) used as access patterns by this data model; the target may be shared elsewhere in the model. |
+| Relationship                       | Kind and multiplicity                                 | Meaning in the model                                                                                                                                                                                                                                                           |
+| ---------------------------------- | ----------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `storageFields` → `DataField`      | containment, [*]; opposite `dataModel`                | The `storageFields` containment on `DataModel` keeps the fields used by the provider-independent data model. The `DataField` objects are owned by `DataModel` and remain part of its model subtree. Its opposite `dataModel` exposes the same connection from the target side. |
+| `dataStore` → `DataStore`          | reference; read-only, [1]; opposite `ownedDataModels` | Derived back-reference to the structured store to which this element belongs. It mirrors the opposite containment and is not set independently on `DataModel`.                                                                                                                 |
+| `schema` → `Schema`                | reference, [1]                                        | The `schema` reference on `DataModel` attaches the structured shape expected for this data. A `Schema` can remain independently owned and can participate in other parts of the model.                                                                                         |
+| `accessPatterns` → `AccessPattern` | reference, [*]                                        | The `accessPatterns` reference on `DataModel` connects the data use to the read or write shapes that justify storage choices. An `AccessPattern` can remain independently owned and can participate in other parts of the model.                                               |
 
 ## `DataField`
 
-Represents data field in the PIM vocabulary. It specializes `TraceableElement` with the details needed for this modeling concern.
+A storage-facing field in a PIM data model. It records key candidacy, sensitivity, source, generated status, and the physical naming hint needed during provider mapping.
 
 Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -173,13 +175,13 @@ Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilit
 
 ### Relationships
 
-| Relationship              | Kind and multiplicity                               | Meaning in the model                                                                                                         |
-| ------------------------- | --------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
-| `dataModel` → `DataModel` | reference; read-only, [1]; opposite `storageFields` | References the data model element(s) used as data model by this data field; the target may be shared elsewhere in the model. |
+| Relationship              | Kind and multiplicity                               | Meaning in the model                                                                                                                                     |
+| ------------------------- | --------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `dataModel` → `DataModel` | reference; read-only, [1]; opposite `storageFields` | Derived back-reference to the logical stored model that owns the field. It mirrors the opposite containment and is not set independently on `DataField`. |
 
 ## `AccessPattern`
 
-Represents access pattern in the PIM vocabulary. It specializes `TraceableElement` with the details needed for this modeling concern.
+A named way the application reads or writes data. It describes operation shape, frequency, cardinality, consistency, and supported indexes so storage follows usage rather than the reverse.
 
 Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -203,15 +205,15 @@ Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilit
 
 ### Relationships
 
-| Relationship                         | Kind and multiplicity                                | Meaning in the model                                                                                                                         |
-| ------------------------------------ | ---------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
-| `dataStore` → `DataStore`            | reference; read-only, [1]; opposite `accessPatterns` | References the data store element(s) used as data store by this access pattern; the target may be shared elsewhere in the model.             |
-| `usedByFunctions` → `FunctionTarget` | reference, [*]                                       | References the function target element(s) used as used by functions by this access pattern; the target may be shared elsewhere in the model. |
-| `exposedByRoutes` → `RouteEndpoint`  | reference, [*]                                       | References the route endpoint element(s) used as exposed by routes by this access pattern; the target may be shared elsewhere in the model.  |
+| Relationship                         | Kind and multiplicity                                | Meaning in the model                                                                                                                                                                                  |
+| ------------------------------------ | ---------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `dataStore` → `DataStore`            | reference; read-only, [1]; opposite `accessPatterns` | Derived back-reference to the structured store to which this element belongs. It mirrors the opposite containment and is not set independently on `AccessPattern`.                                    |
+| `usedByFunctions` → `FunctionTarget` | reference, [*]                                       | Associates `AccessPattern` with the functions whose queries or writes require this access path. The referenced `FunctionTarget` remains independently owned and may be reused elsewhere in the model. |
+| `exposedByRoutes` → `RouteEndpoint`  | reference, [*]                                       | Associates `AccessPattern` with the API routes that expose this access path. The referenced `RouteEndpoint` remains independently owned and may be reused elsewhere in the model.                     |
 
 ## `IndexCandidate`
 
-Represents index candidate in the PIM vocabulary. It specializes `TraceableElement` with the details needed for this modeling concern.
+A proposed index justified by one or more access patterns. It makes key fields, projection, production importance, and provider mapping decisions inspectable.
 
 Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -228,14 +230,14 @@ Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilit
 
 ### Relationships
 
-| Relationship                               | Kind and multiplicity                                 | Meaning in the model                                                                                                                                |
-| ------------------------------------------ | ----------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `dataStore` → `DataStore`                  | reference; read-only, [1]; opposite `indexCandidates` | References the data store element(s) used as data store by this index candidate; the target may be shared elsewhere in the model.                   |
-| `supportsAccessPatterns` → `AccessPattern` | reference, [*]                                        | References the access pattern element(s) used as supports access patterns by this index candidate; the target may be shared elsewhere in the model. |
+| Relationship                               | Kind and multiplicity                                 | Meaning in the model                                                                                                                                                                        |
+| ------------------------------------------ | ----------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `dataStore` → `DataStore`                  | reference; read-only, [1]; opposite `indexCandidates` | Derived back-reference to the structured store to which this element belongs. It mirrors the opposite containment and is not set independently on `IndexCandidate`.                         |
+| `supportsAccessPatterns` → `AccessPattern` | reference, [*]                                        | Associates `IndexCandidate` with the access patterns that justify the candidate index. The referenced `AccessPattern` remains independently owned and may be reused elsewhere in the model. |
 
 ## `DataAccess`
 
-Represents data access in the PIM vocabulary. It specializes `TraceableElement` with the details needed for this modeling concern.
+A function or workflow's declared use of a data model. It joins operation, purpose, permission, and access-pattern intent so data access can be secured and transformed coherently.
 
 Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -249,9 +251,9 @@ Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilit
 
 ### Relationships
 
-| Relationship                       | Kind and multiplicity | Meaning in the model                                                                                                                   |
-| ---------------------------------- | --------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
-| `function` → `FunctionTarget`      | reference, [1]        | References the function target element(s) used as function by this data access; the target may be shared elsewhere in the model.       |
-| `store` → `StorageElement`         | reference, [1]        | References the storage element element(s) used as store by this data access; the target may be shared elsewhere in the model.          |
-| `dataModels` → `DataModel`         | reference, [*]        | References the data model element(s) used as data models by this data access; the target may be shared elsewhere in the model.         |
-| `accessPatterns` → `AccessPattern` | reference, [*]        | References the access pattern element(s) used as access patterns by this data access; the target may be shared elsewhere in the model. |
+| Relationship                       | Kind and multiplicity | Meaning in the model                                                                                                                                                                                                              |
+| ---------------------------------- | --------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `function` → `FunctionTarget`      | reference, [1]        | Associates `DataAccess` with the function invoked or described by this record. The referenced `FunctionTarget` remains independently owned and may be reused elsewhere in the model.                                              |
+| `store` → `StorageElement`         | reference, [1]        | Associates `DataAccess` with the storage target used by the function. The referenced `StorageElement` remains independently owned and may be reused elsewhere in the model.                                                       |
+| `dataModels` → `DataModel`         | reference, [*]        | Associates `DataAccess` with the logical models touched by this access. The referenced `DataModel` remains independently owned and may be reused elsewhere in the model.                                                          |
+| `accessPatterns` → `AccessPattern` | reference, [*]        | The `accessPatterns` reference on `DataAccess` connects the data use to the read or write shapes that justify storage choices. An `AccessPattern` can remain independently owned and can participate in other parts of the model. |

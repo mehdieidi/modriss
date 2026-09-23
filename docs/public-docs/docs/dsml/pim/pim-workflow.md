@@ -1,12 +1,14 @@
 # Provider-independent workflows
 
-Workflow concepts describe orchestration, branching, parallelism, waiting, human approval, compensation, and escalation without embedding ASL syntax.
+The workflow module represents durable control flow as a graph of owned steps and transitions. Step subtypes distinguish entry, successful and failed termination, executable tasks, choices, parallel branches, mapped iteration, waiting, and state-only pass operations. A transition carries its own condition, evaluator outcome, and default-path decision, so routing does not have to be inferred from list order.
+
+Tasks may invoke a function, adapter, nested workflow, or human task, with callback configuration for externally completed work. Error handlers, retry settings, timeouts, compensation, escalation, and completion events express the failure and waiting behavior around that work. The PIM keeps these semantics independent of Amazon States Language while retaining enough structure for the AWS transformation to build a state machine.
 
 Source: `mde/metamodels/pim/pim-workflow.emf`.
 
 ## `Workflow`
 
-The PIM orchestration boundary that coordinates provider-independent steps, transitions, policies, and service behavior. It is where durability, statefulness, compensation, human approval, and duration are decided before Step Functions or another engine is chosen.
+A provider-independent orchestration model. Its steps, transitions, error handling, waits, human tasks, compensation, and escalation describe the process before it becomes a Step Functions state machine.
 
 Direct supertypes: `TraceableElement`, `DeployableElement`, `InvocationTarget`, `WorkflowTarget`, `SubscriptionTarget`, `RoutingTarget`, `FlowEndpoint`, `PolicyTarget`, `ProtectedResource`, `ConfigurableElement`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -25,18 +27,18 @@ Direct supertypes: `TraceableElement`, `DeployableElement`, `InvocationTarget`, 
 
 ### Relationships
 
-| Relationship                            | Kind and multiplicity                           | Meaning in the model                                                                                                                    |
-| --------------------------------------- | ----------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
-| `steps` → `WorkflowStep`                | containment, [+]; opposite `workflow`           | Contains the workflow step element(s) that make up this workflow; the contained objects belong to this model element.                   |
-| `transitions` → `WorkflowTransition`    | containment, [*]; opposite `workflow`           | Contains the workflow transition element(s) that make up this workflow; the contained objects belong to this model element.             |
-| `service` → `ServerlessService`         | reference; read-only, [1]; opposite `workflows` | References the serverless service element(s) used as service by this workflow; the target may be shared elsewhere in the model.         |
-| `observability` → `ObservabilityConfig` | reference, [?]                                  | References the observability config element(s) used as observability by this workflow; the target may be shared elsewhere in the model. |
-| `resilience` → `ResiliencePolicy`       | reference, [?]                                  | References the resilience policy element(s) used as resilience by this workflow; the target may be shared elsewhere in the model.       |
-| `idempotency` → `IdempotencyPolicy`     | reference, [?]                                  | References the idempotency policy element(s) used as idempotency by this workflow; the target may be shared elsewhere in the model.     |
+| Relationship                            | Kind and multiplicity                           | Meaning in the model                                                                                                                                                                                                                                                |
+| --------------------------------------- | ----------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `steps` → `WorkflowStep`                | containment, [+]; opposite `workflow`           | The `steps` containment on `Workflow` owns the execution nodes that make up the workflow. The `WorkflowStep` objects are owned by `Workflow` and remain part of its model subtree. Its opposite `workflow` exposes the same connection from the target side.        |
+| `transitions` → `WorkflowTransition`    | containment, [*]; opposite `workflow`           | The `transitions` containment on `Workflow` owns the routing edges between workflow steps. The `WorkflowTransition` objects are owned by `Workflow` and remain part of its model subtree. Its opposite `workflow` exposes the same connection from the target side. |
+| `service` → `ServerlessService`         | reference; read-only, [1]; opposite `workflows` | Derived back-reference to the service boundary responsible for this element. It mirrors the opposite containment and is not set independently on `Workflow`.                                                                                                        |
+| `observability` → `ObservabilityConfig` | reference, [?]                                  | Associates `Workflow` with the telemetry and operational-visibility requirements. The referenced `ObservabilityConfig` remains independently owned and may be reused elsewhere in the model.                                                                        |
+| `resilience` → `ResiliencePolicy`       | reference, [?]                                  | Associates `Workflow` with the retry, fallback, and failure-handling policy. The referenced `ResiliencePolicy` remains independently owned and may be reused elsewhere in the model.                                                                                |
+| `idempotency` → `IdempotencyPolicy`     | reference, [?]                                  | Associates `Workflow` with the duplicate-processing guarantee. The referenced `IdempotencyPolicy` remains independently owned and may be reused elsewhere in the model.                                                                                             |
 
 ## `WorkflowStep`
 
-The provider-independent execution unit shared by start/end, task, choice, parallel, map, wait, and pass steps. Its mappings and timeout express state-data and timing intent without embedding ASL syntax.
+The common execution and control unit of a PIM workflow. It carries order, responsibility, optionality, and transition context for its specialized step types.
 
 Direct supertypes: `TraceableElement`, `FlowEndpoint`, `PolicyTarget`, `ProtectedResource`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -51,15 +53,15 @@ Direct supertypes: `TraceableElement`, `FlowEndpoint`, `PolicyTarget`, `Protecte
 
 ### Relationships
 
-| Relationship                     | Kind and multiplicity                       | Meaning in the model                                                                                                        |
-| -------------------------------- | ------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
-| `retry` → `RetryPolicy`          | containment, [?]                            | Contains the retry policy element(s) that make up this workflow step; the contained objects belong to this model element.   |
-| `catchHandlers` → `ErrorHandler` | containment, [*]; opposite `step`           | Contains the error handler element(s) that make up this workflow step; the contained objects belong to this model element.  |
-| `workflow` → `Workflow`          | reference; read-only, [1]; opposite `steps` | References the workflow element(s) used as workflow by this workflow step; the target may be shared elsewhere in the model. |
+| Relationship                     | Kind and multiplicity                       | Meaning in the model                                                                                                                                                                  |
+| -------------------------------- | ------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `retry` → `RetryPolicy`          | containment, [?]                            | The `retry` containment on `WorkflowStep` keeps the retry policies applied to this state. The `RetryPolicy` objects are owned by `WorkflowStep` and remain part of its model subtree. |
+| `catchHandlers` → `ErrorHandler` | containment, [*]; opposite `step`           | Owns the recovery paths owned by this workflow step. The contained `ErrorHandler` records form part of the `WorkflowStep` model subtree and follow its lifecycle.                     |
+| `workflow` → `Workflow`          | reference; read-only, [1]; opposite `steps` | Derived back-reference to the orchestration represented by this flow or owned step. It mirrors the opposite containment and is not set independently on `WorkflowStep`.               |
 
 ## `StartStep`
 
-The unique business entry point from which the process begins after its trigger has been recognized. It is a process step rather than a diagram-only marker because its position and traceability are carried into workflow generation.
+The explicit entry node of a workflow graph. It establishes where execution begins and may associate a compensation policy that governs reversal if later work fails.
 
 Direct supertypes: `WorkflowStep`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -69,13 +71,13 @@ This class declares no attributes of its own. It inherits the attributes of its 
 
 ### Relationships
 
-| Relationship                          | Kind and multiplicity | Meaning in the model                                                                                                                    |
-| ------------------------------------- | --------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
-| `compensation` → `CompensationPolicy` | reference, [?]        | References the compensation policy element(s) used as compensation by this start step; the target may be shared elsewhere in the model. |
+| Relationship                          | Kind and multiplicity | Meaning in the model                                                                                                                                                                  |
+| ------------------------------------- | --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `compensation` → `CompensationPolicy` | reference, [?]        | Associates `StartStep` with the reversal policy for already completed work. The referenced `CompensationPolicy` remains independently owned and may be reused elsewhere in the model. |
 
 ## `SuccessEndStep`
 
-Represents success end step in the PIM vocabulary. It specializes `WorkflowStep` with the details needed for this modeling concern.
+A terminal workflow node representing successful completion. Incoming transitions to this node make the successful paths explicit for validation and state-machine generation.
 
 Direct supertypes: `WorkflowStep`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -89,7 +91,7 @@ This class declares no direct relationships.
 
 ## `FailureEndStep`
 
-Represents failure end step in the PIM vocabulary. It specializes `WorkflowStep` with the details needed for this modeling concern.
+A terminal workflow node representing unsuccessful completion. It gives failure paths a deliberate destination instead of leaving termination implicit in an error handler or missing transition.
 
 Direct supertypes: `WorkflowStep`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -103,7 +105,7 @@ This class declares no direct relationships.
 
 ## `TaskStep`
 
-A workflow step that performs exactly one action: invokes a function, calls an adapter, starts a nested workflow, or assigns a human task. EVL enforces that one action is selected so the generated workflow has an unambiguous operation.
+A workflow step that performs work through a function, adapter, or nested workflow. It is the bridge between orchestration structure and an executable target.
 
 Direct supertypes: `WorkflowStep`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -113,18 +115,18 @@ This class declares no attributes of its own. It inherits the attributes of its 
 
 ### Relationships
 
-| Relationship                            | Kind and multiplicity | Meaning in the model                                                                                                                   |
-| --------------------------------------- | --------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
-| `invokesFunction` → `Function`          | reference, [?]        | References the function element(s) used as invokes function by this task step; the target may be shared elsewhere in the model.        |
-| `invokesAdapter` → `ExternalAdapter`    | reference, [?]        | References the external adapter element(s) used as invokes adapter by this task step; the target may be shared elsewhere in the model. |
-| `nestedWorkflow` → `Workflow`           | reference, [?]        | References the workflow element(s) used as nested workflow by this task step; the target may be shared elsewhere in the model.         |
-| `humanTask` → `HumanTask`               | reference, [?]        | References the human task element(s) used as human task by this task step; the target may be shared elsewhere in the model.            |
-| `compensation` → `CompensationPolicy`   | reference, [?]        | References the compensation policy element(s) used as compensation by this task step; the target may be shared elsewhere in the model. |
-| `callbackConfig` → `CallbackTaskConfig` | containment, [?]      | Contains the callback task config element(s) that make up this task step; the contained objects belong to this model element.          |
+| Relationship                            | Kind and multiplicity | Meaning in the model                                                                                                                                                                                            |
+| --------------------------------------- | --------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `invokesFunction` → `Function`          | reference, [?]        | The `invokesFunction` reference on `TaskStep` identifies the function executed by this workflow step. A `Function` can remain independently owned and can participate in other parts of the model.              |
+| `invokesAdapter` → `ExternalAdapter`    | reference, [?]        | The `invokesAdapter` reference on `TaskStep` identifies the external adapter used by this step. An `ExternalAdapter` can remain independently owned and can participate in other parts of the model.            |
+| `nestedWorkflow` → `Workflow`           | reference, [?]        | The `nestedWorkflow` reference on `TaskStep` identifies the workflow invoked as a nested process. A `Workflow` can remain independently owned and can participate in other parts of the model.                  |
+| `humanTask` → `HumanTask`               | reference, [?]        | Associates `TaskStep` with the human work item performed at this step. The referenced `HumanTask` remains independently owned and may be reused elsewhere in the model.                                         |
+| `compensation` → `CompensationPolicy`   | reference, [?]        | Associates `TaskStep` with the reversal policy for already completed work. The referenced `CompensationPolicy` remains independently owned and may be reused elsewhere in the model.                            |
+| `callbackConfig` → `CallbackTaskConfig` | containment, [?]      | The `callbackConfig` containment on `TaskStep` attaches the configuration record represented by callback config. The `CallbackTaskConfig` objects are owned by `TaskStep` and remain part of its model subtree. |
 
 ## `ChoiceStep`
 
-A workflow branching state whose condition/evaluator chooses among outgoing transitions. It is the PIM form of a business decision and becomes provider-specific choice logic during AWS refinement.
+A workflow branch selected by a condition or decision expression. It exposes routing logic that would otherwise be hidden inside generated state-machine JSON.
 
 Direct supertypes: `WorkflowStep`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -136,14 +138,14 @@ Direct supertypes: `WorkflowStep`. Inherited attributes and marker capabilities 
 
 ### Relationships
 
-| Relationship                   | Kind and multiplicity | Meaning in the model                                                                                                              |
-| ------------------------------ | --------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
-| `condition` → `Expression`     | containment, [?]      | Contains the expression element(s) that make up this choice step; the contained objects belong to this model element.             |
-| `invokesFunction` → `Function` | reference, [?]        | References the function element(s) used as invokes function by this choice step; the target may be shared elsewhere in the model. |
+| Relationship                   | Kind and multiplicity | Meaning in the model                                                                                                                                                                                 |
+| ------------------------------ | --------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `condition` → `Expression`     | containment, [?]      | The `condition` containment on `ChoiceStep` provides the predicate used to choose or qualify this path. The `Expression` objects are owned by `ChoiceStep` and remain part of its model subtree.     |
+| `invokesFunction` → `Function` | reference, [?]        | The `invokesFunction` reference on `ChoiceStep` identifies the function executed by this workflow step. A `Function` can remain independently owned and can participate in other parts of the model. |
 
 ## `ParallelStep`
 
-A workflow state that starts independent branches concurrently and joins their outcomes. Branch containment makes the parallel graph explicit rather than relying on an implementation-specific fan-out convention.
+A workflow step that starts independent branches together. Its branch references and join behavior capture the concurrency decision at the provider-independent level.
 
 Direct supertypes: `WorkflowStep`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -153,13 +155,13 @@ This class declares no attributes of its own. It inherits the attributes of its 
 
 ### Relationships
 
-| Relationship                  | Kind and multiplicity                  | Meaning in the model                                                                                                         |
-| ----------------------------- | -------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
-| `branches` → `ParallelBranch` | containment, [*]; opposite `ownerStep` | Contains the parallel branch element(s) that make up this parallel step; the contained objects belong to this model element. |
+| Relationship                  | Kind and multiplicity                  | Meaning in the model                                                                                                                                                                                                                                                  |
+| ----------------------------- | -------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `branches` → `ParallelBranch` | containment, [*]; opposite `ownerStep` | The `branches` containment on `ParallelStep` owns the parallel or mapped workflow branches. The `ParallelBranch` objects are owned by `ParallelStep` and remain part of its model subtree. Its opposite `ownerStep` exposes the same connection from the target side. |
 
 ## `MapStep`
 
-A workflow state that applies a processor to each item in a collection. Its map configuration captures data selection, concurrency, distribution, and result handling so fan-out is an architectural decision.
+A workflow step that applies a nested process to items in a collection. It holds the collection, item mapping, concurrency, and result behavior needed for later provider mapping.
 
 Direct supertypes: `WorkflowStep`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -169,13 +171,13 @@ This class declares no attributes of its own. It inherits the attributes of its 
 
 ### Relationships
 
-| Relationship                   | Kind and multiplicity | Meaning in the model                                                                                                     |
-| ------------------------------ | --------------------- | ------------------------------------------------------------------------------------------------------------------------ |
-| `mapConfig` → `MapStateConfig` | containment, [?]      | Contains the map state config element(s) that make up this map step; the contained objects belong to this model element. |
+| Relationship                   | Kind and multiplicity | Meaning in the model                                                                                                                                                                                  |
+| ------------------------------ | --------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `mapConfig` → `MapStateConfig` | containment, [?]      | The `mapConfig` containment on `MapStep` attaches the collection-processing configuration to the map state. The `MapStateConfig` objects are owned by `MapStep` and remain part of its model subtree. |
 
 ## `WaitStep`
 
-A provider-independent pause with either timed or callback/event semantics. Its condition and reason are preserved until the PSM can safely emit an ASL wait state or identify a manual decision.
+A provider-independent workflow step that delays execution. Its duration and reason are architecture decisions because they affect retries, cost, human response, and long-running behavior.
 
 Direct supertypes: `WorkflowStep`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -188,13 +190,13 @@ Direct supertypes: `WorkflowStep`. Inherited attributes and marker capabilities 
 
 ### Relationships
 
-| Relationship               | Kind and multiplicity | Meaning in the model                                                                                                |
-| -------------------------- | --------------------- | ------------------------------------------------------------------------------------------------------------------- |
-| `condition` → `Expression` | containment, [?]      | Contains the expression element(s) that make up this wait step; the contained objects belong to this model element. |
+| Relationship               | Kind and multiplicity | Meaning in the model                                                                                                                                                                         |
+| -------------------------- | --------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `condition` → `Expression` | containment, [?]      | The `condition` containment on `WaitStep` provides the predicate used to choose or qualify this path. The `Expression` objects are owned by `WaitStep` and remain part of its model subtree. |
 
 ## `PassStep`
 
-Represents pass step in the PIM vocabulary. It specializes `WorkflowStep` with the details needed for this modeling concern.
+A workflow node that advances control without invoking computation or an external system. Its inherited input and output mappings can reshape workflow state between substantive steps.
 
 Direct supertypes: `WorkflowStep`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -208,7 +210,7 @@ This class declares no direct relationships.
 
 ## `WorkflowTransition`
 
-A directed route between PIM workflow steps. Conditions and literal evaluator outcomes determine branching; `defaultTransition` identifies the fallback path when no conditional route matches.
+A directed edge between two workflow steps. Its condition or decision outcome selects the edge, while `defaultTransition` marks the fallback path when no guarded alternative matches.
 
 Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -222,16 +224,16 @@ Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilit
 
 ### Relationships
 
-| Relationship               | Kind and multiplicity                             | Meaning in the model                                                                                                                 |
-| -------------------------- | ------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
-| `condition` → `Expression` | containment, [?]                                  | Contains the expression element(s) that make up this workflow transition; the contained objects belong to this model element.        |
-| `workflow` → `Workflow`    | reference; read-only, [1]; opposite `transitions` | References the workflow element(s) used as workflow by this workflow transition; the target may be shared elsewhere in the model.    |
-| `source` → `WorkflowStep`  | reference, [1]                                    | References the workflow step element(s) used as source by this workflow transition; the target may be shared elsewhere in the model. |
-| `target` → `WorkflowStep`  | reference, [1]                                    | References the workflow step element(s) used as target by this workflow transition; the target may be shared elsewhere in the model. |
+| Relationship               | Kind and multiplicity                             | Meaning in the model                                                                                                                                                                                             |
+| -------------------------- | ------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `condition` → `Expression` | containment, [?]                                  | The `condition` containment on `WorkflowTransition` provides the predicate used to choose or qualify this path. The `Expression` objects are owned by `WorkflowTransition` and remain part of its model subtree. |
+| `workflow` → `Workflow`    | reference; read-only, [1]; opposite `transitions` | Derived back-reference to the orchestration represented by this flow or owned step. It mirrors the opposite containment and is not set independently on `WorkflowTransition`.                                    |
+| `source` → `WorkflowStep`  | reference, [1]                                    | The `source` reference on `WorkflowTransition` marks the origin of a directed relationship. A `WorkflowStep` can remain independently owned and can participate in other parts of the model.                     |
+| `target` → `WorkflowStep`  | reference, [1]                                    | The `target` reference on `WorkflowTransition` marks the destination of a directed relationship. A `WorkflowStep` can remain independently owned and can participate in other parts of the model.                |
 
 ## `ErrorHandler`
 
-The PIM recovery policy attached to a workflow step. It selects the errors it owns and routes them to a next step or handler function, with an explicit choice about whether normal workflow execution continues.
+A workflow response to a named failure. It connects error matching to a next step, retry or catch behavior, and the business recovery path.
 
 Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -245,15 +247,15 @@ Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilit
 
 ### Relationships
 
-| Relationship                   | Kind and multiplicity                               | Meaning in the model                                                                                                                |
-| ------------------------------ | --------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
-| `step` → `WorkflowStep`        | reference; read-only, [1]; opposite `catchHandlers` | References the workflow step element(s) used as step by this error handler; the target may be shared elsewhere in the model.        |
-| `nextStep` → `WorkflowStep`    | reference, [?]                                      | References the workflow step element(s) used as next step by this error handler; the target may be shared elsewhere in the model.   |
-| `handlerFunction` → `Function` | reference, [?]                                      | References the function element(s) used as handler function by this error handler; the target may be shared elsewhere in the model. |
+| Relationship                   | Kind and multiplicity                               | Meaning in the model                                                                                                                                                                              |
+| ------------------------------ | --------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `step` → `WorkflowStep`        | reference; read-only, [1]; opposite `catchHandlers` | Derived back-reference to the workflow step that owns this error handler. It mirrors the opposite containment and is not set independently on `ErrorHandler`.                                     |
+| `nextStep` → `WorkflowStep`    | reference, [?]                                      | The `nextStep` reference on `ErrorHandler` identifies the workflow step reached after this step. A `WorkflowStep` can remain independently owned and can participate in other parts of the model. |
+| `handlerFunction` → `Function` | reference, [?]                                      | Associates `ErrorHandler` with the function used to perform error recovery. The referenced `Function` remains independently owned and may be reused elsewhere in the model.                       |
 
 ## `ParallelBranch`
 
-Represents parallel branch in the PIM vocabulary. It specializes `TraceableElement` with the details needed for this modeling concern.
+One owned subgraph executed by a `ParallelStep`. Its local steps and transitions preserve each concurrent path as a complete graph with traceable nodes and edges.
 
 Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -263,15 +265,15 @@ This class declares no attributes of its own. It inherits the attributes of its 
 
 ### Relationships
 
-| Relationship                         | Kind and multiplicity                          | Meaning in the model                                                                                                                 |
-| ------------------------------------ | ---------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
-| `ownerStep` → `ParallelStep`         | reference; read-only, [1]; opposite `branches` | References the parallel step element(s) used as owner step by this parallel branch; the target may be shared elsewhere in the model. |
-| `steps` → `WorkflowStep`             | containment, [+]                               | Contains the workflow step element(s) that make up this parallel branch; the contained objects belong to this model element.         |
-| `transitions` → `WorkflowTransition` | containment, [*]                               | Contains the workflow transition element(s) that make up this parallel branch; the contained objects belong to this model element.   |
+| Relationship                         | Kind and multiplicity                          | Meaning in the model                                                                                                                                                                                  |
+| ------------------------------------ | ---------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `ownerStep` → `ParallelStep`         | reference; read-only, [1]; opposite `branches` | Derived back-reference to the parallel step that owns this branch. It mirrors the opposite containment and is not set independently on `ParallelBranch`.                                              |
+| `steps` → `WorkflowStep`             | containment, [+]                               | The `steps` containment on `ParallelBranch` owns the execution nodes that make up the workflow. The `WorkflowStep` objects are owned by `ParallelBranch` and remain part of its model subtree.        |
+| `transitions` → `WorkflowTransition` | containment, [*]                               | The `transitions` containment on `ParallelBranch` owns the routing edges between workflow steps. The `WorkflowTransition` objects are owned by `ParallelBranch` and remain part of its model subtree. |
 
 ## `MapStateConfig`
 
-Provider-independent configuration for collection processing: which items to iterate, how to shape each item, how much concurrency to allow, whether distributed execution is needed, and where results belong.
+The iteration contract of a `MapStep`. It identifies the input collection, item projection, concurrency, distributed-execution choice, result writer, and the branch used to process each item.
 
 Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -287,13 +289,13 @@ Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilit
 
 ### Relationships
 
-| Relationship                       | Kind and multiplicity | Meaning in the model                                                                                                            |
-| ---------------------------------- | --------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
-| `itemProcessor` → `ParallelBranch` | containment, [1]      | Contains the parallel branch element(s) that make up this map state config; the contained objects belong to this model element. |
+| Relationship                       | Kind and multiplicity | Meaning in the model                                                                                                                                               |
+| ---------------------------------- | --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `itemProcessor` → `ParallelBranch` | containment, [1]      | Owns the subgraph executed for every mapped item. The contained `ParallelBranch` records form part of the `MapStateConfig` model subtree and follow its lifecycle. |
 
 ## `CallbackTaskConfig`
 
-The contract for a task that pauses until an external actor calls back with the task token. It defines token placement, completion events, and timeout behavior at the architecture level.
+The callback protocol for a task that pauses until external completion. It records where the task token is stored, which route may return it, the accepted completion events, and the applicable timeout.
 
 Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -305,15 +307,15 @@ Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilit
 
 ### Relationships
 
-| Relationship                      | Kind and multiplicity | Meaning in the model                                                                                                                           |
-| --------------------------------- | --------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
-| `callbackRoute` → `RouteEndpoint` | reference, [?]        | References the route endpoint element(s) used as callback route by this callback task config; the target may be shared elsewhere in the model. |
-| `completionEvents` → `EventType`  | reference, [*]        | References the event type element(s) used as completion events by this callback task config; the target may be shared elsewhere in the model.  |
-| `timeout` → `TimeoutPolicy`       | reference, [?]        | References the timeout policy element(s) used as timeout by this callback task config; the target may be shared elsewhere in the model.        |
+| Relationship                      | Kind and multiplicity | Meaning in the model                                                                                                                                                                              |
+| --------------------------------- | --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `callbackRoute` → `RouteEndpoint` | reference, [?]        | Associates `CallbackTaskConfig` with the endpoint through which external completion returns. The referenced `RouteEndpoint` remains independently owned and may be reused elsewhere in the model. |
+| `completionEvents` → `EventType`  | reference, [*]        | Associates `CallbackTaskConfig` with the event contracts accepted as completion evidence. The referenced `EventType` remains independently owned and may be reused elsewhere in the model.        |
+| `timeout` → `TimeoutPolicy`       | reference, [?]        | Associates `CallbackTaskConfig` with the applicable execution or waiting limit. The referenced `TimeoutPolicy` remains independently owned and may be reused elsewhere in the model.              |
 
 ## `EscalationPolicy`
 
-The rule for escalating an unresolved human task after a defined delay. It connects a time boundary with the people or identities who must take over.
+The rule for reassigning or raising an unfinished human task. It states when escalation occurs, the elapsed-time threshold, and the principals who receive the escalated responsibility.
 
 Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -326,13 +328,13 @@ Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilit
 
 ### Relationships
 
-| Relationship               | Kind and multiplicity | Meaning in the model                                                                                                                |
-| -------------------------- | --------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
-| `escalateTo` → `Principal` | reference, [*]        | References the principal element(s) used as escalate to by this escalation policy; the target may be shared elsewhere in the model. |
+| Relationship               | Kind and multiplicity | Meaning in the model                                                                                                                                                                     |
+| -------------------------- | --------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `escalateTo` → `Principal` | reference, [*]        | Associates `EscalationPolicy` with the principals who receive escalated responsibility. The referenced `Principal` remains independently owned and may be reused elsewhere in the model. |
 
 ## `HumanTask`
 
-A reusable PIM representation of work assigned to a person, including completion evidence, timeout, escalation, and completion events. It is the human boundary that an implementation must make auditable.
+A workflow task whose completion depends on a person. It preserves the assignment, evidence, deadline, and completion-event expectations that an automated function cannot provide.
 
 Direct supertypes: `TraceableElement`, `PolicyTarget`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -345,16 +347,16 @@ Direct supertypes: `TraceableElement`, `PolicyTarget`. Inherited attributes and 
 
 ### Relationships
 
-| Relationship                      | Kind and multiplicity | Meaning in the model                                                                                                                |
-| --------------------------------- | --------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
-| `assignees` → `Principal`         | reference, [*]        | References the principal element(s) used as assignees by this human task; the target may be shared elsewhere in the model.          |
-| `timeout` → `TimeoutPolicy`       | reference, [?]        | References the timeout policy element(s) used as timeout by this human task; the target may be shared elsewhere in the model.       |
-| `escalation` → `EscalationPolicy` | reference, [?]        | References the escalation policy element(s) used as escalation by this human task; the target may be shared elsewhere in the model. |
-| `completionEvents` → `EventType`  | reference, [*]        | References the event type element(s) used as completion events by this human task; the target may be shared elsewhere in the model. |
+| Relationship                      | Kind and multiplicity | Meaning in the model                                                                                                                                                                   |
+| --------------------------------- | --------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `assignees` → `Principal`         | reference, [*]        | Associates `HumanTask` with the principals eligible to complete the human task. The referenced `Principal` remains independently owned and may be reused elsewhere in the model.       |
+| `timeout` → `TimeoutPolicy`       | reference, [?]        | Associates `HumanTask` with the applicable execution or waiting limit. The referenced `TimeoutPolicy` remains independently owned and may be reused elsewhere in the model.            |
+| `escalation` → `EscalationPolicy` | reference, [?]        | Associates `HumanTask` with the policy applied when the task is not completed. The referenced `EscalationPolicy` remains independently owned and may be reused elsewhere in the model. |
+| `completionEvents` → `EventType`  | reference, [*]        | Associates `HumanTask` with the event contracts accepted as completion evidence. The referenced `EventType` remains independently owned and may be reused elsewhere in the model.      |
 
 ## `ApprovalTask`
 
-A human task whose completion carries an explicit approval outcome. It prevents silence or mere task closure from being mistaken for authorization of a consequential business action.
+A human task with an explicit approval decision. It makes the approver, approval evidence, and positive or negative continuation visible in the workflow model.
 
 Direct supertypes: `HumanTask`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -371,7 +373,7 @@ This class declares no direct relationships.
 
 ## `CompensationPolicy`
 
-The PIM description of how a workflow reverses or mitigates completed effects. It states whether compensation is automatic and links the functions/events that make recovery executable or observable.
+The recovery policy for work that must be reversed or compensated. It connects a failed or cancelled path to compensating functions, events, and escalation.
 
 Direct supertypes: `ArchitecturePolicy`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -384,7 +386,7 @@ Direct supertypes: `ArchitecturePolicy`. Inherited attributes and marker capabil
 
 ### Relationships
 
-| Relationship                         | Kind and multiplicity | Meaning in the model                                                                                                                            |
-| ------------------------------------ | --------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
-| `compensationFunctions` → `Function` | reference, [*]        | References the function element(s) used as compensation functions by this compensation policy; the target may be shared elsewhere in the model. |
-| `compensationEvents` → `EventType`   | reference, [*]        | References the event type element(s) used as compensation events by this compensation policy; the target may be shared elsewhere in the model.  |
+| Relationship                         | Kind and multiplicity | Meaning in the model                                                                                                                                                                      |
+| ------------------------------------ | --------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `compensationFunctions` → `Function` | reference, [*]        | Associates `CompensationPolicy` with the functions that reverse completed actions. The referenced `Function` remains independently owned and may be reused elsewhere in the model.        |
+| `compensationEvents` → `EventType`   | reference, [*]        | Associates `CompensationPolicy` with the events emitted or consumed during compensation. The referenced `EventType` remains independently owned and may be reused elsewhere in the model. |

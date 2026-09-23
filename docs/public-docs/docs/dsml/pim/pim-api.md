@@ -1,12 +1,14 @@
 # Provider-independent APIs
 
-API concepts capture externally visible operations, routes, and error behavior before API Gateway or another delivery technology is selected.
+The API module describes a callable boundary without assuming how a cloud provider will expose it. `Api` supplies the public identity and shared policy context. Its contained `ApiRoute` objects define individual operations, and each route selects exactly one function or workflow integration. Request, response, and error schemas connect the API surface to the contract module.
+
+The separation between API-wide defaults and route-level decisions is intentional. Authentication, CORS, rate limits, and observability may govern the whole API, while authorization, validation, timeout, and error translation often differ per operation. EVL checks these combinations, including unique method-path pairs, protected routes, schema-backed validation, and unambiguous backend selection.
 
 Source: `mde/metamodels/pim/pim-api.emf`.
 
 ## `Api`
 
-Represents api in the PIM vocabulary. It specializes `TraceableElement`, `DeployableElement`, `FlowEndpoint`, `PolicyTarget`, `ProtectedResource`, `ConfigurableElement` with the details needed for this modeling concern.
+An externally or internally exposed API boundary in the provider-independent architecture. It groups routes and their contract, authentication, consumer, and operational expectations.
 
 Direct supertypes: `TraceableElement`, `DeployableElement`, `FlowEndpoint`, `PolicyTarget`, `ProtectedResource`, `ConfigurableElement`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -25,19 +27,19 @@ Direct supertypes: `TraceableElement`, `DeployableElement`, `FlowEndpoint`, `Pol
 
 ### Relationships
 
-| Relationship                            | Kind and multiplicity                      | Meaning in the model                                                                                                               |
-| --------------------------------------- | ------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------- |
-| `routes` → `ApiRoute`                   | containment, [*]; opposite `api`           | Contains the api route element(s) that make up this api; the contained objects belong to this model element.                       |
-| `contract` → `ApiContract`              | containment, [?]                           | Contains the api contract element(s) that make up this api; the contained objects belong to this model element.                    |
-| `service` → `ServerlessService`         | reference; read-only, [1]; opposite `apis` | References the serverless service element(s) used as service by this api; the target may be shared elsewhere in the model.         |
-| `auth` → `AuthPolicy`                   | reference, [?]                             | References the auth policy element(s) used as auth by this api; the target may be shared elsewhere in the model.                   |
-| `cors` → `CorsPolicy`                   | reference, [?]                             | References the cors policy element(s) used as cors by this api; the target may be shared elsewhere in the model.                   |
-| `rateLimit` → `RateLimitPolicy`         | reference, [?]                             | References the rate limit policy element(s) used as rate limit by this api; the target may be shared elsewhere in the model.       |
-| `observability` → `ObservabilityConfig` | reference, [?]                             | References the observability config element(s) used as observability by this api; the target may be shared elsewhere in the model. |
+| Relationship                            | Kind and multiplicity                      | Meaning in the model                                                                                                                                                                                                                       |
+| --------------------------------------- | ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `routes` → `ApiRoute`                   | containment, [*]; opposite `api`           | The `routes` containment on `Api` owns the addressable operations exposed by the API. The `ApiRoute` objects are owned by `Api` and remain part of its model subtree. Its opposite `api` exposes the same connection from the target side. |
+| `contract` → `ApiContract`              | containment, [?]                           | The `contract` containment on `Api` attaches the payload contract used at this boundary. The `ApiContract` objects are owned by `Api` and remain part of its model subtree.                                                                |
+| `service` → `ServerlessService`         | reference; read-only, [1]; opposite `apis` | Derived back-reference to the service boundary responsible for this element. It mirrors the opposite containment and is not set independently on `Api`.                                                                                    |
+| `auth` → `AuthPolicy`                   | reference, [?]                             | Associates `Api` with the default authentication policy. The referenced `AuthPolicy` remains independently owned and may be reused elsewhere in the model.                                                                                 |
+| `cors` → `CorsPolicy`                   | reference, [?]                             | Associates `Api` with the browser cross-origin policy. The referenced `CorsPolicy` remains independently owned and may be reused elsewhere in the model.                                                                                   |
+| `rateLimit` → `RateLimitPolicy`         | reference, [?]                             | Associates `Api` with the admission-control policy. The referenced `RateLimitPolicy` remains independently owned and may be reused elsewhere in the model.                                                                                 |
+| `observability` → `ObservabilityConfig` | reference, [?]                             | Associates `Api` with the telemetry and operational-visibility requirements. The referenced `ObservabilityConfig` remains independently owned and may be reused elsewhere in the model.                                                    |
 
 ## `ApiRoute`
 
-Represents api route in the PIM vocabulary. It specializes `TraceableElement`, `InvocationSource`, `FlowEndpoint`, `RouteEndpoint`, `PolicyTarget`, `ProtectedResource`, `ConfigurableElement` with the details needed for this modeling concern.
+One addressable operation in a PIM API. It connects method and path semantics to exactly one backend integration while retaining request, response, authorization, and error decisions.
 
 Direct supertypes: `TraceableElement`, `InvocationSource`, `FlowEndpoint`, `RouteEndpoint`, `PolicyTarget`, `ProtectedResource`, `ConfigurableElement`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -58,20 +60,20 @@ Direct supertypes: `TraceableElement`, `InvocationSource`, `FlowEndpoint`, `Rout
 
 ### Relationships
 
-| Relationship                            | Kind and multiplicity                        | Meaning in the model                                                                                                                     |
-| --------------------------------------- | -------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
-| `errorMappings` → `ErrorMapping`        | containment, [*]; opposite `apiRoute`        | Contains the error mapping element(s) that make up this api route; the contained objects belong to this model element.                   |
-| `api` → `Api`                           | reference; read-only, [1]; opposite `routes` | References the api element(s) used as api by this api route; the target may be shared elsewhere in the model.                            |
-| `requestSchema` → `Schema`              | reference, [?]                               | References the schema element(s) used as request schema by this api route; the target may be shared elsewhere in the model.              |
-| `responseSchema` → `Schema`             | reference, [?]                               | References the schema element(s) used as response schema by this api route; the target may be shared elsewhere in the model.             |
-| `functionIntegration` → `Function`      | reference, [?]                               | References the function element(s) used as function integration by this api route; the target may be shared elsewhere in the model.      |
-| `workflowIntegration` → `Workflow`      | reference, [?]                               | References the workflow element(s) used as workflow integration by this api route; the target may be shared elsewhere in the model.      |
-| `authorization` → `AuthorizationPolicy` | reference, [?]                               | References the authorization policy element(s) used as authorization by this api route; the target may be shared elsewhere in the model. |
-| `timeout` → `TimeoutPolicy`             | reference, [?]                               | References the timeout policy element(s) used as timeout by this api route; the target may be shared elsewhere in the model.             |
+| Relationship                            | Kind and multiplicity                        | Meaning in the model                                                                                                                                                                                 |
+| --------------------------------------- | -------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `errorMappings` → `ErrorMapping`        | containment, [*]; opposite `apiRoute`        | Owns the translations from backend failures to API responses. The contained `ErrorMapping` records form part of the `ApiRoute` model subtree and follow its lifecycle.                               |
+| `api` → `Api`                           | reference; read-only, [1]; opposite `routes` | Derived back-reference to the API that contains this route. It mirrors the opposite containment and is not set independently on `ApiRoute`.                                                          |
+| `requestSchema` → `Schema`              | reference, [?]                               | Associates `ApiRoute` with the accepted request shape. The referenced `Schema` remains independently owned and may be reused elsewhere in the model.                                                 |
+| `responseSchema` → `Schema`             | reference, [?]                               | Associates `ApiRoute` with the successful response shape. The referenced `Schema` remains independently owned and may be reused elsewhere in the model.                                              |
+| `functionIntegration` → `Function`      | reference, [?]                               | The `functionIntegration` reference on `ApiRoute` identifies the function that receives this API route. A `Function` can remain independently owned and can participate in other parts of the model. |
+| `workflowIntegration` → `Workflow`      | reference, [?]                               | Associates `ApiRoute` with the workflow used as the route backend. The referenced `Workflow` remains independently owned and may be reused elsewhere in the model.                                   |
+| `authorization` → `AuthorizationPolicy` | reference, [?]                               | Associates `ApiRoute` with the route-level access decision. The referenced `AuthorizationPolicy` remains independently owned and may be reused elsewhere in the model.                               |
+| `timeout` → `TimeoutPolicy`             | reference, [?]                               | Associates `ApiRoute` with the applicable execution or waiting limit. The referenced `TimeoutPolicy` remains independently owned and may be reused elsewhere in the model.                           |
 
 ## `ErrorMapping`
 
-Represents error mapping in the PIM vocabulary. It specializes `TraceableElement` with the details needed for this modeling concern.
+The rule that turns a backend failure into an API-facing error response. It preserves the relationship between a business or technical error, its schema, and the route behavior.
 
 Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -85,7 +87,7 @@ Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilit
 
 ### Relationships
 
-| Relationship             | Kind and multiplicity                               | Meaning in the model                                                                                                          |
-| ------------------------ | --------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
-| `apiRoute` → `ApiRoute`  | reference; read-only, [1]; opposite `errorMappings` | References the api route element(s) used as api route by this error mapping; the target may be shared elsewhere in the model. |
-| `errorSchema` → `Schema` | reference, [?]                                      | References the schema element(s) used as error schema by this error mapping; the target may be shared elsewhere in the model. |
+| Relationship             | Kind and multiplicity                               | Meaning in the model                                                                                                                                         |
+| ------------------------ | --------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `apiRoute` → `ApiRoute`  | reference; read-only, [1]; opposite `errorMappings` | Derived back-reference to the route to which this error mapping belongs. It mirrors the opposite containment and is not set independently on `ErrorMapping`. |
+| `errorSchema` → `Schema` | reference, [?]                                      | Associates `ErrorMapping` with the structured error payload. The referenced `Schema` remains independently owned and may be reused elsewhere in the model.   |

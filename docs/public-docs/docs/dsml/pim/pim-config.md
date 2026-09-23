@@ -1,12 +1,14 @@
 # Configuration, secrets, and credentials
 
-Configuration concepts separate deploy-time values, runtime environment variables, secrets, and credential requirements from application logic.
+This module separates ordinary configuration from confidential material and from the credentials needed to reach another system. A `ConfigurationSet` groups parameters for a defined scope and set of environments. `EnvironmentVariable` binds a runtime name either to a configuration parameter or to a secret, allowing application code to depend on a stable name while deployment supplies the value.
+
+`Secret` represents protected value ownership and lifecycle, whereas `CredentialRequirement` states what an adapter needs without embedding the credential itself. This distinction lets the PIM express rotation, environment overrides, and access requirements while leaving the concrete secret store and injection mechanism to platform refinement.
 
 Source: `mde/metamodels/pim/pim-config.emf`.
 
 ## `ConfigurationSet`
 
-Represents configuration set in the PIM vocabulary. It specializes `TraceableElement`, `DeployableElement`, `PolicyTarget`, `ConfigurableElement` with the details needed for this modeling concern.
+A named group of deployment and runtime configuration values. It separates configuration from code and provides the unit later mapped to parameters, environment variables, and secrets.
 
 Direct supertypes: `TraceableElement`, `DeployableElement`, `PolicyTarget`, `ConfigurableElement`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -18,16 +20,16 @@ Direct supertypes: `TraceableElement`, `DeployableElement`, `PolicyTarget`, `Con
 
 ### Relationships
 
-| Relationship                                   | Kind and multiplicity                         | Meaning in the model                                                                                                                          |
-| ---------------------------------------------- | --------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
-| `parameters` → `ConfigParameter`               | containment, [*]; opposite `configurationSet` | Contains the config parameter element(s) that make up this configuration set; the contained objects belong to this model element.             |
-| `environmentVariables` → `EnvironmentVariable` | containment, [*]; opposite `configurationSet` | Contains the environment variable element(s) that make up this configuration set; the contained objects belong to this model element.         |
-| `environments` → `EnvironmentTarget`           | reference, [*]                                | References the environment target element(s) used as environments by this configuration set; the target may be shared elsewhere in the model. |
-| `appliesTo` → `ConfigurableElement`            | reference, [*]                                | References the configurable element element(s) used as applies to by this configuration set; the target may be shared elsewhere in the model. |
+| Relationship                                   | Kind and multiplicity                         | Meaning in the model                                                                                                                                                                                                                                                                                              |
+| ---------------------------------------------- | --------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `parameters` → `ConfigParameter`               | containment, [*]; opposite `configurationSet` | The `parameters` containment on `ConfigurationSet` keeps the named configuration inputs in the configuration set. The `ConfigParameter` objects are owned by `ConfigurationSet` and remain part of its model subtree. Its opposite `configurationSet` exposes the same connection from the target side.           |
+| `environmentVariables` → `EnvironmentVariable` | containment, [*]; opposite `configurationSet` | The `environmentVariables` containment on `ConfigurationSet` keeps the runtime bindings that use the configuration set. The `EnvironmentVariable` objects are owned by `ConfigurationSet` and remain part of its model subtree. Its opposite `configurationSet` exposes the same connection from the target side. |
+| `environments` → `EnvironmentTarget`           | reference, [*]                                | Associates `ConfigurationSet` with the stages in which this configuration applies. The referenced `EnvironmentTarget` remains independently owned and may be reused elsewhere in the model.                                                                                                                       |
+| `appliesTo` → `ConfigurableElement`            | reference, [*]                                | Associates `ConfigurationSet` with the configurable architecture elements that receive these values. The referenced `ConfigurableElement` remains independently owned and may be reused elsewhere in the model.                                                                                                   |
 
 ## `ConfigParameter`
 
-Represents config parameter in the PIM vocabulary. It specializes `TraceableElement` with the details needed for this modeling concern.
+A declared configuration value with an owner, type, default or required status, and secret decision. It gives deployment configuration a stable identity before it becomes a CloudFormation parameter or SSM value.
 
 Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -45,13 +47,13 @@ Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilit
 
 ### Relationships
 
-| Relationship                            | Kind and multiplicity                            | Meaning in the model                                                                                                                             |
-| --------------------------------------- | ------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `configurationSet` → `ConfigurationSet` | reference; read-only, [1]; opposite `parameters` | References the configuration set element(s) used as configuration set by this config parameter; the target may be shared elsewhere in the model. |
+| Relationship                            | Kind and multiplicity                            | Meaning in the model                                                                                                                                                                                                                                                                                       |
+| --------------------------------------- | ------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `configurationSet` → `ConfigurationSet` | reference; read-only, [1]; opposite `parameters` | The `configurationSet` reference on `ConfigParameter` attaches the configuration record represented by configuration set. A `ConfigurationSet` can remain independently owned and can participate in other parts of the model. Its opposite `parameters` exposes the same connection from the target side. |
 
 ## `EnvironmentVariable`
 
-Represents environment variable in the PIM vocabulary. It specializes `TraceableElement` with the details needed for this modeling concern.
+A runtime name-value binding made available to a function or environment. It distinguishes a reference used by code from the parameter or secret that supplies it.
 
 Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -65,15 +67,15 @@ Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilit
 
 ### Relationships
 
-| Relationship                            | Kind and multiplicity                                      | Meaning in the model                                                                                                                                 |
-| --------------------------------------- | ---------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `configurationSet` → `ConfigurationSet` | reference; read-only, [1]; opposite `environmentVariables` | References the configuration set element(s) used as configuration set by this environment variable; the target may be shared elsewhere in the model. |
-| `parameter` → `ConfigParameter`         | reference, [?]                                             | References the config parameter element(s) used as parameter by this environment variable; the target may be shared elsewhere in the model.          |
-| `secret` → `Secret`                     | reference, [?]                                             | References the secret element(s) used as secret by this environment variable; the target may be shared elsewhere in the model.                       |
+| Relationship                            | Kind and multiplicity                                      | Meaning in the model                                                                                                                                                                                                                                                                                                     |
+| --------------------------------------- | ---------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `configurationSet` → `ConfigurationSet` | reference; read-only, [1]; opposite `environmentVariables` | The `configurationSet` reference on `EnvironmentVariable` attaches the configuration record represented by configuration set. A `ConfigurationSet` can remain independently owned and can participate in other parts of the model. Its opposite `environmentVariables` exposes the same connection from the target side. |
+| `parameter` → `ConfigParameter`         | reference, [?]                                             | Associates `EnvironmentVariable` with the non-secret configuration parameter supplying the variable. The referenced `ConfigParameter` remains independently owned and may be reused elsewhere in the model.                                                                                                              |
+| `secret` → `Secret`                     | reference, [?]                                             | The `secret` reference on `EnvironmentVariable` identifies the protected value required by this configuration or credential. A `Secret` can remain independently owned and can participate in other parts of the model.                                                                                                  |
 
 ## `Secret`
 
-Represents secret in the PIM vocabulary. It specializes `TraceableElement`, `ProtectedResource`, `PolicyTarget` with the details needed for this modeling concern.
+A protected configuration value or credential reference. It identifies the purpose, rotation, ownership, and generated-reference behavior without placing secret material in the model.
 
 Direct supertypes: `TraceableElement`, `ProtectedResource`, `PolicyTarget`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -90,13 +92,13 @@ Direct supertypes: `TraceableElement`, `ProtectedResource`, `PolicyTarget`. Inhe
 
 ### Relationships
 
-| Relationship                                   | Kind and multiplicity             | Meaning in the model                                                                                                                           |
-| ---------------------------------------------- | --------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
-| `usedForCredentials` → `CredentialRequirement` | reference, [*]; opposite `secret` | References the credential requirement element(s) used as used for credentials by this secret; the target may be shared elsewhere in the model. |
+| Relationship                                   | Kind and multiplicity             | Meaning in the model                                                                                                                                                                                                                                                                     |
+| ---------------------------------------------- | --------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `usedForCredentials` → `CredentialRequirement` | reference, [*]; opposite `secret` | The `usedForCredentials` reference on `Secret` records the credential purpose satisfied by the secret. A `CredentialRequirement` can remain independently owned and can participate in other parts of the model. Its opposite `secret` exposes the same connection from the target side. |
 
 ## `CredentialRequirement`
 
-Represents credential requirement in the PIM vocabulary. It specializes `TraceableElement`, `CredentialRequirementLike` with the details needed for this modeling concern.
+A statement that an external interaction needs a particular credential. It links the integration purpose to the secret that can satisfy it.
 
 Direct supertypes: `TraceableElement`, `CredentialRequirementLike`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -112,6 +114,6 @@ Direct supertypes: `TraceableElement`, `CredentialRequirementLike`. Inherited at
 
 ### Relationships
 
-| Relationship        | Kind and multiplicity                         | Meaning in the model                                                                                                             |
-| ------------------- | --------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
-| `secret` → `Secret` | reference, [?]; opposite `usedForCredentials` | References the secret element(s) used as secret by this credential requirement; the target may be shared elsewhere in the model. |
+| Relationship        | Kind and multiplicity                         | Meaning in the model                                                                                                                                                                                                                                                                                          |
+| ------------------- | --------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `secret` → `Secret` | reference, [?]; opposite `usedForCredentials` | The `secret` reference on `CredentialRequirement` identifies the protected value required by this configuration or credential. A `Secret` can remain independently owned and can participate in other parts of the model. Its opposite `usedForCredentials` exposes the same connection from the target side. |
