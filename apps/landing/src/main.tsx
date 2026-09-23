@@ -9,6 +9,7 @@ import './styles.css'
 const appUrl = import.meta.env.VITE_APP_URL ?? window.location.origin
 const backendUrl = (import.meta.env.VITE_BACKEND_BASE_URL ?? window.location.origin).replace(/\/$/, '')
 const docsUrl = import.meta.env.VITE_DOCS_URL ?? 'https://docs.modriss.site'
+const processDocsUrl = `${docsUrl.replace(/\/$/, '')}/guides/full-lifecycle-method/`
 const githubUrl = import.meta.env.VITE_GITHUB_URL ?? 'https://github.com/mehdieidi/modriss'
 const labUrl = 'https://www.sharif.ir/en/web/me_ce/home'
 const universityProfileUrl = 'https://www.sharif.ir/en/web/me_ce/w/mehdi-eidi'
@@ -93,6 +94,7 @@ function App() {
         <a href="#research" onClick={closeMenu}>Research</a>
         <a href="#methodology" onClick={closeMenu}>Methodology</a>
         <a href="#framework" onClick={closeMenu}>Framework</a>
+        <a href="#process" onClick={closeMenu}>Process</a>
         <a href="#publication" onClick={closeMenu}>Publications</a>
         <a href={docsUrl} onClick={closeMenu}>Documentation</a>
         <a className="nav-icon" href={githubUrl} aria-label="MODRISS source code on GitHub"><Icon name="github" size={18} /></a>
@@ -193,10 +195,99 @@ function App() {
       </div>
     </section>
 
+    <section className="process-section" id="process" aria-labelledby="process-title">
+      <div className="process-intro">
+        <div>
+          <div className="section-label"><span>05</span> Engineered development process</div>
+          <h2 id="process-title">A development process for engineering and evolving software in the serverless paradigm</h2>
+        </div>
+        <div className="process-summary">
+          <p>MODRISS is not a single pass. A product lifecycle contains repeated releases; each release assembles one or more small vertical increments. Evidence can trigger rework inside an increment or shape the next release.</p>
+          <p>The process is tailorable, evidence-gated, and structured with SPEM 2.0 concepts for roles, tasks, work products, and reusable method content.</p>
+          <a className="text-link" href={processDocsUrl}>Study the full lifecycle process <Icon name="arrow" size={15} /></a>
+        </div>
+      </div>
+
+      <figure className="process-figure" aria-labelledby="process-map-title process-map-caption">
+        <div className="process-map-heading">
+          <div><span>Nested process cycles</span><h3 id="process-map-title">Cycles within the lifecycle</h3></div>
+          <p>Each smaller cycle runs inside the one above it.</p>
+        </div>
+
+        <div className="lifecycle-cycle" aria-label="A product lifecycle begins once, contains repeating release cycles made of increments, and ends only after retirement is authorized">
+          <article className="lifecycle-boundary lifecycle-start">
+            <span>Phase 0 · once</span>
+            <h4>Initiate &amp; tailor</h4>
+            <small>G0 · G1</small>
+          </article>
+
+          <i className="lifecycle-flow" aria-hidden="true">→</i>
+
+          <div className="active-lifecycle-stack">
+            <div className="release-card-back release-card-back-far" aria-hidden="true" />
+            <div className="release-card-back release-card-back-near" aria-hidden="true" />
+            <section className="active-lifecycle" aria-label="Repeating active product lifecycle">
+              <header className="active-lifecycle-heading">
+                <div><span>Active product lifecycle</span><b>Release n</b></div>
+                <small>repeats until retirement</small>
+              </header>
+
+              <div className="release-cycle">
+                <section className="increment-zone">
+                  <header><span>Phase 1</span><b>1+ increments</b></header>
+                  <div className="increment-stack">
+                    <div className="increment-card-back increment-card-back-far" aria-hidden="true" />
+                    <div className="increment-card-back increment-card-back-near" aria-hidden="true" />
+                    <article className="increment-card">
+                      <div><b>Increment k</b><span>one valuable slice</span></div>
+                      <ol aria-label="Model-driven path through one increment"><li>CIM</li><li>PIM</li><li>PSM</li><li>Artifacts</li></ol>
+                      <small><span aria-hidden="true">↻</span> review · rework · accept</small>
+                    </article>
+                  </div>
+                  <div className="increment-gates">G2 → G5</div>
+                </section>
+
+                <i className="cycle-flow" aria-hidden="true">→</i>
+
+                <article className="release-node">
+                  <span>Phase 2</span>
+                  <h4>Qualify &amp; release</h4>
+                  <div><b>Candidate</b><i aria-hidden="true">→</i><b>Promote</b></div>
+                  <small>G6 · G7</small>
+                </article>
+
+                <i className="cycle-flow" aria-hidden="true">→</i>
+
+                <article className="release-node operate-node">
+                  <span>Phase 3</span>
+                  <h4>Operate &amp; learn</h4>
+                  <div><b>Outcomes</b><b>SLOs</b><b>Cost</b><b>Risk</b></div>
+                  <small>accepted baseline stays live</small>
+                </article>
+              </div>
+
+              <div className="release-return"><span aria-hidden="true">↶</span><b>Evidence</b><i aria-hidden="true">→</i><strong>Release n+1</strong></div>
+            </section>
+          </div>
+
+          <i className="lifecycle-flow lifecycle-exit-flow" aria-hidden="true">→</i>
+
+          <article className="lifecycle-boundary lifecycle-end">
+            <span>Phase 4 · when authorized</span>
+            <h4>Retire &amp; close</h4>
+            <small>G8</small>
+          </article>
+        </div>
+
+        <div className="discipline-rail"><b>Continuous disciplines</b><span>Management · risk · quality · security · change · traceability · FinOps · learning</span></div>
+        <figcaption id="process-map-caption">One lifecycle contains many releases. One release contains one or more increments. Each increment iterates until accepted, deferred, or reworked.</figcaption>
+      </figure>
+    </section>
+
     <section className="prototype" id="prototype">
       <div className="prototype-heading">
         <div>
-          <div className="section-label light"><span>05</span> Research prototype</div>
+          <div className="section-label light"><span>06</span> Research prototype</div>
           <h2>The methodology is realized as an integrated low-code platform.</h2>
         </div>
         <p>The prototype provides project workspaces, graphical modeling editors, process guidance, model import and export, impact analysis, transformations, generated-artifacts inspection, and a conversational modeling assistant.</p>
@@ -210,7 +301,7 @@ function App() {
     <section className="assistant-section">
       <div className="assistant-title">
         <div className="assistant-mark"><Icon name="spark" size={28} /></div>
-        <div><div className="section-label"><span>06</span> LLM-supported modeling</div><h2>A conversational LLM-based assistant grounded in the modeling languages</h2></div>
+        <div><div className="section-label"><span>07</span> LLM-supported modeling</div><h2>A conversational LLM-based assistant grounded in the modeling languages</h2></div>
       </div>
       <div className="assistant-grid">
         <div className="prose"><p>The assistant supports modeling activity through natural-language interaction. It can use the current model and uploaded source material to create, inspect, explain, or modify CIM and PIM models. The live Ecore metamodel provides its modeling vocabulary and structural contract.</p><p>The assistant is part of the research framework, rather than an independent code generator. Its operations are recorded as durable turns, and changes can use checkpoints, confirmation, cancellation, and undo.</p></div>
@@ -222,7 +313,7 @@ function App() {
     </section>
 
     <section className="publication" id="publication">
-      <div className="section-label"><span>07</span> Research output</div>
+      <div className="section-label"><span>08</span> Research output</div>
       <article className="paper-card">
         <div className="paper-meta"><span>Conference paper</span><b>2026</b></div>
         <div className="paper-main">

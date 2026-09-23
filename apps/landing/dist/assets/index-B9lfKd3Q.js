@@ -82,12 +82,12 @@ var t = e((e) => {
     function S() {}
     var C = { H: null, A: null, T: null, S: null },
       te = Object.prototype.hasOwnProperty;
-    function w(e, n, r) {
+    function ne(e, n, r) {
       var i = r.ref;
       return { $$typeof: t, type: e, key: n, ref: i === void 0 ? null : i, props: r };
     }
-    function ne(e, t) {
-      return w(e.type, t, e.props);
+    function w(e, t) {
+      return ne(e.type, t, e.props);
     }
     function T(e) {
       return typeof e == `object` && !!e && e.$$typeof === t;
@@ -168,7 +168,7 @@ var t = e((e) => {
               }))
             : o != null &&
               (T(o) &&
-                (o = ne(
+                (o = w(
                   o,
                   i +
                     (o.key == null || (e && e.key === o.key)
@@ -325,7 +325,7 @@ var t = e((e) => {
           for (var o = Array(a), s = 0; s < a; s++) o[s] = arguments[s + 2];
           r.children = o;
         }
-        return w(e.type, i, r);
+        return ne(e.type, i, r);
       }),
       (e.createContext = function (e) {
         return (
@@ -357,7 +357,7 @@ var t = e((e) => {
         }
         if (e && e.defaultProps)
           for (r in ((o = e.defaultProps), o)) i[r] === void 0 && (i[r] = o[r]);
-        return w(e, a, i);
+        return ne(e, a, i);
       }),
       (e.createRef = function () {
         return { current: null };
@@ -536,10 +536,10 @@ var t = e((e) => {
       S = -1,
       C = 5,
       te = -1;
-    function w() {
+    function ne() {
       return g ? !0 : !(e.unstable_now() - te < C);
     }
-    function ne() {
+    function w() {
       if (((g = !1), ee)) {
         var t = e.unstable_now();
         te = t;
@@ -550,7 +550,7 @@ var t = e((e) => {
             var a = f;
             try {
               b: {
-                for (b(t), d = n(c); d !== null && !(d.expirationTime > t && w()); ) {
+                for (b(t), d = n(c); d !== null && !(d.expirationTime > t && ne()); ) {
                   var o = d.callback;
                   if (typeof o == `function`) {
                     (d.callback = null), (f = d.priorityLevel);
@@ -583,18 +583,18 @@ var t = e((e) => {
     var T;
     if (typeof y == `function`)
       T = function () {
-        y(ne);
+        y(w);
       };
     else if (typeof MessageChannel < `u`) {
       var re = new MessageChannel(),
         ie = re.port2;
-      (re.port1.onmessage = ne),
+      (re.port1.onmessage = w),
         (T = function () {
           ie.postMessage(null);
         });
     } else
       T = function () {
-        _(ne, 0);
+        _(w, 0);
       };
     function ae(t, n) {
       S = _(function () {
@@ -701,7 +701,7 @@ var t = e((e) => {
           r
         );
       }),
-      (e.unstable_shouldYield = w),
+      (e.unstable_shouldYield = ne),
       (e.unstable_wrapCallback = function (e) {
         var t = f;
         return function () {
@@ -1017,8 +1017,8 @@ var t = e((e) => {
       S = Symbol.for(`react.context`),
       C = Symbol.for(`react.forward_ref`),
       te = Symbol.for(`react.suspense`),
-      w = Symbol.for(`react.suspense_list`),
-      ne = Symbol.for(`react.memo`),
+      ne = Symbol.for(`react.suspense_list`),
+      w = Symbol.for(`react.memo`),
       T = Symbol.for(`react.lazy`),
       re = Symbol.for(`react.activity`),
       ie = Symbol.for(`react.memo_cache_sentinel`),
@@ -1042,7 +1042,7 @@ var t = e((e) => {
           return `StrictMode`;
         case te:
           return `Suspense`;
-        case w:
+        case ne:
           return `SuspenseList`;
         case re:
           return `Activity`;
@@ -1064,7 +1064,7 @@ var t = e((e) => {
                 e === `` ? `ForwardRef` : `ForwardRef(` + e + `)`)),
               e
             );
-          case ne:
+          case w:
             return (t = e.displayName || null), t === null ? ce(e.type) || `Memo` : t;
           case T:
             (t = e._payload), (e = e._init);
@@ -2905,8 +2905,8 @@ Error generating stack: ` +
             return (e = _i(12, n, t, i | 2)), (e.elementType = x), (e.lanes = a), e;
           case te:
             return (e = _i(13, n, t, i)), (e.elementType = te), (e.lanes = a), e;
-          case w:
-            return (e = _i(19, n, t, i)), (e.elementType = w), (e.lanes = a), e;
+          case ne:
+            return (e = _i(19, n, t, i)), (e.elementType = ne), (e.lanes = a), e;
           default:
             if (typeof e == `object` && e)
               switch (e.$$typeof) {
@@ -2919,7 +2919,7 @@ Error generating stack: ` +
                 case C:
                   o = 11;
                   break a;
-                case ne:
+                case w:
                   o = 14;
                   break a;
                 case T:
@@ -5933,7 +5933,7 @@ Error generating stack: ` +
                 if (i === C) {
                   (t.tag = 11), (t = lc(null, t, e, r, n));
                   break a;
-                } else if (i === ne) {
+                } else if (i === w) {
                   (t.tag = 14), (t = uc(null, t, e, r, n));
                   break a;
                 }
@@ -11467,12 +11467,13 @@ Error generating stack: ` +
   _ = window.location.origin,
   v = window.location.origin.replace(/\/$/, ``),
   y = `https://docs.modriss.site`,
-  b = `https://github.com/mehdieidi/modriss`,
-  x = `https://www.sharif.ir/en/web/me_ce/home`,
-  ee = `https://www.sharif.ir/en/web/me_ce/w/mehdi-eidi`,
-  S = `https://mehdieidi.github.io/`,
-  C = `https://www.scitepress.org/Link.aspx?doi=10.5220/0014634200004058`;
-async function te() {
+  b = `${y.replace(/\/$/, ``)}/guides/full-lifecycle-method/`,
+  x = `https://github.com/mehdieidi/modriss`,
+  ee = `https://www.sharif.ir/en/web/me_ce/home`,
+  S = `https://www.sharif.ir/en/web/me_ce/w/mehdi-eidi`,
+  C = `https://mehdieidi.github.io/`,
+  te = `https://www.scitepress.org/Link.aspx?doi=10.5220/0014634200004058`;
+async function ne() {
   let e = JSON.stringify({
       app: `landing`,
       kind: `page_view`,
@@ -11489,7 +11490,7 @@ async function te() {
       keepalive: !0,
     }).catch(() => void 0);
 }
-te(), document.querySelector(`link[rel="icon"]`)?.setAttribute(`href`, f);
+ne(), document.querySelector(`link[rel="icon"]`)?.setAttribute(`href`, f);
 function w({ name: e, size: t = 20 }) {
   let n = {
       width: t,
@@ -11568,7 +11569,7 @@ function w({ name: e, size: t = 20 }) {
     };
   return (0, g.jsx)(`svg`, { ...n, children: r[e] });
 }
-var ne = [
+var T = [
     [
       `01`,
       `Development process`,
@@ -11590,7 +11591,7 @@ var ne = [
       `A conversational LLM-based assistant supports model creation, inspection, explanation, and controlled modification. It works with the live metamodel and keeps generated changes subject to structural conformance and human control.`,
     ],
   ],
-  T = [
+  re = [
     [
       `Abstract syntax`,
       `Ecore metamodels define the concepts, attributes, containments, references, and multiplicities of each DSML.`,
@@ -11616,7 +11617,7 @@ var ne = [
       `Links and reports preserve correspondences between source concepts, refined architecture elements, and generated artifacts.`,
     ],
   ];
-function re() {
+function ie() {
   let [e, t] = (0, l.useState)(!1),
     n = () => t(!1);
   return (0, g.jsxs)(`main`, {
@@ -11651,11 +11652,12 @@ function re() {
               (0, g.jsx)(`a`, { href: `#research`, onClick: n, children: `Research` }),
               (0, g.jsx)(`a`, { href: `#methodology`, onClick: n, children: `Methodology` }),
               (0, g.jsx)(`a`, { href: `#framework`, onClick: n, children: `Framework` }),
+              (0, g.jsx)(`a`, { href: `#process`, onClick: n, children: `Process` }),
               (0, g.jsx)(`a`, { href: `#publication`, onClick: n, children: `Publications` }),
               (0, g.jsx)(`a`, { href: y, onClick: n, children: `Documentation` }),
               (0, g.jsx)(`a`, {
                 className: `nav-icon`,
-                href: b,
+                href: x,
                 "aria-label": `MODRISS source code on GitHub`,
                 children: (0, g.jsx)(w, { name: `github`, size: 18 }),
               }),
@@ -11719,7 +11721,7 @@ function re() {
                     children: [
                       (0, g.jsx)(`dt`, { children: `Researcher` }),
                       (0, g.jsx)(`dd`, {
-                        children: (0, g.jsx)(`a`, { href: S, children: `Mehdi Eidi ↗` }),
+                        children: (0, g.jsx)(`a`, { href: C, children: `Mehdi Eidi ↗` }),
                       }),
                     ],
                   }),
@@ -11728,7 +11730,7 @@ function re() {
                       (0, g.jsx)(`dt`, { children: `Laboratory` }),
                       (0, g.jsx)(`dd`, {
                         children: (0, g.jsx)(`a`, {
-                          href: x,
+                          href: ee,
                           children: `Methodology Engineering Laboratory ↗`,
                         }),
                       }),
@@ -11761,7 +11763,7 @@ function re() {
               }),
               (0, g.jsxs)(`a`, {
                 className: `text-link`,
-                href: ee,
+                href: S,
                 children: [`Researcher profile `, (0, g.jsx)(w, { name: `arrow`, size: 15 })],
               }),
             ],
@@ -11793,7 +11795,7 @@ function re() {
                   }),
                   (0, g.jsxs)(`a`, {
                     className: `text-link`,
-                    href: C,
+                    href: te,
                     children: [
                       `Read the study that frames the research gap `,
                       (0, g.jsx)(w, { name: `arrow`, size: 15 }),
@@ -11859,7 +11861,7 @@ function re() {
           }),
           (0, g.jsx)(`div`, {
             className: `contribution-list`,
-            children: ne.map(([e, t, n]) =>
+            children: T.map(([e, t, n]) =>
               (0, g.jsxs)(
                 `article`,
                 {
@@ -11986,7 +11988,7 @@ function re() {
           }),
           (0, g.jsx)(`div`, {
             className: `framework-list`,
-            children: T.map(([e, t], n) =>
+            children: re.map(([e, t], n) =>
               (0, g.jsxs)(
                 `article`,
                 {
@@ -12007,6 +12009,263 @@ function re() {
         ],
       }),
       (0, g.jsxs)(`section`, {
+        className: `process-section`,
+        id: `process`,
+        "aria-labelledby": `process-title`,
+        children: [
+          (0, g.jsxs)(`div`, {
+            className: `process-intro`,
+            children: [
+              (0, g.jsxs)(`div`, {
+                children: [
+                  (0, g.jsxs)(`div`, {
+                    className: `section-label`,
+                    children: [
+                      (0, g.jsx)(`span`, { children: `05` }),
+                      ` Engineered development process`,
+                    ],
+                  }),
+                  (0, g.jsx)(`h2`, {
+                    id: `process-title`,
+                    children: `A development process for engineering and evolving software in the serverless paradigm`,
+                  }),
+                ],
+              }),
+              (0, g.jsxs)(`div`, {
+                className: `process-summary`,
+                children: [
+                  (0, g.jsx)(`p`, {
+                    children: `MODRISS is not a single pass. A product lifecycle contains repeated releases; each release assembles one or more small vertical increments. Evidence can trigger rework inside an increment or shape the next release.`,
+                  }),
+                  (0, g.jsx)(`p`, {
+                    children: `The process is tailorable, evidence-gated, and structured with SPEM 2.0 concepts for roles, tasks, work products, and reusable method content.`,
+                  }),
+                  (0, g.jsxs)(`a`, {
+                    className: `text-link`,
+                    href: b,
+                    children: [
+                      `Study the full lifecycle process `,
+                      (0, g.jsx)(w, { name: `arrow`, size: 15 }),
+                    ],
+                  }),
+                ],
+              }),
+            ],
+          }),
+          (0, g.jsxs)(`figure`, {
+            className: `process-figure`,
+            "aria-labelledby": `process-map-title process-map-caption`,
+            children: [
+              (0, g.jsxs)(`div`, {
+                className: `process-map-heading`,
+                children: [
+                  (0, g.jsxs)(`div`, {
+                    children: [
+                      (0, g.jsx)(`span`, { children: `Nested process cycles` }),
+                      (0, g.jsx)(`h3`, {
+                        id: `process-map-title`,
+                        children: `Cycles within the lifecycle`,
+                      }),
+                    ],
+                  }),
+                  (0, g.jsx)(`p`, { children: `Each smaller cycle runs inside the one above it.` }),
+                ],
+              }),
+              (0, g.jsxs)(`div`, {
+                className: `lifecycle-cycle`,
+                "aria-label": `A product lifecycle begins once, contains repeating release cycles made of increments, and ends only after retirement is authorized`,
+                children: [
+                  (0, g.jsxs)(`article`, {
+                    className: `lifecycle-boundary lifecycle-start`,
+                    children: [
+                      (0, g.jsx)(`span`, { children: `Phase 0 · once` }),
+                      (0, g.jsx)(`h4`, { children: `Initiate & tailor` }),
+                      (0, g.jsx)(`small`, { children: `G0 · G1` }),
+                    ],
+                  }),
+                  (0, g.jsx)(`i`, {
+                    className: `lifecycle-flow`,
+                    "aria-hidden": `true`,
+                    children: `→`,
+                  }),
+                  (0, g.jsxs)(`div`, {
+                    className: `active-lifecycle-stack`,
+                    children: [
+                      (0, g.jsx)(`div`, {
+                        className: `release-card-back release-card-back-far`,
+                        "aria-hidden": `true`,
+                      }),
+                      (0, g.jsx)(`div`, {
+                        className: `release-card-back release-card-back-near`,
+                        "aria-hidden": `true`,
+                      }),
+                      (0, g.jsxs)(`section`, {
+                        className: `active-lifecycle`,
+                        "aria-label": `Repeating active product lifecycle`,
+                        children: [
+                          (0, g.jsxs)(`header`, {
+                            className: `active-lifecycle-heading`,
+                            children: [
+                              (0, g.jsxs)(`div`, {
+                                children: [
+                                  (0, g.jsx)(`span`, { children: `Active product lifecycle` }),
+                                  (0, g.jsx)(`b`, { children: `Release n` }),
+                                ],
+                              }),
+                              (0, g.jsx)(`small`, { children: `repeats until retirement` }),
+                            ],
+                          }),
+                          (0, g.jsxs)(`div`, {
+                            className: `release-cycle`,
+                            children: [
+                              (0, g.jsxs)(`section`, {
+                                className: `increment-zone`,
+                                children: [
+                                  (0, g.jsxs)(`header`, {
+                                    children: [
+                                      (0, g.jsx)(`span`, { children: `Phase 1` }),
+                                      (0, g.jsx)(`b`, { children: `1+ increments` }),
+                                    ],
+                                  }),
+                                  (0, g.jsxs)(`div`, {
+                                    className: `increment-stack`,
+                                    children: [
+                                      (0, g.jsx)(`div`, {
+                                        className: `increment-card-back increment-card-back-far`,
+                                        "aria-hidden": `true`,
+                                      }),
+                                      (0, g.jsx)(`div`, {
+                                        className: `increment-card-back increment-card-back-near`,
+                                        "aria-hidden": `true`,
+                                      }),
+                                      (0, g.jsxs)(`article`, {
+                                        className: `increment-card`,
+                                        children: [
+                                          (0, g.jsxs)(`div`, {
+                                            children: [
+                                              (0, g.jsx)(`b`, { children: `Increment k` }),
+                                              (0, g.jsx)(`span`, {
+                                                children: `one valuable slice`,
+                                              }),
+                                            ],
+                                          }),
+                                          (0, g.jsxs)(`ol`, {
+                                            "aria-label": `Model-driven path through one increment`,
+                                            children: [
+                                              (0, g.jsx)(`li`, { children: `CIM` }),
+                                              (0, g.jsx)(`li`, { children: `PIM` }),
+                                              (0, g.jsx)(`li`, { children: `PSM` }),
+                                              (0, g.jsx)(`li`, { children: `Artifacts` }),
+                                            ],
+                                          }),
+                                          (0, g.jsxs)(`small`, {
+                                            children: [
+                                              (0, g.jsx)(`span`, {
+                                                "aria-hidden": `true`,
+                                                children: `↻`,
+                                              }),
+                                              ` review · rework · accept`,
+                                            ],
+                                          }),
+                                        ],
+                                      }),
+                                    ],
+                                  }),
+                                  (0, g.jsx)(`div`, {
+                                    className: `increment-gates`,
+                                    children: `G2 → G5`,
+                                  }),
+                                ],
+                              }),
+                              (0, g.jsx)(`i`, {
+                                className: `cycle-flow`,
+                                "aria-hidden": `true`,
+                                children: `→`,
+                              }),
+                              (0, g.jsxs)(`article`, {
+                                className: `release-node`,
+                                children: [
+                                  (0, g.jsx)(`span`, { children: `Phase 2` }),
+                                  (0, g.jsx)(`h4`, { children: `Qualify & release` }),
+                                  (0, g.jsxs)(`div`, {
+                                    children: [
+                                      (0, g.jsx)(`b`, { children: `Candidate` }),
+                                      (0, g.jsx)(`i`, { "aria-hidden": `true`, children: `→` }),
+                                      (0, g.jsx)(`b`, { children: `Promote` }),
+                                    ],
+                                  }),
+                                  (0, g.jsx)(`small`, { children: `G6 · G7` }),
+                                ],
+                              }),
+                              (0, g.jsx)(`i`, {
+                                className: `cycle-flow`,
+                                "aria-hidden": `true`,
+                                children: `→`,
+                              }),
+                              (0, g.jsxs)(`article`, {
+                                className: `release-node operate-node`,
+                                children: [
+                                  (0, g.jsx)(`span`, { children: `Phase 3` }),
+                                  (0, g.jsx)(`h4`, { children: `Operate & learn` }),
+                                  (0, g.jsxs)(`div`, {
+                                    children: [
+                                      (0, g.jsx)(`b`, { children: `Outcomes` }),
+                                      (0, g.jsx)(`b`, { children: `SLOs` }),
+                                      (0, g.jsx)(`b`, { children: `Cost` }),
+                                      (0, g.jsx)(`b`, { children: `Risk` }),
+                                    ],
+                                  }),
+                                  (0, g.jsx)(`small`, { children: `accepted baseline stays live` }),
+                                ],
+                              }),
+                            ],
+                          }),
+                          (0, g.jsxs)(`div`, {
+                            className: `release-return`,
+                            children: [
+                              (0, g.jsx)(`span`, { "aria-hidden": `true`, children: `↶` }),
+                              (0, g.jsx)(`b`, { children: `Evidence` }),
+                              (0, g.jsx)(`i`, { "aria-hidden": `true`, children: `→` }),
+                              (0, g.jsx)(`strong`, { children: `Release n+1` }),
+                            ],
+                          }),
+                        ],
+                      }),
+                    ],
+                  }),
+                  (0, g.jsx)(`i`, {
+                    className: `lifecycle-flow lifecycle-exit-flow`,
+                    "aria-hidden": `true`,
+                    children: `→`,
+                  }),
+                  (0, g.jsxs)(`article`, {
+                    className: `lifecycle-boundary lifecycle-end`,
+                    children: [
+                      (0, g.jsx)(`span`, { children: `Phase 4 · when authorized` }),
+                      (0, g.jsx)(`h4`, { children: `Retire & close` }),
+                      (0, g.jsx)(`small`, { children: `G8` }),
+                    ],
+                  }),
+                ],
+              }),
+              (0, g.jsxs)(`div`, {
+                className: `discipline-rail`,
+                children: [
+                  (0, g.jsx)(`b`, { children: `Continuous disciplines` }),
+                  (0, g.jsx)(`span`, {
+                    children: `Management · risk · quality · security · change · traceability · FinOps · learning`,
+                  }),
+                ],
+              }),
+              (0, g.jsx)(`figcaption`, {
+                id: `process-map-caption`,
+                children: `One lifecycle contains many releases. One release contains one or more increments. Each increment iterates until accepted, deferred, or reworked.`,
+              }),
+            ],
+          }),
+        ],
+      }),
+      (0, g.jsxs)(`section`, {
         className: `prototype`,
         id: `prototype`,
         children: [
@@ -12017,7 +12276,7 @@ function re() {
                 children: [
                   (0, g.jsxs)(`div`, {
                     className: `section-label light`,
-                    children: [(0, g.jsx)(`span`, { children: `05` }), ` Research prototype`],
+                    children: [(0, g.jsx)(`span`, { children: `06` }), ` Research prototype`],
                   }),
                   (0, g.jsx)(`h2`, {
                     children: `The methodology is realized as an integrated low-code platform.`,
@@ -12060,7 +12319,7 @@ function re() {
                 children: [
                   (0, g.jsxs)(`div`, {
                     className: `section-label`,
-                    children: [(0, g.jsx)(`span`, { children: `06` }), ` LLM-supported modeling`],
+                    children: [(0, g.jsx)(`span`, { children: `07` }), ` LLM-supported modeling`],
                   }),
                   (0, g.jsx)(`h2`, {
                     children: `A conversational LLM-based assistant grounded in the modeling languages`,
@@ -12091,7 +12350,7 @@ function re() {
         children: [
           (0, g.jsxs)(`div`, {
             className: `section-label`,
-            children: [(0, g.jsx)(`span`, { children: `07` }), ` Research output`],
+            children: [(0, g.jsx)(`span`, { children: `08` }), ` Research output`],
           }),
           (0, g.jsxs)(`article`, {
             className: `paper-card`,
@@ -12149,7 +12408,7 @@ function re() {
               }),
               (0, g.jsxs)(`a`, {
                 className: `paper-link`,
-                href: C,
+                href: te,
                 children: [`View publication `, (0, g.jsx)(w, { name: `arrow`, size: 17 })],
               }),
             ],
@@ -12178,10 +12437,10 @@ function re() {
           (0, g.jsxs)(`div`, {
             className: `footer-links`,
             children: [
-              (0, g.jsx)(`a`, { href: x, children: `Laboratory` }),
-              (0, g.jsx)(`a`, { href: ee, children: `Lab profile` }),
-              (0, g.jsx)(`a`, { href: S, children: `Researcher` }),
-              (0, g.jsx)(`a`, { href: b, children: `Repository` }),
+              (0, g.jsx)(`a`, { href: ee, children: `Laboratory` }),
+              (0, g.jsx)(`a`, { href: S, children: `Lab profile` }),
+              (0, g.jsx)(`a`, { href: C, children: `Researcher` }),
+              (0, g.jsx)(`a`, { href: x, children: `Repository` }),
             ],
           }),
         ],
@@ -12189,4 +12448,4 @@ function re() {
     ],
   });
 }
-(0, u.createRoot)(document.getElementById(`root`)).render((0, g.jsx)(re, {}));
+(0, u.createRoot)(document.getElementById(`root`)).render((0, g.jsx)(ie, {}));
