@@ -77,3 +77,13 @@ export function processDisplayTitle(process) {
 
   return process?.displayName ? `${process.displayName} Process` : "Process";
 }
+
+/** Keep only loop/rework edges whose endpoints exist in the current partial view. */
+export function renderableLoopEdges(edges = [], nodeById = new Map()) {
+  return edges.filter(
+    (edge) =>
+      (edge.kind === "loop" || edge.kind === "rework") &&
+      nodeById.has(edge.from) &&
+      nodeById.has(edge.to),
+  );
+}

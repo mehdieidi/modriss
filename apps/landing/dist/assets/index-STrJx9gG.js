@@ -12074,8 +12074,24 @@ function ie() {
                 ],
               }),
               (0, g.jsxs)(`div`, {
+                className: `process-lane-heading development-lane-heading`,
+                children: [
+                  (0, g.jsx)(`span`, { children: `Process A` }),
+                  (0, g.jsx)(`b`, { children: `Development & Delivery` }),
+                  (0, g.jsxs)(`small`, {
+                    children: [
+                      `Phase 0 `,
+                      (0, g.jsx)(`i`, { "aria-hidden": `true`, children: `→` }),
+                      ` Phase 1 `,
+                      (0, g.jsx)(`i`, { "aria-hidden": `true`, children: `→` }),
+                      ` Phase 2`,
+                    ],
+                  }),
+                ],
+              }),
+              (0, g.jsxs)(`div`, {
                 className: `lifecycle-cycle`,
-                "aria-label": `Development proceeds through sequential phases while an ongoing Operations and Maintenance process sustains live releases`,
+                "aria-label": `Development and Delivery proceeds through three sequential, one-time phases`,
                 children: [
                   (0, g.jsxs)(`article`, {
                     className: `lifecycle-boundary lifecycle-start`,
@@ -12193,12 +12209,31 @@ function ie() {
                           ],
                         }),
                         (0, g.jsxs)(`div`, {
-                          className: `release-return`,
+                          className: `release-learning-loop`,
+                          "aria-label": `Release learning loop: review release evidence, adapt the backlog, and begin the next release iteration`,
                           children: [
-                            (0, g.jsx)(`span`, { "aria-hidden": `true`, children: `↶` }),
-                            (0, g.jsx)(`b`, { children: `Outcome evidence` }),
-                            (0, g.jsx)(`i`, { "aria-hidden": `true`, children: `→` }),
-                            (0, g.jsx)(`strong`, { children: `Next release iteration` }),
+                            (0, g.jsx)(`span`, { children: `Release learning loop` }),
+                            (0, g.jsxs)(`ol`, {
+                              children: [
+                                (0, g.jsx)(`li`, {
+                                  children: (0, g.jsx)(`b`, { children: `G7 evidence` }),
+                                }),
+                                (0, g.jsx)(`li`, {
+                                  children: (0, g.jsx)(`b`, { children: `Review outcomes` }),
+                                }),
+                                (0, g.jsx)(`li`, {
+                                  children: (0, g.jsx)(`b`, { children: `Adapt backlog` }),
+                                }),
+                                (0, g.jsx)(`li`, {
+                                  children: (0, g.jsxs)(`strong`, {
+                                    children: [
+                                      (0, g.jsx)(`i`, { "aria-hidden": `true`, children: `↺` }),
+                                      ` Next iteration`,
+                                    ],
+                                  }),
+                                }),
+                              ],
+                            }),
                           ],
                         }),
                       ],
@@ -12220,32 +12255,75 @@ function ie() {
                 ],
               }),
               (0, g.jsxs)(`div`, {
-                className: `devops-interface`,
-                "aria-label": `DevOps coordination between the two processes`,
+                className: `process-coupling`,
+                "aria-label": `DevOps interface between the processes: operational feedback returns to active product development and the G7 release enters operations`,
                 children: [
-                  (0, g.jsx)(`b`, { children: `DevOps` }),
                   (0, g.jsxs)(`div`, {
-                    className: `devops-channels`,
+                    className: `coupling-heading`,
                     children: [
-                      (0, g.jsxs)(`span`, {
+                      (0, g.jsx)(`b`, { children: `DevOps interface` }),
+                      (0, g.jsx)(`span`, { children: `shared automation + evidence` }),
+                    ],
+                  }),
+                  (0, g.jsxs)(`svg`, {
+                    className: `coupling-lines`,
+                    viewBox: `0 0 1000 76`,
+                    preserveAspectRatio: `none`,
+                    "aria-hidden": `true`,
+                    children: [
+                      (0, g.jsxs)(`defs`, {
                         children: [
-                          (0, g.jsx)(`i`, { "aria-hidden": `true`, children: `↓` }),
-                          `G7 release`,
+                          (0, g.jsx)(`marker`, {
+                            id: `coupling-coral-arrow`,
+                            markerWidth: `8`,
+                            markerHeight: `6`,
+                            refX: `7`,
+                            refY: `3`,
+                            orient: `auto`,
+                            children: (0, g.jsx)(`path`, { d: `M0 0 8 3 0 6Z` }),
+                          }),
+                          (0, g.jsx)(`marker`, {
+                            id: `coupling-teal-arrow`,
+                            markerWidth: `8`,
+                            markerHeight: `6`,
+                            refX: `7`,
+                            refY: `3`,
+                            orient: `auto`,
+                            children: (0, g.jsx)(`path`, { d: `M0 0 8 3 0 6Z` }),
+                          }),
                         ],
                       }),
-                      (0, g.jsxs)(`span`, {
-                        children: [
-                          (0, g.jsx)(`i`, { "aria-hidden": `true`, children: `↑` }),
-                          `Feedback`,
-                        ],
+                      (0, g.jsx)(`path`, {
+                        className: `coupling-path coupling-path-feedback`,
+                        d: `M280 76 V0`,
+                        markerEnd: `url(#coupling-teal-arrow)`,
                       }),
-                      (0, g.jsxs)(`span`, {
-                        children: [
-                          (0, g.jsx)(`i`, { "aria-hidden": `true`, children: `↕` }),
-                          `Retirement`,
-                        ],
+                      (0, g.jsx)(`path`, {
+                        className: `coupling-path coupling-path-handover`,
+                        d: `M680 0 V76`,
+                        markerEnd: `url(#coupling-coral-arrow)`,
                       }),
                     ],
+                  }),
+                  (0, g.jsx)(`div`, {
+                    className: `coupling-channel coupling-feedback`,
+                    children: (0, g.jsxs)(`span`, {
+                      "data-short": `Feedback`,
+                      children: [
+                        (0, g.jsx)(`i`, { "aria-hidden": `true`, children: `↑` }),
+                        ` Feedback + change`,
+                      ],
+                    }),
+                  }),
+                  (0, g.jsx)(`div`, {
+                    className: `coupling-channel coupling-handover`,
+                    children: (0, g.jsxs)(`span`, {
+                      "data-short": `G7 release`,
+                      children: [
+                        (0, g.jsx)(`i`, { "aria-hidden": `true`, children: `↓` }),
+                        ` G7 release`,
+                      ],
+                    }),
                   }),
                 ],
               }),
@@ -12255,11 +12333,22 @@ function ie() {
                 children: [
                   (0, g.jsxs)(`header`, {
                     children: [
-                      (0, g.jsx)(`span`, { children: `Concurrent process · not a phase` }),
+                      (0, g.jsx)(`span`, { children: `Process B · concurrent · not a phase` }),
                       (0, g.jsx)(`h4`, { children: `Operations & Maintenance` }),
                       (0, g.jsxs)(`div`, {
                         className: `live-baseline`,
-                        children: [(0, g.jsx)(`i`, { "aria-hidden": `true` }), `Live baseline`],
+                        children: [
+                          (0, g.jsxs)(`span`, {
+                            children: [(0, g.jsx)(`i`, { "aria-hidden": `true` }), `Live baseline`],
+                          }),
+                          (0, g.jsxs)(`small`, {
+                            children: [
+                              `First G7 `,
+                              (0, g.jsx)(`i`, { "aria-hidden": `true`, children: `→` }),
+                              ` shared G8 closure`,
+                            ],
+                          }),
+                        ],
                       }),
                     ],
                   }),
@@ -12298,17 +12387,83 @@ function ie() {
                       }),
                       (0, g.jsxs)(`div`, {
                         className: `operations-routes`,
+                        "aria-label": `At replenishment, classify each service item for one of three destinations`,
                         children: [
-                          (0, g.jsxs)(`span`, {
+                          (0, g.jsxs)(`div`, {
+                            className: `route-decision`,
                             children: [
-                              (0, g.jsx)(`i`, { "aria-hidden": `true`, children: `↺` }),
-                              `Runbook`,
+                              (0, g.jsx)(`span`, { children: `At replenishment` }),
+                              (0, g.jsx)(`b`, { children: `Classify service item` }),
                             ],
                           }),
-                          (0, g.jsxs)(`span`, {
+                          (0, g.jsxs)(`svg`, {
+                            className: `route-fork`,
+                            viewBox: `0 0 52 128`,
+                            preserveAspectRatio: `none`,
+                            "aria-hidden": `true`,
                             children: [
-                              (0, g.jsx)(`i`, { "aria-hidden": `true`, children: `↑` }),
-                              `Product change`,
+                              (0, g.jsx)(`defs`, {
+                                children: (0, g.jsx)(`marker`, {
+                                  id: `route-fork-arrow`,
+                                  markerWidth: `7`,
+                                  markerHeight: `6`,
+                                  refX: `6`,
+                                  refY: `3`,
+                                  orient: `auto`,
+                                  children: (0, g.jsx)(`path`, { d: `M0 0 7 3 0 6Z` }),
+                                }),
+                              }),
+                              (0, g.jsx)(`path`, { d: `M0 64 H14` }),
+                              (0, g.jsx)(`path`, {
+                                d: `M14 64 V22 Q14 16 20 16 H50`,
+                                markerEnd: `url(#route-fork-arrow)`,
+                              }),
+                              (0, g.jsx)(`path`, {
+                                d: `M14 64 H50`,
+                                markerEnd: `url(#route-fork-arrow)`,
+                              }),
+                              (0, g.jsx)(`path`, {
+                                d: `M14 64 V106 Q14 112 20 112 H50`,
+                                markerEnd: `url(#route-fork-arrow)`,
+                              }),
+                            ],
+                          }),
+                          (0, g.jsxs)(`div`, {
+                            className: `route-outcomes`,
+                            children: [
+                              (0, g.jsxs)(`article`, {
+                                children: [
+                                  (0, g.jsx)(`i`, { "aria-hidden": `true`, children: `↺` }),
+                                  (0, g.jsxs)(`div`, {
+                                    children: [
+                                      (0, g.jsx)(`b`, { children: `Resolve in operations` }),
+                                      (0, g.jsx)(`small`, { children: `Runbook + evidence` }),
+                                    ],
+                                  }),
+                                ],
+                              }),
+                              (0, g.jsxs)(`article`, {
+                                children: [
+                                  (0, g.jsx)(`i`, { "aria-hidden": `true`, children: `↑` }),
+                                  (0, g.jsxs)(`div`, {
+                                    children: [
+                                      (0, g.jsx)(`b`, { children: `Return to MDE flow` }),
+                                      (0, g.jsx)(`small`, { children: `Earliest owning source` }),
+                                    ],
+                                  }),
+                                ],
+                              }),
+                              (0, g.jsxs)(`article`, {
+                                children: [
+                                  (0, g.jsx)(`i`, { "aria-hidden": `true`, children: `↗` }),
+                                  (0, g.jsxs)(`div`, {
+                                    children: [
+                                      (0, g.jsx)(`b`, { children: `Commit to planned release` }),
+                                      (0, g.jsx)(`small`, { children: `Release backlog` }),
+                                    ],
+                                  }),
+                                ],
+                              }),
                             ],
                           }),
                         ],
@@ -12328,7 +12483,7 @@ function ie() {
               }),
               (0, g.jsx)(`figcaption`, {
                 id: `process-map-caption`,
-                children: `Three one-time sequential Development and Delivery phases coexist with a distinct ongoing, event-driven Operations and Maintenance process. Release iterations repeat only inside Phase 1. DevOps interfaces carry G7 handover, CI/CD evidence, telemetry, maintenance change, learning, and retirement coordination between the processes; both close at G8.`,
+                children: `Three one-time sequential Development and Delivery phases coexist with a distinct ongoing, event-driven Operations and Maintenance process. Release iterations repeat only inside Phase 1. DevOps interfaces carry G7 handover, CI/CD evidence, telemetry, maintenance change, and learning. Phase 2 and Operations have separate work flows; both finish only when the shared G8 closure criteria are satisfied.`,
               }),
             ],
           }),

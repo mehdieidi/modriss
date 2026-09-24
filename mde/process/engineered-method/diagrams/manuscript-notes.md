@@ -11,8 +11,8 @@ Suggested caption:
 > retirement. Model-driven increments and release activities repeat within the
 > active-product phase. The distinct ongoing, event-driven Operations and Maintenance Process
 > sustains live releases through Kanban. G7 handover, telemetry/change feedback,
-> retirement, and G8 synchronize the lanes; the DevOps rail names their shared
-> integration responsibilities.
+> and learning connect the lanes; G8 is their shared closure condition rather
+> than an activity flow from one process to the other.
 
 Suggested in-text interpretation:
 
@@ -21,7 +21,9 @@ Suggested in-text interpretation:
 > baseline while another release may be engineered. Product-changing service
 > work returns to the earliest authoritative source; operations-only work stays
 > on the Kanban board. Phase 2 begins only after retirement is authorized, and
-> operations ends only when G8 confirms that no live release remains.
+> operations ends only when G8 confirms that no live release remains. Phase 2
+> and Operations retain separate work flows while contributing their own
+> evidence to that shared gate.
 
 ## Operational pull-flow detail
 

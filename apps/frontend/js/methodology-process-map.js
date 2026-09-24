@@ -8,6 +8,7 @@ import { isModelingLevel, modelingElementDefinition } from "./modeling-config-da
 import {
   guidanceForProcess,
   processDisplayTitle,
+  renderableLoopEdges,
   roleForTask,
   tasksForStage,
 } from "./methodology-process-utils.js";
@@ -194,9 +195,9 @@ function buildProcessView(process) {
     sublabel:
       process.processId === "modriss.end-to-end.modeling"
         ? phase.id === "e2e.ph1"
-          ? "Repeatable CIM → PIM → PSM increments"
-          : phase.id === "e2e.ph3"
-            ? "Feeds the next release cycle"
+          ? "Release activities repeat inside this phase"
+          : phase.id === "e2e.ph2"
+            ? "Retirement evidence contributes to shared G8 closure"
             : `${phase.stages?.length || 0} stages · click to explore`
         : enginePhaseIds.has(phase.id)
           ? "Engine phase"
@@ -223,24 +224,8 @@ function buildProcessView(process) {
   }
 
   if (process.processId === "modriss.end-to-end.modeling") {
-    layout.edges.push(
-      {
-        from: "e2e.ph3",
-        to: "e2e.ph1",
-        kind: "loop",
-        label: "Release cycle repeats while operating",
-        lane: 0,
-      },
-      {
-        from: "e2e.ph2",
-        to: "e2e.ph1",
-        kind: "rework",
-        label: "G6 rejection returns to delivery",
-        lane: 1,
-      },
-    );
     layout.subtitle =
-      "Phase 0 establishes the product; Phases 1–3 repeat for each release; Phase 4 follows an authorized retirement decision.";
+      "Three sequential phases occur once; increment and release activities repeat only inside Phase 1, while Operations runs as a distinct concurrent process.";
   }
 
   layout.title = processDisplayTitle(process);
@@ -448,7 +433,9 @@ function computeBounds(layout, loopRoutes) {
 }
 
 function buildLoopEdgeRoutes(edges, nodeById) {
-  const loopEdges = edges.filter((edge) => edge.kind === "loop" || edge.kind === "rework");
+  // A layout can show only part of a process. Ignore relationships whose
+  // endpoints are outside that view instead of trying to anchor a missing node.
+  const loopEdges = renderableLoopEdges(edges, nodeById);
   const routes = new Map(
     loopEdges.map((edge) => [
       edge,

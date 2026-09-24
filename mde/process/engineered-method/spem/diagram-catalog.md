@@ -48,8 +48,9 @@ returning to Phase 1 increment planning, normally
 while the accepted release continues to serve users. A rejected candidate or
 failed promotion also returns to Phase 1 for correction at the earliest
 authoritative source. Operations-only items loop within the operations process
-and do not create releases. Explicit retirement synchronizes Operations and
-Maintenance with Development Phase 2; both terminate at G8.
+and do not create releases. Phase 2 and Operations and Maintenance perform
+different retirement work and contribute separate evidence to the shared G8
+closure criteria; no activity-flow edge joins the two processes.
 
 ## Why there is not one diagram per task
 

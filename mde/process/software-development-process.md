@@ -258,7 +258,10 @@ infrastructure decommissioning, cost closure, evidence retention, and
 organizational learning. A lifecycle is not complete while data, integrations,
 credentials, support obligations, or legal records remain ownerless.
 Operations and Maintenance continues during migration and decommissioning and
-terminates with Development and Delivery at G8.
+terminates with Development and Delivery at G8. G8 is a shared lifecycle
+closure condition, not an activity-flow edge between Phase 2 and the Operations
+and Maintenance Process: Phase 2 owns the product-retirement decision and
+closure work, while Operations owns the safe shutdown of every live release.
 
 ## Roles and team coordination
 

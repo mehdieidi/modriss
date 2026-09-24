@@ -214,7 +214,13 @@ function App() {
           <p>Development delivers releases while operations sustains the live baseline.</p>
         </div>
 
-        <div className="lifecycle-cycle" aria-label="Development proceeds through sequential phases while an ongoing Operations and Maintenance process sustains live releases">
+        <div className="process-lane-heading development-lane-heading">
+          <span>Process A</span>
+          <b>Development &amp; Delivery</b>
+          <small>Phase 0 <i aria-hidden="true">→</i> Phase 1 <i aria-hidden="true">→</i> Phase 2</small>
+        </div>
+
+        <div className="lifecycle-cycle" aria-label="Development and Delivery proceeds through three sequential, one-time phases">
           <article className="lifecycle-boundary lifecycle-start">
             <span>Phase 0 · once</span>
             <h4>Inception &amp; tailor</h4>
@@ -256,7 +262,15 @@ function App() {
 
               </div>
 
-              <div className="release-return"><span aria-hidden="true">↶</span><b>Outcome evidence</b><i aria-hidden="true">→</i><strong>Next release iteration</strong></div>
+              <div className="release-learning-loop" aria-label="Release learning loop: review release evidence, adapt the backlog, and begin the next release iteration">
+                <span>Release learning loop</span>
+                <ol>
+                  <li><b>G7 evidence</b></li>
+                  <li><b>Review outcomes</b></li>
+                  <li><b>Adapt backlog</b></li>
+                  <li><strong><i aria-hidden="true">↺</i> Next iteration</strong></li>
+                </ol>
+              </div>
             </section>
           </div>
 
@@ -269,20 +283,29 @@ function App() {
           </article>
         </div>
 
-        <div className="devops-interface" aria-label="DevOps coordination between the two processes">
-          <b>DevOps</b>
-          <div className="devops-channels">
-            <span><i aria-hidden="true">↓</i>G7 release</span>
-            <span><i aria-hidden="true">↑</i>Feedback</span>
-            <span><i aria-hidden="true">↕</i>Retirement</span>
+        <div className="process-coupling" aria-label="DevOps interface between the processes: operational feedback returns to active product development and the G7 release enters operations">
+          <div className="coupling-heading"><b>DevOps interface</b><span>shared automation + evidence</span></div>
+          <svg className="coupling-lines" viewBox="0 0 1000 76" preserveAspectRatio="none" aria-hidden="true">
+            <defs>
+              <marker id="coupling-coral-arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><path d="M0 0 8 3 0 6Z" /></marker>
+              <marker id="coupling-teal-arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><path d="M0 0 8 3 0 6Z" /></marker>
+            </defs>
+            <path className="coupling-path coupling-path-feedback" d="M280 76 V0" markerEnd="url(#coupling-teal-arrow)" />
+            <path className="coupling-path coupling-path-handover" d="M680 0 V76" markerEnd="url(#coupling-coral-arrow)" />
+          </svg>
+          <div className="coupling-channel coupling-feedback">
+            <span data-short="Feedback"><i aria-hidden="true">↑</i> Feedback + change</span>
+          </div>
+          <div className="coupling-channel coupling-handover">
+            <span data-short="G7 release"><i aria-hidden="true">↓</i> G7 release</span>
           </div>
         </div>
 
         <article className="operations-process" aria-label="Distinct concurrent Operations and Maintenance process with Kanban pull flow">
           <header>
-            <span>Concurrent process · not a phase</span>
+            <span>Process B · concurrent · not a phase</span>
             <h4>Operations &amp; Maintenance</h4>
-            <div className="live-baseline"><i aria-hidden="true" />Live baseline</div>
+            <div className="live-baseline"><span><i aria-hidden="true" />Live baseline</span><small>First G7 <i aria-hidden="true">→</i> shared G8 closure</small></div>
           </header>
           <div className="operations-mechanism">
             <div className="kanban-label"><b>Kanban pull</b><span>WIP + SLE</span></div>
@@ -293,15 +316,31 @@ function App() {
               <li><span>Verify</span><small>1/2</small></li>
               <li><span>Done</span></li>
             </ol>
-            <div className="operations-routes">
-              <span><i aria-hidden="true">↺</i>Runbook</span>
-              <span><i aria-hidden="true">↑</i>Product change</span>
+            <div className="operations-routes" aria-label="At replenishment, classify each service item for one of three destinations">
+              <div className="route-decision">
+                <span>At replenishment</span>
+                <b>Classify service item</b>
+              </div>
+              <svg className="route-fork" viewBox="0 0 52 128" preserveAspectRatio="none" aria-hidden="true">
+                <defs>
+                  <marker id="route-fork-arrow" markerWidth="7" markerHeight="6" refX="6" refY="3" orient="auto"><path d="M0 0 7 3 0 6Z" /></marker>
+                </defs>
+                <path d="M0 64 H14" />
+                <path d="M14 64 V22 Q14 16 20 16 H50" markerEnd="url(#route-fork-arrow)" />
+                <path d="M14 64 H50" markerEnd="url(#route-fork-arrow)" />
+                <path d="M14 64 V106 Q14 112 20 112 H50" markerEnd="url(#route-fork-arrow)" />
+              </svg>
+              <div className="route-outcomes">
+                <article><i aria-hidden="true">↺</i><div><b>Resolve in operations</b><small>Runbook + evidence</small></div></article>
+                <article><i aria-hidden="true">↑</i><div><b>Return to MDE flow</b><small>Earliest owning source</small></div></article>
+                <article><i aria-hidden="true">↗</i><div><b>Commit to planned release</b><small>Release backlog</small></div></article>
+              </div>
             </div>
           </div>
         </article>
 
         <div className="discipline-rail"><b>Continuous disciplines</b><span>Management · risk · quality · security · change · traceability · FinOps · learning</span></div>
-        <figcaption id="process-map-caption">Three one-time sequential Development and Delivery phases coexist with a distinct ongoing, event-driven Operations and Maintenance process. Release iterations repeat only inside Phase 1. DevOps interfaces carry G7 handover, CI/CD evidence, telemetry, maintenance change, learning, and retirement coordination between the processes; both close at G8.</figcaption>
+        <figcaption id="process-map-caption">Three one-time sequential Development and Delivery phases coexist with a distinct ongoing, event-driven Operations and Maintenance process. Release iterations repeat only inside Phase 1. DevOps interfaces carry G7 handover, CI/CD evidence, telemetry, maintenance change, and learning. Phase 2 and Operations have separate work flows; both finish only when the shared G8 closure criteria are satisfied.</figcaption>
       </figure>
     </section>
 

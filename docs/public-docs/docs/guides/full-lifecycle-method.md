@@ -27,7 +27,10 @@ first G7 handover, continues while any release is live, and ends at G8.
 The continuous-delivery cycle repeats activities _inside Phase 1_; no phase
 repeats. Phase 2 begins only after an explicit retirement decision. Operations
 and Maintenance coexists with active-product delivery and continues through
-retirement until no live release remains.
+retirement until no live release remains. The two processes do not feed into
+one another through a retirement activity edge. Instead, Phase 2 owns product
+retirement and Operations owns live-service shutdown; both must satisfy the
+shared G8 closure criteria before the lifecycle is closed.
 
 SPEM defines a Phase as a significant period ending at a major checkpoint and
 provides `isOngoing` and `isEventDriven` for continuous and occurrence-triggered

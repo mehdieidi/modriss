@@ -125,8 +125,9 @@
         <title id="modriss-lifecycle-title">MODRISS integrated product lifecycle</title>
         <desc id="modriss-lifecycle-desc">
           Two coordinated processes: sequential Development and Delivery phases above, and an
-          ongoing event-driven Operations and Maintenance Kanban process below. Release handover,
-          operational feedback, maintenance change, and retirement synchronize the processes.
+          ongoing event-driven Operations and Maintenance Kanban process below. Release handover and
+          operational feedback connect the processes; both finish against shared G8 closure
+          criteria.
         </desc>
         <defs>
           <marker id="arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
@@ -189,7 +190,7 @@
           <path class="flow" d="M184 121H212" marker-end="url(#arrow)" />
           <path class="feedback" d="M297 166V188H99V166" marker-end="url(#teal)" />
           <text class="small accent" x="198" y="196" text-anchor="middle">
-            NEXT RELEASE ITERATION · NOT A PHASE LOOP
+            G7 EVIDENCE → REVIEW + ADAPT → NEXT ITERATION
           </text>
         </g>
         <g transform="translate(846 174)">
@@ -229,18 +230,16 @@
         </g>
         <path class="sync" d="M711 316V494" marker-end="url(#red)" />
         <path class="feedback" d="M462 494V419H513V316" marker-end="url(#teal)" />
-        <path class="sync" d="M938 494V328" marker-end="url(#red)" />
-        <rect x="192" y="396" width="844" height="46" rx="6" fill="#ebe8df" stroke="#ccd2cf" />
+        <rect x="192" y="396" width="618" height="46" rx="6" fill="#ebe8df" stroke="#ccd2cf" />
         <text class="tag ink" x="208" y="414">
           DEVOPS COORDINATION INTERFACE · BETWEEN THE PROCESSES
         </text>
         <text class="body muted" x="208" y="430">
-          CI/CD + G7 handover ↓ · telemetry + service change + learning ↑ · retirement + G8
-          coordination ↕
+          CI/CD + G7 handover ↓ · telemetry + service change + learning ↑
         </text>
         <text class="small muted" x="42" y="700">
-          SOLID = PHASE / HANDOVER FLOW · DASHED = FEEDBACK / CONTROLLED RE-ENTRY · CORAL =
-          CROSS-PROCESS SYNCHRONIZATION
+          SOLID = PHASE / HANDOVER FLOW · DASHED = FEEDBACK / CONTROLLED RE-ENTRY · G8 = SHARED
+          CLOSURE CRITERIA, NOT AN ACTIVITY FLOW
         </text>
       </svg>
     </main>
