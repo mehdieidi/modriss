@@ -113,6 +113,23 @@ full round-trip transformation, quantitative cost estimation, automated
 cold-start testing, native vendor-tool SPEM interchange, and empirical method
 validation remain open or partial.
 
+### Iteration 7 — engineer planned/interrupt-driven coexistence
+
+The lifecycle was stress-tested against an operating service: planned product
+work can be forecast at release and increment horizons, whereas incidents,
+vulnerabilities, provider events, cost anomalies, and maintenance requests
+arrive unpredictably. Treating both as one sprint/release backlog either hides
+interrupts or makes planned commitments meaningless.
+
+MF-18 was therefore assembled from the Kanban Guide's pull-system controls,
+SWEBOK maintenance categories, AWS Serverless Lens operational practices, and
+the existing MODRISS trace/release fragments. It adds WP-30 Operational Work
+Item and WP-31 Operations Flow Policy and Board. Its three result ports are:
+operations-only completion, a bounded change through the shortest safe MDE and
+release path, or explicit commitment to a future planned release. Emergency
+restoration is allowed, but a temporary downstream modification cannot close
+until permanent correction or authoritative-source reconciliation is tracked.
+
 ## Reusable fragment catalog
 
 Each fragment is documented as a process pattern: problem, initial context,
@@ -138,6 +155,7 @@ machine-readable catalog is in `method-library/method-fragments.json`.
 | MF-15 | Operate, observe, control cost, and learn                 | Eidi observability/feedback; lifecycle completeness                | Required                              |
 | MF-16 | Incident, problem, and controlled change propagation      | Maintenance plus source/target synchronization                     | Required                              |
 | MF-17 | Retirement, migration, and closure                        | Complete lifecycle requirement                                     | Required                              |
+| MF-18 | Interrupt-driven operations and maintenance flow          | Kanban Guide; SWEBOK maintenance; AWS Serverless Lens              | Required for production operation     |
 | UF-01 | Integrated management, assurance, and evidence            | Ramsin–Paige umbrella activities; MDASP postmortem/generalization  | Continuous; depth is tailored         |
 
 `UF-01` is a composite continuous pattern. It is decomposed operationally in

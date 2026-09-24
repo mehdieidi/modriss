@@ -5,7 +5,7 @@ independent of the order in which content is used in one delivery process.
 
 - `method-fragments.json` describes phase/stage-scale process patterns and
   continuous fragments with problem/context/result semantics.
-- `core-method-content.json` adds the lifecycle roles and the 29 work-product
+- `core-method-content.json` adds the lifecycle roles and the 31 work-product
   definitions introduced by the engineered method beyond the executable
   modeling-process catalogs. Its role-mapping table links the 16 conceptual
   lifecycle roles (`R-01`–`R-16`) to the stable RoleDefinition identifiers used
@@ -19,7 +19,7 @@ independent of the order in which content is used in one delivery process.
 - The complete consolidated task catalog is generated into
   `../spem/method-content-index.json`.
 
-The thesis-style rationale and the narrative description of all 18 method
+The thesis-style rationale and the narrative description of all 19 method
 fragments are in `../12-method-library-and-fragment-report.md`.
 
 Stable source TaskDefinitions remain in

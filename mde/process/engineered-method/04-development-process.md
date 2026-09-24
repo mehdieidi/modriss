@@ -8,7 +8,11 @@ creates one bounded, testable vertical increment at a time and can repeat
 several times within a release.
 
 The default lifecycle is iterative, incremental, risk-driven,
-architecture-conscious, requirements-based, and evidence-gated. Phases express
+architecture-conscious, requirements-based, and evidence-gated. Planned
+delivery is plan-driven at release and increment horizons and adaptive inside
+them. Unpredictable production demand is interrupt-driven and controlled by a
+pull system; it is not represented as fictional pre-scheduled maintenance.
+Phases express
 dominant objectives rather than hard departmental handoffs. Activities from
 different phases may overlap when inputs, ownership, and decision authority are
 explicit.
@@ -36,9 +40,11 @@ cadences that are easy to confuse in a single overview figure:
 3. **Increment cycle:** Phase 1 repeats one or more bounded vertical increments
    before a release candidate is assembled. Each increment crosses the
    required CIM, PIM, PSM, generation, implementation, and verification work.
-4. **Continuous operation:** The last accepted release normally remains in
-   operation while the next release is engineered. Beginning a later release
-   does not restart the product lifecycle and does not imply downtime.
+4. **Continuous operation and maintenance flow:** The last accepted release
+   remains in operation while the next release is engineered. Production
+   demand is captured as it emerges and pulled under explicit WIP and service
+   policies. Beginning a later release does not restart the product lifecycle
+   and does not imply downtime.
 
 Consequently, G7 is not the end of the process. After transition, the team may
 continue observing the current release without immediately changing it, start
@@ -275,22 +281,75 @@ G6 decision, and G7 transition record.
 
 ## Phase 3 — Operate, Evolve, and Learn
 
+Phase 3 is a continuing service-delivery system, not a pre-planned iteration.
+It applies the Kanban Guide's minimum definition of workflow—work-item
+definition, start/finish states, WIP control, explicit policies, and a service
+level expectation—and actively manages WIP, item age, blockers, cycle time,
+and throughput [Kanban Guide 2025](https://kanbanguides.org/the-kanban-guide/).
+It coexists with the planned release stream:
+
+| Control dimension | Planned delivery stream                            | Operational service stream                                                            |
+| ----------------- | -------------------------------------------------- | ------------------------------------------------------------------------------------- |
+| Trigger           | roadmap, approved change, release hypothesis       | telemetry, user/support request, incident, vulnerability, provider or cost signal     |
+| Commitment        | release and increment planning                     | replenishment and pull when WIP capacity exists                                       |
+| Unit              | vertical model-driven increment                    | operational work item                                                                 |
+| Main control      | scope, dependency, risk, gate and release forecast | explicit workflow, WIP, service class, SLE and item age                               |
+| Completion        | accepted increment/release evidence                | operations-only resolution, safely released change, or committed planned backlog item |
+
+The Method Profile defines the capacity policy between the streams. Reserved
+operational capacity may be used by planned work when no operational item is
+ready, but a new interrupt can preempt work only according to the explicit
+expedite policy. MODRISS therefore acknowledges uncertainty without making the
+team permanently idle or allowing every request to become an emergency.
+
 ### 3.1 Operate and observe
 
 Operate against SLOs and product outcomes. Monitor latency, availability,
 errors, throttling, concurrency, retries, dead letters, workflow failures,
 security signals, quota usage, cold starts, cost/unit economics, customer
 impact, and provider health. Execute routine recovery, patching, access review,
-certificate/key rotation, dependency update, and continuity work.
+certificate/key rotation, dependency update, and continuity work. Each
+actionable signal becomes WP-30, an Operational Work Item, with its origin,
+evidence, affected service, owner, and age.
 
-### 3.2 Respond to incidents and problems
+### 3.2 Triage demand and control pull flow
+
+Classify each work item on three independent axes. Maintenance purpose
+describes _why_ the system changes: corrective, preventive, adaptive, additive,
+or perfective. Emergency status records whether immediate restoration requires
+an unscheduled temporary modification. Service class describes _how_ the item
+should flow: expedite, fixed-date, standard, or risk-reduction. The purpose
+categories and distinction between a temporary emergency modification and a
+subsequent permanent correction follow SWEBOK v4.0a
+([IEEE Computer Society, 2024](https://ieeecs-media.computer.org/media/education/swebok/swebok-v4.pdf)).
+
+WP-31 records the Definition of Workflow: intake, triage, ready, active,
+verify, and done states; WIP limits; service-class selection rules; SLEs;
+replenishment; capacity policy; blocking/escalation rules; and exit evidence.
+The default expedite WIP limit is one. A project may replace it only with a
+documented incident-command policy. Unknown future work is never added to the
+schedule; actual demand is made visible when it arrives.
+
+At replenishment, the team chooses one of three dispositions:
+
+1. resolve operations-only work using an approved runbook and retain evidence;
+2. run a bounded maintenance change through the earliest affected CIM, PIM,
+   PSM, generator, or code activity and the applicable release controls; or
+3. move a broader or deferrable change into a planned release backlog with an
+   explicit commitment decision.
+
+### 3.3 Respond to incidents and problems
 
 Restore service first under the incident process, preserve an evidence
-timeline, communicate, and track temporary changes. Problem analysis identifies
-systemic causes and produces model, generator, artifact, process, or operational
-changes. Blameless learning does not remove accountable follow-through.
+timeline, communicate, and track temporary changes. Emergency work uses the
+expedite policy but never silently cancels traceability, security, or recovery
+obligations. Problem analysis identifies systemic causes and produces model,
+generator, artifact, process, or operational
+changes. A temporary operational modification remains open until it is removed
+or reconciled by permanent corrective work. Blameless learning does not remove
+accountable follow-through.
 
-### 3.3 Classify and propagate change
+### 3.4 Route and propagate change
 
 Route changes to the earliest authoritative source:
 
@@ -305,13 +364,23 @@ Route changes to the earliest authoritative source:
 | method friction or missing guidance                                        | method-engineering backlog  |
 
 Perform impact analysis through traces, create a bounded change increment,
-propagate forward, and obtain new evidence. Emergency downstream changes must
-be reconciled into the authoritative source after stabilization.
+propagate forward, and obtain new evidence. The shortest safe path may omit
+unaffected modeling activities but cannot omit their control objectives.
+Emergency downstream changes must be reconciled into the authoritative source
+after stabilization. AWS guidance reinforces small reversible changes,
+observability, automated rollback, and canary or blue/green deployment for
+serverless workloads
+([AWS Well-Architected operational excellence](https://docs.aws.amazon.com/wellarchitected/2024-06-27/framework/oe-design-principles.html);
+[Serverless Lens deployment approaches](https://docs.aws.amazon.com/wellarchitected/latest/serverless-applications-lens/deployment-approaches.html)).
 
-### 3.4 Learn and generalize
+### 3.5 Learn and generalize
 
 Compare actual outcomes, SLOs, cost, risks, estimates, and process measures with
-hypotheses. Generalize reusable models, patterns, transformations, tests,
+hypotheses. Review WIP, throughput, work-item age, cycle time, SLE attainment,
+interrupt demand, expedite frequency, preemption, operational capacity usage,
+and effects on the planned-release forecast. These are system-improvement
+measures, never individual performance rankings. Generalize reusable models,
+patterns, transformations, tests,
 runbooks, and method fragments only after review. Update training and the
 method library through versioned change.
 

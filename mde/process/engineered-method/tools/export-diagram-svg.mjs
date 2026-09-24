@@ -16,7 +16,7 @@ if (!/^<svg\b[^>]*\bxmlns=/i.test(svg)) {
 }
 if (!/^<svg\b[^>]*\bviewBox=/i.test(svg)) throw new Error('SVG has no viewBox');
 
-const fontImport = "<style>@import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&amp;family=Geist:wght@400;500;600&amp;family=Geist+Mono:wght@400;500;600&amp;family=Noto+Serif:ital@0;1&amp;display=swap');</style>";
+const fontImport = "<style>@import url('https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400;500;600&amp;family=Space+Grotesk:wght@400;500;600&amp;display=swap');</style>";
 if (/<defs>/i.test(svg)) {
   svg = svg.replace(/<defs>/i, `<defs>\n    ${fontImport}`);
 } else {

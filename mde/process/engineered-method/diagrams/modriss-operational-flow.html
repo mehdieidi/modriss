@@ -1,0 +1,366 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MODRISS interrupt-driven operations and maintenance flow</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400;500;600&amp;family=Space+Grotesk:wght@400;500;600&amp;display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        min-height: 100vh;
+        display: grid;
+        place-items: center;
+        padding: 24px;
+        background: #f5f3ed;
+        color: #102c3a;
+        font-family: "Space Grotesk", "Segoe UI", sans-serif;
+      }
+      main {
+        width: min(100%, 1280px);
+      }
+      svg {
+        display: block;
+        width: 100%;
+        height: auto;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <svg
+        viewBox="0 0 1280 720"
+        xmlns="http://www.w3.org/2000/svg"
+        role="img"
+        aria-labelledby="ops-flow-title ops-flow-desc"
+      >
+        <title id="ops-flow-title">MODRISS interrupt-driven operations and maintenance flow</title>
+        <desc id="ops-flow-desc">
+          A six-step pull-controlled process across service ownership, delivery, and assurance.
+          Production demand is captured, classified by maintenance purpose, emergency status, and
+          service class, replenished, pulled within work-in-progress limits, verified, and disposed
+          to operations-only completion, a bounded model-driven release path, or a planned release.
+        </desc>
+        <defs>
+          <pattern id="ops-dots" width="22" height="22" patternUnits="userSpaceOnUse">
+            <circle cx="11" cy="11" r="0.8" fill="#102c3a" opacity="0.08" />
+          </pattern>
+          <marker id="ops-arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+            <polygon points="0 0,8 3,0 6" fill="#617178" />
+          </marker>
+          <marker
+            id="ops-arrow-accent"
+            markerWidth="8"
+            markerHeight="6"
+            refX="7"
+            refY="3"
+            orient="auto"
+          >
+            <polygon points="0 0,8 3,0 6" fill="#087b78" />
+          </marker>
+          <style>
+            .title {
+              font:
+                400 32px Georgia,
+                "Times New Roman",
+                serif;
+              fill: #102c3a;
+            }
+            .subtitle {
+              font:
+                400 12px "Space Grotesk",
+                "Segoe UI",
+                sans-serif;
+              fill: #617178;
+            }
+            .eyebrow {
+              font:
+                500 8px "Geist Mono",
+                ui-monospace,
+                monospace;
+              letter-spacing: 0.18em;
+              fill: #075d5b;
+            }
+            .step-label {
+              font:
+                500 8px "Geist Mono",
+                ui-monospace,
+                monospace;
+              letter-spacing: 0.1em;
+              fill: #617178;
+            }
+            .lane-label {
+              font:
+                500 9px "Geist Mono",
+                ui-monospace,
+                monospace;
+              letter-spacing: 0.08em;
+              fill: #617178;
+            }
+            .node-name {
+              font:
+                600 12px "Space Grotesk",
+                "Segoe UI",
+                sans-serif;
+              fill: #102c3a;
+            }
+            .node-sub {
+              font:
+                400 8px "Geist Mono",
+                ui-monospace,
+                monospace;
+              fill: #617178;
+            }
+            .node-tool {
+              font:
+                400 7px "Geist Mono",
+                ui-monospace,
+                monospace;
+              fill: #7d898e;
+            }
+            .role-chip {
+              font:
+                600 6px "Geist Mono",
+                ui-monospace,
+                monospace;
+              fill: #075d5b;
+            }
+            .legend-key {
+              font:
+                500 8px "Geist Mono",
+                ui-monospace,
+                monospace;
+              letter-spacing: 0.12em;
+              fill: #617178;
+            }
+            .legend-text {
+              font:
+                400 10px "Space Grotesk",
+                "Segoe UI",
+                sans-serif;
+              fill: #617178;
+            }
+            .node {
+              fill: #fcfbf7;
+              stroke: rgba(16, 44, 58, 0.25);
+              stroke-width: 1;
+            }
+            .node-focal {
+              fill: rgba(8, 123, 120, 0.08);
+              stroke: #087b78;
+              stroke-width: 1.2;
+            }
+            .flow {
+              fill: none;
+              stroke: #617178;
+              stroke-width: 1;
+            }
+            .flow-focal {
+              fill: none;
+              stroke: #087b78;
+              stroke-width: 1.2;
+            }
+            .rule {
+              stroke: rgba(16, 44, 58, 0.14);
+              stroke-width: 0.8;
+            }
+          </style>
+        </defs>
+
+        <rect width="1280" height="720" fill="#f5f3ed" />
+        <rect width="1280" height="720" fill="url(#ops-dots)" opacity=".45" />
+        <text class="eyebrow" x="40" y="30">PHASE 3 · REPEATABLE KANBANFLOW · MF-18</text>
+        <text class="title" x="40" y="68">Interrupt-driven operations and maintenance</text>
+        <text class="subtitle" x="40" y="94">
+          Unpredictable production demand is pulled within capacity while the accepted baseline and
+          planned release stream continue.
+        </text>
+
+        <!-- Process frame: 160 label column + six 140-pixel step slots. -->
+        <rect
+          x="120"
+          y="136"
+          width="1040"
+          height="344"
+          rx="8"
+          fill="#fcfbf7"
+          stroke="rgba(16,44,58,.14)"
+        />
+        <rect x="280" y="176" width="880" height="88" fill="#102c3a" opacity=".018" />
+        <rect x="280" y="352" width="880" height="88" fill="#102c3a" opacity=".018" />
+        <line class="rule" x1="280" y1="176" x2="1160" y2="176" />
+        <line class="rule" x1="280" y1="264" x2="1160" y2="264" />
+        <line class="rule" x1="280" y1="352" x2="1160" y2="352" />
+        <line class="rule" x1="280" y1="440" x2="1160" y2="440" />
+        <line x1="280" y1="176" x2="280" y2="440" stroke="rgba(16,44,58,.22)" />
+
+        <!-- Step headers. Step 3 is the focal commitment point. -->
+        <g text-anchor="middle">
+          <rect x="342" y="144" width="16" height="16" rx="8" fill="rgba(16,44,58,.12)" />
+          <text class="step-label" x="350" y="156" fill="#102c3a">1</text>
+          <text class="step-label" x="350" y="170">CAPTURE</text>
+          <rect x="482" y="144" width="16" height="16" rx="8" fill="rgba(16,44,58,.12)" />
+          <text class="step-label" x="490" y="156" fill="#102c3a">2</text>
+          <text class="step-label" x="490" y="170">CLASSIFY</text>
+          <rect x="622" y="144" width="16" height="16" rx="8" fill="rgba(8,123,120,.20)" />
+          <text class="step-label" x="630" y="156" fill="#087b78">3</text>
+          <text class="step-label" x="630" y="170" fill="#087b78">REPLENISH</text>
+          <rect x="762" y="144" width="16" height="16" rx="8" fill="rgba(16,44,58,.12)" />
+          <text class="step-label" x="770" y="156" fill="#102c3a">4</text>
+          <text class="step-label" x="770" y="170">PULL</text>
+          <rect x="902" y="144" width="16" height="16" rx="8" fill="rgba(16,44,58,.12)" />
+          <text class="step-label" x="910" y="156" fill="#102c3a">5</text>
+          <text class="step-label" x="910" y="170">VERIFY</text>
+          <rect x="1042" y="144" width="16" height="16" rx="8" fill="rgba(16,44,58,.12)" />
+          <text class="step-label" x="1050" y="156" fill="#102c3a">6</text>
+          <text class="step-label" x="1050" y="170">DISPOSE</text>
+        </g>
+
+        <g class="lane-label" text-anchor="middle">
+          <text x="200" y="224">SERVICE OWNER</text>
+          <text x="200" y="312">DELIVERY TEAM</text>
+          <text x="200" y="400">ASSURANCE / RELEASE</text>
+        </g>
+
+        <!-- Connectors precede nodes. -->
+        <line class="flow" x1="416" y1="220" x2="424" y2="220" marker-end="url(#ops-arrow)" />
+        <path
+          class="flow-focal"
+          d="M556 220 H622 Q630 220 630 228 V272"
+          marker-end="url(#ops-arrow-accent)"
+        />
+        <line
+          class="flow-focal"
+          x1="696"
+          y1="308"
+          x2="704"
+          y2="308"
+          marker-end="url(#ops-arrow-accent)"
+        />
+        <path class="flow" d="M836 308 H902 Q910 308 910 316 V360" marker-end="url(#ops-arrow)" />
+        <path
+          class="flow"
+          d="M976 396 H1042 Q1050 396 1050 388 V344"
+          marker-end="url(#ops-arrow)"
+        />
+
+        <!-- Nodes. -->
+        <g>
+          <rect class="node" x="284" y="184" width="132" height="72" rx="6" />
+          <rect x="290" y="190" width="18" height="10" rx="2" fill="rgba(8,123,120,.18)" />
+          <text class="role-chip" x="299" y="198" text-anchor="middle">SVC</text>
+          <text class="node-name" x="350" y="215" text-anchor="middle">Capture demand</text>
+          <text class="node-sub" x="350" y="232" text-anchor="middle">signal → WP-30</text>
+          <text class="node-tool" x="350" y="247" text-anchor="middle">
+            telemetry · user · provider
+          </text>
+
+          <rect class="node" x="424" y="184" width="132" height="72" rx="6" />
+          <rect x="430" y="190" width="18" height="10" rx="2" fill="rgba(8,123,120,.18)" />
+          <text class="role-chip" x="439" y="198" text-anchor="middle">SVC</text>
+          <text class="node-name" x="490" y="215" text-anchor="middle">Classify</text>
+          <text class="node-sub" x="490" y="232" text-anchor="middle">purpose · emergency</text>
+          <text class="node-tool" x="490" y="247" text-anchor="middle">service class · SLE</text>
+
+          <rect class="node-focal" x="564" y="272" width="132" height="72" rx="6" />
+          <rect x="570" y="278" width="18" height="10" rx="2" fill="rgba(8,123,120,.22)" />
+          <text class="role-chip" x="579" y="286" text-anchor="middle">DEL</text>
+          <text class="node-name" x="630" y="303" text-anchor="middle">Replenish</text>
+          <text class="node-sub" x="630" y="320" text-anchor="middle">ready policy · capacity</text>
+          <text class="node-tool" x="630" y="335" text-anchor="middle">
+            WP-31 · explicit priority
+          </text>
+
+          <rect class="node" x="704" y="272" width="132" height="72" rx="6" />
+          <rect x="710" y="278" width="18" height="10" rx="2" fill="rgba(8,123,120,.18)" />
+          <text class="role-chip" x="719" y="286" text-anchor="middle">DEL</text>
+          <text class="node-name" x="770" y="303" text-anchor="middle">Pull &amp; execute</text>
+          <text class="node-sub" x="770" y="320" text-anchor="middle">only with WIP capacity</text>
+          <text class="node-tool" x="770" y="335" text-anchor="middle">
+            unblock · age · preempt
+          </text>
+
+          <rect class="node" x="844" y="360" width="132" height="72" rx="6" />
+          <rect x="850" y="366" width="18" height="10" rx="2" fill="rgba(8,123,120,.18)" />
+          <text class="role-chip" x="859" y="374" text-anchor="middle">REL</text>
+          <text class="node-name" x="910" y="391" text-anchor="middle">Verify evidence</text>
+          <text class="node-sub" x="910" y="408" text-anchor="middle">
+            restore · test · release
+          </text>
+          <text class="node-tool" x="910" y="423" text-anchor="middle">
+            trace · rollback · reconcile
+          </text>
+
+          <rect class="node" x="984" y="272" width="132" height="72" rx="6" />
+          <rect x="990" y="278" width="18" height="10" rx="2" fill="rgba(8,123,120,.18)" />
+          <text class="role-chip" x="999" y="286" text-anchor="middle">DEL</text>
+          <text class="node-name" x="1050" y="303" text-anchor="middle">Dispose explicitly</text>
+          <text class="node-sub" x="1050" y="320" text-anchor="middle">ops · MDE · release</text>
+          <text class="node-tool" x="1050" y="335" text-anchor="middle">one accepted route</text>
+        </g>
+
+        <!-- Operational policies and route semantics. -->
+        <g>
+          <rect x="120" y="512" width="304" height="108" rx="6" fill="#fcfbf7" stroke="#ccd2cf" />
+          <text class="legend-key" x="136" y="536">CLASSIFICATION · THREE AXES</text>
+          <text class="legend-text" x="136" y="558">
+            Purpose: corrective · preventive · adaptive
+          </text>
+          <text class="legend-text" x="136" y="576">additive · perfective</text>
+          <text class="legend-text" x="136" y="598">
+            Emergency status and class of service are separate.
+          </text>
+
+          <rect
+            x="440"
+            y="512"
+            width="320"
+            height="108"
+            rx="6"
+            fill="rgba(8,123,120,.08)"
+            stroke="#087b78"
+          />
+          <text class="legend-key" x="456" y="536" fill="#075d5b">
+            DEFINITION OF WORKFLOW · WP-31
+          </text>
+          <text class="legend-text" x="456" y="558">
+            States · WIP limits · explicit policies · SLE
+          </text>
+          <text class="legend-text" x="456" y="576">
+            Replenishment · capacity · expedite authority
+          </text>
+          <text class="legend-text" x="456" y="598">
+            Measure WIP, age, throughput and cycle time.
+          </text>
+
+          <rect x="776" y="512" width="384" height="108" rx="6" fill="#fcfbf7" stroke="#ccd2cf" />
+          <text class="legend-key" x="792" y="536">THREE LEGITIMATE DISPOSITIONS</text>
+          <text class="legend-text" x="792" y="558">
+            1 · Operations-only resolution with evidence
+          </text>
+          <text class="legend-text" x="792" y="576">
+            2 · Shortest safe MDE path + release controls
+          </text>
+          <text class="legend-text" x="792" y="598">
+            3 · Explicit commitment to a planned release
+          </text>
+        </g>
+
+        <line class="rule" x1="40" y1="664" x2="1240" y2="664" />
+        <text class="legend-key" x="40" y="688">CONTROL RULE</text>
+        <text class="legend-text" x="136" y="688">
+          Unknown future incidents are never scheduled. Temporary emergency modifications remain
+          open until removed or reconciled with the authoritative source.
+        </text>
+        <text class="legend-key" x="1240" y="688" text-anchor="end">MR-LC-08…10 · MR-MG-08</text>
+      </svg>
+    </main>
+  </body>
+</html>

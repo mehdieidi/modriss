@@ -373,6 +373,19 @@ function addWorkSequence(workSequences, sequence) {
   if (!exists) workSequences.push(sequence);
 }
 
+function upsertWorkSequence(workSequences, sequence) {
+  const index = workSequences.findIndex(
+    (item) =>
+      item.id === sequence.id ||
+      (item.predecessorRef === sequence.predecessorRef &&
+        item.successorRef === sequence.successorRef &&
+        item.linkKind === (sequence.linkKind || "finishToStart")),
+  );
+  const normalized = { type: "WorkSequence", linkKind: "finishToStart", ...sequence };
+  if (index >= 0) workSequences[index] = normalized;
+  else workSequences.push(normalized);
+}
+
 function addAdjacentSequences(items, kind, workSequences) {
   for (let index = 1; index < items.length; index += 1) {
     const predecessor = items[index - 1];
@@ -453,6 +466,9 @@ function buildWorkSequences(phases, engine, loops) {
       condition: loop.trigger,
       guidance: loop.guidance,
     });
+  }
+  for (const transition of engine?.lifecycleTransitions || []) {
+    upsertWorkSequence(workSequences, transition);
   }
   return workSequences;
 }

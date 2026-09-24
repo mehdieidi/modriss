@@ -1,18 +1,18 @@
 @startuml
 title MODRISS Full Lifecycle — SPEM 2.0 Logical Activity View
 
-skinparam backgroundColor white
+skinparam backgroundColor #F5F3ED
 skinparam shadowing false
 skinparam activity {
-  BackgroundColor #F7F9FC
-  BorderColor #334155
-  FontColor #172033
-  DiamondBackgroundColor #FFF7D6
-  DiamondBorderColor #9A6700
+  BackgroundColor #FCFBF7
+  BorderColor #617178
+  FontColor #102C3A
+  DiamondBackgroundColor #D7E9E5
+  DiamondBorderColor #087B78
 }
 skinparam note {
-  BackgroundColor #FFFDF2
-  BorderColor #A16207
+  BackgroundColor #EBE8DF
+  BorderColor #B4653C
 }
 
 start
@@ -60,22 +60,30 @@ repeat
   }
 
   partition "Phase 3 — Operate, Evolve & Learn\n«Activity, Continuous Phase»" {
-    :Operate the accepted baseline; observe outcomes,\nSLOs, security, cost and provider health «TaskUse»;
-    :Respond to incidents, problems and risks\n«TaskUse»;
-    if (Change or new value required?) then (yes)
-      :Classify impact and route it to CIM, PIM, PSM,\ngenerator, code, release control or method profile «TaskUse»;
-      :Prioritize a bounded increment or release hypothesis;
-    else (no)
-      :Continue service review and evidence collection;
-    endif
+    repeat
+      :Operate the accepted baseline; observe outcomes,\nSLOs, security, cost and provider health «TaskUse»;
+      :Capture one operational work item in WP-30\nand preserve evidence «TaskUse»;
+      :Classify maintenance purpose, emergency status,\nand class of service as independent axes «TaskUse»;
+      :Replenish and pull within explicit WIP limits,\ncapacity and service-level expectations «TaskUse»;
+      :Restore or evolve safely; verify evidence and\nreconcile temporary changes «TaskUse»;
+      if (Disposition?) then (operations-only)
+        :Close with operational evidence; no release re-entry;
+      elseif (bounded MDE/release path) then (shortest safe path)
+        :Route to earliest authoritative source and\npropagate through applicable G2–G7 controls;
+      else (planned release backlog)
+        :Select explicitly into a later release hypothesis;
+      endif
+    repeat while (No bounded/planned release selected\nand retirement not authorized?) is (continue pull flow)
+    -> release or retirement selected;
     note right
       The accepted release remains in operation while
-      a later release is engineered. Phase 3 is not a
-      one-time terminal step after deployment.
+      planned delivery proceeds. Operations-only demand
+      stays in Phase 3; only explicit selection re-enters
+      the model-driven release stream.
     end note
   }
 
-repeat while (Retirement authorized?) is (no — begin another release cycle)
+repeat while (Retirement authorized?) is (no — begin selected release cycle)
 -> yes;
 
 partition "Phase 4 — Retire, Migrate & Close\n«Activity, Phase»" {

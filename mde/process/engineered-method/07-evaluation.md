@@ -31,28 +31,28 @@ not empirical proof of effectiveness.
 
 ## General software-development criteria
 
-| Criterion                  |                             Design                              | Realization | Evidence and limitation                                                                                                                                   |
-| -------------------------- | :-------------------------------------------------------------: | :---------: | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Requirements Engineering   |                                A                                |      A      | Phase 0 and CIM formalize stakeholders, functional/NFR concerns, priorities, quality scenarios, and acceptance criteria.                                  |
-| Analysis                   |                                A                                |      A      | Opportunity, domain, information, behavior, policy, risk, suitability, and cost analysis precede provider commitment.                                     |
-| Design                     |                                A                                |      A      | PIM and PSM provide architecture and detailed provider design with decision records.                                                                      |
-| Implementation             |                                A                                |      A      | Generation plus explicit completion of business logic, adapters, clients, and protected regions.                                                          |
-| Test                       |                                A                                |      A      | Test-in-the-small and large cover model, contract, workflow, integration, NFR, security, recovery, and acceptance scopes.                                 |
-| Deployment                 |                                A                                |      A      | Immutable candidate, CI/CD, progressive promotion, rollback, post-deployment checks, and handover.                                                        |
-| Maintenance                |                                A                                |      A      | Operations, incidents, controlled change propagation, learning, and retirement are first-class phases.                                                    |
-| Project Management         |                                A                                |      B      | Delivery planning, dependencies, risks, evidence, and progress contract are defined; a persisted integrated process-run tracker is not fully implemented. |
-| Quality Assurance          |                                A                                |      A      | Continuous reviews, model validation, tests, trace, findings, gates, and independent review in higher-risk profiles.                                      |
-| Risk Management            |                                A                                |      A      | Initial and continuous product, MDE, serverless, security, cost, release, and operational risk work.                                                      |
-| Reusability                |                                A                                |      A      | Generalization/repository fragment plus reusable models, transforms, templates, tests, and method content.                                                |
-| User Involvement Support   |                                A                                |      B      | Product/user/domain participation is mandatory in discovery and acceptance; the platform cannot enforce attendance or representation quality.             |
-| Adaptability               |                                A                                |      B      | Situational factors, profiles, configuration packages, substitutions, and review triggers are explicit; automated configuration tooling is limited.       |
-| Completeness of Definition |                                A                                |      A      | Process-centred lifecycle, role/product views, fragment catalog, gates, work products, tailoring, evaluation, trace, and SPEM structure are supplied.     |
-| Definition Type            |     Process-oriented with complementary product/role views      |    Same     | The lifecycle is primary; role and work-product views cross-reference it.                                                                                 |
-| Traceability               |                                A                                |      A      | Outcome/requirement→CIM→PIM→PSM→artifact→test/release/runtime/change trace is required; transformation and artifact traces are implemented.               |
-| Based on Requirements      |                                A                                |      A      | Requirements and acceptance evidence govern modeling, design, tests, release, and operational outcomes.                                                   |
-| Complexity Management      |                                A                                |      A      | Abstraction levels, vertical slices, bounded ownership, packages/views, explicit dependencies, and configuration profiles.                                |
-| Methodology Type           | Model-driven methodology with an integrated development process |    Same     | Models are primary engineering artifacts. The development process incorporates agile, DevOps/SRE, risk, and governance practices.                         |
-| Application Scope          |  Domain-specific: serverless/event-driven information systems   |    Same     | Hybrid and external systems are supported; safety-critical/hard real-time systems require extensions.                                                     |
+| Criterion                  |                             Design                              | Realization | Evidence and limitation                                                                                                                                                    |
+| -------------------------- | :-------------------------------------------------------------: | :---------: | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Requirements Engineering   |                                A                                |      A      | Phase 0 and CIM formalize stakeholders, functional/NFR concerns, priorities, quality scenarios, and acceptance criteria.                                                   |
+| Analysis                   |                                A                                |      A      | Opportunity, domain, information, behavior, policy, risk, suitability, and cost analysis precede provider commitment.                                                      |
+| Design                     |                                A                                |      A      | PIM and PSM provide architecture and detailed provider design with decision records.                                                                                       |
+| Implementation             |                                A                                |      A      | Generation plus explicit completion of business logic, adapters, clients, and protected regions.                                                                           |
+| Test                       |                                A                                |      A      | Test-in-the-small and large cover model, contract, workflow, integration, NFR, security, recovery, and acceptance scopes.                                                  |
+| Deployment                 |                                A                                |      A      | Immutable candidate, CI/CD, progressive promotion, rollback, post-deployment checks, and handover.                                                                         |
+| Maintenance                |                                A                                |      A      | Operations, maintenance categories, interrupt-driven pull/WIP/SLE control, incidents, emergency reconciliation, controlled change, learning, and retirement are explicit.  |
+| Project Management         |                                A                                |      B      | Planned release/increment control, operational capacity/preemption, dependencies, risks, evidence, and progress are defined; a persisted integrated tracker is incomplete. |
+| Quality Assurance          |                                A                                |      A      | Continuous reviews, model validation, tests, trace, findings, gates, and independent review in higher-risk profiles.                                                       |
+| Risk Management            |                                A                                |      A      | Initial and continuous product, MDE, serverless, security, cost, release, and operational risk work.                                                                       |
+| Reusability                |                                A                                |      A      | Generalization/repository fragment plus reusable models, transforms, templates, tests, and method content.                                                                 |
+| User Involvement Support   |                                A                                |      B      | Product/user/domain participation is mandatory in discovery and acceptance; the platform cannot enforce attendance or representation quality.                              |
+| Adaptability               |                                A                                |      B      | Situational factors, profiles, configuration packages, substitutions, and review triggers are explicit; automated configuration tooling is limited.                        |
+| Completeness of Definition |                                A                                |      A      | Process-centred lifecycle, role/product views, fragment catalog, gates, work products, tailoring, evaluation, trace, and SPEM structure are supplied.                      |
+| Definition Type            |     Process-oriented with complementary product/role views      |    Same     | The lifecycle is primary; role and work-product views cross-reference it.                                                                                                  |
+| Traceability               |                                A                                |      A      | Outcome/requirement→CIM→PIM→PSM→artifact→test/release/runtime/change trace is required; transformation and artifact traces are implemented.                                |
+| Based on Requirements      |                                A                                |      A      | Requirements and acceptance evidence govern modeling, design, tests, release, and operational outcomes.                                                                    |
+| Complexity Management      |                                A                                |      A      | Abstraction levels, vertical slices, bounded ownership, packages/views, explicit dependencies, and configuration profiles.                                                 |
+| Methodology Type           | Model-driven methodology with an integrated development process |    Same     | Models are primary engineering artifacts. The development process incorporates agile, DevOps/SRE, risk, and governance practices.                                          |
+| Application Scope          |  Domain-specific: serverless/event-driven information systems   |    Same     | Hybrid and external systems are supported; safety-critical/hard real-time systems require extensions.                                                                      |
 
 ## MDD-related criteria
 
@@ -121,6 +121,19 @@ not empirical proof of effectiveness.
 | Feedback Loop                      |   A    |      B      | Operations-to-backlog/model/method routing is explicit; automatic telemetry-to-model feedback is not implemented.                                |
 | Cold-Start Mitigation              |   A    |      B      | Situational analysis, experiment, capacity/architecture decision, monitoring, and test required; no universal automated optimizer.               |
 | Vendor Lock-In Mitigation          |   A    |      B      | Provider-independent PIM, portability package, adapter/exit guidance, and source-level change routing; AWS-only PSM limits realized portability. |
+
+## Dual-flow lifecycle stress test
+
+The corrected design was walked through four production-demand scenarios: an
+availability incident requiring immediate restoration, a dependency
+vulnerability, a provider deprecation with a known date, and a perfective cost
+improvement. In each case the method now provides (1) a visible WP-30 item,
+(2) independent maintenance-purpose, emergency-status, and service-class decisions, (3) pull/WIP/SLE
+control through WP-31, (4) an explicit disposition to operations-only work,
+bounded MDE/release change, or planned backlog, and (5) authoritative-source
+reconciliation after any temporary emergency modification. This is structural
+scenario evidence, not empirical proof of effectiveness; the measures in the
+validation protocol must still be collected in real enactments.
 
 ## Summary and interpretation
 

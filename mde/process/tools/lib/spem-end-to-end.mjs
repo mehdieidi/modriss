@@ -40,6 +40,8 @@ export const END_TO_END_ARTIFACT_KINDS = [
   { id: "e2e-artifact.increment-record", name: "Increment Record", description: "Slice goal, scope, acceptance evidence, model revisions, transformation runs, and retrospective results." },
   { id: "e2e-artifact.release-record", name: "Release Record", description: "Release scope, exact model and artifact revisions, approvals, deployment evidence, rollback identity, and outcome." },
   { id: "e2e-artifact.operations-record", name: "Operations and Learning Record", description: "SLOs, incidents, changes, product outcomes, and method-improvement actions." },
+  { id: "e2e-artifact.operational-work-item", name: "Operational Work Item", description: "An unplanned production demand item with source, maintenance purpose, emergency-temporary status, service class, severity, owner, service-level expectation, state, age, evidence, and disposition." },
+  { id: "e2e-artifact.service-flow-system", name: "Operations Flow Policy and Board", description: "The explicit pull-system policy: workflow states, WIP limits, service classes, service-level expectations, capacity policy, metrics, and visible board." },
   { id: "e2e-artifact.retirement-record", name: "Retirement and Closure Record", description: "Retirement decision, migration/data disposition, decommission evidence, and retained knowledge." },
 ];
 
@@ -85,7 +87,7 @@ const END_TO_END_PHASES_SOURCE = [
       ]),
       stage("e2e.ph0.st4", "Quality, Security & Operations Baseline", "Set cross-cutting quality, security, operational, and release constraints before design detail accumulates.", "quality-engineer", [
         task("e2e.ph0.st4.t1", "Define quality and security control objectives", "security-engineer", ["Identify privacy, threat, compliance, resilience, performance, accessibility, and audit obligations.", "Map control objectives to model evidence, generated artifact evidence, and explicit human decisions.", "Set severity and blocking policies."], ["e2e-artifact.method-profile"], { validationRules: ["Critical controls have an accountable owner and verification evidence path"] }),
-        task("e2e.ph0.st4.t2", "Define operational and release strategy", "service-owner", ["Define environments, support ownership, SLO hypotheses, observability expectations, rollback posture, and release cadence.", "Identify data migration, compatibility, and progressive-delivery constraints.", "Record the initial release decision policy."], ["e2e-artifact.product-charter", "e2e-artifact.method-profile"], { validationRules: ["The release strategy names promotion, rollback, and post-deployment validation evidence"] }),
+        task("e2e.ph0.st4.t2", "Define operational and release strategy", "service-owner", ["Define environments, support ownership, SLO hypotheses, observability expectations, rollback posture, and release cadence.", "Define the operational pull system: workflow states, WIP limits, service classes, service-level expectations, capacity allocation, replenishment, and emergency preemption/reconciliation policy.", "Identify data migration, compatibility, and progressive-delivery constraints and record the initial release decision policy."], ["e2e-artifact.product-charter", "e2e-artifact.method-profile", "e2e-artifact.service-flow-system"], { validationRules: ["The release strategy names promotion, rollback, and post-deployment validation evidence", "The operational policy prevents unknown future maintenance demand from being represented as pre-scheduled tasks"] }),
       ]),
     ],
   },
@@ -153,24 +155,28 @@ const END_TO_END_PHASES_SOURCE = [
     id: "e2e.ph3",
     name: "Operate, Evolve & Learn",
     order: 3,
-    objective: "Operate the service, respond to incidents, evolve models and artifacts through controlled change propagation, and continuously improve the development process.",
+    objective: "Operate the service and use an explicit pull system for unpredictable production demand while planned releases continue through the increment engine; restore service, reconcile authoritative sources, and learn.",
     primaryRole: "service-owner",
     entryCriteria: ["A service or operational capability has been released or is being maintained"],
-    exitCriteria: ["Operational work is recorded", "Changes are traced through the appropriate lifecycle path", "Product and method learning is reviewed at the agreed cadence"],
+    exitCriteria: ["Operational demand and flow decisions are visible", "Changes are traced through the appropriate lifecycle path", "Product and method learning is reviewed at the agreed cadence"],
     inEngine: true,
     stages: [
       stage("e2e.ph3.st1", "Operate and Observe", "Use operational evidence to assess service health, user outcomes, and control effectiveness.", "service-owner", [
-        task("e2e.ph3.st1.t1", "Review SLOs, telemetry, and product outcomes", "service-owner", ["Inspect service levels, errors, cost, security signals, usage, and product outcome measures.", "Compare observations with the service and product hypotheses.", "Create improvement or change items with evidence and owners."], ["e2e-artifact.operations-record"], { iterative: true, validationRules: ["Operational decisions are based on identified evidence and thresholds"] }),
+        task("e2e.ph3.st1.t1", "Review SLOs, telemetry, and product outcomes", "service-owner", ["Inspect service levels, errors, cost, security signals, usage, provider events, and product outcome measures.", "Compare observations with the service and product hypotheses.", "Capture actionable demand as operational work items rather than inserting invisible work into a release plan."], ["e2e-artifact.operations-record", "e2e-artifact.operational-work-item"], { iterative: true, validationRules: ["Operational decisions are based on identified evidence and thresholds"] }),
+      ], { iterative: true }),
+      stage("e2e.ph3.st2a", "Operational Demand Intake & Pull Control", "Control unpredictable production demand through explicit classification, replenishment, pull, WIP, and service expectations.", "delivery-lead", [
+        task("e2e.ph3.st2a.t1", "Triage and classify operational demand", "service-owner", ["Record the demand source, impact, affected service and evidence.", "Classify maintenance purpose as corrective, preventive, adaptive, additive, or perfective; record any emergency temporary-restoration status; classify service separately as expedite, fixed-date, standard, or risk-reduction.", "Select an operations-only response, the shortest safe model-driven change path, or the planned release backlog."], ["e2e-artifact.operational-work-item", "e2e-artifact.service-flow-system"], { iterative: true, validationRules: ["Maintenance purpose, emergency-temporary status, and service class are recorded independently", "Every item has a visible disposition and accountable owner"] }),
+        task("e2e.ph3.st2a.t2", "Replenish, pull, and manage operational flow", "delivery-lead", ["Replenish the ready queue at the defined cadence and pull only when WIP capacity exists.", "Manage item age, blocked work, service-level expectations, and reserved operational capacity; preempt only under the explicit expedite policy.", "Review WIP, throughput, cycle time, work-item age, SLE attainment, interrupt demand, and expedite/preemption frequency without ranking individuals."], ["e2e-artifact.operational-work-item", "e2e-artifact.service-flow-system", "e2e-artifact.operations-record"], { iterative: true, validationRules: ["A team does not start ordinary operational work beyond its WIP limit", "The expedite lane has at most one active item unless the method profile records an exceptional incident command policy"] }),
       ], { iterative: true }),
       stage("e2e.ph3.st2", "Incident, Problem & Risk Response", "Restore service and address systemic causes while preserving traceability and learning.", "service-owner", [
-        task("e2e.ph3.st2.t1", "Manage incidents and recovery", "service-owner", ["Triage impact, stabilize service, communicate status, and execute approved recovery actions.", "Record incident timeline, affected scope, decisions, and evidence.", "Open problem, security, or change work for systemic causes."], ["e2e-artifact.operations-record"], { iterative: true, validationRules: ["Recovery and customer impact are recorded before closure"] }),
-        task("e2e.ph3.st2.t2", "Perform problem and risk learning", "quality-engineer", ["Analyze contributing causes across requirements, models, transformation, generation, deployment, and operation.", "Update controls, tests, model patterns, process guidance, or method profile as appropriate.", "Review changes at the next increment or release boundary."], ["e2e-artifact.operations-record", "e2e-artifact.method-profile"], { validationRules: ["The corrective action is routed to the earliest responsible source rather than only patched downstream"] }),
+        task("e2e.ph3.st2.t1", "Manage incidents and emergency recovery", "service-owner", ["Triage impact, stabilize service, communicate status, and execute approved recovery actions.", "Record incident timeline, affected scope, decisions, temporary modifications, and evidence.", "Create permanent corrective, security, or change work for systemic causes and keep it visible after restoration."], ["e2e-artifact.operations-record", "e2e-artifact.operational-work-item"], { iterative: true, validationRules: ["Recovery and customer impact are recorded before closure", "An emergency temporary modification is not treated as the permanent corrective change"] }),
+        task("e2e.ph3.st2.t2", "Perform problem and risk learning", "quality-engineer", ["Analyze contributing causes across requirements, models, transformation, generation, deployment, and operation.", "Update controls, tests, model patterns, process guidance, or method profile as appropriate.", "Route permanent change through the operational pull system or a planned release and verify reconciliation after any emergency downstream fix."], ["e2e-artifact.operations-record", "e2e-artifact.method-profile", "e2e-artifact.operational-work-item"], { validationRules: ["The corrective action is routed to the earliest responsible source rather than only patched downstream"] }),
       ], { iterative: true }),
       stage("e2e.ph3.st3", "Change Propagation", "Evolve the product through a controlled impact-analysis and re-execution path.", "delivery-lead", [
-        task("e2e.ph3.st3.t1", "Assess and propagate a change", "delivery-lead", ["Classify the change as product, domain, architecture, platform, artifact, operational, or retirement scope.", "Use traces and dependency ownership to identify impacted downstream levels and teams.", "Re-enter the smallest affected process stage, regenerate or redeploy as required, and preserve compatibility evidence."], ["e2e-artifact.increment-record", "e2e-artifact.operations-record"], { iterative: true, validationRules: ["The change record identifies source revision, impacted levels, downstream evidence, and acceptance decision"] }),
+        task("e2e.ph3.st3.t1", "Assess and propagate a change", "delivery-lead", ["Classify the authoritative source as product/domain, architecture, platform, generator, artifact, or operations and confirm whether the item stays in operational flow or enters a planned release.", "Use traces and dependency ownership to identify impacted downstream levels and teams.", "Re-enter the smallest affected process stage, regenerate or redeploy through applicable release controls, and reconcile emergency downstream fixes into the authoritative source."], ["e2e-artifact.increment-record", "e2e-artifact.operations-record", "e2e-artifact.operational-work-item"], { iterative: true, validationRules: ["The change record identifies source revision, impacted levels, downstream evidence, acceptance decision, and operational-item disposition"] }),
       ], { iterative: true }),
       stage("e2e.ph3.st4", "Process and Product Retrospective", "Improve the product and development process using evidence from increments, releases, incidents, and dependencies.", "process-reviewer", [
-        task("e2e.ph3.st4.t1", "Inspect flow, quality, and coordination metrics", "process-reviewer", ["Review flow time, rework, trace coverage, blockers, dependency age, escaped defects, and product outcomes.", "Look for systemic queues, missing work products, invalid gates, and coordination failures.", "Approve bounded process changes and record their expected effect."], ["e2e-artifact.operations-record", "e2e-artifact.method-profile"], { iterative: true, validationRules: ["Metrics lead to inspectable improvement experiments rather than individual performance rankings"] }),
+        task("e2e.ph3.st4.t1", "Inspect flow, quality, and coordination metrics", "process-reviewer", ["Review planned-delivery forecast, WIP, throughput, cycle time, work-item age, SLE attainment, interrupt demand, expedite/preemption frequency, rework, trace coverage, blockers, dependency age, escaped defects, and product outcomes.", "Look for systemic queues, starvation between planned and operational work, missing work products, invalid gates, and coordination failures.", "Approve bounded process changes and record their expected effect."], ["e2e-artifact.operations-record", "e2e-artifact.method-profile", "e2e-artifact.service-flow-system"], { iterative: true, validationRules: ["Metrics lead to inspectable improvement experiments rather than individual performance rankings"] }),
       ], { iterative: true }),
     ],
   },
@@ -302,19 +308,38 @@ const END_TO_END_INPUT_ARTIFACT_IDS = {
     "e2e-artifact.product-charter",
     "e2e-artifact.operations-record",
     "e2e-artifact.method-profile",
+    "e2e-artifact.service-flow-system",
+  ],
+  "e2e.ph3.st2a.t1": [
+    "e2e-artifact.operational-work-item",
+    "e2e-artifact.operations-record",
+    "e2e-artifact.method-profile",
+    "e2e-artifact.service-flow-system",
+  ],
+  "e2e.ph3.st2a.t2": [
+    "e2e-artifact.operational-work-item",
+    "e2e-artifact.operations-record",
+    "e2e-artifact.method-profile",
+    "e2e-artifact.service-flow-system",
   ],
   "e2e.ph3.st2.t1": [
+    "e2e-artifact.operational-work-item",
+    "e2e-artifact.service-flow-system",
     "e2e-artifact.operations-record",
     "e2e-artifact.release-record",
     "e2e-artifact.method-profile",
   ],
   "e2e.ph3.st2.t2": [
+    "e2e-artifact.operational-work-item",
+    "e2e-artifact.service-flow-system",
     "e2e-artifact.operations-record",
     "e2e-artifact.increment-record",
     "e2e-artifact.release-record",
     "e2e-artifact.method-profile",
   ],
   "e2e.ph3.st3.t1": [
+    "e2e-artifact.operational-work-item",
+    "e2e-artifact.service-flow-system",
     "e2e-artifact.operations-record",
     "e2e-artifact.method-profile",
     "e2e-artifact.increment-record",
@@ -322,6 +347,8 @@ const END_TO_END_INPUT_ARTIFACT_IDS = {
     "e2e-artifact.release-record",
   ],
   "e2e.ph3.st4.t1": [
+    "e2e-artifact.operational-work-item",
+    "e2e-artifact.service-flow-system",
     "e2e-artifact.increment-record",
     "e2e-artifact.operations-record",
     "e2e-artifact.product-charter",

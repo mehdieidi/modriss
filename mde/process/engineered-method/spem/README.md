@@ -35,6 +35,7 @@ MethodLibrary: MODRISS
 | `../12-method-library-and-fragment-report.md`          | Academic narrative explaining the library design, all method fragments, selection, assembly, governance, and validity boundary                               |
 | `lifecycle.puml`                                       | Normative overview of the product lifecycle, nested release cycle, increment cycle, and retirement decision                                                  |
 | `release-cycle.puml`                                   | Focused release-to-release control flow, including G6 rework, promotion rollback, G7, continued operation, and the next release                              |
+| `operations-flow.puml`                                 | Phase 3 pull flow from operational intake through classification, WIP/SLE control, verification, and three explicit dispositions                             |
 | `model-driven-increment.puml`                          | Phase 1 detail from increment framing through CIM, PIM, PSM, generation, verification, and G5                                                                |
 | `change-routing.puml`                                  | Operational change classification and return to the earliest authoritative source                                                                            |
 | `diagram-catalog.md`                                   | Diagram hierarchy, semantic authority, and synchronization rules                                                                                             |
@@ -50,6 +51,16 @@ G7, the accepted release remains in operation. If retirement is not authorized
 and further work is selected, control returns from Phase 3 to Phase 1 with a
 new release hypothesis; Phase 0 is not repeated. Phase 4 is reached only by an
 explicit retirement decision.
+
+Phase 3 also contains a separately repeatable `KanbanFlow` Activity. It keeps
+unpredictable production demand out of fictional release schedules while
+remaining connected to the lifecycle: an item may finish as operations-only
+work, invoke the shortest safe model-driven/release path, or be committed to a
+planned release. Its MODRISS extension metadata records pull control, explicit
+WIP limits, service-level expectations, and the stage references serialized by
+the package builder. Maintenance purpose, emergency status, and class of
+service remain independent classifications; none is used as a proxy for the
+others.
 
 ## Conformance statement
 

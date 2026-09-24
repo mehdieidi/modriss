@@ -17,7 +17,8 @@ The generated artifacts are then reviewed, verified, released, operated,
 changed, and eventually retired. The process therefore has two structures:
 
 1. a **full lifecycle** around the product/system; and
-2. a repeatable **vertical increment engine** inside that lifecycle.
+2. a repeatable **vertical increment engine** for planned delivery; and
+3. a concurrent **interrupt-driven maintenance flow** for unpredictable production demand.
 
 The machine-readable definitions are in
 [`process-definitions/`](process-definitions/). This document is the normative
@@ -198,8 +199,18 @@ runbooks, support ownership, recovery access, and post-deployment validation.
 
 Operation is part of the lifecycle, not an afterthought. The service owner
 reviews SLOs, telemetry, cost, security signals, product outcomes, incidents,
-and customer impact. Incidents produce recovery evidence and problem/change
-work. A change is classified, impact-analyzed through traces and dependencies,
+and customer impact. Because this demand cannot be predicted honestly, it is
+captured as it appears and pulled through an explicit workflow with WIP limits,
+service classes, service-level expectations, replenishment, and flow measures.
+Planned delivery retains its release/increment commitments; the method profile
+defines capacity and preemption between the two systems.
+
+Maintenance purpose—corrective, preventive, adaptive, additive, or
+perfective—emergency-temporary status, and the expedite, fixed-date, standard,
+or risk-reduction class of service are separate decisions. Each operational item either completes through
+an approved runbook, follows the shortest safe MDE/release path, or is
+explicitly committed to a planned release. Incidents produce recovery evidence
+and permanent problem/change work. A change is classified, impact-analyzed through traces and dependencies,
 and routed to the earliest correct source:
 
 - product/requirements change → CIM;

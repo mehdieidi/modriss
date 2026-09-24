@@ -20,10 +20,43 @@ The lifecycle has five phases. Each has an outcome and evidence that supports th
 | **0. Initiate, tailor, and organize**  | Agree on product outcomes, the first release and increment hypotheses, a method profile, team ownership, dependencies, and quality, security, and operations baselines.                                |
 | **1. Iterative model-driven delivery** | Deliver capability increments through CIM, PIM, AWS PSM, generation, and artifact review. Record model and artifact revisions, decisions, risks, validation, and the accept, defer, or rework outcome. |
 | **2. Release and transition**          | Assemble accepted increments into a release candidate, review its evidence, promote it through environments, rehearse rollback, and transfer operational ownership.                                    |
-| **3. Operate, evolve, and learn**      | Review service and product outcomes, SLOs, cost, security signals, and incidents. Use this evidence to plan changes and improve the development process.                                               |
+| **3. Operate, evolve, and learn**      | Keep the accepted baseline running; pull unpredictable incidents and maintenance through explicit WIP/SLE policies; route product changes back through models and release controls.                    |
 | **4. Retire, migrate, and close**      | Authorize retirement, communicate with users, migrate or dispose of data, close integrations and access, decommission infrastructure, and retain required records and knowledge.                       |
 
 The release cycle repeats while the product remains active. Phase 4 begins only after an explicit retirement decision. A release or an accepted increment does not end the product lifecycle.
+
+## Two connected ways of controlling work
+
+MODRISS does not pretend that all maintenance can be scheduled. Planned product
+work is committed at release and increment horizons. Production demand is
+captured when it appears and pulled through a Kanban-style service flow with
+explicit workflow states, WIP limits, service classes, service-level
+expectations, and flow measures. The [Kanban Guide](https://kanbanguides.org/the-kanban-guide/)
+provides the minimum pull-system semantics used here.
+
+Every operational item records its maintenance purpose—corrective, preventive,
+adaptive, additive, or perfective—any emergency-temporary restoration status,
+and its separate class of service—expedite, fixed-date, standard, or
+risk-reduction. This follows
+the maintenance distinctions in [SWEBOK v4.0a](https://ieeecs-media.computer.org/media/education/swebok/swebok-v4.pdf).
+
+An item has three legitimate destinations:
+
+1. finish as operations-only/runbook work with evidence;
+2. take the shortest safe path through the affected CIM, PIM, PSM, generator,
+   code, and release activities; or
+3. be explicitly committed to a planned release backlog.
+
+Emergency restoration may use the expedite policy, but temporary downstream
+changes remain open until permanent correction or reconciliation with the
+authoritative model, generator, code, configuration, or runbook source.
+
+<figure class="doc-diagram">
+  <a class="doc-diagram__link" href="../../assets/diagrams/modriss-operational-flow.svg" aria-label="Open the full-size MODRISS operational pull-flow diagram">
+    <img src="../../assets/diagrams/modriss-operational-flow.svg" alt="Operational demand is captured, classified, replenished, pulled within WIP limits, verified, and disposed through operations-only, bounded model-driven release, or planned-release routes." />
+  </a>
+  <figcaption>The interrupt-driven Phase 3 pull flow runs alongside planned releases.</figcaption>
+</figure>
 
 ## Capability-increment process
 
@@ -71,7 +104,7 @@ Assistant-generated actions, patches, proposals, checkpoints, and model outputs 
 
 ## Process foundations
 
-The process documentation follows OMG SPEM 2.0 in distinguishing reusable method content, such as roles, tasks, work products, and guidance, from the process activities that use it. Its lifecycle scope is informed by ISO/IEC/IEEE 12207 and ISO/IEC/IEEE 15288. Situational method engineering informs how method content is selected and tailored for a project. Agile principles and Scrum inform inspection, adaptation, small increments, and ownership. MDE process-pattern research informs model refinement, transformation, traceability, human review, and feedback between levels.
+The process documentation follows OMG SPEM 2.0 in distinguishing reusable method content, such as roles, tasks, work products, and guidance, from the process activities that use it. Its lifecycle scope is informed by ISO/IEC/IEEE 12207 and ISO/IEC/IEEE 15288. Situational method engineering informs how method content is selected and tailored for a project. Agile principles and Scrum inform inspection, adaptation, small increments, and ownership. Kanban supplies interrupt-driven service-flow control. SWEBOK supplies maintenance categories. MDE process-pattern research informs model refinement, transformation, traceability, human review, and feedback between levels. AWS Serverless Lens guidance informs serverless operations, observability, reversibility, and progressive deployment.
 
 These references provide a basis for the structure. They do not establish that one activity sequence or metric is right for every project. Teams should review their process tailoring against project evidence.
 

@@ -202,8 +202,8 @@ function App() {
           <h2 id="process-title">A development process for engineering and evolving software in the serverless paradigm</h2>
         </div>
         <div className="process-summary">
-          <p>MODRISS is not a single pass. A product lifecycle contains repeated releases; each release assembles one or more small vertical increments. Evidence can trigger rework inside an increment or shape the next release.</p>
-          <p>The process is tailorable, evidence-gated, and structured with SPEM 2.0 concepts for roles, tasks, work products, and reusable method content.</p>
+          <p>MODRISS is not a single pass. A product lifecycle contains repeated releases; each release assembles one or more small vertical increments. The accepted baseline stays live while later releases are engineered.</p>
+          <p>Planned release work and unpredictable production demand use connected but distinct controls: release/increment planning for the former, and explicit pull, WIP, service-class, and service-level policies for the latter. The process is tailorable, evidence-gated, and represented with SPEM 2.0 concepts.</p>
           <a className="text-link" href={processDocsUrl}>Study the full lifecycle process <Icon name="arrow" size={15} /></a>
         </div>
       </div>
@@ -260,9 +260,9 @@ function App() {
 
                 <article className="release-node operate-node">
                   <span>Phase 3</span>
-                  <h4>Operate &amp; learn</h4>
-                  <div><b>Outcomes</b><b>SLOs</b><b>Cost</b><b>Risk</b></div>
-                  <small>accepted baseline stays live</small>
+                  <h4>Operate, pull &amp; learn</h4>
+                  <div><b>WIP</b><b>SLE</b><b>SLOs</b><b>Risk</b></div>
+                  <small>interrupt-driven · baseline stays live</small>
                 </article>
               </div>
 
@@ -280,7 +280,7 @@ function App() {
         </div>
 
         <div className="discipline-rail"><b>Continuous disciplines</b><span>Management · risk · quality · security · change · traceability · FinOps · learning</span></div>
-        <figcaption id="process-map-caption">One lifecycle contains many releases. One release contains one or more increments. Each increment iterates until accepted, deferred, or reworked.</figcaption>
+        <figcaption id="process-map-caption">One lifecycle contains many planned releases and a concurrent operational pull flow. Each release contains one or more increments; production demand is handled when it emerges and routed back through authoritative sources when change is required.</figcaption>
       </figure>
     </section>
 

@@ -26,7 +26,7 @@ Methodology Design guided top-down assembly; and a serverless-specific
 evaluation framework was used to expose missing lifecycle and engineering
 concerns. The resulting process has five lifecycle phases, an iterative
 CIM–PIM–PSM delivery engine, nine evidence gates, sixteen conceptual roles,
-twenty-nine principal work products, four reference configurations, and a
+thirty-one principal work products, four reference configurations, and a
 repository of reusable process patterns. It is represented using SPEM 2.0 and
 connected to the executable process definitions already present in MODRISS.
 
@@ -256,15 +256,15 @@ version and alias management, progressive strategies, recovery, observation,
 and handover. “Model validation” was separated into structural conformance,
 semantic validation, transformation verification, and product testing.
 
-The stabilized set contains 57 requirements in six families.
+The stabilized set contains 61 requirements in six families.
 
 | Family                        | IDs        | Count | Main concern                                                                                                     |
 | ----------------------------- | ---------- | ----: | ---------------------------------------------------------------------------------------------------------------- |
-| Lifecycle                     | `MR-LC-*`  |     7 | Full lifecycle, gates, concurrency, feedback, and method-content separation                                      |
+| Lifecycle                     | `MR-LC-*`  |    10 | Full lifecycle, gates, concurrency, feedback, method-content separation, and planned/interrupt flow              |
 | Requirements and stakeholders | `MR-RE-*`  |     5 | Outcomes, events, NFRs, user involvement, evolution, and traceability                                            |
 | Model-driven engineering      | `MR-MDE-*` |    12 | Level boundaries, transformations, identity, reconciliation, validation, reuse, and standards                    |
 | Serverless engineering        | `MR-SL-*`  |    18 | Suitability, cost, provider choice, events, state, failure, security, testing, delivery, operations, and lock-in |
-| Management and scale          | `MR-MG-*`  |     7 | Planning, risk, quality, security, configuration, evidence, teams, measurement, and learning                     |
+| Management and scale          | `MR-MG-*`  |     8 | Planning, capacity, risk, quality, security, configuration, evidence, teams, measurement, and learning           |
 | Process quality               | `MR-Q-*`   |     8 | Understandability, configurability, practicality, scalability, visibility, and preserved controls                |
 
 Each requirement has a support level—MUST, SHOULD, or MAY—and a verification
@@ -384,7 +384,8 @@ increments. The process nevertheless uses explicit gates because iteration
 without stable decisions makes traceability and responsibility difficult to
 defend.
 
-The lifecycle therefore has three nested cycles. The outer product/service
+The lifecycle therefore has three nested cycles and one concurrent service
+flow. The outer product/service
 lifecycle begins with Phase 0 and ends only when Phase 4 retirement is
 authorized. Within it, a release cycle traverses Phases 1, 2, and 3 repeatedly.
 Within each release, Phase 1 executes one or more vertical increment cycles.
@@ -393,8 +394,12 @@ telemetry, incidents, risks, cost evidence, and user feedback are evaluated.
 If further work is selected, the team defines a new release hypothesis and
 returns to Phase 1; it does not restart initiation and it does not proceed to
 retirement by default. A G6 rejection or failed promotion also returns to
-Phase 1 for correction and requalification. This distinction makes the
-apparently linear phase layout compatible with continuous product evolution.
+Phase 1 for correction and requalification. In parallel, Phase 3 uses an
+interrupt-driven pull system for production demand; operational work can finish
+there, traverse a bounded MDE/release path, or be committed to a planned
+release. This distinction makes the apparently linear phase layout compatible
+with continuous product evolution without pretending that incidents can be
+pre-scheduled.
 
 ### 5.1 Phase 0 — Initiate, Tailor, and Organize
 
@@ -504,10 +509,41 @@ expects observation of latency, availability, errors, throttling, concurrency,
 retries, dead letters, workflow failures, quota use, cold starts, security
 signals, capacity, cost per meaningful business unit, and provider health.
 Routine recovery, dependency updates, access review, key rotation, patching,
-and continuity work remain owned.
+and continuity work remain owned. Actionable signals become Operational Work
+Items rather than invisible additions to a release plan.
 
-Incidents first trigger recovery and communication. The subsequent problem
-analysis may reveal a defect in a domain rule, architecture, provider mapping,
+Phase 3 is governed as a service-delivery pull system. Its Definition of
+Workflow names intake, triage, ready, active, verify, and done states; WIP
+limits; explicit policies; service-level expectations; replenishment; and flow
+measures, following the Kanban Guide (Kanban Guides, 2025). The Method Profile
+defines capacity allocation between planned delivery and operational demand.
+
+Maintenance purpose, emergency status, and service class are independent.
+Purpose records why work exists—corrective, preventive, adaptive, additive, or
+perfective. Emergency status identifies an unscheduled temporary restoration
+modification pending permanent correction, following SWEBOK v4.0a (IEEE
+Computer Society, 2024). Class records how work flows—expedite, fixed-date,
+standard, or risk-reduction. Unknown future demand
+is not scheduled. Actual demand is triaged when it arrives and either finishes
+as operations-only work, uses the shortest safe model-driven/release path, or
+is deliberately committed to a future planned release.
+
+Figure 3 makes this concurrent control system explicit.
+
+![The MODRISS interrupt-driven operations and maintenance flow](diagrams/modriss-operational-flow.svg)
+
+**Figure 3. The MODRISS interrupt-driven operations and maintenance flow.** An
+Operational Work Item moves from capture through independent classification,
+replenishment, pull, verification, and one explicit disposition. WP-31 defines
+the workflow, WIP limits, service-level expectations, replenishment, capacity,
+and expedite authority. Operations-only work does not manufacture a release;
+only bounded MDE/release work or explicit planned-release commitment crosses
+into the delivery stream.
+
+Incidents first trigger recovery and communication. Expedite does not mean
+uncontrolled: recovery, evidence, security, and rollback obligations remain.
+The subsequent problem analysis may reveal a defect in a domain rule,
+architecture, provider mapping,
 generator, implementation, release control, or process guidance. The change is
 routed to the earliest authoritative source:
 
@@ -522,11 +558,15 @@ routed to the earliest authoritative source:
 | Repeated process friction or missing guidance                                 | Method-engineering backlog        |
 
 Emergency downstream repairs are permitted when service restoration requires
-them, but they create a reconciliation obligation. Otherwise, the running
+them, but SWEBOK's distinction between temporary emergency modification and
+permanent correction creates a reconciliation obligation. Otherwise, the running
 system and its authoritative models gradually become unrelated artifacts.
 
-Retrospectives compare actual outcomes, SLOs, cost, risk, estimates, and flow
-with the original hypotheses. Reusable models, transformations, tests,
+Retrospectives compare actual outcomes, SLOs, cost, risk, estimates, and flow.
+They review planned-release forecast alongside operational WIP, throughput,
+cycle time, item age, SLE attainment, interrupt rate, expedite/preemption, and
+capacity allocation against the original hypotheses. Metrics improve the
+system and never rank individuals. Reusable models, transformations, tests,
 templates, runbooks, and reusable method content are generalized only after review.
 
 ### 5.5 Phase 4 — Retire, Migrate, and Close
@@ -558,7 +598,7 @@ vary by project profile.
 
 ### 6.1 Process-pattern repository
 
-Seventeen lifecycle patterns and one composite continuous pattern form the
+Eighteen lifecycle patterns and one composite continuous pattern form the
 method repository.
 
 | ID    | Pattern                                                   | Default use                                      |
@@ -580,6 +620,7 @@ method repository.
 | MF-15 | Operate, observe, control cost, and learn                 | Required                                         |
 | MF-16 | Incident, problem, and controlled change propagation      | Required                                         |
 | MF-17 | Retirement, migration, and closure                        | Required                                         |
+| MF-18 | Interrupt-driven operations and maintenance flow          | Required during production operation             |
 | UF-01 | Integrated management, assurance, and evidence            | Continuous; depth is tailored                    |
 
 Each pattern records its problem, initial context, result context, roles, work
@@ -629,7 +670,7 @@ regulatory context.
 
 ### 6.3 Work products
 
-The process defines twenty-nine principal work products. A work product is
+The process defines thirty-one principal work products. A work product is
 broader than a file: it has an accountable owner, revision, state, quality
 criteria, consumers, provenance, and retention rule.
 
@@ -664,6 +705,8 @@ criteria, consumers, provenance, and retention rule.
 |                            | WP-27 | Change and Impact Record                        | Requirements Engineer               |
 |                            | WP-28 | Retirement/Migration Plan and Closure Record    | Service Owner                       |
 |                            | WP-29 | Retrospective and Improvement Record            | Method Engineer                     |
+|                            | WP-30 | Operational Work Item                           | Service Owner                       |
+|                            | WP-31 | Operations Flow Policy and Board                | Delivery Lead                       |
 
 Ordinary work products progress through `identified`, `draft`, `reviewed`,
 `accepted`, `baselined`, `superseded`, and `archived`. Rejection, deferral, and
@@ -810,9 +853,9 @@ WorkSequences, Milestones, and MethodConfigurations.
 The current consolidated package contains:
 
 - 17 stable RoleDefinitions mapped to the 16 conceptual lifecycle roles;
-- 132 TaskDefinitions drawn from the integrated and child processes;
-- 88 WorkProductDefinitions, including the 29 lifecycle products defined here;
-- 44 Guidance elements, including all 18 process patterns;
+- 134 TaskDefinitions drawn from the integrated and child processes;
+- 92 WorkProductDefinitions, including the 31 lifecycle products defined here;
+- 45 Guidance elements, including all 19 process patterns;
 - five process components: end-to-end, CIM, PIM, PSM, and artifact readiness;
 - four MethodConfigurations corresponding to exploration, standard,
   multi-team, and regulated/high-criticality profiles.
@@ -908,7 +951,9 @@ increment gates, release, an operating period, a controlled change or incident,
 and retirement or a retirement rehearsal. Measures include cycle and wait time,
 effort by activity family, rework, trace closure, transformation conflicts,
 finding stage, escaped defects, forecast and observed cost, SLO evidence,
-deviations, and practitioner experience. Independent assessors should rescore
+operational WIP, item age, SLE attainment, interrupt/preemption frequency,
+planned-release disruption, emergency-reconciliation time, deviations, and
+practitioner experience. Independent assessors should rescore
 the criteria from the evidence package and preserve disagreements.
 
 Until such studies are completed, the defensible claim is that MODRISS provides
@@ -957,6 +1002,9 @@ Engineering.” In R. Lee and N. Ishii (eds.), _Software Engineering Research,
 Management and Applications 2009_, Studies in Computational Intelligence,
 vol. 253, pp. 277–291. Springer. <https://doi.org/10.1007/978-3-642-05441-9_24>.
 
+Amazon Web Services (AWS) (2024). _AWS Well-Architected Framework: Serverless
+Applications Lens_. <https://docs.aws.amazon.com/wellarchitected/latest/serverless-applications-lens/welcome.html>.
+
 Deljouyi (n.d.). “Proposed Process for Developing REST-Based Web Services.”
 Thesis process chapter supplied as _Deljouyi — Process_, pp. 97–110. [In
 Persian].
@@ -966,6 +1014,13 @@ Software Development: Evaluation and Future Directions.” In _Proceedings of
 the 14th International Conference on Model-Based Software and Systems
 Engineering (MODELSWARD 2026)_, pp. 560–567. SCITEPRESS.
 <https://doi.org/10.5220/0014634200004058>.
+
+IEEE Computer Society (2024). _Guide to the Software Engineering Body of
+Knowledge (SWEBOK Guide), Version 4.0a_.
+<https://ieeecs-media.computer.org/media/education/swebok/swebok-v4.pdf>.
+
+Kanban Guides (2025). _The Kanban Guide_, May 2025.
+<https://kanbanguides.org/the-kanban-guide/>.
 
 Object Management Group (OMG) (2008). _Software & Systems Process Engineering
 Metamodel Specification, Version 2.0_. OMG formal/2008-04-01.

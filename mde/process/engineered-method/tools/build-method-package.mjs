@@ -92,6 +92,7 @@ const index = {
     repeatableActivities: [
       source.model.processEngine?.iteration,
       source.model.processEngine?.releaseCycle,
+      source.model.processEngine?.maintenanceFlow,
     ].filter(Boolean),
   })),
   methodRoleMappings: coreContentSource.model.roleMappings ?? [],
@@ -215,7 +216,7 @@ for (const guidance of index.guidance) {
   catalog.push(`Guidance kind: ${mdInline(guidance.guidanceKind ?? 'Practice guidance')}.${appliesTo}${pattern} Provenance: ${(guidance.sourceProcesses ?? []).map(source => sourceLabels[source] ?? source).join(', ')}.`, '');
 }
 
-fs.writeFileSync(path.join(libraryRoot, 'reusable-method-content-catalog.md'), `${catalog.join('\n')}\n`);
+fs.writeFileSync(path.join(libraryRoot, 'reusable-method-content-catalog.md'), `${catalog.join('\n').trimEnd()}\n`);
 
 const escapeXml = value => String(value ?? '')
   .replaceAll('&', '&amp;')
@@ -309,9 +310,9 @@ const processXml = (source, depth) => {
     lines.push(line(depth + 1, `<nestedBreakdownElement xmi:type="spem:WorkProductUse" xmi:id="${xmiId(use.id)}" name="${escapeXml(use.id)}" workProduct="${xmiId(use.workProductDefinitionRef)}" modriss:activityRef="${xmiId(use.activityRef)}" modriss:usage="${escapeXml(use.usage)}"/>`));
   }
   for (const phase of model.phases ?? []) lines.push(...activityXml(phase, depth + 1, 'Phase'));
-  for (const repeatable of [model.processEngine?.iteration, model.processEngine?.releaseCycle].filter(Boolean)) {
+  for (const repeatable of [model.processEngine?.iteration, model.processEngine?.releaseCycle, model.processEngine?.maintenanceFlow].filter(Boolean)) {
     const activityRefs = (repeatable.activityRefs ?? []).map(xmiId).join(' ');
-    lines.push(line(depth + 1, `<nestedBreakdownElement xmi:type="spem:Activity" xmi:id="${xmiId(repeatable.id)}" name="${escapeXml(repeatable.name)}" modriss:sourceId="${escapeXml(repeatable.id)}" modriss:kind="Iteration" modriss:isRepeatable="${Boolean(repeatable.isRepeatable)}"${attr('modriss:activityRefs', activityRefs)}${attr('modriss:repeatCondition', repeatable.repeatCondition)}${attr('modriss:exitCondition', repeatable.exitCondition)}${attr('modriss:guidance', repeatable.guidance)}/>`));
+    lines.push(line(depth + 1, `<nestedBreakdownElement xmi:type="spem:Activity" xmi:id="${xmiId(repeatable.id)}" name="${escapeXml(repeatable.name)}" modriss:sourceId="${escapeXml(repeatable.id)}" modriss:kind="${escapeXml(repeatable.activityKind ?? 'Iteration')}" modriss:isRepeatable="${Boolean(repeatable.isRepeatable)}"${attr('modriss:activityRefs', activityRefs)}${attr('modriss:repeatCondition', repeatable.repeatCondition)}${attr('modriss:exitCondition', repeatable.exitCondition)}${attr('modriss:flowControl', repeatable.flowControl)}${attr('modriss:guidance', repeatable.guidance)}/>`));
   }
   for (const sequence of model.workSequences ?? []) {
     lines.push(line(depth + 1, `<nestedBreakdownElement xmi:type="spem:WorkSequence" xmi:id="${xmiId(sequence.id)}" predecessor="${xmiId(sequence.predecessorRef)}" successor="${xmiId(sequence.successorRef)}" linkKind="${escapeXml(sequence.linkKind)}" modriss:relation="${escapeXml(sequence.relation ?? '')}"${attr('modriss:condition', sequence.condition)}${attr('modriss:guidance', sequence.guidance)}/>`));

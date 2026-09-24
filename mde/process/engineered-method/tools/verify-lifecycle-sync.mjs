@@ -68,6 +68,16 @@ const releaseCycle = methodProcess.processEngine?.releaseCycle;
 if (!releaseCycle?.isRepeatable || releaseCycle.repeatCondition !== 'retirement-not-authorized') {
   fail('processEngine.releaseCycle must explicitly repeat until retirement is authorized');
 }
+const maintenanceFlow = methodProcess.processEngine?.maintenanceFlow;
+if (!maintenanceFlow?.isRepeatable || maintenanceFlow.activityKind !== 'KanbanFlow') {
+  fail('processEngine.maintenanceFlow must be an explicit repeatable KanbanFlow');
+}
+if (maintenanceFlow.flowControl !== 'pull-with-explicit-WIP-limits-and-service-level-expectations') {
+  fail('processEngine.maintenanceFlow must define pull, WIP, and SLE control');
+}
+for (const stageId of ['e2e.ph3.st1', 'e2e.ph3.st2a', 'e2e.ph3.st2', 'e2e.ph3.st3', 'e2e.ph3.st4']) {
+  if (!maintenanceFlow.activityRefs?.includes(stageId)) fail(`maintenanceFlow is missing ${stageId}`);
+}
 
 const overview = read('mde/process/engineered-method/spem/lifecycle.puml');
 const sourceView = read('mde/process/spem/end-to-end-process.activity.puml');
@@ -90,6 +100,7 @@ if (/Begin next release[^\n]*\n\s*detach/i.test(overview + releaseView)) {
 const plantUmlPaths = [
   'mde/process/engineered-method/spem/lifecycle.puml',
   'mde/process/engineered-method/spem/release-cycle.puml',
+  'mde/process/engineered-method/spem/operations-flow.puml',
   'mde/process/engineered-method/spem/model-driven-increment.puml',
   'mde/process/engineered-method/spem/change-routing.puml',
   'mde/process/spem/end-to-end-process.activity.puml',
@@ -104,21 +115,30 @@ for (const plantUmlPath of plantUmlPaths) {
 
 const lifecycleHtml = read('mde/process/engineered-method/diagrams/modriss-lifecycle-manuscript.html');
 const alternateHtml = read('mde/process/engineered-method/diagrams/modriss-lifecycle-2.html');
-requireText(lifecycleHtml, 'NEXT RELEASE / CHANGE', 'primary publication diagram');
-requireText(alternateHtml, 'NEXT RELEASE / CHANGE RE-ENTRY', 'alternative publication diagram');
+const operationsHtml = read('mde/process/engineered-method/diagrams/modriss-operational-flow.html');
+requireText(lifecycleHtml, 'SELECTED CHANGE → PLANNED RELEASE', 'primary publication diagram');
+requireText(alternateHtml, 'SELECTED CHANGE → PLANNED RELEASE', 'alternative publication diagram');
+for (const expected of ['WIP', 'SLE', 'Operations-only', 'planned release']) {
+  requireText(operationsHtml, expected, 'operational-flow publication diagram');
+}
 const lifecycleSvg = read('mde/process/engineered-method/diagrams/modriss-lifecycle-manuscript.svg');
 const alternateSvg = read('mde/process/engineered-method/diagrams/modriss-lifecycle-2.svg');
-requireText(lifecycleSvg, 'NEXT RELEASE / CHANGE', 'exported primary SVG');
-requireText(alternateSvg, 'NEXT RELEASE / CHANGE RE-ENTRY', 'exported alternative SVG');
+const operationsSvg = read('mde/process/engineered-method/diagrams/modriss-operational-flow.svg');
+requireText(lifecycleSvg, 'SELECTED CHANGE → PLANNED RELEASE', 'exported primary SVG');
+requireText(alternateSvg, 'SELECTED CHANGE → PLANNED RELEASE', 'exported alternative SVG');
+requireText(operationsSvg, 'Operations-only', 'exported operational-flow SVG');
 
 const processNarrative = read('mde/process/engineered-method/04-development-process.md');
 const thesisChapter = read('mde/process/engineered-method/10-thesis-process-chapter.md');
 requireText(processNarrative, '### Nested lifecycle cadence', 'development-process narrative');
-requireText(thesisChapter, 'The lifecycle therefore has three nested cycles.', 'thesis chapter');
+requireText(thesisChapter, 'The lifecycle therefore has three nested cycles and one concurrent service', 'thesis chapter');
 
 const xml = read('mde/process/engineered-method/spem/modriss-method-library.spem.xml');
 requireText(xml, 'modriss:sourceId="modriss.end-to-end.release-cycle"', 'generated SPEM XML');
 requireText(xml, 'modriss:repeatCondition="retirement-not-authorized"', 'generated SPEM XML');
+requireText(xml, 'modriss:sourceId="modriss.end-to-end.maintenance-flow"', 'generated SPEM XML');
+requireText(xml, 'modriss:kind="KanbanFlow"', 'generated SPEM XML');
+requireText(xml, 'modriss:flowControl="pull-with-explicit-WIP-limits-and-service-level-expectations"', 'generated SPEM XML');
 for (const expected of requiredSequences) {
   requireText(xml, `modriss:relation="${expected.relation}"`, 'generated SPEM XML');
   requireText(xml, `modriss:condition="${expected.condition}"`, 'generated SPEM XML');
@@ -128,6 +148,6 @@ console.log(JSON.stringify({
   status: 'ok',
   checkedWorkSequences: requiredSequences.map(sequence => sequence.id),
   checkedPlantUmlViews: plantUmlPaths.length,
-  checkedPublicationSourcesAndExports: 4,
+  checkedPublicationSourcesAndExports: 6,
   checkedNarratives: 2,
 }, null, 2));

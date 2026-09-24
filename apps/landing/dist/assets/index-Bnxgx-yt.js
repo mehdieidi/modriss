@@ -12035,10 +12035,10 @@ function ie() {
                 className: `process-summary`,
                 children: [
                   (0, g.jsx)(`p`, {
-                    children: `MODRISS is not a single pass. A product lifecycle contains repeated releases; each release assembles one or more small vertical increments. Evidence can trigger rework inside an increment or shape the next release.`,
+                    children: `MODRISS is not a single pass. A product lifecycle contains repeated releases; each release assembles one or more small vertical increments. The accepted baseline stays live while later releases are engineered.`,
                   }),
                   (0, g.jsx)(`p`, {
-                    children: `The process is tailorable, evidence-gated, and structured with SPEM 2.0 concepts for roles, tasks, work products, and reusable method content.`,
+                    children: `Planned release work and unpredictable production demand use connected but distinct controls: release/increment planning for the former, and explicit pull, WIP, service-class, and service-level policies for the latter. The process is tailorable, evidence-gated, and represented with SPEM 2.0 concepts.`,
                   }),
                   (0, g.jsxs)(`a`, {
                     className: `text-link`,
@@ -12206,16 +12206,18 @@ function ie() {
                                 className: `release-node operate-node`,
                                 children: [
                                   (0, g.jsx)(`span`, { children: `Phase 3` }),
-                                  (0, g.jsx)(`h4`, { children: `Operate & learn` }),
+                                  (0, g.jsx)(`h4`, { children: `Operate, pull & learn` }),
                                   (0, g.jsxs)(`div`, {
                                     children: [
-                                      (0, g.jsx)(`b`, { children: `Outcomes` }),
+                                      (0, g.jsx)(`b`, { children: `WIP` }),
+                                      (0, g.jsx)(`b`, { children: `SLE` }),
                                       (0, g.jsx)(`b`, { children: `SLOs` }),
-                                      (0, g.jsx)(`b`, { children: `Cost` }),
                                       (0, g.jsx)(`b`, { children: `Risk` }),
                                     ],
                                   }),
-                                  (0, g.jsx)(`small`, { children: `accepted baseline stays live` }),
+                                  (0, g.jsx)(`small`, {
+                                    children: `interrupt-driven · baseline stays live`,
+                                  }),
                                 ],
                               }),
                             ],
@@ -12259,7 +12261,7 @@ function ie() {
               }),
               (0, g.jsx)(`figcaption`, {
                 id: `process-map-caption`,
-                children: `One lifecycle contains many releases. One release contains one or more increments. Each increment iterates until accepted, deferred, or reworked.`,
+                children: `One lifecycle contains many planned releases and a concurrent operational pull flow. Each release contains one or more increments; production demand is handled when it emerges and routed back through authoritative sources when change is required.`,
               }),
             ],
           }),

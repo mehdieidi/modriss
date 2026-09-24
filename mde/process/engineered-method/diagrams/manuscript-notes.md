@@ -20,11 +20,27 @@ Suggested in-text interpretation:
 
 > The phases are not a waterfall. Phase 1 repeats for thin vertical increments;
 > releases can contain several accepted increments; operational findings return
-> to the earliest authoritative work product; and retirement is governed as a
+> through one of three explicit dispositions; and retirement is governed as a
 > release with explicit closure evidence. After G7, the accepted release stays
 > in operation while a later release may be engineered through Phases 1–3. The
-> dashed Phase 3-to-Phase 1 path denotes this next-release/change cycle; Phase 4
-> is entered only after an explicit retirement decision.
+> dashed Phase 3-to-Phase 1 path denotes only selected bounded or planned
+> release work; operations-only demand remains in Phase 3. Phase 4 is entered
+> only after an explicit retirement decision.
+
+## Operational pull-flow detail
+
+Use `modriss-operational-flow.svg` to explain how unpredictable production
+demand coexists with planned releases.
+
+Suggested caption:
+
+> **The MODRISS interrupt-driven operations and maintenance flow.** Production
+> demand is captured as WP-30, classified along three independent axes, and
+> replenished and pulled under the WP-31 Definition of Workflow. Verification
+> precedes one accepted disposition: operations-only closure, the shortest safe
+> model-driven/release path, or explicit commitment to a planned release.
+> Temporary emergency changes remain open until removed or reconciled with the
+> authoritative source.
 
 ## Model-driven engine detail
 
@@ -54,7 +70,7 @@ Suggested caption:
 > PSM models, generates implementation and deployment artifacts, and verifies
 > the resulting software. Accepted increments enter release and transition,
 > operation and evolution, and eventual retirement. Dashed paths denote
-> iteration, next-release work, and evidence-driven re-entry; the lower rail identifies continuous
+> iteration, selected next-release work, and evidence-driven re-entry; the lower rail identifies continuous
 > management and engineering disciplines that apply throughout the lifecycle.
 
 ## Typesetting

@@ -19,7 +19,9 @@ process activities.
 
 The package was constructed from the six papers supplied in
 `.idea/process_papers`, the implemented MODRISS MDE assets, and the existing
-modeling-process definitions. It does not treat the three modeling guides as a
+modeling-process definitions, with current official Kanban, SWEBOK, DORA, and
+AWS Serverless Lens guidance used for the operational specialization. It does
+not treat the three modeling guides as a
 complete software process. Instead, it reuses them as method fragments within a
 larger, situational, iterative-incremental lifecycle.
 
@@ -71,8 +73,11 @@ situational factors control it, and how it is evaluated.
 
 The full lifecycle contains a repeatable release cycle rather than one terminal
 release. G7 establishes the currently accepted operating baseline. While that
-baseline continues to run, selected roadmap or operational work begins a later
-release at Phase 1. Phase 4 is reached only through an explicit retirement
+baseline continues to run, planned increments use the release engine and
+unpredictable production demand uses a distinct pull-controlled maintenance
+flow. Operations-only work can finish there; model/product changes take the
+shortest safe MDE and release path; broader changes are explicitly committed to
+a later release. Phase 4 is reached only through an explicit retirement
 decision. The detailed views and synchronization rules are indexed in
 [`spem/diagram-catalog.md`](spem/diagram-catalog.md).
 

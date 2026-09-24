@@ -105,19 +105,21 @@ retention rule.
 
 ### Implementation, release, and operations products
 
-| ID    | Work product                                 | Accountable role      | Minimum content                                                                               |
-| ----- | -------------------------------------------- | --------------------- | --------------------------------------------------------------------------------------------- |
-| WP-19 | Source and Test Baseline                     | Software Engineer     | completed logic/adapters/client, unit/contract/component tests, provenance                    |
-| WP-20 | Verification and Validation Record           | Quality Engineer      | test scope, environment, inputs, results, findings, coverage, limitations                     |
-| WP-21 | Immutable Release Candidate                  | Release Engineer      | artifact digests, configuration/schema versions, dependencies, SBOM/provenance where selected |
-| WP-22 | Release and Recovery Plan                    | Release Engineer      | strategy, thresholds, migrations, rollback/roll-forward, communications, approvals            |
-| WP-23 | Operational Readiness and Handover Pack      | Service Owner         | SLOs, dashboards, alerts, runbooks, support, access, backup/recovery, known risks             |
-| WP-24 | Deployment/Promotion Record                  | Release Engineer      | candidate, target, timestamps, checks, observations, decision/outcome                         |
-| WP-25 | Operational Evidence Set                     | Service Owner         | SLI/SLO, incidents, capacity, cost, security, product outcome, provider events                |
-| WP-26 | Incident and Problem Record                  | Service Owner         | timeline, impact, recovery, cause/system conditions, actions, learning                        |
-| WP-27 | Change and Impact Record                     | Requirements Engineer | request, authoritative re-entry point, affected traces, risk, plan, evidence                  |
-| WP-28 | Retirement/Migration Plan and Closure Record | Service Owner         | stakeholders, data/integrations/access/resources, migration, verification, retained evidence  |
-| WP-29 | Retrospective and Improvement Record         | Method Engineer       | observations, measures, decisions, actions, reusable candidates, no-op rationale              |
+| ID    | Work product                                 | Accountable role      | Minimum content                                                                                                                                                                 |
+| ----- | -------------------------------------------- | --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| WP-19 | Source and Test Baseline                     | Software Engineer     | completed logic/adapters/client, unit/contract/component tests, provenance                                                                                                      |
+| WP-20 | Verification and Validation Record           | Quality Engineer      | test scope, environment, inputs, results, findings, coverage, limitations                                                                                                       |
+| WP-21 | Immutable Release Candidate                  | Release Engineer      | artifact digests, configuration/schema versions, dependencies, SBOM/provenance where selected                                                                                   |
+| WP-22 | Release and Recovery Plan                    | Release Engineer      | strategy, thresholds, migrations, rollback/roll-forward, communications, approvals                                                                                              |
+| WP-23 | Operational Readiness and Handover Pack      | Service Owner         | SLOs, dashboards, alerts, runbooks, support, access, backup/recovery, known risks                                                                                               |
+| WP-24 | Deployment/Promotion Record                  | Release Engineer      | candidate, target, timestamps, checks, observations, decision/outcome                                                                                                           |
+| WP-25 | Operational Evidence Set                     | Service Owner         | SLI/SLO, incidents, capacity, cost, security, product outcome, provider events                                                                                                  |
+| WP-26 | Incident and Problem Record                  | Service Owner         | timeline, impact, recovery, cause/system conditions, actions, learning                                                                                                          |
+| WP-27 | Change and Impact Record                     | Requirements Engineer | request, authoritative re-entry point, affected traces, risk, plan, evidence                                                                                                    |
+| WP-28 | Retirement/Migration Plan and Closure Record | Service Owner         | stakeholders, data/integrations/access/resources, migration, verification, retained evidence                                                                                    |
+| WP-29 | Retrospective and Improvement Record         | Method Engineer       | observations, measures, decisions, actions, reusable candidates, no-op rationale                                                                                                |
+| WP-30 | Operational Work Item                        | Service Owner         | source, affected service, maintenance purpose, emergency-temporary status, service class, severity, owner, SLE, state, age, evidence, authoritative re-entry point, disposition |
+| WP-31 | Operations Flow Policy and Board             | Delivery Lead         | workflow states, WIP limits, pull/replenishment rules, service classes, SLEs, capacity and expedite policies, board and flow measures                                           |
 
 ## Work-product states
 
@@ -129,6 +131,12 @@ The standard state progression is:
 revision. Generated content also uses `generated-draft` before review. A
 release candidate uses `assembled → qualified → authorized → promoted →
 withdrawn/superseded`.
+
+WP-30 uses the flow states `intake → triage → ready → active → verify → done`,
+with `blocked`, `deferred-to-planned-release`, and `cancelled` explicitly
+recorded. WP-31 is a versioned policy: changing a WIP limit, service-level
+expectation, capacity rule, or expedite authority creates a reviewed revision
+rather than silently rewriting historical flow evidence.
 
 Acceptance is revision-specific. Editing an accepted work product creates a new
 draft revision; it does not mutate the prior decision invisibly.

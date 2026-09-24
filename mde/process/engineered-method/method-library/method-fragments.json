@@ -253,6 +253,23 @@
       "requirements": ["MR-LC-01", "MR-LC-04", "MR-MG-07"]
     },
     {
+      "id": "MF-18",
+      "name": "Interrupt-driven operations and maintenance flow",
+      "kind": "process-component",
+      "problem": "Unpredictable production demand competes with planned delivery, while emergency speed can bypass model, trace, and release controls and create permanent divergence.",
+      "initialContext": "A production service, an accepted operating baseline, service ownership, observability, and an explicit flow policy exist.",
+      "resultContext": "Operational demand is classified, pulled within capacity, resolved or routed, measured, and reconciled with authoritative sources and release evidence.",
+      "roles": ["R-05", "R-10", "R-11", "R-12", "R-13", "R-14"],
+      "workProducts": ["WP-25", "WP-26", "WP-27", "WP-30", "WP-31"],
+      "source": [
+        "Kanban Guide 2025 Definition of Workflow and active management",
+        "SWEBOK v4.0a maintenance categories and emergency maintenance",
+        "AWS Serverless Lens operational excellence"
+      ],
+      "selection": "required whenever MODRISS operates a production service; policy depth and support coverage are tailored",
+      "requirements": ["MR-LC-08", "MR-LC-09", "MR-LC-10", "MR-MG-08", "MR-SL-16"]
+    },
+    {
       "id": "UF-01",
       "name": "Integrated management, assurance, and evidence",
       "kind": "continuous",
@@ -260,10 +277,29 @@
       "initialContext": "An authorized product/process run exists.",
       "resultContext": "Decisions, dependencies, risks, findings, revisions, evidence, and improvement remain controlled throughout the run.",
       "roles": ["R-04", "R-05", "R-10", "R-11", "R-12", "R-14", "R-15"],
-      "workProducts": ["WP-04", "WP-05", "WP-07", "WP-13", "WP-20", "WP-25", "WP-27", "WP-29"],
+      "workProducts": [
+        "WP-04",
+        "WP-05",
+        "WP-07",
+        "WP-13",
+        "WP-20",
+        "WP-25",
+        "WP-27",
+        "WP-29",
+        "WP-30",
+        "WP-31"
+      ],
       "source": ["Ramsin-Paige PR3", "MDASP umbrella/postmortem/generalization patterns"],
       "selection": "continuous and required; depth is tailored",
-      "requirements": ["MR-MG-01", "MR-MG-03", "MR-MG-04", "MR-MG-05", "MR-MG-06", "MR-MG-07"]
+      "requirements": [
+        "MR-MG-01",
+        "MR-MG-03",
+        "MR-MG-04",
+        "MR-MG-05",
+        "MR-MG-06",
+        "MR-MG-07",
+        "MR-MG-08"
+      ]
     }
   ]
 }

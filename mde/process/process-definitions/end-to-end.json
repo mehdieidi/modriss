@@ -456,7 +456,11 @@
           "e2e-artifact.product-charter"
         ],
         "inputSource": "declared",
-        "outputWorkProductRefs": ["e2e-artifact.product-charter", "e2e-artifact.method-profile"],
+        "outputWorkProductRefs": [
+          "e2e-artifact.product-charter",
+          "e2e-artifact.method-profile",
+          "e2e-artifact.service-flow-system"
+        ],
         "workProductParameters": [
           {
             "type": "Default_TaskDefinitionParameter",
@@ -487,18 +491,25 @@
             "workProductDefinitionRef": "e2e-artifact.method-profile",
             "direction": "out",
             "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "e2e-artifact.service-flow-system",
+            "direction": "out",
+            "optional": false
           }
         ],
         "coverageGroups": [],
         "steps": [
           "Define environments, support ownership, SLO hypotheses, observability expectations, rollback posture, and release cadence.",
-          "Identify data migration, compatibility, and progressive-delivery constraints.",
-          "Record the initial release decision policy."
+          "Define the operational pull system: workflow states, WIP limits, service classes, service-level expectations, capacity allocation, replenishment, and emergency preemption/reconciliation policy.",
+          "Identify data migration, compatibility, and progressive-delivery constraints and record the initial release decision policy."
         ],
         "entryCriteria": [],
         "exitCriteria": ["Define operational and release strategy evidence is recorded"],
         "validationRules": [
-          "The release strategy names promotion, rollback, and post-deployment validation evidence"
+          "The release strategy names promotion, rollback, and post-deployment validation evidence",
+          "The operational policy prevents unknown future maintenance demand from being represented as pre-scheduled tasks"
         ],
         "progressEvidence": "Define operational and release strategy decision, evidence links, owner, and status are recorded",
         "paletteFocus": [],
@@ -1286,10 +1297,14 @@
           "e2e-artifact.release-record",
           "e2e-artifact.product-charter",
           "e2e-artifact.operations-record",
-          "e2e-artifact.method-profile"
+          "e2e-artifact.method-profile",
+          "e2e-artifact.service-flow-system"
         ],
         "inputSource": "declared",
-        "outputWorkProductRefs": ["e2e-artifact.operations-record"],
+        "outputWorkProductRefs": [
+          "e2e-artifact.operations-record",
+          "e2e-artifact.operational-work-item"
+        ],
         "workProductParameters": [
           {
             "type": "Default_TaskDefinitionParameter",
@@ -1317,16 +1332,28 @@
           },
           {
             "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "e2e-artifact.service-flow-system",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "e2e-artifact.operations-record",
+            "direction": "out",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "e2e-artifact.operational-work-item",
             "direction": "out",
             "optional": false
           }
         ],
         "coverageGroups": [],
         "steps": [
-          "Inspect service levels, errors, cost, security signals, usage, and product outcome measures.",
+          "Inspect service levels, errors, cost, security signals, usage, provider events, and product outcome measures.",
           "Compare observations with the service and product hypotheses.",
-          "Create improvement or change items with evidence and owners."
+          "Capture actionable demand as operational work items rather than inserting invisible work into a release plan."
         ],
         "entryCriteria": [],
         "exitCriteria": ["Review SLOs, telemetry, and product outcomes evidence is recorded"],
@@ -1338,19 +1365,185 @@
         "metamodelBindings": []
       },
       {
-        "id": "task.e2e.ph3.st2.t1",
+        "id": "task.e2e.ph3.st2a.t1",
         "type": "TaskDefinition",
-        "name": "Manage incidents and recovery",
-        "purpose": "Manage incidents and recovery",
+        "name": "Triage and classify operational demand",
+        "purpose": "Triage and classify operational demand",
         "performerRoleRefs": ["role.service-owner"],
         "inputWorkProductRefs": [
+          "e2e-artifact.operational-work-item",
+          "e2e-artifact.operations-record",
+          "e2e-artifact.method-profile",
+          "e2e-artifact.service-flow-system"
+        ],
+        "inputSource": "declared",
+        "outputWorkProductRefs": [
+          "e2e-artifact.operational-work-item",
+          "e2e-artifact.service-flow-system"
+        ],
+        "workProductParameters": [
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "e2e-artifact.operational-work-item",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "e2e-artifact.operations-record",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "e2e-artifact.method-profile",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "e2e-artifact.service-flow-system",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "e2e-artifact.operational-work-item",
+            "direction": "out",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "e2e-artifact.service-flow-system",
+            "direction": "out",
+            "optional": false
+          }
+        ],
+        "coverageGroups": [],
+        "steps": [
+          "Record the demand source, impact, affected service and evidence.",
+          "Classify maintenance purpose as corrective, preventive, adaptive, additive, or perfective; record any emergency temporary-restoration status; classify service separately as expedite, fixed-date, standard, or risk-reduction.",
+          "Select an operations-only response, the shortest safe model-driven change path, or the planned release backlog."
+        ],
+        "entryCriteria": [],
+        "exitCriteria": ["Triage and classify operational demand evidence is recorded"],
+        "validationRules": [
+          "Maintenance purpose, emergency-temporary status, and service class are recorded independently",
+          "Every item has a visible disposition and accountable owner"
+        ],
+        "progressEvidence": "Triage and classify operational demand decision, evidence links, owner, and status are recorded",
+        "paletteFocus": [],
+        "metamodelBindings": []
+      },
+      {
+        "id": "task.e2e.ph3.st2a.t2",
+        "type": "TaskDefinition",
+        "name": "Replenish, pull, and manage operational flow",
+        "purpose": "Replenish, pull, and manage operational flow",
+        "performerRoleRefs": ["role.delivery-lead"],
+        "inputWorkProductRefs": [
+          "e2e-artifact.operational-work-item",
+          "e2e-artifact.operations-record",
+          "e2e-artifact.method-profile",
+          "e2e-artifact.service-flow-system"
+        ],
+        "inputSource": "declared",
+        "outputWorkProductRefs": [
+          "e2e-artifact.operational-work-item",
+          "e2e-artifact.service-flow-system",
+          "e2e-artifact.operations-record"
+        ],
+        "workProductParameters": [
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "e2e-artifact.operational-work-item",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "e2e-artifact.operations-record",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "e2e-artifact.method-profile",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "e2e-artifact.service-flow-system",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "e2e-artifact.operational-work-item",
+            "direction": "out",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "e2e-artifact.service-flow-system",
+            "direction": "out",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "e2e-artifact.operations-record",
+            "direction": "out",
+            "optional": false
+          }
+        ],
+        "coverageGroups": [],
+        "steps": [
+          "Replenish the ready queue at the defined cadence and pull only when WIP capacity exists.",
+          "Manage item age, blocked work, service-level expectations, and reserved operational capacity; preempt only under the explicit expedite policy.",
+          "Review WIP, throughput, cycle time, work-item age, SLE attainment, interrupt demand, and expedite/preemption frequency without ranking individuals."
+        ],
+        "entryCriteria": [],
+        "exitCriteria": ["Replenish, pull, and manage operational flow evidence is recorded"],
+        "validationRules": [
+          "A team does not start ordinary operational work beyond its WIP limit",
+          "The expedite lane has at most one active item unless the method profile records an exceptional incident command policy"
+        ],
+        "progressEvidence": "Replenish, pull, and manage operational flow decision, evidence links, owner, and status are recorded",
+        "paletteFocus": [],
+        "metamodelBindings": []
+      },
+      {
+        "id": "task.e2e.ph3.st2.t1",
+        "type": "TaskDefinition",
+        "name": "Manage incidents and emergency recovery",
+        "purpose": "Manage incidents and emergency recovery",
+        "performerRoleRefs": ["role.service-owner"],
+        "inputWorkProductRefs": [
+          "e2e-artifact.operational-work-item",
+          "e2e-artifact.service-flow-system",
           "e2e-artifact.operations-record",
           "e2e-artifact.release-record",
           "e2e-artifact.method-profile"
         ],
         "inputSource": "declared",
-        "outputWorkProductRefs": ["e2e-artifact.operations-record"],
+        "outputWorkProductRefs": [
+          "e2e-artifact.operations-record",
+          "e2e-artifact.operational-work-item"
+        ],
         "workProductParameters": [
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "e2e-artifact.operational-work-item",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "e2e-artifact.service-flow-system",
+            "direction": "in",
+            "optional": false
+          },
           {
             "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "e2e-artifact.operations-record",
@@ -1374,18 +1567,27 @@
             "workProductDefinitionRef": "e2e-artifact.operations-record",
             "direction": "out",
             "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "e2e-artifact.operational-work-item",
+            "direction": "out",
+            "optional": false
           }
         ],
         "coverageGroups": [],
         "steps": [
           "Triage impact, stabilize service, communicate status, and execute approved recovery actions.",
-          "Record incident timeline, affected scope, decisions, and evidence.",
-          "Open problem, security, or change work for systemic causes."
+          "Record incident timeline, affected scope, decisions, temporary modifications, and evidence.",
+          "Create permanent corrective, security, or change work for systemic causes and keep it visible after restoration."
         ],
         "entryCriteria": [],
-        "exitCriteria": ["Manage incidents and recovery evidence is recorded"],
-        "validationRules": ["Recovery and customer impact are recorded before closure"],
-        "progressEvidence": "Manage incidents and recovery decision, evidence links, owner, and status are recorded",
+        "exitCriteria": ["Manage incidents and emergency recovery evidence is recorded"],
+        "validationRules": [
+          "Recovery and customer impact are recorded before closure",
+          "An emergency temporary modification is not treated as the permanent corrective change"
+        ],
+        "progressEvidence": "Manage incidents and emergency recovery decision, evidence links, owner, and status are recorded",
         "paletteFocus": [],
         "metamodelBindings": []
       },
@@ -1396,14 +1598,32 @@
         "purpose": "Perform problem and risk learning",
         "performerRoleRefs": ["role.quality-engineer"],
         "inputWorkProductRefs": [
+          "e2e-artifact.operational-work-item",
+          "e2e-artifact.service-flow-system",
           "e2e-artifact.operations-record",
           "e2e-artifact.increment-record",
           "e2e-artifact.release-record",
           "e2e-artifact.method-profile"
         ],
         "inputSource": "declared",
-        "outputWorkProductRefs": ["e2e-artifact.operations-record", "e2e-artifact.method-profile"],
+        "outputWorkProductRefs": [
+          "e2e-artifact.operations-record",
+          "e2e-artifact.method-profile",
+          "e2e-artifact.operational-work-item"
+        ],
         "workProductParameters": [
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "e2e-artifact.operational-work-item",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "e2e-artifact.service-flow-system",
+            "direction": "in",
+            "optional": false
+          },
           {
             "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "e2e-artifact.operations-record",
@@ -1439,13 +1659,19 @@
             "workProductDefinitionRef": "e2e-artifact.method-profile",
             "direction": "out",
             "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "e2e-artifact.operational-work-item",
+            "direction": "out",
+            "optional": false
           }
         ],
         "coverageGroups": [],
         "steps": [
           "Analyze contributing causes across requirements, models, transformation, generation, deployment, and operation.",
           "Update controls, tests, model patterns, process guidance, or method profile as appropriate.",
-          "Review changes at the next increment or release boundary."
+          "Route permanent change through the operational pull system or a planned release and verify reconciliation after any emergency downstream fix."
         ],
         "entryCriteria": [],
         "exitCriteria": ["Perform problem and risk learning evidence is recorded"],
@@ -1463,6 +1689,8 @@
         "purpose": "Assess and propagate a change",
         "performerRoleRefs": ["role.delivery-lead"],
         "inputWorkProductRefs": [
+          "e2e-artifact.operational-work-item",
+          "e2e-artifact.service-flow-system",
           "e2e-artifact.operations-record",
           "e2e-artifact.method-profile",
           "e2e-artifact.increment-record",
@@ -1472,9 +1700,22 @@
         "inputSource": "declared",
         "outputWorkProductRefs": [
           "e2e-artifact.increment-record",
-          "e2e-artifact.operations-record"
+          "e2e-artifact.operations-record",
+          "e2e-artifact.operational-work-item"
         ],
         "workProductParameters": [
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "e2e-artifact.operational-work-item",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "e2e-artifact.service-flow-system",
+            "direction": "in",
+            "optional": false
+          },
           {
             "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "e2e-artifact.operations-record",
@@ -1516,18 +1757,24 @@
             "workProductDefinitionRef": "e2e-artifact.operations-record",
             "direction": "out",
             "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "e2e-artifact.operational-work-item",
+            "direction": "out",
+            "optional": false
           }
         ],
         "coverageGroups": [],
         "steps": [
-          "Classify the change as product, domain, architecture, platform, artifact, operational, or retirement scope.",
+          "Classify the authoritative source as product/domain, architecture, platform, generator, artifact, or operations and confirm whether the item stays in operational flow or enters a planned release.",
           "Use traces and dependency ownership to identify impacted downstream levels and teams.",
-          "Re-enter the smallest affected process stage, regenerate or redeploy as required, and preserve compatibility evidence."
+          "Re-enter the smallest affected process stage, regenerate or redeploy through applicable release controls, and reconcile emergency downstream fixes into the authoritative source."
         ],
         "entryCriteria": [],
         "exitCriteria": ["Assess and propagate a change evidence is recorded"],
         "validationRules": [
-          "The change record identifies source revision, impacted levels, downstream evidence, and acceptance decision"
+          "The change record identifies source revision, impacted levels, downstream evidence, acceptance decision, and operational-item disposition"
         ],
         "progressEvidence": "Assess and propagate a change decision, evidence links, owner, and status are recorded",
         "paletteFocus": [],
@@ -1540,6 +1787,8 @@
         "purpose": "Inspect flow, quality, and coordination metrics",
         "performerRoleRefs": ["role.process-reviewer"],
         "inputWorkProductRefs": [
+          "e2e-artifact.operational-work-item",
+          "e2e-artifact.service-flow-system",
           "e2e-artifact.increment-record",
           "e2e-artifact.operations-record",
           "e2e-artifact.product-charter",
@@ -1547,8 +1796,24 @@
           "e2e-artifact.release-record"
         ],
         "inputSource": "declared",
-        "outputWorkProductRefs": ["e2e-artifact.operations-record", "e2e-artifact.method-profile"],
+        "outputWorkProductRefs": [
+          "e2e-artifact.operations-record",
+          "e2e-artifact.method-profile",
+          "e2e-artifact.service-flow-system"
+        ],
         "workProductParameters": [
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "e2e-artifact.operational-work-item",
+            "direction": "in",
+            "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "e2e-artifact.service-flow-system",
+            "direction": "in",
+            "optional": false
+          },
           {
             "type": "Default_TaskDefinitionParameter",
             "workProductDefinitionRef": "e2e-artifact.increment-record",
@@ -1590,12 +1855,18 @@
             "workProductDefinitionRef": "e2e-artifact.method-profile",
             "direction": "out",
             "optional": false
+          },
+          {
+            "type": "Default_TaskDefinitionParameter",
+            "workProductDefinitionRef": "e2e-artifact.service-flow-system",
+            "direction": "out",
+            "optional": false
           }
         ],
         "coverageGroups": [],
         "steps": [
-          "Review flow time, rework, trace coverage, blockers, dependency age, escaped defects, and product outcomes.",
-          "Look for systemic queues, missing work products, invalid gates, and coordination failures.",
+          "Review planned-delivery forecast, WIP, throughput, cycle time, work-item age, SLE attainment, interrupt demand, expedite/preemption frequency, rework, trace coverage, blockers, dependency age, escaped defects, and product outcomes.",
+          "Look for systemic queues, starvation between planned and operational work, missing work products, invalid gates, and coordination failures.",
           "Approve bounded process changes and record their expected effect."
         ],
         "entryCriteria": [],
@@ -1914,6 +2185,20 @@
         "description": "SLOs, incidents, changes, product outcomes, and method-improvement actions."
       },
       {
+        "id": "e2e-artifact.operational-work-item",
+        "type": "WorkProductDefinition",
+        "workProductKind": "Artifact",
+        "name": "Operational Work Item",
+        "description": "An unplanned production demand item with source, maintenance purpose, emergency-temporary status, service class, severity, owner, service-level expectation, state, age, evidence, and disposition."
+      },
+      {
+        "id": "e2e-artifact.service-flow-system",
+        "type": "WorkProductDefinition",
+        "workProductKind": "Artifact",
+        "name": "Operations Flow Policy and Board",
+        "description": "The explicit pull-system policy: workflow states, WIP limits, service classes, service-level expectations, capacity policy, metrics, and visible board."
+      },
+      {
         "id": "e2e-artifact.retirement-record",
         "type": "WorkProductDefinition",
         "workProductKind": "Artifact",
@@ -2076,6 +2361,18 @@
       "id": "ru.e2e.ph3.st1.service-owner",
       "type": "RoleUse",
       "activityRef": "e2e.ph3.st1",
+      "roleDefinitionRef": "role.service-owner"
+    },
+    {
+      "id": "ru.e2e.ph3.st2a.delivery-lead",
+      "type": "RoleUse",
+      "activityRef": "e2e.ph3.st2a",
+      "roleDefinitionRef": "role.delivery-lead"
+    },
+    {
+      "id": "ru.e2e.ph3.st2a.service-owner",
+      "type": "RoleUse",
+      "activityRef": "e2e.ph3.st2a",
       "roleDefinitionRef": "role.service-owner"
     },
     {
@@ -2380,6 +2677,14 @@
       "activityRef": "e2e.ph0.st4",
       "taskUseRef": "e2e.ph0.st4.t2",
       "workProductDefinitionRef": "e2e-artifact.method-profile",
+      "usage": "output"
+    },
+    {
+      "id": "wpu.e2e.ph0.st4.t2.output.e2e-artifact.service-flow-system",
+      "type": "WorkProductUse",
+      "activityRef": "e2e.ph0.st4",
+      "taskUseRef": "e2e.ph0.st4.t2",
+      "workProductDefinitionRef": "e2e-artifact.service-flow-system",
       "usage": "output"
     },
     {
@@ -2903,12 +3208,148 @@
       "usage": "input"
     },
     {
+      "id": "wpu.e2e.ph3.st1.t1.input.e2e-artifact.service-flow-system",
+      "type": "WorkProductUse",
+      "activityRef": "e2e.ph3.st1",
+      "taskUseRef": "e2e.ph3.st1.t1",
+      "workProductDefinitionRef": "e2e-artifact.service-flow-system",
+      "usage": "input"
+    },
+    {
       "id": "wpu.e2e.ph3.st1.t1.output.e2e-artifact.operations-record",
       "type": "WorkProductUse",
       "activityRef": "e2e.ph3.st1",
       "taskUseRef": "e2e.ph3.st1.t1",
       "workProductDefinitionRef": "e2e-artifact.operations-record",
       "usage": "output"
+    },
+    {
+      "id": "wpu.e2e.ph3.st1.t1.output.e2e-artifact.operational-work-item",
+      "type": "WorkProductUse",
+      "activityRef": "e2e.ph3.st1",
+      "taskUseRef": "e2e.ph3.st1.t1",
+      "workProductDefinitionRef": "e2e-artifact.operational-work-item",
+      "usage": "output"
+    },
+    {
+      "id": "wpu.e2e.ph3.st2a.t1.input.e2e-artifact.operational-work-item",
+      "type": "WorkProductUse",
+      "activityRef": "e2e.ph3.st2a",
+      "taskUseRef": "e2e.ph3.st2a.t1",
+      "workProductDefinitionRef": "e2e-artifact.operational-work-item",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.e2e.ph3.st2a.t1.input.e2e-artifact.operations-record",
+      "type": "WorkProductUse",
+      "activityRef": "e2e.ph3.st2a",
+      "taskUseRef": "e2e.ph3.st2a.t1",
+      "workProductDefinitionRef": "e2e-artifact.operations-record",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.e2e.ph3.st2a.t1.input.e2e-artifact.method-profile",
+      "type": "WorkProductUse",
+      "activityRef": "e2e.ph3.st2a",
+      "taskUseRef": "e2e.ph3.st2a.t1",
+      "workProductDefinitionRef": "e2e-artifact.method-profile",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.e2e.ph3.st2a.t1.input.e2e-artifact.service-flow-system",
+      "type": "WorkProductUse",
+      "activityRef": "e2e.ph3.st2a",
+      "taskUseRef": "e2e.ph3.st2a.t1",
+      "workProductDefinitionRef": "e2e-artifact.service-flow-system",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.e2e.ph3.st2a.t1.output.e2e-artifact.operational-work-item",
+      "type": "WorkProductUse",
+      "activityRef": "e2e.ph3.st2a",
+      "taskUseRef": "e2e.ph3.st2a.t1",
+      "workProductDefinitionRef": "e2e-artifact.operational-work-item",
+      "usage": "output"
+    },
+    {
+      "id": "wpu.e2e.ph3.st2a.t1.output.e2e-artifact.service-flow-system",
+      "type": "WorkProductUse",
+      "activityRef": "e2e.ph3.st2a",
+      "taskUseRef": "e2e.ph3.st2a.t1",
+      "workProductDefinitionRef": "e2e-artifact.service-flow-system",
+      "usage": "output"
+    },
+    {
+      "id": "wpu.e2e.ph3.st2a.t2.input.e2e-artifact.operational-work-item",
+      "type": "WorkProductUse",
+      "activityRef": "e2e.ph3.st2a",
+      "taskUseRef": "e2e.ph3.st2a.t2",
+      "workProductDefinitionRef": "e2e-artifact.operational-work-item",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.e2e.ph3.st2a.t2.input.e2e-artifact.operations-record",
+      "type": "WorkProductUse",
+      "activityRef": "e2e.ph3.st2a",
+      "taskUseRef": "e2e.ph3.st2a.t2",
+      "workProductDefinitionRef": "e2e-artifact.operations-record",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.e2e.ph3.st2a.t2.input.e2e-artifact.method-profile",
+      "type": "WorkProductUse",
+      "activityRef": "e2e.ph3.st2a",
+      "taskUseRef": "e2e.ph3.st2a.t2",
+      "workProductDefinitionRef": "e2e-artifact.method-profile",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.e2e.ph3.st2a.t2.input.e2e-artifact.service-flow-system",
+      "type": "WorkProductUse",
+      "activityRef": "e2e.ph3.st2a",
+      "taskUseRef": "e2e.ph3.st2a.t2",
+      "workProductDefinitionRef": "e2e-artifact.service-flow-system",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.e2e.ph3.st2a.t2.output.e2e-artifact.operational-work-item",
+      "type": "WorkProductUse",
+      "activityRef": "e2e.ph3.st2a",
+      "taskUseRef": "e2e.ph3.st2a.t2",
+      "workProductDefinitionRef": "e2e-artifact.operational-work-item",
+      "usage": "output"
+    },
+    {
+      "id": "wpu.e2e.ph3.st2a.t2.output.e2e-artifact.service-flow-system",
+      "type": "WorkProductUse",
+      "activityRef": "e2e.ph3.st2a",
+      "taskUseRef": "e2e.ph3.st2a.t2",
+      "workProductDefinitionRef": "e2e-artifact.service-flow-system",
+      "usage": "output"
+    },
+    {
+      "id": "wpu.e2e.ph3.st2a.t2.output.e2e-artifact.operations-record",
+      "type": "WorkProductUse",
+      "activityRef": "e2e.ph3.st2a",
+      "taskUseRef": "e2e.ph3.st2a.t2",
+      "workProductDefinitionRef": "e2e-artifact.operations-record",
+      "usage": "output"
+    },
+    {
+      "id": "wpu.e2e.ph3.st2.t1.input.e2e-artifact.operational-work-item",
+      "type": "WorkProductUse",
+      "activityRef": "e2e.ph3.st2",
+      "taskUseRef": "e2e.ph3.st2.t1",
+      "workProductDefinitionRef": "e2e-artifact.operational-work-item",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.e2e.ph3.st2.t1.input.e2e-artifact.service-flow-system",
+      "type": "WorkProductUse",
+      "activityRef": "e2e.ph3.st2",
+      "taskUseRef": "e2e.ph3.st2.t1",
+      "workProductDefinitionRef": "e2e-artifact.service-flow-system",
+      "usage": "input"
     },
     {
       "id": "wpu.e2e.ph3.st2.t1.input.e2e-artifact.operations-record",
@@ -2941,6 +3382,30 @@
       "taskUseRef": "e2e.ph3.st2.t1",
       "workProductDefinitionRef": "e2e-artifact.operations-record",
       "usage": "output"
+    },
+    {
+      "id": "wpu.e2e.ph3.st2.t1.output.e2e-artifact.operational-work-item",
+      "type": "WorkProductUse",
+      "activityRef": "e2e.ph3.st2",
+      "taskUseRef": "e2e.ph3.st2.t1",
+      "workProductDefinitionRef": "e2e-artifact.operational-work-item",
+      "usage": "output"
+    },
+    {
+      "id": "wpu.e2e.ph3.st2.t2.input.e2e-artifact.operational-work-item",
+      "type": "WorkProductUse",
+      "activityRef": "e2e.ph3.st2",
+      "taskUseRef": "e2e.ph3.st2.t2",
+      "workProductDefinitionRef": "e2e-artifact.operational-work-item",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.e2e.ph3.st2.t2.input.e2e-artifact.service-flow-system",
+      "type": "WorkProductUse",
+      "activityRef": "e2e.ph3.st2",
+      "taskUseRef": "e2e.ph3.st2.t2",
+      "workProductDefinitionRef": "e2e-artifact.service-flow-system",
+      "usage": "input"
     },
     {
       "id": "wpu.e2e.ph3.st2.t2.input.e2e-artifact.operations-record",
@@ -2989,6 +3454,30 @@
       "taskUseRef": "e2e.ph3.st2.t2",
       "workProductDefinitionRef": "e2e-artifact.method-profile",
       "usage": "output"
+    },
+    {
+      "id": "wpu.e2e.ph3.st2.t2.output.e2e-artifact.operational-work-item",
+      "type": "WorkProductUse",
+      "activityRef": "e2e.ph3.st2",
+      "taskUseRef": "e2e.ph3.st2.t2",
+      "workProductDefinitionRef": "e2e-artifact.operational-work-item",
+      "usage": "output"
+    },
+    {
+      "id": "wpu.e2e.ph3.st3.t1.input.e2e-artifact.operational-work-item",
+      "type": "WorkProductUse",
+      "activityRef": "e2e.ph3.st3",
+      "taskUseRef": "e2e.ph3.st3.t1",
+      "workProductDefinitionRef": "e2e-artifact.operational-work-item",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.e2e.ph3.st3.t1.input.e2e-artifact.service-flow-system",
+      "type": "WorkProductUse",
+      "activityRef": "e2e.ph3.st3",
+      "taskUseRef": "e2e.ph3.st3.t1",
+      "workProductDefinitionRef": "e2e-artifact.service-flow-system",
+      "usage": "input"
     },
     {
       "id": "wpu.e2e.ph3.st3.t1.input.e2e-artifact.operations-record",
@@ -3047,6 +3536,30 @@
       "usage": "output"
     },
     {
+      "id": "wpu.e2e.ph3.st3.t1.output.e2e-artifact.operational-work-item",
+      "type": "WorkProductUse",
+      "activityRef": "e2e.ph3.st3",
+      "taskUseRef": "e2e.ph3.st3.t1",
+      "workProductDefinitionRef": "e2e-artifact.operational-work-item",
+      "usage": "output"
+    },
+    {
+      "id": "wpu.e2e.ph3.st4.t1.input.e2e-artifact.operational-work-item",
+      "type": "WorkProductUse",
+      "activityRef": "e2e.ph3.st4",
+      "taskUseRef": "e2e.ph3.st4.t1",
+      "workProductDefinitionRef": "e2e-artifact.operational-work-item",
+      "usage": "input"
+    },
+    {
+      "id": "wpu.e2e.ph3.st4.t1.input.e2e-artifact.service-flow-system",
+      "type": "WorkProductUse",
+      "activityRef": "e2e.ph3.st4",
+      "taskUseRef": "e2e.ph3.st4.t1",
+      "workProductDefinitionRef": "e2e-artifact.service-flow-system",
+      "usage": "input"
+    },
+    {
       "id": "wpu.e2e.ph3.st4.t1.input.e2e-artifact.increment-record",
       "type": "WorkProductUse",
       "activityRef": "e2e.ph3.st4",
@@ -3100,6 +3613,14 @@
       "activityRef": "e2e.ph3.st4",
       "taskUseRef": "e2e.ph3.st4.t1",
       "workProductDefinitionRef": "e2e-artifact.method-profile",
+      "usage": "output"
+    },
+    {
+      "id": "wpu.e2e.ph3.st4.t1.output.e2e-artifact.service-flow-system",
+      "type": "WorkProductUse",
+      "activityRef": "e2e.ph3.st4",
+      "taskUseRef": "e2e.ph3.st4.t1",
+      "workProductDefinitionRef": "e2e-artifact.service-flow-system",
       "usage": "output"
     },
     {
@@ -3520,6 +4041,79 @@
       "e2e.loop.psm-feedback-pim",
       "e2e.loop.artifact-feedback-psm"
     ],
+    "releaseCycle": {
+      "id": "modriss.end-to-end.release-cycle",
+      "type": "Activity",
+      "activityKind": "LifecycleLoop",
+      "name": "Active Product Release Cycle",
+      "isRepeatable": true,
+      "activityRefs": ["e2e.ph1", "e2e.ph2", "e2e.ph3"],
+      "repeatCondition": "retirement-not-authorized",
+      "exitCondition": "retirement-authorized",
+      "guidance": "While the product remains active, planned release work and interrupt-driven operational work proceed as connected but separately controlled flows; an accepted baseline remains in operation while a later release is engineered."
+    },
+    "maintenanceFlow": {
+      "id": "modriss.end-to-end.maintenance-flow",
+      "type": "Activity",
+      "activityKind": "KanbanFlow",
+      "name": "Interrupt-Driven Operations and Maintenance Flow",
+      "isRepeatable": true,
+      "activityRefs": ["e2e.ph3.st1", "e2e.ph3.st2a", "e2e.ph3.st2", "e2e.ph3.st3", "e2e.ph3.st4"],
+      "repeatCondition": "service-operational-and-retirement-not-authorized",
+      "exitCondition": "retirement-authorized",
+      "flowControl": "pull-with-explicit-WIP-limits-and-service-level-expectations",
+      "guidance": "Production demand is captured when it emerges, classified by maintenance purpose, emergency-temporary status, and service class, and pulled only with capacity. Operations-only work may complete in this flow; product changes use the shortest safe MDE path and applicable release controls; broad changes enter a planned release."
+    },
+    "lifecycleTransitions": [
+      {
+        "id": "ws.e2e.ph0.e2e.ph1",
+        "predecessorRef": "e2e.ph0",
+        "successorRef": "e2e.ph1",
+        "relation": "phase-order",
+        "condition": "G1-method-and-first-increment-authorized",
+        "guidance": "Begin planned delivery only after the method profile, ownership, controls, and first increment hypothesis are accepted."
+      },
+      {
+        "id": "ws.e2e.ph1.e2e.ph2",
+        "predecessorRef": "e2e.ph1",
+        "successorRef": "e2e.ph2",
+        "relation": "phase-order",
+        "condition": "release-candidate-scope-ready",
+        "guidance": "Assemble only accepted increments and exact compatible revisions into an immutable release candidate."
+      },
+      {
+        "id": "ws.e2e.ph2.e2e.ph3",
+        "predecessorRef": "e2e.ph2",
+        "successorRef": "e2e.ph3",
+        "relation": "phase-order",
+        "condition": "G6-authorized-and-G7-transitioned",
+        "guidance": "The promoted release becomes the accepted operating baseline after progressive validation and operational handover."
+      },
+      {
+        "id": "ws.e2e.ph3.e2e.ph4",
+        "predecessorRef": "e2e.ph3",
+        "successorRef": "e2e.ph4",
+        "relation": "retirement-transition",
+        "condition": "retirement-authorized",
+        "guidance": "Leave active operation only after an explicit retirement decision and an accepted migration/decommission plan."
+      },
+      {
+        "id": "ws.release-rework.e2e.ph2.e2e.ph1",
+        "predecessorRef": "e2e.ph2",
+        "successorRef": "e2e.ph1",
+        "relation": "release-rework",
+        "condition": "G6-rejected-or-promotion-failed",
+        "guidance": "Retain the last accepted operating baseline and return corrective work to the earliest affected delivery activity before requalification."
+      },
+      {
+        "id": "ws.release-cycle.e2e.ph3.e2e.ph1",
+        "predecessorRef": "e2e.ph3",
+        "successorRef": "e2e.ph1",
+        "relation": "release-cycle",
+        "condition": "retirement-not-authorized-and-next-release-or-change-selected",
+        "guidance": "Start the next planned release from roadmap demand or operational work deliberately committed to the release backlog; Phase 3 continues for the accepted baseline."
+      }
+    ],
     "reworkLoops": [
       {
         "id": "e2e.loop.pim-feedback-cim",
@@ -3566,17 +4160,6 @@
         "e2e.p6.m2t-generation",
         "e2e.p7.artifact-completion"
       ]
-    },
-    "releaseCycle": {
-      "id": "modriss.end-to-end.release-cycle",
-      "type": "Activity",
-      "activityKind": "Iteration",
-      "name": "Release Cycle",
-      "isRepeatable": true,
-      "activityRefs": ["e2e.ph1", "e2e.ph2", "e2e.ph3"],
-      "repeatCondition": "retirement-not-authorized",
-      "exitCondition": "retirement-authorized",
-      "guidance": "While the accepted release remains in operation, roadmap demand and operational evidence initiate a later release at Phase 1. Phase 4 is entered only through an authorized retirement decision."
     },
     "spemMapping": "MODRISS extension realized as an Activity(kind = Iteration) containing process Activities and WorkSequences."
   },
@@ -4017,7 +4600,8 @@
               ],
               "outputWorkProductUseRefs": [
                 "wpu.e2e.ph0.st4.t2.output.e2e-artifact.product-charter",
-                "wpu.e2e.ph0.st4.t2.output.e2e-artifact.method-profile"
+                "wpu.e2e.ph0.st4.t2.output.e2e-artifact.method-profile",
+                "wpu.e2e.ph0.st4.t2.output.e2e-artifact.service-flow-system"
               ],
               "processParameters": [
                 {
@@ -4059,6 +4643,14 @@
                   "direction": "out",
                   "optional": false,
                   "workProductUseRef": "wpu.e2e.ph0.st4.t2.output.e2e-artifact.method-profile"
+                },
+                {
+                  "id": "pp.e2e.ph0.st4.t2.out.wpu.e2e.ph0.st4.t2.output.e2e-artifact.service-flow-system",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "e2e.ph0.st4.t2",
+                  "direction": "out",
+                  "optional": false,
+                  "workProductUseRef": "wpu.e2e.ph0.st4.t2.output.e2e-artifact.service-flow-system"
                 }
               ]
             }
@@ -5141,12 +5733,12 @@
       "id": "e2e.ph3",
       "name": "Operate, Evolve & Learn",
       "order": 3,
-      "objective": "Operate the service, respond to incidents, evolve models and artifacts through controlled change propagation, and continuously improve the development process.",
+      "objective": "Operate the service and use an explicit pull system for unpredictable production demand while planned releases continue through the increment engine; restore service, reconcile authoritative sources, and learn.",
       "entryCriteria": [
         "A service or operational capability has been released or is being maintained"
       ],
       "exitCriteria": [
-        "Operational work is recorded",
+        "Operational demand and flow decisions are visible",
         "Changes are traced through the appropriate lifecycle path",
         "Product and method learning is reviewed at the agreed cadence"
       ],
@@ -5181,10 +5773,12 @@
                 "wpu.e2e.ph3.st1.t1.input.e2e-artifact.release-record",
                 "wpu.e2e.ph3.st1.t1.input.e2e-artifact.product-charter",
                 "wpu.e2e.ph3.st1.t1.input.e2e-artifact.operations-record",
-                "wpu.e2e.ph3.st1.t1.input.e2e-artifact.method-profile"
+                "wpu.e2e.ph3.st1.t1.input.e2e-artifact.method-profile",
+                "wpu.e2e.ph3.st1.t1.input.e2e-artifact.service-flow-system"
               ],
               "outputWorkProductUseRefs": [
-                "wpu.e2e.ph3.st1.t1.output.e2e-artifact.operations-record"
+                "wpu.e2e.ph3.st1.t1.output.e2e-artifact.operations-record",
+                "wpu.e2e.ph3.st1.t1.output.e2e-artifact.operational-work-item"
               ],
               "processParameters": [
                 {
@@ -5220,12 +5814,201 @@
                   "workProductUseRef": "wpu.e2e.ph3.st1.t1.input.e2e-artifact.method-profile"
                 },
                 {
+                  "id": "pp.e2e.ph3.st1.t1.in.wpu.e2e.ph3.st1.t1.input.e2e-artifact.service-flow-system",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "e2e.ph3.st1.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.e2e.ph3.st1.t1.input.e2e-artifact.service-flow-system"
+                },
+                {
                   "id": "pp.e2e.ph3.st1.t1.out.wpu.e2e.ph3.st1.t1.output.e2e-artifact.operations-record",
                   "type": "ProcessParameter",
                   "taskUseRef": "e2e.ph3.st1.t1",
                   "direction": "out",
                   "optional": false,
                   "workProductUseRef": "wpu.e2e.ph3.st1.t1.output.e2e-artifact.operations-record"
+                },
+                {
+                  "id": "pp.e2e.ph3.st1.t1.out.wpu.e2e.ph3.st1.t1.output.e2e-artifact.operational-work-item",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "e2e.ph3.st1.t1",
+                  "direction": "out",
+                  "optional": false,
+                  "workProductUseRef": "wpu.e2e.ph3.st1.t1.output.e2e-artifact.operational-work-item"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "e2e.ph3.st2a",
+          "type": "Activity",
+          "activityKind": "MODRISS::Stage",
+          "name": "Operational Demand Intake & Pull Control",
+          "objective": "Control unpredictable production demand through explicit classification, replenishment, pull, WIP, and service expectations.",
+          "roleUseRefs": ["ru.e2e.ph3.st2a.delivery-lead", "ru.e2e.ph3.st2a.service-owner"],
+          "iterative": true,
+          "iterationLoops": [],
+          "taskUses": [
+            {
+              "id": "e2e.ph3.st2a.t1",
+              "type": "TaskUse",
+              "taskDefinitionRef": "task.e2e.ph3.st2a.t1",
+              "performerRoleUseRefs": ["ru.e2e.ph3.st2a.service-owner"],
+              "processPerformers": [
+                {
+                  "id": "ppf.e2e.ph3.st2a.t1.ru.e2e.ph3.st2a.service-owner",
+                  "type": "ProcessPerformer",
+                  "taskUseRef": "e2e.ph3.st2a.t1",
+                  "kind": "primary",
+                  "roleUseRef": "ru.e2e.ph3.st2a.service-owner"
+                }
+              ],
+              "selectedStepIndices": [0, 1, 2],
+              "inputWorkProductUseRefs": [
+                "wpu.e2e.ph3.st2a.t1.input.e2e-artifact.operational-work-item",
+                "wpu.e2e.ph3.st2a.t1.input.e2e-artifact.operations-record",
+                "wpu.e2e.ph3.st2a.t1.input.e2e-artifact.method-profile",
+                "wpu.e2e.ph3.st2a.t1.input.e2e-artifact.service-flow-system"
+              ],
+              "outputWorkProductUseRefs": [
+                "wpu.e2e.ph3.st2a.t1.output.e2e-artifact.operational-work-item",
+                "wpu.e2e.ph3.st2a.t1.output.e2e-artifact.service-flow-system"
+              ],
+              "processParameters": [
+                {
+                  "id": "pp.e2e.ph3.st2a.t1.in.wpu.e2e.ph3.st2a.t1.input.e2e-artifact.operational-work-item",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "e2e.ph3.st2a.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.e2e.ph3.st2a.t1.input.e2e-artifact.operational-work-item"
+                },
+                {
+                  "id": "pp.e2e.ph3.st2a.t1.in.wpu.e2e.ph3.st2a.t1.input.e2e-artifact.operations-record",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "e2e.ph3.st2a.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.e2e.ph3.st2a.t1.input.e2e-artifact.operations-record"
+                },
+                {
+                  "id": "pp.e2e.ph3.st2a.t1.in.wpu.e2e.ph3.st2a.t1.input.e2e-artifact.method-profile",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "e2e.ph3.st2a.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.e2e.ph3.st2a.t1.input.e2e-artifact.method-profile"
+                },
+                {
+                  "id": "pp.e2e.ph3.st2a.t1.in.wpu.e2e.ph3.st2a.t1.input.e2e-artifact.service-flow-system",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "e2e.ph3.st2a.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.e2e.ph3.st2a.t1.input.e2e-artifact.service-flow-system"
+                },
+                {
+                  "id": "pp.e2e.ph3.st2a.t1.out.wpu.e2e.ph3.st2a.t1.output.e2e-artifact.operational-work-item",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "e2e.ph3.st2a.t1",
+                  "direction": "out",
+                  "optional": false,
+                  "workProductUseRef": "wpu.e2e.ph3.st2a.t1.output.e2e-artifact.operational-work-item"
+                },
+                {
+                  "id": "pp.e2e.ph3.st2a.t1.out.wpu.e2e.ph3.st2a.t1.output.e2e-artifact.service-flow-system",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "e2e.ph3.st2a.t1",
+                  "direction": "out",
+                  "optional": false,
+                  "workProductUseRef": "wpu.e2e.ph3.st2a.t1.output.e2e-artifact.service-flow-system"
+                }
+              ]
+            },
+            {
+              "id": "e2e.ph3.st2a.t2",
+              "type": "TaskUse",
+              "taskDefinitionRef": "task.e2e.ph3.st2a.t2",
+              "performerRoleUseRefs": ["ru.e2e.ph3.st2a.delivery-lead"],
+              "processPerformers": [
+                {
+                  "id": "ppf.e2e.ph3.st2a.t2.ru.e2e.ph3.st2a.delivery-lead",
+                  "type": "ProcessPerformer",
+                  "taskUseRef": "e2e.ph3.st2a.t2",
+                  "kind": "primary",
+                  "roleUseRef": "ru.e2e.ph3.st2a.delivery-lead"
+                }
+              ],
+              "selectedStepIndices": [0, 1, 2],
+              "inputWorkProductUseRefs": [
+                "wpu.e2e.ph3.st2a.t2.input.e2e-artifact.operational-work-item",
+                "wpu.e2e.ph3.st2a.t2.input.e2e-artifact.operations-record",
+                "wpu.e2e.ph3.st2a.t2.input.e2e-artifact.method-profile",
+                "wpu.e2e.ph3.st2a.t2.input.e2e-artifact.service-flow-system"
+              ],
+              "outputWorkProductUseRefs": [
+                "wpu.e2e.ph3.st2a.t2.output.e2e-artifact.operational-work-item",
+                "wpu.e2e.ph3.st2a.t2.output.e2e-artifact.service-flow-system",
+                "wpu.e2e.ph3.st2a.t2.output.e2e-artifact.operations-record"
+              ],
+              "processParameters": [
+                {
+                  "id": "pp.e2e.ph3.st2a.t2.in.wpu.e2e.ph3.st2a.t2.input.e2e-artifact.operational-work-item",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "e2e.ph3.st2a.t2",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.e2e.ph3.st2a.t2.input.e2e-artifact.operational-work-item"
+                },
+                {
+                  "id": "pp.e2e.ph3.st2a.t2.in.wpu.e2e.ph3.st2a.t2.input.e2e-artifact.operations-record",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "e2e.ph3.st2a.t2",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.e2e.ph3.st2a.t2.input.e2e-artifact.operations-record"
+                },
+                {
+                  "id": "pp.e2e.ph3.st2a.t2.in.wpu.e2e.ph3.st2a.t2.input.e2e-artifact.method-profile",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "e2e.ph3.st2a.t2",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.e2e.ph3.st2a.t2.input.e2e-artifact.method-profile"
+                },
+                {
+                  "id": "pp.e2e.ph3.st2a.t2.in.wpu.e2e.ph3.st2a.t2.input.e2e-artifact.service-flow-system",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "e2e.ph3.st2a.t2",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.e2e.ph3.st2a.t2.input.e2e-artifact.service-flow-system"
+                },
+                {
+                  "id": "pp.e2e.ph3.st2a.t2.out.wpu.e2e.ph3.st2a.t2.output.e2e-artifact.operational-work-item",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "e2e.ph3.st2a.t2",
+                  "direction": "out",
+                  "optional": false,
+                  "workProductUseRef": "wpu.e2e.ph3.st2a.t2.output.e2e-artifact.operational-work-item"
+                },
+                {
+                  "id": "pp.e2e.ph3.st2a.t2.out.wpu.e2e.ph3.st2a.t2.output.e2e-artifact.service-flow-system",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "e2e.ph3.st2a.t2",
+                  "direction": "out",
+                  "optional": false,
+                  "workProductUseRef": "wpu.e2e.ph3.st2a.t2.output.e2e-artifact.service-flow-system"
+                },
+                {
+                  "id": "pp.e2e.ph3.st2a.t2.out.wpu.e2e.ph3.st2a.t2.output.e2e-artifact.operations-record",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "e2e.ph3.st2a.t2",
+                  "direction": "out",
+                  "optional": false,
+                  "workProductUseRef": "wpu.e2e.ph3.st2a.t2.output.e2e-artifact.operations-record"
                 }
               ]
             }
@@ -5257,14 +6040,33 @@
               ],
               "selectedStepIndices": [0, 1, 2],
               "inputWorkProductUseRefs": [
+                "wpu.e2e.ph3.st2.t1.input.e2e-artifact.operational-work-item",
+                "wpu.e2e.ph3.st2.t1.input.e2e-artifact.service-flow-system",
                 "wpu.e2e.ph3.st2.t1.input.e2e-artifact.operations-record",
                 "wpu.e2e.ph3.st2.t1.input.e2e-artifact.release-record",
                 "wpu.e2e.ph3.st2.t1.input.e2e-artifact.method-profile"
               ],
               "outputWorkProductUseRefs": [
-                "wpu.e2e.ph3.st2.t1.output.e2e-artifact.operations-record"
+                "wpu.e2e.ph3.st2.t1.output.e2e-artifact.operations-record",
+                "wpu.e2e.ph3.st2.t1.output.e2e-artifact.operational-work-item"
               ],
               "processParameters": [
+                {
+                  "id": "pp.e2e.ph3.st2.t1.in.wpu.e2e.ph3.st2.t1.input.e2e-artifact.operational-work-item",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "e2e.ph3.st2.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.e2e.ph3.st2.t1.input.e2e-artifact.operational-work-item"
+                },
+                {
+                  "id": "pp.e2e.ph3.st2.t1.in.wpu.e2e.ph3.st2.t1.input.e2e-artifact.service-flow-system",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "e2e.ph3.st2.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.e2e.ph3.st2.t1.input.e2e-artifact.service-flow-system"
+                },
                 {
                   "id": "pp.e2e.ph3.st2.t1.in.wpu.e2e.ph3.st2.t1.input.e2e-artifact.operations-record",
                   "type": "ProcessParameter",
@@ -5296,6 +6098,14 @@
                   "direction": "out",
                   "optional": false,
                   "workProductUseRef": "wpu.e2e.ph3.st2.t1.output.e2e-artifact.operations-record"
+                },
+                {
+                  "id": "pp.e2e.ph3.st2.t1.out.wpu.e2e.ph3.st2.t1.output.e2e-artifact.operational-work-item",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "e2e.ph3.st2.t1",
+                  "direction": "out",
+                  "optional": false,
+                  "workProductUseRef": "wpu.e2e.ph3.st2.t1.output.e2e-artifact.operational-work-item"
                 }
               ]
             },
@@ -5315,6 +6125,8 @@
               ],
               "selectedStepIndices": [0, 1, 2],
               "inputWorkProductUseRefs": [
+                "wpu.e2e.ph3.st2.t2.input.e2e-artifact.operational-work-item",
+                "wpu.e2e.ph3.st2.t2.input.e2e-artifact.service-flow-system",
                 "wpu.e2e.ph3.st2.t2.input.e2e-artifact.operations-record",
                 "wpu.e2e.ph3.st2.t2.input.e2e-artifact.increment-record",
                 "wpu.e2e.ph3.st2.t2.input.e2e-artifact.release-record",
@@ -5322,9 +6134,26 @@
               ],
               "outputWorkProductUseRefs": [
                 "wpu.e2e.ph3.st2.t2.output.e2e-artifact.operations-record",
-                "wpu.e2e.ph3.st2.t2.output.e2e-artifact.method-profile"
+                "wpu.e2e.ph3.st2.t2.output.e2e-artifact.method-profile",
+                "wpu.e2e.ph3.st2.t2.output.e2e-artifact.operational-work-item"
               ],
               "processParameters": [
+                {
+                  "id": "pp.e2e.ph3.st2.t2.in.wpu.e2e.ph3.st2.t2.input.e2e-artifact.operational-work-item",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "e2e.ph3.st2.t2",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.e2e.ph3.st2.t2.input.e2e-artifact.operational-work-item"
+                },
+                {
+                  "id": "pp.e2e.ph3.st2.t2.in.wpu.e2e.ph3.st2.t2.input.e2e-artifact.service-flow-system",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "e2e.ph3.st2.t2",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.e2e.ph3.st2.t2.input.e2e-artifact.service-flow-system"
+                },
                 {
                   "id": "pp.e2e.ph3.st2.t2.in.wpu.e2e.ph3.st2.t2.input.e2e-artifact.operations-record",
                   "type": "ProcessParameter",
@@ -5372,6 +6201,14 @@
                   "direction": "out",
                   "optional": false,
                   "workProductUseRef": "wpu.e2e.ph3.st2.t2.output.e2e-artifact.method-profile"
+                },
+                {
+                  "id": "pp.e2e.ph3.st2.t2.out.wpu.e2e.ph3.st2.t2.output.e2e-artifact.operational-work-item",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "e2e.ph3.st2.t2",
+                  "direction": "out",
+                  "optional": false,
+                  "workProductUseRef": "wpu.e2e.ph3.st2.t2.output.e2e-artifact.operational-work-item"
                 }
               ]
             }
@@ -5403,6 +6240,8 @@
               ],
               "selectedStepIndices": [0, 1, 2],
               "inputWorkProductUseRefs": [
+                "wpu.e2e.ph3.st3.t1.input.e2e-artifact.operational-work-item",
+                "wpu.e2e.ph3.st3.t1.input.e2e-artifact.service-flow-system",
                 "wpu.e2e.ph3.st3.t1.input.e2e-artifact.operations-record",
                 "wpu.e2e.ph3.st3.t1.input.e2e-artifact.method-profile",
                 "wpu.e2e.ph3.st3.t1.input.e2e-artifact.increment-record",
@@ -5411,9 +6250,26 @@
               ],
               "outputWorkProductUseRefs": [
                 "wpu.e2e.ph3.st3.t1.output.e2e-artifact.increment-record",
-                "wpu.e2e.ph3.st3.t1.output.e2e-artifact.operations-record"
+                "wpu.e2e.ph3.st3.t1.output.e2e-artifact.operations-record",
+                "wpu.e2e.ph3.st3.t1.output.e2e-artifact.operational-work-item"
               ],
               "processParameters": [
+                {
+                  "id": "pp.e2e.ph3.st3.t1.in.wpu.e2e.ph3.st3.t1.input.e2e-artifact.operational-work-item",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "e2e.ph3.st3.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.e2e.ph3.st3.t1.input.e2e-artifact.operational-work-item"
+                },
+                {
+                  "id": "pp.e2e.ph3.st3.t1.in.wpu.e2e.ph3.st3.t1.input.e2e-artifact.service-flow-system",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "e2e.ph3.st3.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.e2e.ph3.st3.t1.input.e2e-artifact.service-flow-system"
+                },
                 {
                   "id": "pp.e2e.ph3.st3.t1.in.wpu.e2e.ph3.st3.t1.input.e2e-artifact.operations-record",
                   "type": "ProcessParameter",
@@ -5469,6 +6325,14 @@
                   "direction": "out",
                   "optional": false,
                   "workProductUseRef": "wpu.e2e.ph3.st3.t1.output.e2e-artifact.operations-record"
+                },
+                {
+                  "id": "pp.e2e.ph3.st3.t1.out.wpu.e2e.ph3.st3.t1.output.e2e-artifact.operational-work-item",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "e2e.ph3.st3.t1",
+                  "direction": "out",
+                  "optional": false,
+                  "workProductUseRef": "wpu.e2e.ph3.st3.t1.output.e2e-artifact.operational-work-item"
                 }
               ]
             }
@@ -5500,6 +6364,8 @@
               ],
               "selectedStepIndices": [0, 1, 2],
               "inputWorkProductUseRefs": [
+                "wpu.e2e.ph3.st4.t1.input.e2e-artifact.operational-work-item",
+                "wpu.e2e.ph3.st4.t1.input.e2e-artifact.service-flow-system",
                 "wpu.e2e.ph3.st4.t1.input.e2e-artifact.increment-record",
                 "wpu.e2e.ph3.st4.t1.input.e2e-artifact.operations-record",
                 "wpu.e2e.ph3.st4.t1.input.e2e-artifact.product-charter",
@@ -5508,9 +6374,26 @@
               ],
               "outputWorkProductUseRefs": [
                 "wpu.e2e.ph3.st4.t1.output.e2e-artifact.operations-record",
-                "wpu.e2e.ph3.st4.t1.output.e2e-artifact.method-profile"
+                "wpu.e2e.ph3.st4.t1.output.e2e-artifact.method-profile",
+                "wpu.e2e.ph3.st4.t1.output.e2e-artifact.service-flow-system"
               ],
               "processParameters": [
+                {
+                  "id": "pp.e2e.ph3.st4.t1.in.wpu.e2e.ph3.st4.t1.input.e2e-artifact.operational-work-item",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "e2e.ph3.st4.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.e2e.ph3.st4.t1.input.e2e-artifact.operational-work-item"
+                },
+                {
+                  "id": "pp.e2e.ph3.st4.t1.in.wpu.e2e.ph3.st4.t1.input.e2e-artifact.service-flow-system",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "e2e.ph3.st4.t1",
+                  "direction": "in",
+                  "optional": false,
+                  "workProductUseRef": "wpu.e2e.ph3.st4.t1.input.e2e-artifact.service-flow-system"
+                },
                 {
                   "id": "pp.e2e.ph3.st4.t1.in.wpu.e2e.ph3.st4.t1.input.e2e-artifact.increment-record",
                   "type": "ProcessParameter",
@@ -5566,6 +6449,14 @@
                   "direction": "out",
                   "optional": false,
                   "workProductUseRef": "wpu.e2e.ph3.st4.t1.output.e2e-artifact.method-profile"
+                },
+                {
+                  "id": "pp.e2e.ph3.st4.t1.out.wpu.e2e.ph3.st4.t1.output.e2e-artifact.service-flow-system",
+                  "type": "ProcessParameter",
+                  "taskUseRef": "e2e.ph3.st4.t1",
+                  "direction": "out",
+                  "optional": false,
+                  "workProductUseRef": "wpu.e2e.ph3.st4.t1.output.e2e-artifact.service-flow-system"
                 }
               ]
             }
@@ -5930,62 +6821,44 @@
   ],
   "workSequences": [
     {
-      "id": "ws.e2e.ph0.e2e.ph1",
       "type": "WorkSequence",
+      "linkKind": "finishToStart",
+      "id": "ws.e2e.ph0.e2e.ph1",
       "predecessorRef": "e2e.ph0",
       "successorRef": "e2e.ph1",
-      "linkKind": "finishToStart",
       "relation": "phase-order",
-      "condition": "G1-method-and-organization-ready"
+      "condition": "G1-method-and-first-increment-authorized",
+      "guidance": "Begin planned delivery only after the method profile, ownership, controls, and first increment hypothesis are accepted."
     },
     {
-      "id": "ws.e2e.ph1.e2e.ph2",
       "type": "WorkSequence",
+      "linkKind": "finishToStart",
+      "id": "ws.e2e.ph1.e2e.ph2",
       "predecessorRef": "e2e.ph1",
       "successorRef": "e2e.ph2",
-      "linkKind": "finishToStart",
       "relation": "phase-order",
-      "condition": "release-candidate-scope-ready"
+      "condition": "release-candidate-scope-ready",
+      "guidance": "Assemble only accepted increments and exact compatible revisions into an immutable release candidate."
     },
     {
-      "id": "ws.e2e.ph2.e2e.ph3",
       "type": "WorkSequence",
+      "linkKind": "finishToStart",
+      "id": "ws.e2e.ph2.e2e.ph3",
       "predecessorRef": "e2e.ph2",
       "successorRef": "e2e.ph3",
-      "linkKind": "finishToStart",
       "relation": "phase-order",
       "condition": "G6-authorized-and-G7-transitioned",
-      "guidance": "If promotion breaches a stop threshold, retain the last accepted operating baseline and route corrective work to Phase 1."
+      "guidance": "The promoted release becomes the accepted operating baseline after progressive validation and operational handover."
     },
     {
-      "id": "ws.e2e.ph3.e2e.ph4",
       "type": "WorkSequence",
+      "linkKind": "finishToStart",
+      "id": "ws.e2e.ph3.e2e.ph4",
       "predecessorRef": "e2e.ph3",
       "successorRef": "e2e.ph4",
-      "linkKind": "finishToStart",
       "relation": "retirement-transition",
       "condition": "retirement-authorized",
-      "guidance": "Normal continued operation does not enter Phase 4. Retirement requires an explicit authorized decision and plan."
-    },
-    {
-      "id": "ws.release-rework.e2e.ph2.e2e.ph1",
-      "type": "WorkSequence",
-      "predecessorRef": "e2e.ph2",
-      "successorRef": "e2e.ph1",
-      "linkKind": "finishToStart",
-      "relation": "release-rework",
-      "condition": "G6-rejected-or-promotion-failed",
-      "guidance": "Correct the candidate at the earliest authoritative model, generator, or code source, then propagate forward and requalify a new immutable candidate."
-    },
-    {
-      "id": "ws.release-cycle.e2e.ph3.e2e.ph1",
-      "type": "WorkSequence",
-      "predecessorRef": "e2e.ph3",
-      "successorRef": "e2e.ph1",
-      "linkKind": "finishToStart",
-      "relation": "release-cycle",
-      "condition": "retirement-not-authorized-and-next-release-or-change-selected",
-      "guidance": "Form a new release hypothesis from roadmap demand and operational evidence. The accepted release remains in operation while the later release is engineered."
+      "guidance": "Leave active operation only after an explicit retirement decision and an accepted migration/decommission plan."
     },
     {
       "id": "ws.e2e.ph0.st1.e2e.ph0.st2",
@@ -6132,9 +7005,17 @@
       "relation": "task-order"
     },
     {
-      "id": "ws.e2e.ph3.st1.e2e.ph3.st2",
+      "id": "ws.e2e.ph3.st1.e2e.ph3.st2a",
       "type": "WorkSequence",
       "predecessorRef": "e2e.ph3.st1",
+      "successorRef": "e2e.ph3.st2a",
+      "linkKind": "finishToStart",
+      "relation": "activity-order"
+    },
+    {
+      "id": "ws.e2e.ph3.st2a.e2e.ph3.st2",
+      "type": "WorkSequence",
+      "predecessorRef": "e2e.ph3.st2a",
       "successorRef": "e2e.ph3.st2",
       "linkKind": "finishToStart",
       "relation": "activity-order"
@@ -6154,6 +7035,14 @@
       "successorRef": "e2e.ph3.st4",
       "linkKind": "finishToStart",
       "relation": "activity-order"
+    },
+    {
+      "id": "ws.e2e.ph3.st2a.t1.e2e.ph3.st2a.t2",
+      "type": "WorkSequence",
+      "predecessorRef": "e2e.ph3.st2a.t1",
+      "successorRef": "e2e.ph3.st2a.t2",
+      "linkKind": "finishToStart",
+      "relation": "task-order"
     },
     {
       "id": "ws.e2e.ph3.st2.t1.e2e.ph3.st2.t2",
@@ -6226,6 +7115,26 @@
       "relation": "rework",
       "condition": "Generated artifacts fail validation or deployment dry-run.",
       "guidance": "Fix PSM at source stage; regenerate artifacts."
+    },
+    {
+      "type": "WorkSequence",
+      "linkKind": "finishToStart",
+      "id": "ws.release-rework.e2e.ph2.e2e.ph1",
+      "predecessorRef": "e2e.ph2",
+      "successorRef": "e2e.ph1",
+      "relation": "release-rework",
+      "condition": "G6-rejected-or-promotion-failed",
+      "guidance": "Retain the last accepted operating baseline and return corrective work to the earliest affected delivery activity before requalification."
+    },
+    {
+      "type": "WorkSequence",
+      "linkKind": "finishToStart",
+      "id": "ws.release-cycle.e2e.ph3.e2e.ph1",
+      "predecessorRef": "e2e.ph3",
+      "successorRef": "e2e.ph1",
+      "relation": "release-cycle",
+      "condition": "retirement-not-authorized-and-next-release-or-change-selected",
+      "guidance": "Start the next planned release from roadmap demand or operational work deliberately committed to the release backlog; Phase 3 continues for the accepted baseline."
     }
   ],
   "changeManagement": {

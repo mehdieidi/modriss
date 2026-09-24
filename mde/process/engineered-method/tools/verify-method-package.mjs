@@ -60,10 +60,10 @@ for (const attribute of referenceAttributes) {
 
 const coreWorkProducts = core.methodContent?.workProductDefinitions ?? [];
 const methodIds = coreWorkProducts.map(item => item.methodWorkProductId);
-if (coreWorkProducts.length !== 29 || new Set(methodIds).size !== 29) {
-  fail('Engineered core must contain exactly 29 uniquely identified lifecycle work products');
+if (coreWorkProducts.length !== 31 || new Set(methodIds).size !== 31) {
+  fail('Engineered core must contain exactly 31 uniquely identified lifecycle work products');
 }
-if ((fragments.fragments ?? []).length !== 18) fail('Expected 17 lifecycle fragments and one continuous fragment');
+if ((fragments.fragments ?? []).length !== 19) fail('Expected 18 lifecycle fragments and one continuous fragment');
 for (const fragment of fragments.fragments ?? []) {
   if (!libraryReport.includes(`#### ${fragment.id} —`)) {
     fail(`Academic method-library report is missing fragment ${fragment.id}`);

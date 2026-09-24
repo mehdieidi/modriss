@@ -15,14 +15,15 @@ such as PIM refinement realizes several requirements at once.
 
 | Requirement family                                                       | Primary fragments                       | Process phases        |
 | ------------------------------------------------------------------------ | --------------------------------------- | --------------------- |
-| Full lifecycle and gates (`MR-LC-*`)                                     | MF-01, MF-03, MF-04, MF-13–MF-17, UF-01 | 0–4                   |
+| Full lifecycle and gates (`MR-LC-*`)                                     | MF-01, MF-03, MF-04, MF-13–MF-18, UF-01 | 0–4                   |
 | Requirements and user involvement (`MR-RE-*`)                            | MF-04–MF-06, MF-15–MF-16                | 0, 1, 3               |
 | MDE boundaries, transformation, synchronization, validation (`MR-MDE-*`) | MF-05–MF-12, UF-01                      | 1 and continuous      |
 | Serverless exploration (`MR-SL-01`–`04`)                                 | MF-01–MF-03                             | 0, revisited at 1/2/3 |
 | Serverless modeling/design/security (`MR-SL-05`–`12`)                    | MF-05, MF-08–MF-10                      | 1                     |
 | Generation, testing, deployment (`MR-SL-13`–`15`)                        | MF-11–MF-14                             | 1–2                   |
-| Observability, cold start, feedback, lock-in (`MR-SL-16`–`18`)           | MF-02, MF-08, MF-10, MF-13–MF-16        | 0–3                   |
-| Management and scale (`MR-MG-*`)                                         | MF-03–MF-04, MF-13–MF-17, UF-01         | continuous            |
+| Observability, cold start, feedback, lock-in (`MR-SL-16`–`18`)           | MF-02, MF-08, MF-10, MF-13–MF-16, MF-18 | 0–3                   |
+| Planned/interrupt flow and maintenance (`MR-LC-08`–`10`, `MR-MG-08`)     | MF-16, MF-18, UF-01                     | 3 and continuous      |
+| Management and scale (`MR-MG-*`)                                         | MF-03–MF-04, MF-13–MF-18, UF-01         | continuous            |
 | Usability/configurability (`MR-Q-*`)                                     | MF-03, all documented components, UF-01 | method-wide           |
 
 Detailed requirement arrays are stored on every entry in
@@ -50,21 +51,22 @@ Detailed requirement arrays are stored on every entry in
 | Artifact completion/readiness          | `mde/process/process-definitions/artifact.json` (16 TaskDefinitions)                                                                                              |
 | Integrated executable process          | `mde/process/process-definitions/end-to-end.json`                                                                                                                 |
 | Nested lifecycle and release semantics | `mde/process/engineered-method/spem/lifecycle.puml`, `release-cycle.puml`, and generated conditional `WorkSequence` elements in `modriss-method-library.spem.xml` |
+| Interrupt-driven maintenance semantics | `processEngine.maintenanceFlow` in `end-to-end.json`, WP-30/WP-31, MF-18, and `templates/operations-flow-policy.md`                                               |
 | Human modeling guidance                | `docs/public-docs/docs/guides/{cim,pim,psm,end-to-end}-modeling-methodology.md`                                                                                   |
 | Operations/release guidance            | `docs/devops-sre/` and public operations documentation                                                                                                            |
 
 ## Lifecycle work-product trace
 
-| Upstream authority     | Transformation or decision   | Downstream evidence                          | Feedback rule                                                                         |
-| ---------------------- | ---------------------------- | -------------------------------------------- | ------------------------------------------------------------------------------------- |
-| Product/System Charter | increment selection          | accepted scope and outcome signal            | outcome failure updates charter/backlog, not only implementation                      |
-| Requirements and CIM   | CIM→PIM ETL                  | traceable PIM draft and report               | domain/requirement mismatch returns to CIM                                            |
-| Accepted PIM           | PIM→PSM ETL                  | traceable AWS PSM draft and report           | provider constraint may revise PIM decision or provider choice                        |
-| Accepted PSM           | EGX/EGL                      | generated baseline, manifest, artifact trace | structural realization defect returns to PSM/generator                                |
-| Generated baseline     | implementation/test          | candidate and verification record            | reusable scaffold defect returns to generator; business logic stays in extension code |
-| Qualified candidate    | promotion                    | deployment and handover record               | release finding returns to earliest affected model/code/release control               |
-| Running service        | telemetry/incidents/outcomes | operational evidence/change record           | product, architecture, platform, implementation, or method change routed by authority |
-| Retirement decision    | migration/decommission       | closure record                               | unresolved consumer/data/access/resource blocks closure                               |
+| Upstream authority     | Transformation or decision   | Downstream evidence                             | Feedback rule                                                                                            |
+| ---------------------- | ---------------------------- | ----------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| Product/System Charter | increment selection          | accepted scope and outcome signal               | outcome failure updates charter/backlog, not only implementation                                         |
+| Requirements and CIM   | CIM→PIM ETL                  | traceable PIM draft and report                  | domain/requirement mismatch returns to CIM                                                               |
+| Accepted PIM           | PIM→PSM ETL                  | traceable AWS PSM draft and report              | provider constraint may revise PIM decision or provider choice                                           |
+| Accepted PSM           | EGX/EGL                      | generated baseline, manifest, artifact trace    | structural realization defect returns to PSM/generator                                                   |
+| Generated baseline     | implementation/test          | candidate and verification record               | reusable scaffold defect returns to generator; business logic stays in extension code                    |
+| Qualified candidate    | promotion                    | deployment and handover record                  | release finding returns to earliest affected model/code/release control                                  |
+| Running service        | telemetry/incidents/outcomes | WP-30 item, WP-31 board, evidence/change record | pull within WIP; finish operations-only, traverse bounded MDE/release path, or commit to planned release |
+| Retirement decision    | migration/decommission       | closure record                                  | unresolved consumer/data/access/resource blocks closure                                                  |
 
 ## Assistant-validation boundary trace
 

@@ -1,7 +1,7 @@
 @startuml
 title MODRISS Release Cycle — From Accepted Increments to the Next Release
 
-skinparam backgroundColor white
+skinparam backgroundColor #F5F3ED
 skinparam shadowing false
 
 start
@@ -30,14 +30,20 @@ repeat
     :Accept the new operating baseline at G7;
   endif
 
-  :Operate, observe and compare outcomes\nwith the release hypothesis;
-  :Form the next release hypothesis from roadmap,\ntelemetry, incidents, risks and user feedback;
+  repeat
+    :Operate the accepted baseline and capture one\noperational work item in WP-30;
+    :Classify purpose, emergency status and class of service;
+    :Replenish and pull under WP-31 WIP, capacity and SLE policies;
+    :Verify the result and choose exactly one disposition:\noperations-only, bounded MDE/release, or planned release;
+  repeat while (No release selected and retirement not authorized?) is (continue pull flow)
+  -> release or retirement selected;
+  :Form the next release hypothesis only from explicitly\nselected roadmap or operational work;
   note right
     The currently accepted release continues to run.
-    The next pass creates a later release; it does not
-    restart the product lifecycle.
+    Operations-only work remains in Phase 3. The next pass
+    creates a later release; it does not restart the lifecycle.
   end note
-repeat while (Retirement authorized?) is (no — begin next release)
+repeat while (Retirement authorized?) is (no — begin next selected release)
 -> yes;
 
 :Enter Phase 4 retirement workflow;

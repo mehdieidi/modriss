@@ -287,6 +287,22 @@
         "workProductKind": "Artifact",
         "name": "Retrospective and Improvement Record",
         "description": "Observations, measures, decisions, actions, reusable candidates, and no-op rationale."
+      },
+      {
+        "id": "wp.operational-work-item",
+        "type": "WorkProductDefinition",
+        "methodWorkProductId": "WP-30",
+        "workProductKind": "Artifact",
+        "name": "Operational Work Item",
+        "description": "Demand source, affected service, maintenance purpose, emergency-temporary status, service class, severity, owner, SLE, state, age, evidence, authoritative re-entry point, and disposition."
+      },
+      {
+        "id": "wp.operations-flow-policy-board",
+        "type": "WorkProductDefinition",
+        "methodWorkProductId": "WP-31",
+        "workProductKind": "Artifact",
+        "name": "Operations Flow Policy and Board",
+        "description": "Workflow states, WIP limits, pull and replenishment rules, service classes, SLEs, capacity policy, emergency preemption, reconciliation rules, board, and flow measures."
       }
     ],
     "guidance": []

@@ -1,0 +1,51 @@
+@startuml
+title MODRISS Phase 3 — Interrupt-Driven Operations and Maintenance Pull Flow
+
+skinparam backgroundColor #F5F3ED
+skinparam shadowing false
+skinparam activity {
+  BackgroundColor #FCFBF7
+  BorderColor #617178
+  FontColor #102C3A
+  DiamondBackgroundColor #D7E9E5
+  DiamondBorderColor #087B78
+}
+skinparam note {
+  BackgroundColor #EBE8DF
+  BorderColor #B4653C
+}
+
+start
+repeat
+  :Capture one production signal, incident, request,\nprovider event or improvement as WP-30;
+  :Classify three independent axes:\nmaintenance purpose; emergency status; class of service;
+  :Replenish from ready demand and pull only when\nWP-31 WIP limits and capacity permit;
+
+  if (Emergency restoration required?) then (yes)
+    :Restore service under expedite policy;
+    :Keep every temporary change open until removed\nor reconciled with its authoritative source;
+  else (no)
+    :Execute the pulled item using its explicit policy;
+  endif
+
+  :Verify restoration or change evidence; update trace,\nage, cycle time, throughput and SLE observations;
+
+  if (Accepted disposition?) then (operations-only)
+    :Close WP-30 with operational evidence;\nno release is created;
+  elseif (bounded shortest safe MDE/release path) then (bounded)
+    :Route to the earliest authoritative source; propagate\nand obtain applicable release controls;
+  else (planned release backlog)
+    :Commit explicitly to a later release hypothesis;
+  endif
+
+repeat while (Service active and no release/retirement transition selected?) is (pull next item)
+-> transition selected;
+
+note right
+  Maintenance purpose does not determine urgency.
+  Emergency status does not determine class of service.
+  Class of service does not determine engineering impact.
+end note
+
+stop
+@enduml

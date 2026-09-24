@@ -42,16 +42,18 @@ repeat
 
   partition "e2e.ph3 — Operate / Evolve / Learn" {
     :e2e.ph3.st1 — Operate and observe accepted baseline;
+    :e2e.ph3.st2a — Capture, classify, replenish and pull\nWP-30 work under the WP-31 Definition of Workflow;
     :e2e.ph3.st2 — Incident, problem and risk response;
-    :e2e.ph3.st3 — Route change to earliest authoritative source;
+    :e2e.ph3.st3 — Dispose as operations-only, bounded MDE/release,\nor explicit planned-release commitment;
     :e2e.ph3.st4 — Product and method retrospective;
     note right
-      Operation of the accepted baseline continues while
-      the next release cycle is engineered.
+      The accepted baseline continues while planned delivery
+      proceeds. Pull is controlled by WIP limits and SLEs;
+      operations-only work does not start a release.
     end note
   }
 
-repeat while (Retirement authorized?) is (no — next release)
+repeat while (Retirement authorized?) is (no — selected next release)
 -> yes;
 
 partition "e2e.ph4 — Retire / Migrate / Close" {

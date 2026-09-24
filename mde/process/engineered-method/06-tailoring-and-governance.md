@@ -74,16 +74,48 @@ safety-certified. Domain-specific standards and assurance cases must extend it.
 
 ## Conditional configuration packages
 
-| Package                                   | Trigger                                                           | Adds or strengthens                                                                                                                       |
-| ----------------------------------------- | ----------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
-| CP-01 Multi-team scale                    | more than one independently planning team                         | bounded ownership, contract governance, dependencies, integration ownership, release coordination                                         |
-| CP-02 Sensitive/regulated data            | confidential/restricted data or external obligation               | privacy analysis, residency, encryption, access evidence, retention/disposition, independent review                                       |
-| CP-03 High availability/disaster recovery | stringent SLO or recovery objective                               | failure analysis, multi-zone/region decisions, backup/restore, failover rehearsal, chaos/fault tests                                      |
-| CP-04 Portability/multi-cloud             | provider undecided, exit requirement, or multiple providers       | provider-neutral contracts, capability intersection, adapter boundaries, portability tests, separate PSM profiles                         |
-| CP-05 Legacy migration                    | coexistence, strangler, replacement, or data migration            | baseline discovery, compatibility, dual-run, reconciliation, cutover, decommissioning                                                     |
-| CP-06 High release risk                   | irreversible data change, broad blast radius, or critical service | independent authorization, rehearsal, canary/blue-green, extended observation, rollback/roll-forward                                      |
-| CP-07 External suppliers                  | SaaS, partner, or managed dependency                              | supplier responsibility, SLA/security review, sandbox/contract tests, exit and incident coordination                                      |
-| CP-08 AI-assisted modeling                | assistant enabled                                                 | structural-only assistant gate, human review, provenance, budgets, privacy, prompt/model policy; EVL remains separate explicit validation |
+| Package                                   | Trigger                                                                  | Adds or strengthens                                                                                                                                    |
+| ----------------------------------------- | ------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| CP-01 Multi-team scale                    | more than one independently planning team                                | bounded ownership, contract governance, dependencies, integration ownership, release coordination                                                      |
+| CP-02 Sensitive/regulated data            | confidential/restricted data or external obligation                      | privacy analysis, residency, encryption, access evidence, retention/disposition, independent review                                                    |
+| CP-03 High availability/disaster recovery | stringent SLO or recovery objective                                      | failure analysis, multi-zone/region decisions, backup/restore, failover rehearsal, chaos/fault tests                                                   |
+| CP-04 Portability/multi-cloud             | provider undecided, exit requirement, or multiple providers              | provider-neutral contracts, capability intersection, adapter boundaries, portability tests, separate PSM profiles                                      |
+| CP-05 Legacy migration                    | coexistence, strangler, replacement, or data migration                   | baseline discovery, compatibility, dual-run, reconciliation, cutover, decommissioning                                                                  |
+| CP-06 High release risk                   | irreversible data change, broad blast radius, or critical service        | independent authorization, rehearsal, canary/blue-green, extended observation, rollback/roll-forward                                                   |
+| CP-07 External suppliers                  | SaaS, partner, or managed dependency                                     | supplier responsibility, SLA/security review, sandbox/contract tests, exit and incident coordination                                                   |
+| CP-08 AI-assisted modeling                | assistant enabled                                                        | structural-only assistant gate, human review, provenance, budgets, privacy, prompt/model policy; EVL remains separate explicit validation              |
+| CP-09 Sustained operational demand        | production service has intermittent/sustained interrupts or 24×7 support | operational Kanban flow, maintenance/service classification, capacity and preemption policy, WIP/SLE tuning, on-call hand-off, service-delivery review |
+
+## Dual-flow governance
+
+MODRISS uses two connected control systems. Planned product work is committed
+at release and increment horizons, then refined adaptively. Production demand
+is captured when it emerges and pulled under the Operations Flow Policy and
+Board. The Product Owner orders planned value; the Service Owner owns service
+impact and urgency; the Delivery Lead protects system flow and makes capacity
+and preemption visible.
+
+The Method Profile must define:
+
+- the intake sources and `ready`/`done` criteria for operational work;
+- WIP limits by active state and an explicit expedite policy (default active
+  expedite WIP: one);
+- standard, fixed-date, expedite, and risk-reduction service-class policies and
+  service-level expectations;
+- the initial operational-capacity allocation, who may change it, and the
+  evidence/cadence for doing so;
+- replenishment, daily flow review, service-delivery review, and release
+  planning cadences;
+- what may finish as operations-only work, what must use a bounded MDE/release
+  path, and what enters the next planned release; and
+- how temporary emergency changes are reconciled with the earliest
+  authoritative model, generator, code, configuration, or runbook source.
+
+These rules operationalize the Kanban Guide's workflow, WIP, pull, explicit
+policy, SLE, and flow-measure requirements
+([Kanban Guides, 2025](https://kanbanguides.org/the-kanban-guide/)). They do not
+turn maintenance into a second sprint backlog or reserve a universal percentage
+of capacity; those are situational decisions reviewed from observed demand.
 
 ## Release management
 
@@ -167,7 +199,10 @@ weighted but missing critical links cannot be averaged away.
 
 ### Measurement and improvement
 
-Recommended measures include outcome progress, increment flow time, rework,
+Recommended measures include outcome progress, increment flow time, planned
+release forecast, operational WIP, throughput, cycle time, work-item age, SLE
+attainment, interrupt arrival rate, expedite/preemption frequency, capacity
+allocation and starvation signals, rework,
 escaped defects, trace closure, open blocker age, manual-decision closure,
 dependency age, deployment frequency, change failure/recovery, SLO performance,
 cost per business unit, and method-profile changes. Use trends and context; do

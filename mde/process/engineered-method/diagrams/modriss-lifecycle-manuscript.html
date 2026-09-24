@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>MODRISS full-lifecycle software development process</title>
     <link
-      href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&amp;family=Geist:wght@400;500;600&amp;family=Geist+Mono:wght@400;500;600&amp;family=Noto+Serif:ital@0;1&amp;display=swap"
+      href="https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400;500;600&amp;family=Space+Grotesk:wght@400;500;600&amp;display=swap"
       rel="stylesheet"
     />
     <style>
@@ -22,9 +22,9 @@
         align-items: center;
         justify-content: center;
         padding: 24px;
-        background: #f5f5f5;
-        color: #2d3142;
-        font-family: "Geist", system-ui, sans-serif;
+        background: #f5f3ed;
+        color: #102c3a;
+        font-family: "Space Grotesk", system-ui, sans-serif;
       }
       main {
         width: min(100%, 1120px);
@@ -50,30 +50,31 @@
         <desc id="modriss-lifecycle-desc">
           Five-phase serverless software lifecycle showing situational initiation, iterative
           CIM-to-PIM-to-PSM delivery, release, operations, retirement, feedback paths, evidence
-          gates, and continuous disciplines.
+          gates, concurrent planned delivery and interrupt-driven operational pull flow, and
+          continuous disciplines.
         </desc>
         <defs>
           <style>
             .sans {
-              font-family: "Geist", system-ui, sans-serif;
+              font-family: "Space Grotesk", system-ui, sans-serif;
             }
             .serif {
-              font-family: "Instrument Serif", "Noto Serif", serif;
+              font-family: Georgia, "Times New Roman", serif;
             }
             .mono {
               font-family: "Geist Mono", ui-monospace, monospace;
             }
             .ink {
-              fill: #2d3142;
+              fill: #102c3a;
             }
             .muted {
-              fill: #4f5d75;
+              fill: #617178;
             }
             .soft {
-              fill: #7a8399;
+              fill: #7d898e;
             }
             .accent {
-              fill: #eb6c36;
+              fill: #087b78;
             }
             .eyebrow {
               font:
@@ -84,13 +85,13 @@
             }
             .title {
               font:
-                400 32px "Instrument Serif",
-                "Noto Serif",
+                400 32px Georgia,
+                "Times New Roman",
                 serif;
             }
             .subtitle {
               font:
-                400 10px "Geist",
+                400 10px "Space Grotesk",
                 system-ui,
                 sans-serif;
             }
@@ -103,7 +104,7 @@
             }
             .phase-name {
               font:
-                600 12px "Geist",
+                600 12px "Space Grotesk",
                 system-ui,
                 sans-serif;
             }
@@ -116,13 +117,13 @@
             }
             .cell-head {
               font:
-                600 10px "Geist",
+                600 10px "Space Grotesk",
                 system-ui,
                 sans-serif;
             }
             .cell-text {
               font:
-                400 9px "Geist",
+                400 9px "Space Grotesk",
                 system-ui,
                 sans-serif;
             }
@@ -148,55 +149,55 @@
             }
             .legend-text {
               font:
-                400 9px "Geist",
+                400 9px "Space Grotesk",
                 system-ui,
                 sans-serif;
             }
             .forward {
               fill: none;
-              stroke: #4f5d75;
+              stroke: #617178;
               stroke-width: 1.2;
             }
             .feedback {
               fill: none;
-              stroke: #4f5d75;
+              stroke: #617178;
               stroke-width: 1;
               stroke-dasharray: 5 4;
             }
             .hair {
-              stroke: #bfc0c0;
+              stroke: #ccd2cf;
               stroke-width: 0.8;
             }
             .stage {
-              fill: #fff;
-              stroke: #bfc0c0;
+              fill: #fcfbf7;
+              stroke: #ccd2cf;
               stroke-width: 1;
             }
             .stage-focal {
-              fill: #fff;
-              stroke: #eb6c36;
+              fill: #fcfbf7;
+              stroke: #087b78;
               stroke-width: 1.4;
             }
             .header {
-              fill: #ececec;
+              fill: #ebe8df;
             }
             .header-focal {
-              fill: #fdf0ea;
+              fill: #d7e9e5;
             }
             .slot-a {
-              fill: #fff;
+              fill: #fcfbf7;
             }
             .slot-b {
-              fill: #f8f8f8;
+              fill: #f0eee7;
             }
             .discipline {
-              fill: #ececec;
-              stroke: #bfc0c0;
+              fill: #ebe8df;
+              stroke: #ccd2cf;
               stroke-width: 1;
             }
           </style>
           <marker id="main-arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
-            <polygon points="0 0,8 3,0 6" fill="#4f5d75" />
+            <polygon points="0 0,8 3,0 6" fill="#617178" />
           </marker>
           <marker
             id="main-arrow-accent"
@@ -206,7 +207,7 @@
             refY="3"
             orient="auto"
           >
-            <polygon points="0 0,8 3,0 6" fill="#eb6c36" />
+            <polygon points="0 0,8 3,0 6" fill="#087b78" />
           </marker>
           <marker
             id="main-arrow-link"
@@ -216,11 +217,11 @@
             refY="3"
             orient="auto"
           >
-            <polygon points="0 0,8 3,0 6" fill="#2e5aa8" />
+            <polygon points="0 0,8 3,0 6" fill="#075d5b" />
           </marker>
         </defs>
 
-        <rect width="1120" height="792" fill="#f5f5f5" />
+        <rect width="1120" height="792" fill="#f5f3ed" />
         <text class="eyebrow muted" x="40" y="28">
           DEVELOPMENT PROCESS · SERVERLESS SOFTWARE LIFECYCLE
         </text>
@@ -249,16 +250,16 @@
           d="M752 600 V628 Q752 636 744 636 H392 Q384 636 384 628 V604"
           marker-end="url(#main-arrow)"
         />
-        <rect x="492" y="614" width="168" height="12" rx="2" fill="#f5f5f5" />
+        <rect x="464" y="614" width="224" height="12" rx="2" fill="#f5f3ed" />
         <text class="cell-tech muted" x="576" y="623" text-anchor="middle">
-          NEXT RELEASE / CHANGE
+          SELECTED CHANGE → PLANNED RELEASE
         </text>
         <path
           class="feedback"
           d="M936 600 V656 Q936 664 928 664 H208 Q200 664 200 656 V604"
           marker-end="url(#main-arrow)"
         />
-        <rect x="512" y="642" width="112" height="12" rx="2" fill="#f5f5f5" />
+        <rect x="512" y="642" width="112" height="12" rx="2" fill="#f5f3ed" />
         <text class="cell-tech muted" x="568" y="651" text-anchor="middle">
           LEARNING · NEXT RUN
         </text>
@@ -319,11 +320,11 @@
             y1="272"
             x2="464"
             y2="272"
-            stroke="#eb6c36"
+            stroke="#087b78"
             stroke-opacity=".35"
             stroke-width=".8"
           />
-          <rect x="305" y="273" width="158" height="143" fill="#fdf8f5" />
+          <rect x="305" y="273" width="158" height="143" fill="#edf5f2" />
           <text class="cell-head ink" x="316" y="296">Frame increment</text>
           <text class="cell-head accent" x="316" y="320">CIM → PIM → AWS PSM</text>
           <text class="cell-tech muted" x="316" y="338">ETL · RECONCILE · ETL</text>
@@ -335,7 +336,7 @@
             y1="416"
             x2="464"
             y2="416"
-            stroke="#eb6c36"
+            stroke="#087b78"
             stroke-opacity=".35"
             stroke-width=".8"
           />
@@ -349,11 +350,11 @@
             y1="512"
             x2="464"
             y2="512"
-            stroke="#eb6c36"
+            stroke="#087b78"
             stroke-opacity=".35"
             stroke-width=".8"
           />
-          <rect x="305" y="513" width="158" height="86" rx="6" fill="#fdf8f5" />
+          <rect x="305" y="513" width="158" height="86" rx="6" fill="#edf5f2" />
           <text class="cell-head ink" x="316" y="540">Accepted vertical increment</text>
           <text class="cell-text muted" x="316" y="556">models · trace · software</text>
           <text class="cell-tech soft" x="316" y="576">WP-08…WP-20</text>
@@ -396,31 +397,31 @@
           <rect class="stage" x="672" y="136" width="160" height="464" rx="6" />
           <rect class="header" x="672" y="136" width="160" height="72" rx="6" />
           <rect class="header" x="672" y="200" width="160" height="8" />
-          <text class="phase-tag muted" x="684" y="156">PHASE 3 · CONTINUOUS</text>
+          <text class="phase-tag muted" x="684" y="156">PHASE 3 · PULL FLOW</text>
           <text class="phase-name ink" x="684" y="176">Operate, Evolve</text>
           <text class="phase-name ink" x="684" y="192">and Learn</text>
           <rect class="slot-a" x="673" y="208" width="158" height="64" />
-          <text class="cell-head ink" x="684" y="232">Is the service achieving</text>
-          <text class="cell-text muted" x="684" y="248">outcomes within guardrails?</text>
+          <text class="cell-head ink" x="684" y="232">Which demand should be pulled?</text>
+          <text class="cell-text muted" x="684" y="248">How does it affect delivery?</text>
           <line class="hair" x1="672" y1="272" x2="832" y2="272" />
           <rect class="slot-b" x="673" y="273" width="158" height="143" />
-          <text class="cell-head ink" x="684" y="296">Observe outcomes and SLOs</text>
-          <text class="cell-text muted" x="684" y="320">Security · cost · capacity</text>
-          <text class="cell-text muted" x="684" y="336">Incident and recovery</text>
-          <text class="cell-text muted" x="684" y="352">Problem analysis</text>
-          <text class="cell-text muted" x="684" y="368">Route controlled change</text>
-          <text class="cell-text muted" x="684" y="384">Retrospect and generalize</text>
+          <text class="cell-head ink" x="684" y="296">Observe and capture WP-30</text>
+          <text class="cell-text muted" x="684" y="320">Classify 3 independent axes</text>
+          <text class="cell-text muted" x="684" y="336">Replenish · pull within WIP</text>
+          <text class="cell-text muted" x="684" y="352">Restore or evolve safely</text>
+          <text class="cell-text muted" x="684" y="368">Verify · reconcile · learn</text>
+          <text class="cell-text muted" x="684" y="384">Dispose through one route</text>
           <line class="hair" x1="672" y1="416" x2="832" y2="416" />
           <rect class="slot-a" x="673" y="417" width="158" height="95" />
-          <text class="gate ink" x="684" y="440">SLO · OUTCOME · COST</text>
-          <text class="gate ink" x="684" y="456">RISK · SECURITY SIGNALS</text>
-          <text class="cell-text muted" x="684" y="480">Incident/problem evidence</text>
-          <text class="cell-text muted" x="684" y="496">change impact and trace</text>
+          <text class="gate ink" x="684" y="440">WIP · AGE · SLE · THROUGHPUT</text>
+          <text class="gate ink" x="684" y="456">SLO · RISK · SECURITY</text>
+          <text class="cell-text muted" x="684" y="480">WP-30 operational work item</text>
+          <text class="cell-text muted" x="684" y="496">WP-31 flow policy and board</text>
           <line class="hair" x1="672" y1="512" x2="832" y2="512" />
           <rect class="slot-b" x="673" y="513" width="158" height="86" rx="6" />
-          <text class="cell-head ink" x="684" y="540">Stable service and</text>
-          <text class="cell-text muted" x="684" y="556">prioritized controlled change</text>
-          <text class="cell-tech soft" x="684" y="576">WP-25…WP-27 · WP-29</text>
+          <text class="cell-head ink" x="684" y="540">Stable service plus</text>
+          <text class="cell-text muted" x="684" y="556">explicitly routed change</text>
+          <text class="cell-tech soft" x="684" y="576">WP-25…WP-27 · WP-29…WP-31</text>
         </g>
 
         <!-- Phase 4 -->
@@ -465,14 +466,14 @@
         </text>
 
         <!-- Bottom legend strip. -->
-        <line x1="40" y1="752" x2="1080" y2="752" stroke="#bfc0c0" stroke-width=".8" />
+        <line x1="40" y1="752" x2="1080" y2="752" stroke="#ccd2cf" stroke-width=".8" />
         <text class="legend-key muted" x="40" y="772">LEGEND</text>
         <line
           x1="112"
           y1="768"
           x2="144"
           y2="768"
-          stroke="#4f5d75"
+          stroke="#617178"
           stroke-width="1.2"
           marker-end="url(#main-arrow)"
         />
@@ -482,13 +483,13 @@
           y1="768"
           x2="340"
           y2="768"
-          stroke="#4f5d75"
+          stroke="#617178"
           stroke-width="1"
           stroke-dasharray="5 4"
           marker-end="url(#main-arrow)"
         />
         <text class="legend-text muted" x="352" y="772">feedback and controlled re-entry</text>
-        <rect x="560" y="760" width="20" height="16" rx="3" fill="#fdf0ea" stroke="#eb6c36" />
+        <rect x="560" y="760" width="20" height="16" rx="3" fill="#d7e9e5" stroke="#087b78" />
         <text class="legend-text muted" x="592" y="772">focal iterative delivery engine</text>
         <text class="legend-key soft" x="1080" y="772" text-anchor="end">
           SPEM-STRUCTURED · EVIDENCE-GATED · TAILORABLE

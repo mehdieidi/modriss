@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>MODRISS iterative model-driven delivery engine</title>
     <link
-      href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&amp;family=Geist:wght@400;500;600&amp;family=Geist+Mono:wght@400;500;600&amp;family=Noto+Serif:ital@0;1&amp;display=swap"
+      href="https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400;500;600&amp;family=Space+Grotesk:wght@400;500;600&amp;display=swap"
       rel="stylesheet"
     />
     <style>
@@ -22,9 +22,9 @@
         align-items: center;
         justify-content: center;
         padding: 24px;
-        background: #f5f5f5;
-        color: #2d3142;
-        font-family: "Geist", system-ui, sans-serif;
+        background: #f5f3ed;
+        color: #102c3a;
+        font-family: "Space Grotesk", system-ui, sans-serif;
       }
       main {
         width: min(100%, 1120px);
@@ -53,25 +53,25 @@
         <defs>
           <style>
             .sans {
-              font-family: "Geist", system-ui, sans-serif;
+              font-family: "Space Grotesk", system-ui, sans-serif;
             }
             .serif {
-              font-family: "Instrument Serif", "Noto Serif", serif;
+              font-family: Georgia, "Times New Roman", serif;
             }
             .mono {
               font-family: "Geist Mono", ui-monospace, monospace;
             }
             .ink {
-              fill: #2d3142;
+              fill: #102c3a;
             }
             .muted {
-              fill: #4f5d75;
+              fill: #617178;
             }
             .soft {
-              fill: #7a8399;
+              fill: #7d898e;
             }
             .accent {
-              fill: #eb6c36;
+              fill: #087b78;
             }
             .eyebrow {
               font:
@@ -82,24 +82,24 @@
             }
             .title {
               font:
-                400 32px "Instrument Serif",
-                "Noto Serif",
+                400 32px Georgia,
+                "Times New Roman",
                 serif;
             }
             .subtitle {
               font:
-                400 10px "Geist",
+                400 10px "Space Grotesk",
                 system-ui,
                 sans-serif;
             }
             .step {
-              fill: #fff;
-              stroke: #bfc0c0;
+              fill: #fcfbf7;
+              stroke: #ccd2cf;
               stroke-width: 1;
             }
             .step-focal {
-              fill: #fdf0ea;
-              stroke: #eb6c36;
+              fill: #d7e9e5;
+              stroke: #087b78;
               stroke-width: 1.4;
             }
             .tag {
@@ -111,13 +111,13 @@
             }
             .name {
               font:
-                600 12px "Geist",
+                600 12px "Space Grotesk",
                 system-ui,
                 sans-serif;
             }
             .detail {
               font:
-                400 9px "Geist",
+                400 9px "Space Grotesk",
                 system-ui,
                 sans-serif;
             }
@@ -136,23 +136,23 @@
             }
             .flow {
               fill: none;
-              stroke: #4f5d75;
+              stroke: #617178;
               stroke-width: 1.2;
             }
             .flow-focal {
               fill: none;
-              stroke: #eb6c36;
+              stroke: #087b78;
               stroke-width: 1.4;
             }
             .feedback {
               fill: none;
-              stroke: #4f5d75;
+              stroke: #617178;
               stroke-width: 1;
               stroke-dasharray: 5 4;
             }
             .rail {
-              fill: #ececec;
-              stroke: #bfc0c0;
+              fill: #ebe8df;
+              stroke: #ccd2cf;
               stroke-width: 1;
             }
             .legend-key {
@@ -164,7 +164,7 @@
             }
             .legend-text {
               font:
-                400 9px "Geist",
+                400 9px "Space Grotesk",
                 system-ui,
                 sans-serif;
             }
@@ -177,7 +177,7 @@
             refY="3"
             orient="auto"
           >
-            <polygon points="0 0,8 3,0 6" fill="#4f5d75" />
+            <polygon points="0 0,8 3,0 6" fill="#617178" />
           </marker>
           <marker
             id="engine-arrow-accent"
@@ -187,7 +187,7 @@
             refY="3"
             orient="auto"
           >
-            <polygon points="0 0,8 3,0 6" fill="#eb6c36" />
+            <polygon points="0 0,8 3,0 6" fill="#087b78" />
           </marker>
           <marker
             id="engine-arrow-link"
@@ -197,11 +197,11 @@
             refY="3"
             orient="auto"
           >
-            <polygon points="0 0,8 3,0 6" fill="#2e5aa8" />
+            <polygon points="0 0,8 3,0 6" fill="#075d5b" />
           </marker>
         </defs>
 
-        <rect width="1120" height="792" fill="#f5f5f5" />
+        <rect width="1120" height="792" fill="#f5f3ed" />
         <text class="eyebrow muted" x="40" y="28">PHASE 1 DETAIL · ONE VERTICAL INCREMENT</text>
         <text class="title ink" x="40" y="64">The MODRISS model-driven delivery engine</text>
         <text class="subtitle muted" x="40" y="88">
@@ -233,16 +233,16 @@
         <line class="flow" x1="320" y1="476" x2="284" y2="476" marker-end="url(#engine-arrow)" />
         <path
           class="feedback"
-          d="M120 532 V584 Q120 592 112 592 H56 Q48 592 48 584 V156 Q48 148 56 148 H112 Q120 148 120 156 V180"
+          d="M80 476 H56 Q48 476 48 468 V248 Q48 240 56 240 H80"
           marker-end="url(#engine-arrow)"
         />
-        <rect x="60" y="352" width="112" height="16" rx="2" fill="#f5f5f5" />
+        <rect x="60" y="352" width="112" height="16" rx="2" fill="#f5f3ed" />
         <text class="tech muted" x="116" y="363" text-anchor="middle">REWORK / NEXT SLICE</text>
 
         <!-- Top row -->
         <g>
           <rect class="step" x="80" y="184" width="200" height="112" rx="6" />
-          <rect x="92" y="196" width="28" height="16" rx="2" fill="#ececec" />
+          <rect x="92" y="196" width="28" height="16" rx="2" fill="#ebe8df" />
           <text class="tag muted" x="106" y="207" text-anchor="middle">01</text>
           <text class="name ink" x="96" y="232">Frame increment</text>
           <text class="detail muted" x="96" y="252">Outcome slice · requirements · risks</text>
@@ -251,7 +251,7 @@
         </g>
         <g>
           <rect class="step" x="320" y="184" width="200" height="112" rx="6" />
-          <rect x="332" y="196" width="28" height="16" rx="2" fill="#ececec" />
+          <rect x="332" y="196" width="28" height="16" rx="2" fill="#ebe8df" />
           <text class="tag muted" x="346" y="207" text-anchor="middle">02</text>
           <text class="gate ink" x="504" y="207" text-anchor="end">G2</text>
           <text class="name ink" x="336" y="232">Discover and accept CIM</text>
@@ -261,7 +261,7 @@
         </g>
         <g>
           <rect class="step" x="560" y="184" width="200" height="112" rx="6" />
-          <rect x="572" y="196" width="28" height="16" rx="2" fill="#ececec" />
+          <rect x="572" y="196" width="28" height="16" rx="2" fill="#ebe8df" />
           <text class="tag muted" x="586" y="207" text-anchor="middle">03</text>
           <text class="name ink" x="576" y="232">Transform and reconcile</text>
           <text class="detail muted" x="576" y="252">CIM → generated PIM draft</text>
@@ -270,7 +270,7 @@
         </g>
         <g>
           <rect class="step-focal" x="800" y="184" width="200" height="112" rx="6" />
-          <rect x="812" y="196" width="28" height="16" rx="2" fill="#eb6c36" fill-opacity=".22" />
+          <rect x="812" y="196" width="28" height="16" rx="2" fill="#087b78" fill-opacity=".18" />
           <text class="tag accent" x="826" y="207" text-anchor="middle">04</text>
           <text class="gate ink" x="984" y="207" text-anchor="end">G3</text>
           <text class="name ink" x="816" y="232">Refine PIM architecture</text>
@@ -282,7 +282,7 @@
         <!-- Bottom row -->
         <g>
           <rect class="step" x="800" y="420" width="200" height="112" rx="6" />
-          <rect x="812" y="432" width="28" height="16" rx="2" fill="#ececec" />
+          <rect x="812" y="432" width="28" height="16" rx="2" fill="#ebe8df" />
           <text class="tag muted" x="826" y="443" text-anchor="middle">05</text>
           <text class="name ink" x="816" y="468">Transform and reconcile</text>
           <text class="detail muted" x="816" y="488">PIM → generated AWS PSM draft</text>
@@ -291,7 +291,7 @@
         </g>
         <g>
           <rect class="step" x="560" y="420" width="200" height="112" rx="6" />
-          <rect x="572" y="432" width="28" height="16" rx="2" fill="#ececec" />
+          <rect x="572" y="432" width="28" height="16" rx="2" fill="#ebe8df" />
           <text class="tag muted" x="586" y="443" text-anchor="middle">06</text>
           <text class="gate ink" x="744" y="443" text-anchor="end">G4</text>
           <text class="name ink" x="576" y="468">Refine and accept AWS PSM</text>
@@ -301,7 +301,7 @@
         </g>
         <g>
           <rect class="step" x="320" y="420" width="200" height="112" rx="6" />
-          <rect x="332" y="432" width="28" height="16" rx="2" fill="#ececec" />
+          <rect x="332" y="432" width="28" height="16" rx="2" fill="#ebe8df" />
           <text class="tag muted" x="346" y="443" text-anchor="middle">07</text>
           <text class="name ink" x="336" y="468">Generate reproducible baseline</text>
           <text class="detail muted" x="336" y="488">Infrastructure · handlers · tests</text>
@@ -310,7 +310,7 @@
         </g>
         <g>
           <rect class="step" x="80" y="420" width="200" height="112" rx="6" />
-          <rect x="92" y="432" width="28" height="16" rx="2" fill="#ececec" />
+          <rect x="92" y="432" width="28" height="16" rx="2" fill="#ebe8df" />
           <text class="tag muted" x="106" y="443" text-anchor="middle">08</text>
           <text class="gate ink" x="264" y="443" text-anchor="end">G5</text>
           <text class="name ink" x="96" y="468">Complete, test and accept</text>
@@ -337,9 +337,9 @@
           width="920"
           height="32"
           rx="6"
-          fill="#eb6c36"
+          fill="#087b78"
           fill-opacity=".05"
-          stroke="#eb6c36"
+          stroke="#087b78"
           stroke-opacity=".5"
           stroke-width="1"
           stroke-dasharray="4 4"
@@ -349,14 +349,14 @@
           remains an explicit user/model-validation workflow.
         </text>
 
-        <line x1="40" y1="752" x2="1080" y2="752" stroke="#bfc0c0" stroke-width=".8" />
+        <line x1="40" y1="752" x2="1080" y2="752" stroke="#ccd2cf" stroke-width=".8" />
         <text class="legend-key muted" x="40" y="772">LEGEND</text>
         <line
           x1="112"
           y1="768"
           x2="144"
           y2="768"
-          stroke="#4f5d75"
+          stroke="#617178"
           stroke-width="1.2"
           marker-end="url(#engine-arrow)"
         />
@@ -366,13 +366,13 @@
           y1="768"
           x2="320"
           y2="768"
-          stroke="#4f5d75"
+          stroke="#617178"
           stroke-width="1"
           stroke-dasharray="5 4"
           marker-end="url(#engine-arrow)"
         />
         <text class="legend-text muted" x="332" y="772">controlled rework / next slice</text>
-        <rect x="520" y="760" width="20" height="16" rx="3" fill="#fdf0ea" stroke="#eb6c36" />
+        <rect x="520" y="760" width="20" height="16" rx="3" fill="#d7e9e5" stroke="#087b78" />
         <text class="legend-text muted" x="552" y="772">architecture decision pivot</text>
         <text class="legend-key soft" x="1080" y="772" text-anchor="end">
           DRAFT ≠ ACCEPTED · AUTOMATION ≠ ACCOUNTABILITY

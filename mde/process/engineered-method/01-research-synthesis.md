@@ -122,6 +122,31 @@ continuous activities. The final MODRISS diagram similarly shows a complete
 lifecycle while reducing visual density and making release, operations,
 feedback, and retirement explicit.
 
+## Supplementary engineering evidence
+
+The supplied corpus establishes the method-engineering procedure and the MDE
+backbone, but it does not fully specify how unpredictable production work
+coexists with planned releases. Four current primary or official sources close
+that design gap:
+
+- the [Kanban Guide (May 2025)](https://kanbanguides.org/the-kanban-guide/)
+  defines the minimum workflow, WIP, explicit-policy, service-level-expectation,
+  pull, and flow-measure commitments used by the Phase 3 service system;
+- [SWEBOK v4.0a](https://ieeecs-media.computer.org/media/education/swebok/swebok-v4.pdf)
+  supplies corrective, preventive, adaptive, additive, perfective, and
+  emergency maintenance distinctions, including the difference between a
+  temporary emergency modification and permanent corrective work;
+- the [AWS Well-Architected Serverless Lens](https://docs.aws.amazon.com/wellarchitected/latest/serverless-applications-lens/the-pillars-of-the-well-architected-framework.html)
+  grounds serverless operational excellence, observability, resilience, cost,
+  security, progressive deployment, and rollback concerns; and
+- [DORA continuous-delivery guidance](https://dora.dev/capabilities/continuous-delivery/)
+  supports small, reversible, automated, production-ready changes while
+  retaining empirical feedback and release safety.
+
+These sources are supplementary design evidence, not additional items in the
+six-paper supplied corpus. Their fragments are specialized and assembled under
+the same Ramsin–Paige/SMEP requirements and traceability procedure.
+
 ## Evidence from the MODRISS repository
 
 The repository already implements a substantial modeling framework:
@@ -166,13 +191,17 @@ MODRISS uses a hybrid of the supplied approaches:
 7. **Integrate domain-specific practices.** Add serverless suitability, cost,
    event, state, failure, security, portability, observability, CI/CD, and
    operations fragments.
-8. **Configure instead of cloning.** Define situational factors and selectable
+8. **Separate planned and interrupt-driven control.** Keep release/increment
+   commitments distinct from the operational pull system, then define explicit
+   bridges for operations-only completion, bounded maintenance release, or
+   planned-backlog commitment.
+9. **Configure instead of cloning.** Define situational factors and selectable
    packages for size, criticality, novelty, compliance, multi-team work,
    provider strategy, and release risk.
-9. **Test in the large.** Evaluate completeness, coherence, traceability,
-   criteria coverage, SPEM consistency, repository alignment, and residual
-   gaps.
-10. **Deploy and evolve the MODRISS methodology.** Publish guidance, train
+10. **Test in the large.** Evaluate completeness, coherence, traceability,
+    criteria coverage, SPEM consistency, repository alignment, and residual
+    gaps.
+11. **Deploy and evolve the MODRISS methodology.** Publish guidance, train
     roles, capture enactment evidence, and use retrospectives and empirical
     studies to inform revisions to the process and modeling framework.
 

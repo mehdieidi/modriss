@@ -16,6 +16,7 @@ semantics for a thesis or paper.
 | ----- | ------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
 | L0    | `lifecycle.puml`                            | How does the complete product/service lifecycle proceed, repeat releases, and eventually retire?              |
 | L1    | `release-cycle.puml`                        | What happens from a release hypothesis through G6, promotion, G7, operation, and the next release?            |
+| L1    | `operations-flow.puml`                      | How is unpredictable production demand classified, pulled, verified, and disposed without fictional planning? |
 | L1    | `change-routing.puml`                       | Where does operational evidence re-enter the authoritative engineering chain?                                 |
 | L2    | `model-driven-increment.puml`               | How does one bounded Phase 1 increment cross CIM, PIM, PSM, generation, implementation, verification, and G5? |
 | L3    | `../../spem/cim-process.activity.puml`      | How is the CIM work performed?                                                                                |
@@ -29,19 +30,24 @@ should remain semantically equivalent to `lifecycle.puml`.
 
 ## Release semantics
 
-Three cycles are deliberately separated:
+Three nested cycles and one concurrent service flow are deliberately separated:
 
 1. The product/service lifecycle runs from Phase 0 to an authorized Phase 4.
 2. The release cycle repeats Phases 1–3 while the product remains active.
 3. The increment cycle repeats inside Phase 1 until the candidate has the
    accepted scope for a release.
+4. The Phase 3 operational flow continuously captures and pulls unpredictable
+   production demand under WIP and service-level policies while the accepted
+   baseline runs and planned delivery may proceed.
 
 G7 accepts an operating baseline; it does not end the lifecycle. A later
-release begins by forming a new hypothesis and returning to Phase 1, normally
+release begins only after explicit selection, by forming a new hypothesis and
+returning to Phase 1, normally
 while the accepted release continues to serve users. A rejected candidate or
 failed promotion also returns to Phase 1 for correction at the earliest
-authoritative source. Only an explicit retirement authorization routes Phase 3
-to Phase 4.
+authoritative source. Operations-only items loop within Phase 3 and do not
+create releases. Only an explicit retirement authorization routes Phase 3 to
+Phase 4.
 
 ## Why there is not one diagram per task
 

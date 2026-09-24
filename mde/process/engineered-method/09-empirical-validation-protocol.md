@@ -57,8 +57,10 @@ demonstration. At minimum:
   latency/cost constraints, or a portability requirement.
 
 A case should contain a meaningful change after initial deployment so the
-operations-to-model feedback path is exercised. A toy generation-only example
-cannot validate the lifecycle claim.
+operations-to-model feedback path is exercised. At least one case should expose
+the team to multiple unpredictable operational items, including a time-critical
+item, so planned/interrupt coexistence and recovery from preemption can be
+observed. A toy generation-only example cannot validate the lifecycle claim.
 
 ## Unit of analysis and observation points
 
@@ -93,6 +95,14 @@ Collect evidence at these observation points:
 - queue/wait time at reviews, transformations, dependencies, and environments;
 - rework events and the earliest authoritative source to which each returned;
 - transformation/generation time versus review and manual-completion time.
+- operational arrival rate, WIP, throughput, cycle time, work-item age, blocked
+  time, and SLE attainment by service class;
+- expedite frequency, preemption count/duration, capacity allocation changes,
+  and effect on the planned-release forecast;
+- operational disposition counts: operations-only, bounded MDE/release path,
+  or committed planned backlog; and
+- time from emergency restoration to permanent correction or authoritative-
+  source reconciliation.
 
 ### Product and model evidence
 
