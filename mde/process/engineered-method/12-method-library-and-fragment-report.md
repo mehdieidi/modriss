@@ -316,18 +316,38 @@ evidence retention. Migration and decommissioning are verified before closure
 is accepted. The fragment is required at the end of the product lifecycle,
 although it may be rehearsed rather than enacted during a short research case.
 
-#### MF-18 — Interrupt-driven operations and maintenance flow
+#### MF-18 — Kanban service-delivery and maintenance system
 
-MF-18 prevents unplanned production demand from being hidden inside a planned
-release backlog or from destroying every release commitment. It defines a
-visible pull system with explicit workflow states, WIP limits, service-level
-expectations, replenishment, service classes, capacity policy, and flow
-measures. Maintenance purpose (corrective, preventive, adaptive, additive, or
-perfective), emergency-temporary status, and service class (expedite,
-fixed-date, standard, or risk-reduction) are recorded separately. Each item finishes through an
-operations-only resolution, the shortest safe MDE/release path, or explicit
-commitment to planned delivery. Emergency restoration creates a permanent
-correction or authoritative-source reconciliation obligation.
+MF-18 prevents service demand from being hidden inside a planned release
+backlog or from destroying every release commitment. It defines a visible
+Kanban board with Requested, Ready, In Progress, Verify, and Done states;
+explicit start and finish points; WIP controls; service-level expectations;
+replenishment and review cadences; classes of service; capacity policy; and
+flow measures. Maintenance purpose (corrective, preventive, adaptive,
+additive, or perfective), emergency-temporary status, and class of service are
+recorded separately. Each item finishes through an operations-only resolution,
+the shortest safe MDE/release path, or explicit commitment to planned delivery.
+Emergency restoration creates a permanent correction or authoritative-source
+reconciliation obligation.
+
+The fragment uses the Kanban Guide (2025) for the Definition of Workflow and
+flow measures, PMI Disciplined Agile for the contextual choice of flow,
+Kanban-board design, and end-to-end value-stream optimization, and Ahmad et al.
+(2018) as peer-reviewed evidence on Kanban use in software development and
+maintenance. These sources justify the fragment as a tailored Kanban service
+system rather than a novel parallel process.
+
+#### MF-19 — DevOps cross-process coordination
+
+MF-19 connects rather than conflates Development and Delivery with Operations
+and Maintenance. It defines G7 handover, shared CI/CD and release evidence,
+operational-readiness participation, telemetry and outcome feedback,
+incident/maintenance change routing, and coordinated retirement through G8.
+The fragment follows ISO/IEC/IEEE 12207's separate but concurrently applicable
+lifecycle processes and PMI Disciplined DevOps' integration of development,
+operations, support, release, security, and improvement. It prevents a local
+delivery or operations optimization from leaving an end-to-end obligation
+ownerless.
 
 ### 5.4 Continuous fragment
 
@@ -350,27 +370,28 @@ product identifiers refer to the definitions described in the reusable content
 catalog. “Required” means that the control objective belongs to the core
 process; the effort and evidence depth may still be tailored.
 
-| Fragment | Kind                | Selection                                           | Roles                                          | Principal work products                                   | Requirements realized                  |
-| -------- | ------------------- | --------------------------------------------------- | ---------------------------------------------- | --------------------------------------------------------- | -------------------------------------- |
-| MF-01    | Stage               | Required                                            | R-01, R-02, R-03, R-07, R-14                   | WP-01, WP-02, WP-04                                       | MR-LC-01, MR-SL-01, MR-Q-04            |
-| MF-02    | Stage               | Required before provider-specific design            | R-02, R-07, R-08, R-11, R-12, R-14             | WP-02, WP-03, WP-04, WP-12, WP-13                         | MR-SL-01–04, MR-SL-17–18               |
-| MF-03    | Stage               | Required                                            | R-04, R-05, R-10, R-11, R-14, R-15             | WP-05, WP-06, WP-07                                       | MR-LC-02, MR-Q-03–05, MR-Q-08          |
-| MF-04    | Stage               | Required for every increment                        | R-02, R-03, R-05, R-06, R-07, R-14             | WP-01, WP-04, WP-07                                       | MR-LC-03, MR-RE-01, MR-RE-03, MR-MG-02 |
-| MF-05    | Process component   | Required                                            | R-02, R-03, R-06                               | WP-08                                                     | MR-RE-01–02, MR-MDE-01–02              |
-| MF-06    | Stage               | Required                                            | R-02, R-06, R-10, R-15                         | WP-08, WP-09                                              | MR-MDE-04, MR-MDE-06, MR-Q-07          |
-| MF-07    | Stage               | Required when the MODRISS CIM→PIM transform is used | R-07, R-10, R-15                               | WP-09, WP-10, WP-11                                       | MR-MDE-03–05, MR-MDE-07                |
-| MF-08    | Process component   | Required                                            | R-07, R-09, R-10, R-11, R-12, R-14             | WP-11, WP-12, WP-13, WP-14                                | MR-SL-05–10, MR-SL-12                  |
-| MF-09    | Stage               | Required for a supported PSM                        | R-07, R-08, R-10, R-11, R-15                   | WP-14, WP-15, WP-16                                       | MR-MDE-03, MR-MDE-05, MR-SL-04         |
-| MF-10    | Process component   | Required for the AWS profile                        | R-08, R-10, R-11, R-12, R-14, R-15             | WP-16, WP-17                                              | MR-SL-12–13, MR-SL-16–17               |
-| MF-11    | Stage               | Required                                            | R-08, R-13                                     | WP-17, WP-18                                              | MR-MDE-03, MR-SL-13, MR-MG-05          |
-| MF-12    | Stage               | Required                                            | R-09, R-10, R-11                               | WP-18, WP-19, WP-20                                       | MR-SL-13–14, MR-MDE-11                 |
-| MF-13    | Stage               | Required; tests selected by risk                    | R-02, R-09, R-10, R-11, R-12, R-13, R-14       | WP-20, WP-21, WP-22, WP-23                                | MR-SL-14–15, MR-LC-05                  |
-| MF-14    | Phase               | Required; promotion strategy varies                 | R-02, R-11, R-13, R-14, R-15                   | WP-21, WP-22, WP-23, WP-24                                | MR-SL-15, MR-MG-04–05                  |
-| MF-15    | Phase               | Required during active operation                    | R-02, R-11, R-12, R-14                         | WP-25, WP-26, WP-27, WP-29                                | MR-SL-02, MR-SL-16, MR-RE-04           |
-| MF-16    | Stage               | Required                                            | R-05, R-06, R-07, R-08, R-09, R-11, R-13, R-14 | WP-26, WP-27                                              | MR-LC-07, MR-MDE-05, MR-MG-05          |
-| MF-17    | Phase               | Required at retirement                              | R-01, R-02, R-11, R-13, R-14, R-16             | WP-28, WP-29                                              | MR-LC-01, MR-LC-04, MR-MG-07           |
-| MF-18    | Process component   | Required during production operation                | R-05, R-10, R-11, R-12, R-13, R-14             | WP-25, WP-26, WP-27, WP-30, WP-31                         | MR-LC-08–10, MR-MG-08, MR-SL-16        |
-| UF-01    | Continuous practice | Required; depth is tailored                         | R-04, R-05, R-10, R-11, R-12, R-14, R-15       | WP-04, WP-05, WP-07, WP-13, WP-20, WP-25, WP-27, WP-29–31 | MR-MG-01, MR-MG-03–08                  |
+| Fragment | Kind                 | Selection                                           | Roles                                          | Principal work products                                   | Requirements realized                  |
+| -------- | -------------------- | --------------------------------------------------- | ---------------------------------------------- | --------------------------------------------------------- | -------------------------------------- |
+| MF-01    | Stage                | Required                                            | R-01, R-02, R-03, R-07, R-14                   | WP-01, WP-02, WP-04                                       | MR-LC-01, MR-SL-01, MR-Q-04            |
+| MF-02    | Stage                | Required before provider-specific design            | R-02, R-07, R-08, R-11, R-12, R-14             | WP-02, WP-03, WP-04, WP-12, WP-13                         | MR-SL-01–04, MR-SL-17–18               |
+| MF-03    | Stage                | Required                                            | R-04, R-05, R-10, R-11, R-14, R-15             | WP-05, WP-06, WP-07                                       | MR-LC-02, MR-Q-03–05, MR-Q-08          |
+| MF-04    | Stage                | Required for every increment                        | R-02, R-03, R-05, R-06, R-07, R-14             | WP-01, WP-04, WP-07                                       | MR-LC-03, MR-RE-01, MR-RE-03, MR-MG-02 |
+| MF-05    | Process component    | Required                                            | R-02, R-03, R-06                               | WP-08                                                     | MR-RE-01–02, MR-MDE-01–02              |
+| MF-06    | Stage                | Required                                            | R-02, R-06, R-10, R-15                         | WP-08, WP-09                                              | MR-MDE-04, MR-MDE-06, MR-Q-07          |
+| MF-07    | Stage                | Required when the MODRISS CIM→PIM transform is used | R-07, R-10, R-15                               | WP-09, WP-10, WP-11                                       | MR-MDE-03–05, MR-MDE-07                |
+| MF-08    | Process component    | Required                                            | R-07, R-09, R-10, R-11, R-12, R-14             | WP-11, WP-12, WP-13, WP-14                                | MR-SL-05–10, MR-SL-12                  |
+| MF-09    | Stage                | Required for a supported PSM                        | R-07, R-08, R-10, R-11, R-15                   | WP-14, WP-15, WP-16                                       | MR-MDE-03, MR-MDE-05, MR-SL-04         |
+| MF-10    | Process component    | Required for the AWS profile                        | R-08, R-10, R-11, R-12, R-14, R-15             | WP-16, WP-17                                              | MR-SL-12–13, MR-SL-16–17               |
+| MF-11    | Stage                | Required                                            | R-08, R-13                                     | WP-17, WP-18                                              | MR-MDE-03, MR-SL-13, MR-MG-05          |
+| MF-12    | Stage                | Required                                            | R-09, R-10, R-11                               | WP-18, WP-19, WP-20                                       | MR-SL-13–14, MR-MDE-11                 |
+| MF-13    | Stage                | Required; tests selected by risk                    | R-02, R-09, R-10, R-11, R-12, R-13, R-14       | WP-20, WP-21, WP-22, WP-23                                | MR-SL-14–15, MR-LC-05                  |
+| MF-14    | Release activity     | Required; promotion strategy varies                 | R-02, R-11, R-13, R-14, R-15                   | WP-21, WP-22, WP-23, WP-24                                | MR-SL-15, MR-MG-04–05                  |
+| MF-15    | Operations activity  | Required during active operation                    | R-02, R-11, R-12, R-14                         | WP-25, WP-26, WP-27, WP-29                                | MR-SL-02, MR-SL-16, MR-RE-04           |
+| MF-16    | Operations activity  | Required                                            | R-05, R-06, R-07, R-08, R-09, R-11, R-13, R-14 | WP-26, WP-27                                              | MR-LC-07, MR-MDE-05, MR-MG-05          |
+| MF-17    | Phase                | Required at retirement                              | R-01, R-02, R-11, R-13, R-14, R-16             | WP-28, WP-29                                              | MR-LC-01, MR-LC-04, MR-MG-07           |
+| MF-18    | Process component    | Required during production operation                | R-05, R-10, R-11, R-12, R-13, R-14             | WP-25, WP-26, WP-27, WP-30, WP-31                         | MR-LC-08–10, MR-MG-08, MR-SL-16        |
+| MF-19    | Integration fragment | Required during production operation                | R-02, R-04, R-10–R-15                          | WP-20–WP-27, WP-29–WP-31                                  | MR-LC-07–08, MR-LC-11, MR-MG-04–05     |
+| UF-01    | Continuous practice  | Required; depth is tailored                         | R-04, R-05, R-10, R-11, R-12, R-14, R-15       | WP-04, WP-05, WP-07, WP-13, WP-20, WP-25, WP-27, WP-29–31 | MR-MG-01, MR-MG-03–08                  |
 
 ## 6. Reusable method-content families
 
@@ -396,7 +417,7 @@ visible during consolidation.
 Each TaskDefinition states its purpose, performer roles, declared input and
 output work products, ordered steps, entry and exit criteria, validation or
 review checks, and—in the modeling components—metamodel coverage. The 134 tasks
-are intentionally finer-grained than the 19 fragments. A fragment expresses a
+are intentionally finer-grained than the 20 fragments. A fragment expresses a
 reusable solution to a process problem; a task describes the work required to
 realize part of that solution.
 
@@ -430,7 +451,7 @@ The 31 lifecycle products fall into three families:
 | --------------------------------------------------------------------- | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Strategy, feasibility, process tailoring, and planning                | WP-01–WP-07 | establish why the endeavor exists, whether serverless is suitable, how risk and cost are controlled, which process configuration applies, and how work is organized |
 | Models, transformations, decisions, and generated baseline            | WP-08–WP-18 | preserve accepted CIM/PIM/PSM revisions, transformation provenance, architectural and assurance evidence, and reproducible generation                               |
-| Implementation, verification, release, operation, change, and closure | WP-19–WP-31 | control software and tests, exact candidates, promotion and recovery, operational evidence, incidents, changes, retirement, improvement, and interrupt-driven flow  |
+| Implementation, verification, release, operation, change, and closure | WP-19–WP-31 | control software and tests, exact candidates, promotion and recovery, operational evidence, incidents, changes, retirement, improvement, and Kanban service flow    |
 
 A work product is not simply a file. Its definition establishes meaning; its
 process use identifies the activity and task context; its revision and state
@@ -481,9 +502,10 @@ throughout this sequence.
 
 ### 7.1 Process components
 
-The library exposes five process components. The end-to-end component provides
-the five-phase product lifecycle, the nested release cycle, and the vertical
-MDE increment. The CIM, PIM, and AWS PSM components encapsulate their respective
+The library exposes five top-level process packages. The end-to-end package
+provides two coordinated components: four-phase Development and Delivery and
+the ongoing, event-driven Operations and Maintenance Process, plus the nested
+release cycle and vertical MDE increment. The CIM, PIM, and AWS PSM components encapsulate their respective
 modeling engines and can be invoked as child processes without copying their
 tasks into the parent process. The artifact-readiness component begins with a
 generated project baseline and covers controlled refinement, delivery
@@ -572,6 +594,10 @@ enactment, and critique.
 
 ## References
 
+Ahmad, M. O., Dennehy, D., Conboy, K., and Oivo, M. (2018). “Kanban in
+Software Engineering: A Systematic Mapping Study.” _Journal of Systems and
+Software_, 137, 96–113. <https://doi.org/10.1016/j.jss.2017.11.045>.
+
 Asadi, M., Esfahani, N., and Ramsin, R. (2010). “Process Patterns for
 MDA-Based Software Development.” In _Proceedings of the 8th ACIS International
 Conference on Software Engineering Research, Management and Applications
@@ -602,6 +628,26 @@ Knowledge (SWEBOK Guide), Version 4.0a_.
 
 Kanban Guides (2025). _The Kanban Guide_, May 2025.
 <https://kanbanguides.org/the-kanban-guide/>.
+
+Project Management Institute (PMI) (n.d.). _Disciplined Agile: Starting With
+Iterations or Flow; Designing the Kanban Board; Lean (Kanban-Based) Lifecycle;
+Disciplined DevOps_.
+<https://www.pmi.org/disciplined-agile/starting-with-iterations-or-flow>;
+<https://www.pmi.org/disciplined-agile/designing-the-kanban-board>;
+<https://www.pmi.org/-/media/pmi/microsites/disciplined-agile/posters/life-cycle-posters-11x17_lean.pdf>;
+<https://www.pmi.org/disciplined-agile/process/disciplined-devops>.
+
+Faustino, J., Pereira, R., Alturas, B., and Silva, M. M. (2022). “Agile
+Information Technology Service Management with DevOps: An Incident Management
+Case Study.” _Software: Practice and Experience_, 52(1), 322–339.
+<https://doi.org/10.1002/spe.3096>.
+
+ISO/IEC/IEEE (2026). _ISO/IEC/IEEE 12207:2026 Systems and Software Engineering
+— Software Life Cycle Processes_. <https://www.iso.org/standard/90219.html>.
+
+ISO/IEC/IEEE (2022). _ISO/IEC/IEEE 14764:2022 Software Engineering — Software
+Life Cycle Processes — Maintenance_.
+<https://www.iso.org/standard/80710.html>.
 
 Object Management Group (OMG) (2008). _Software & Systems Process Engineering
 Metamodel Specification, Version 2.0_. OMG formal/2008-04-01.

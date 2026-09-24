@@ -31,25 +31,55 @@ const methodProcess = JSON.parse(read('mde/process/process-definitions/end-to-en
 const sequences = methodProcess.workSequences ?? [];
 const requiredSequences = [
   {
-    id: 'ws.release-rework.e2e.ph2.e2e.ph1',
-    predecessorRef: 'e2e.ph2',
-    successorRef: 'e2e.ph1',
+    id: 'ws.release-rework.e2e.rel.a2.e2e.p0',
+    predecessorRef: 'e2e.rel.a2',
+    successorRef: 'e2e.p0.increment-planning',
     relation: 'release-rework',
     condition: 'G6-rejected-or-promotion-failed',
   },
   {
-    id: 'ws.release-cycle.e2e.ph3.e2e.ph1',
-    predecessorRef: 'e2e.ph3',
-    successorRef: 'e2e.ph1',
+    id: 'ws.release-cycle.e2e.rel.a3.e2e.p0',
+    predecessorRef: 'e2e.rel.a3',
+    successorRef: 'e2e.p0.increment-planning',
     relation: 'release-cycle',
-    condition: 'retirement-not-authorized-and-next-release-or-change-selected',
+    condition: 'next-release-selected-and-retirement-not-authorized',
   },
   {
-    id: 'ws.e2e.ph3.e2e.ph4',
-    predecessorRef: 'e2e.ph3',
-    successorRef: 'e2e.ph4',
-    relation: 'retirement-transition',
+    id: 'ws.handover.e2e.rel.a2.e2e.ops',
+    predecessorRef: 'e2e.rel.a2',
+    successorRef: 'modriss.operations-maintenance',
+    relation: 'operational-handover',
+    condition: 'G6-authorized-and-G7-transitioned',
+  },
+  {
+    id: 'ws.ops-change.e2e.ops.e2e.p0',
+    predecessorRef: 'modriss.operations-maintenance',
+    successorRef: 'e2e.p0.increment-planning',
+    relation: 'maintenance-change-feedback',
+    condition: 'service-item-requires-product-change',
+  },
+  {
+    id: 'ws.retirement-development.e2e.ph1.e2e.ph2',
+    predecessorRef: 'e2e.ph1',
+    successorRef: 'e2e.ph2',
+    relation: 'phase-order',
+    condition: 'retirement-authorized-and-no-development-or-release-work-in-flight',
+  },
+  {
+    id: 'ws.retirement-operations.e2e.ops.e2e.ph2',
+    predecessorRef: 'modriss.operations-maintenance',
+    successorRef: 'e2e.ph2',
+    linkKind: 'startToStart',
+    relation: 'retirement-coordination',
     condition: 'retirement-authorized',
+  },
+  {
+    id: 'ws.retirement-close.e2e.ph2.e2e.ops',
+    predecessorRef: 'e2e.ph2',
+    successorRef: 'modriss.operations-maintenance',
+    linkKind: 'finishToFinish',
+    relation: 'operations-termination',
+    condition: 'G8-lifecycle-closed',
   },
 ];
 
@@ -65,18 +95,46 @@ for (const expected of requiredSequences) {
 }
 
 const releaseCycle = methodProcess.processEngine?.releaseCycle;
-if (!releaseCycle?.isRepeatable || releaseCycle.repeatCondition !== 'retirement-not-authorized') {
-  fail('processEngine.releaseCycle must explicitly repeat until retirement is authorized');
+if (!releaseCycle?.isRepeatable || releaseCycle.activityKind !== 'Iteration' || releaseCycle.repeatCondition !== 'next-release-selected-and-retirement-not-authorized') {
+  fail('processEngine.releaseCycle must be an Iteration of activities, not phases');
 }
-const maintenanceFlow = methodProcess.processEngine?.maintenanceFlow;
-if (!maintenanceFlow?.isRepeatable || maintenanceFlow.activityKind !== 'KanbanFlow') {
-  fail('processEngine.maintenanceFlow must be an explicit repeatable KanbanFlow');
+const phases = methodProcess.phases ?? [];
+if (phases.length !== 3 || phases.map(phase => phase.id).join(',') !== 'e2e.ph0,e2e.ph1,e2e.ph2') {
+  fail('Development and Delivery must contain exactly three ordered, one-time phases');
 }
-if (maintenanceFlow.flowControl !== 'pull-with-explicit-WIP-limits-and-service-level-expectations') {
-  fail('processEngine.maintenanceFlow must define pull, WIP, and SLE control');
+const phaseIds = new Set(phases.map(phase => phase.id));
+for (const activityRef of releaseCycle.activityRefs ?? []) {
+  if (phaseIds.has(activityRef)) fail(`releaseCycle must not repeat phase ${activityRef}`);
 }
-for (const stageId of ['e2e.ph3.st1', 'e2e.ph3.st2a', 'e2e.ph3.st2', 'e2e.ph3.st3', 'e2e.ph3.st4']) {
-  if (!maintenanceFlow.activityRefs?.includes(stageId)) fail(`maintenanceFlow is missing ${stageId}`);
+for (const level of ['cim', 'pim', 'psm', 'artifact']) {
+  const subprocess = JSON.parse(read(`mde/process/process-definitions/${level}.json`));
+  for (const activity of subprocess.phases ?? []) {
+    if (activity.activityKind !== 'MODRISS::Stage') {
+      fail(`${level}.${activity.id} is repeatable subprocess structure and must be a Stage, not a Phase`);
+    }
+    for (const child of activity.stages ?? []) {
+      if (child.activityKind !== 'MODRISS::SubStage') {
+        fail(`${level}.${child.id} must be a SubStage below ${activity.id}`);
+      }
+    }
+  }
+}
+const serviceDeliveryFlow = methodProcess.processEngine?.serviceDeliveryFlow;
+if (!serviceDeliveryFlow?.isRepeatable || !serviceDeliveryFlow.isOngoing || !serviceDeliveryFlow.isEventDriven || serviceDeliveryFlow.activityKind !== 'KanbanFlow') {
+  fail('processEngine.serviceDeliveryFlow must be an explicit repeatable KanbanFlow');
+}
+if (serviceDeliveryFlow.flowControl !== 'pull-with-explicit-WIP-limits-and-service-level-expectations') {
+  fail('processEngine.serviceDeliveryFlow must define pull, WIP, and SLE control');
+}
+for (const stageId of ['e2e.ops.a1', 'e2e.ops.a2', 'e2e.ops.a3', 'e2e.ops.a4', 'e2e.ops.a5']) {
+  if (!serviceDeliveryFlow.activityRefs?.includes(stageId)) fail(`serviceDeliveryFlow is missing ${stageId}`);
+}
+const operationsProcess = methodProcess.processComponents?.find(component => component.id === 'modriss.operations-maintenance');
+if (!operationsProcess || operationsProcess.type !== 'Process' || !operationsProcess.isOngoing || !operationsProcess.isEventDriven) {
+  fail('Operations and Maintenance must be an ongoing, event-driven Process component');
+}
+if ((methodProcess.phases ?? []).some(phase => /operate|operations|maintenance/i.test(phase.name))) {
+  fail('Operations and Maintenance must not be represented as a lifecycle Phase');
 }
 
 const overview = read('mde/process/engineered-method/spem/lifecycle.puml');
@@ -87,7 +145,7 @@ for (const [label, diagram] of [
   ['end-to-end-process.activity.puml', sourceView],
   ['release-cycle.puml', releaseView],
 ]) {
-  requireText(diagram, 'Retirement authorized?', label);
+  requireText(diagram.toLowerCase(), 'retirement', label);
   requireText(diagram.toLowerCase(), 'next release', label);
   if (!/accepted (release|baseline)/i.test(diagram)) {
     fail(`${label} must state that an accepted release or baseline remains in operation`);
@@ -116,28 +174,36 @@ for (const plantUmlPath of plantUmlPaths) {
 const lifecycleHtml = read('mde/process/engineered-method/diagrams/modriss-lifecycle-manuscript.html');
 const alternateHtml = read('mde/process/engineered-method/diagrams/modriss-lifecycle-2.html');
 const operationsHtml = read('mde/process/engineered-method/diagrams/modriss-operational-flow.html');
-requireText(lifecycleHtml, 'SELECTED CHANGE → PLANNED RELEASE', 'primary publication diagram');
-requireText(alternateHtml, 'SELECTED CHANGE → PLANNED RELEASE', 'alternative publication diagram');
+for (const [label, diagram] of [['primary publication diagram', lifecycleHtml], ['alternative publication diagram', alternateHtml]]) {
+  requireText(diagram, 'TWO COORDINATED PROCESSES', label);
+  requireText(diagram, 'NOT A PHASE', label);
+  requireText(diagram, 'DEVOPS COORDINATION INTERFACE', label);
+  requireText(diagram, 'BETWEEN THE PROCESSES', label);
+}
 for (const expected of ['WIP', 'SLE', 'Operations-only', 'planned release']) {
   requireText(operationsHtml, expected, 'operational-flow publication diagram');
 }
 const lifecycleSvg = read('mde/process/engineered-method/diagrams/modriss-lifecycle-manuscript.svg');
 const alternateSvg = read('mde/process/engineered-method/diagrams/modriss-lifecycle-2.svg');
 const operationsSvg = read('mde/process/engineered-method/diagrams/modriss-operational-flow.svg');
-requireText(lifecycleSvg, 'SELECTED CHANGE → PLANNED RELEASE', 'exported primary SVG');
-requireText(alternateSvg, 'SELECTED CHANGE → PLANNED RELEASE', 'exported alternative SVG');
+requireText(lifecycleSvg, 'TWO COORDINATED PROCESSES', 'exported primary SVG');
+requireText(alternateSvg, 'NOT A PHASE', 'exported alternative SVG');
 requireText(operationsSvg, 'Operations-only', 'exported operational-flow SVG');
 
 const processNarrative = read('mde/process/engineered-method/04-development-process.md');
 const thesisChapter = read('mde/process/engineered-method/10-thesis-process-chapter.md');
-requireText(processNarrative, '### Nested lifecycle cadence', 'development-process narrative');
-requireText(thesisChapter, 'The lifecycle therefore has three nested cycles and one concurrent service', 'thesis chapter');
+requireText(processNarrative, '## Normative process vocabulary', 'development-process narrative');
+requireText(processNarrative, 'Operations and Maintenance Process — ongoing and event-driven', 'development-process narrative');
+requireText(thesisChapter, 'two coordinated processes', 'thesis chapter');
 
 const xml = read('mde/process/engineered-method/spem/modriss-method-library.spem.xml');
 requireText(xml, 'modriss:sourceId="modriss.end-to-end.release-cycle"', 'generated SPEM XML');
-requireText(xml, 'modriss:repeatCondition="retirement-not-authorized"', 'generated SPEM XML');
-requireText(xml, 'modriss:sourceId="modriss.end-to-end.maintenance-flow"', 'generated SPEM XML');
+requireText(xml, 'modriss:repeatCondition="next-release-selected-and-retirement-not-authorized"', 'generated SPEM XML');
+requireText(xml, 'modriss:sourceId="modriss.end-to-end.service-delivery-flow"', 'generated SPEM XML');
 requireText(xml, 'modriss:kind="KanbanFlow"', 'generated SPEM XML');
+requireText(xml, 'modriss:isOngoing="true"', 'generated SPEM XML');
+requireText(xml, 'modriss:isEventDriven="true"', 'generated SPEM XML');
+requireText(xml, 'modriss:sourceId="modriss.operations-maintenance"', 'generated SPEM XML');
 requireText(xml, 'modriss:flowControl="pull-with-explicit-WIP-limits-and-service-level-expectations"', 'generated SPEM XML');
 for (const expected of requiredSequences) {
   requireText(xml, `modriss:relation="${expected.relation}"`, 'generated SPEM XML');

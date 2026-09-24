@@ -2,497 +2,245 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>MODRISS full-lifecycle software development process</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>MODRISS integrated product lifecycle</title>
     <link
-      href="https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400;500;600&amp;family=Space+Grotesk:wght@400;500;600&amp;display=swap"
+      href="https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400;600&amp;family=Space+Grotesk:wght@400;600&amp;display=swap"
       rel="stylesheet"
     />
     <style>
-      *,
-      *::before,
-      *::after {
+      * {
         box-sizing: border-box;
-        margin: 0;
-        padding: 0;
       }
       body {
+        margin: 0;
         min-height: 100vh;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        padding: 24px;
+        display: grid;
+        place-items: center;
         background: #f5f3ed;
         color: #102c3a;
-        font-family: "Space Grotesk", system-ui, sans-serif;
+        font-family: "Space Grotesk", sans-serif;
       }
       main {
         width: min(100%, 1120px);
+        padding: 20px;
       }
       svg {
         display: block;
         width: 100%;
         height: auto;
       }
+      .sans {
+        font-family: "Space Grotesk", sans-serif;
+      }
+      .mono {
+        font-family: "Geist Mono", monospace;
+      }
+      .ink {
+        fill: #102c3a;
+      }
+      .muted {
+        fill: #617178;
+      }
+      .accent {
+        fill: #087b78;
+      }
+      .coral {
+        fill: #d6644a;
+      }
+      .title {
+        font:
+          400 31px Georgia,
+          serif;
+      }
+      .eyebrow {
+        font: 600 8px "Geist Mono";
+        letter-spacing: 0.16em;
+      }
+      .lane {
+        fill: #fcfbf7;
+        stroke: #ccd2cf;
+      }
+      .lane-label {
+        font: 600 10px "Geist Mono";
+        letter-spacing: 0.08em;
+      }
+      .node {
+        fill: #fff;
+        stroke: #aeb9b7;
+      }
+      .focus {
+        fill: #edf5f2;
+        stroke: #087b78;
+        stroke-width: 1.5;
+      }
+      .ops {
+        fill: #fff8f4;
+        stroke: #d6644a;
+        stroke-width: 1.4;
+      }
+      .tag {
+        font: 600 8px "Geist Mono";
+        letter-spacing: 0.08em;
+      }
+      .head {
+        font: 600 12px "Space Grotesk";
+      }
+      .body {
+        font: 400 9px "Space Grotesk";
+      }
+      .small {
+        font: 400 8px "Geist Mono";
+      }
+      .flow {
+        fill: none;
+        stroke: #617178;
+        stroke-width: 1.3;
+      }
+      .sync {
+        fill: none;
+        stroke: #d6644a;
+        stroke-width: 1.5;
+      }
+      .feedback {
+        fill: none;
+        stroke: #087b78;
+        stroke-width: 1.3;
+        stroke-dasharray: 5 4;
+      }
+      .hair {
+        stroke: #ccd2cf;
+        stroke-width: 0.8;
+      }
     </style>
   </head>
   <body>
     <main>
       <svg
-        viewBox="0 0 1120 792"
+        viewBox="0 0 1120 760"
         xmlns="http://www.w3.org/2000/svg"
         role="img"
         aria-labelledby="modriss-lifecycle-title modriss-lifecycle-desc"
       >
-        <title id="modriss-lifecycle-title">
-          MODRISS full-lifecycle software development process
-        </title>
+        <title id="modriss-lifecycle-title">MODRISS integrated product lifecycle</title>
         <desc id="modriss-lifecycle-desc">
-          Five-phase serverless software lifecycle showing situational initiation, iterative
-          CIM-to-PIM-to-PSM delivery, release, operations, retirement, feedback paths, evidence
-          gates, concurrent planned delivery and interrupt-driven operational pull flow, and
-          continuous disciplines.
+          Two coordinated processes: sequential Development and Delivery phases above, and an
+          ongoing event-driven Operations and Maintenance Kanban process below. Release handover,
+          operational feedback, maintenance change, and retirement synchronize the processes.
         </desc>
         <defs>
-          <style>
-            .sans {
-              font-family: "Space Grotesk", system-ui, sans-serif;
-            }
-            .serif {
-              font-family: Georgia, "Times New Roman", serif;
-            }
-            .mono {
-              font-family: "Geist Mono", ui-monospace, monospace;
-            }
-            .ink {
-              fill: #102c3a;
-            }
-            .muted {
-              fill: #617178;
-            }
-            .soft {
-              fill: #7d898e;
-            }
-            .accent {
-              fill: #087b78;
-            }
-            .eyebrow {
-              font:
-                500 8px "Geist Mono",
-                ui-monospace,
-                monospace;
-              letter-spacing: 0.18em;
-            }
-            .title {
-              font:
-                400 32px Georgia,
-                "Times New Roman",
-                serif;
-            }
-            .subtitle {
-              font:
-                400 10px "Space Grotesk",
-                system-ui,
-                sans-serif;
-            }
-            .phase-tag {
-              font:
-                600 8px "Geist Mono",
-                ui-monospace,
-                monospace;
-              letter-spacing: 0.12em;
-            }
-            .phase-name {
-              font:
-                600 12px "Space Grotesk",
-                system-ui,
-                sans-serif;
-            }
-            .slot-label {
-              font:
-                500 8px "Geist Mono",
-                ui-monospace,
-                monospace;
-              letter-spacing: 0.1em;
-            }
-            .cell-head {
-              font:
-                600 10px "Space Grotesk",
-                system-ui,
-                sans-serif;
-            }
-            .cell-text {
-              font:
-                400 9px "Space Grotesk",
-                system-ui,
-                sans-serif;
-            }
-            .cell-tech {
-              font:
-                400 8px "Geist Mono",
-                ui-monospace,
-                monospace;
-            }
-            .gate {
-              font:
-                600 8px "Geist Mono",
-                ui-monospace,
-                monospace;
-              letter-spacing: 0.06em;
-            }
-            .legend-key {
-              font:
-                500 8px "Geist Mono",
-                ui-monospace,
-                monospace;
-              letter-spacing: 0.12em;
-            }
-            .legend-text {
-              font:
-                400 9px "Space Grotesk",
-                system-ui,
-                sans-serif;
-            }
-            .forward {
-              fill: none;
-              stroke: #617178;
-              stroke-width: 1.2;
-            }
-            .feedback {
-              fill: none;
-              stroke: #617178;
-              stroke-width: 1;
-              stroke-dasharray: 5 4;
-            }
-            .hair {
-              stroke: #ccd2cf;
-              stroke-width: 0.8;
-            }
-            .stage {
-              fill: #fcfbf7;
-              stroke: #ccd2cf;
-              stroke-width: 1;
-            }
-            .stage-focal {
-              fill: #fcfbf7;
-              stroke: #087b78;
-              stroke-width: 1.4;
-            }
-            .header {
-              fill: #ebe8df;
-            }
-            .header-focal {
-              fill: #d7e9e5;
-            }
-            .slot-a {
-              fill: #fcfbf7;
-            }
-            .slot-b {
-              fill: #f0eee7;
-            }
-            .discipline {
-              fill: #ebe8df;
-              stroke: #ccd2cf;
-              stroke-width: 1;
-            }
-          </style>
-          <marker id="main-arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
-            <polygon points="0 0,8 3,0 6" fill="#617178" />
+          <marker id="arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+            <path d="M0 0 8 3 0 6Z" fill="#617178" />
           </marker>
-          <marker
-            id="main-arrow-accent"
-            markerWidth="8"
-            markerHeight="6"
-            refX="7"
-            refY="3"
-            orient="auto"
-          >
-            <polygon points="0 0,8 3,0 6" fill="#087b78" />
+          <marker id="teal" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+            <path d="M0 0 8 3 0 6Z" fill="#087b78" />
           </marker>
-          <marker
-            id="main-arrow-link"
-            markerWidth="8"
-            markerHeight="6"
-            refX="7"
-            refY="3"
-            orient="auto"
-          >
-            <polygon points="0 0,8 3,0 6" fill="#075d5b" />
+          <marker id="red" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+            <path d="M0 0 8 3 0 6Z" fill="#d6644a" />
           </marker>
         </defs>
-
-        <rect width="1120" height="792" fill="#f5f3ed" />
-        <text class="eyebrow muted" x="40" y="28">
-          DEVELOPMENT PROCESS · SERVERLESS SOFTWARE LIFECYCLE
+        <rect width="1120" height="760" fill="#f5f3ed" />
+        <text class="eyebrow muted" x="42" y="34">
+          INTEGRATED PRODUCT LIFECYCLE · TWO COORDINATED PROCESSES
         </text>
-        <text class="title ink" x="40" y="64">
-          MODRISS full-lifecycle software development process
+        <text class="title ink" x="42" y="70">
+          Development delivers releases. Operations sustains live releases.
         </text>
-        <text class="subtitle muted" x="40" y="88">
-          Situational method engineering around a vertical CIM → PIM → AWS PSM → software delivery
-          engine
+        <text class="sans muted" font-size="10" x="42" y="94">
+          DevOps coordination joins the processes without misclassifying continuous operation as a
+          sequential phase.
         </text>
-
-        <!-- Primary and feedback connections are drawn before stage containers. -->
-        <line
-          class="forward"
-          x1="280"
-          y1="172"
-          x2="300"
-          y2="172"
-          marker-end="url(#main-arrow-accent)"
-        />
-        <line class="forward" x1="464" y1="172" x2="484" y2="172" marker-end="url(#main-arrow)" />
-        <line class="forward" x1="648" y1="172" x2="668" y2="172" marker-end="url(#main-arrow)" />
-        <line class="forward" x1="832" y1="172" x2="852" y2="172" marker-end="url(#main-arrow)" />
-        <path
-          class="feedback"
-          d="M752 600 V628 Q752 636 744 636 H392 Q384 636 384 628 V604"
-          marker-end="url(#main-arrow)"
-        />
-        <rect x="464" y="614" width="224" height="12" rx="2" fill="#f5f3ed" />
-        <text class="cell-tech muted" x="576" y="623" text-anchor="middle">
-          SELECTED CHANGE → PLANNED RELEASE
+        <rect class="lane" x="42" y="128" width="1036" height="258" rx="8" />
+        <rect x="42" y="128" width="150" height="258" rx="8" fill="#ebe8df" />
+        <text class="lane-label ink" x="58" y="154">DEVELOPMENT</text>
+        <text class="lane-label ink" x="58" y="170">AND DELIVERY</text>
+        <text class="body muted" x="58" y="196">Three sequential</text>
+        <text class="body muted" x="58" y="211">one-time phases</text>
+        <text class="small muted" x="58" y="354">PHASES NEVER REPEAT</text>
+        <g transform="translate(216 174)">
+          <rect class="node" width="164" height="154" rx="6" />
+          <text class="tag muted" x="14" y="25">PHASE 0 · ONCE</text>
+          <text class="head ink" x="14" y="50">Inception, Tailoring</text>
+          <text class="head ink" x="14" y="67">and Organization</text>
+          <line class="hair" x1="14" y1="80" x2="150" y2="80" />
+          <text class="body muted" x="14" y="101">Value · feasibility · profile</text>
+          <text class="body muted" x="14" y="118">teams · quality · ops baseline</text>
+          <text class="small accent" x="14" y="140">G0 → G1</text>
+        </g>
+        <g transform="translate(414 150)">
+          <rect class="focus" width="396" height="202" rx="6" />
+          <text class="tag accent" x="14" y="25">PHASE 1 · ONCE · ACTIVE PRODUCT LIFE</text>
+          <text class="head ink" x="14" y="47">Active Product Construction and Evolution</text>
+          <line class="hair" x1="14" y1="60" x2="382" y2="60" />
+          <g transform="translate(14 76)">
+            <rect class="node" width="170" height="90" rx="5" />
+            <text class="tag accent" x="12" y="20">ITERATION · REPEATS</text>
+            <text class="head ink" x="12" y="42">Model-driven increment</text>
+            <text class="body muted" x="12" y="61">CIM → PIM → PSM</text>
+            <text class="small accent" x="12" y="79">G2 → G5</text>
+          </g>
+          <g transform="translate(212 76)">
+            <rect class="node" width="170" height="90" rx="5" />
+            <text class="tag accent" x="12" y="20">ACTIVITIES · REPEAT</text>
+            <text class="head ink" x="12" y="42">Qualify and release</text>
+            <text class="body muted" x="12" y="61">promote · hand over</text>
+            <text class="small accent" x="12" y="79">G6 → G7</text>
+          </g>
+          <path class="flow" d="M184 121H212" marker-end="url(#arrow)" />
+          <path class="feedback" d="M297 166V188H99V166" marker-end="url(#teal)" />
+          <text class="small accent" x="198" y="196" text-anchor="middle">
+            NEXT RELEASE ITERATION · NOT A PHASE LOOP
+          </text>
+        </g>
+        <g transform="translate(846 174)">
+          <rect class="node" width="190" height="154" rx="6" />
+          <text class="tag muted" x="14" y="25">PHASE 2 · ONCE AUTHORIZED</text>
+          <text class="head ink" x="14" y="50">Retire, Migrate and Close</text>
+          <line class="hair" x1="14" y1="64" x2="176" y2="64" />
+          <text class="body muted" x="14" y="86">migrate · decommission</text>
+          <text class="body muted" x="14" y="103">retain evidence · close duties</text>
+          <text class="body muted" x="14" y="120">operations protects service</text>
+          <text class="small accent" x="14" y="140">G8 · CLOSED</text>
+        </g>
+        <path class="flow" d="M380 251H414" marker-end="url(#arrow)" />
+        <path class="flow" d="M810 251H846" marker-end="url(#arrow)" />
+        <rect class="lane" x="42" y="456" width="1036" height="210" rx="8" />
+        <rect x="42" y="456" width="150" height="210" rx="8" fill="#ebe8df" />
+        <text class="lane-label ink" x="58" y="482">OPERATIONS</text>
+        <text class="lane-label ink" x="58" y="498">AND MAINTENANCE</text>
+        <text class="body muted" x="58" y="524">Ongoing + event-driven</text>
+        <text class="body muted" x="58" y="539">Kanban service flow</text>
+        <text class="small coral" x="58" y="634">NOT A PHASE</text>
+        <g transform="translate(216 494)">
+          <rect class="ops" width="820" height="126" rx="6" />
+          <text class="tag coral" x="16" y="24">
+            LIVE RELEASE SERVICE SYSTEM · STARTS AT FIRST G7 · ENDS AT G8
+          </text>
+          <text class="head ink" x="16" y="51">
+            Observe → Replenish and Pull → Restore / Maintain → Verify and Reconcile → Learn
+          </text>
+          <line class="hair" x1="16" y1="65" x2="804" y2="65" />
+          <text class="body muted" x="16" y="86">
+            Requested → Ready → In Progress → Verify → Done
+          </text>
+          <text class="body muted" x="16" y="104">
+            Explicit WIP · service classes · SLE · item age · throughput · operations evidence
+          </text>
+        </g>
+        <path class="sync" d="M711 316V494" marker-end="url(#red)" />
+        <path class="feedback" d="M462 494V419H513V316" marker-end="url(#teal)" />
+        <path class="sync" d="M938 494V328" marker-end="url(#red)" />
+        <rect x="192" y="396" width="844" height="46" rx="6" fill="#ebe8df" stroke="#ccd2cf" />
+        <text class="tag ink" x="208" y="414">
+          DEVOPS COORDINATION INTERFACE · BETWEEN THE PROCESSES
         </text>
-        <path
-          class="feedback"
-          d="M936 600 V656 Q936 664 928 664 H208 Q200 664 200 656 V604"
-          marker-end="url(#main-arrow)"
-        />
-        <rect x="512" y="642" width="112" height="12" rx="2" fill="#f5f3ed" />
-        <text class="cell-tech muted" x="568" y="651" text-anchor="middle">
-          LEARNING · NEXT RUN
+        <text class="body muted" x="208" y="430">
+          CI/CD + G7 handover ↓ · telemetry + service change + learning ↑ · retirement + G8
+          coordination ↕
         </text>
-
-        <!-- Stable semantic-slot labels. -->
-        <g class="slot-label muted" text-anchor="start">
-          <text x="40" y="244">QUESTION</text>
-          <text x="40" y="328">CORE WORK</text>
-          <text x="40" y="468">EVIDENCE</text>
-          <text x="40" y="552">OUTPUT</text>
-        </g>
-
-        <!-- Phase 0 -->
-        <g>
-          <rect class="stage" x="120" y="136" width="160" height="464" rx="6" />
-          <rect class="header" x="120" y="136" width="160" height="72" rx="6" />
-          <rect class="header" x="120" y="200" width="160" height="8" />
-          <text class="phase-tag muted" x="132" y="156">PHASE 0</text>
-          <text class="phase-name ink" x="132" y="176">Initiate, Tailor</text>
-          <text class="phase-name ink" x="132" y="192">and Organize</text>
-          <rect class="slot-a" x="121" y="208" width="158" height="64" />
-          <text class="cell-head ink" x="132" y="232">Should we build it?</text>
-          <text class="cell-text muted" x="132" y="248">Which process profile fits?</text>
-          <line class="hair" x1="120" y1="272" x2="280" y2="272" />
-          <rect class="slot-b" x="121" y="273" width="158" height="143" />
-          <text class="cell-head ink" x="132" y="296">Frame value and feasibility</text>
-          <text class="cell-text muted" x="132" y="316">Serverless suitability</text>
-          <text class="cell-text muted" x="132" y="332">Cost · risk · provider</text>
-          <text class="cell-text muted" x="132" y="348">Situational method profile</text>
-          <text class="cell-text muted" x="132" y="364">Team and ownership</text>
-          <text class="cell-text muted" x="132" y="380">Quality · security · ops</text>
-          <line class="hair" x1="120" y1="416" x2="280" y2="416" />
-          <rect class="slot-a" x="121" y="417" width="158" height="95" />
-          <text class="gate ink" x="132" y="440">G0 · PURSUE / REDIRECT</text>
-          <text class="gate ink" x="132" y="456">G1 · PROCESS READY</text>
-          <text class="cell-text muted" x="132" y="480">Charter · profile · risks</text>
-          <text class="cell-text muted" x="132" y="496">first release hypothesis</text>
-          <line class="hair" x1="120" y1="512" x2="280" y2="512" />
-          <rect class="slot-b" x="121" y="513" width="158" height="86" rx="6" />
-          <text class="cell-head ink" x="132" y="540">Authorized product</text>
-          <text class="cell-text muted" x="132" y="556">and enactable process</text>
-          <text class="cell-tech soft" x="132" y="576">WP-01…WP-07</text>
-        </g>
-
-        <!-- Phase 1, focal -->
-        <g>
-          <rect class="stage-focal" x="304" y="136" width="160" height="464" rx="6" />
-          <rect class="header-focal" x="304" y="136" width="160" height="72" rx="6" />
-          <rect class="header-focal" x="304" y="200" width="160" height="8" />
-          <text class="phase-tag accent" x="316" y="156">PHASE 1 · ITERATE</text>
-          <text class="phase-name ink" x="316" y="176">Model-Driven</text>
-          <text class="phase-name ink" x="316" y="192">Delivery</text>
-          <rect class="slot-a" x="305" y="208" width="158" height="64" />
-          <text class="cell-head ink" x="316" y="232">Which vertical slice</text>
-          <text class="cell-text muted" x="316" y="248">is valuable and ready?</text>
-          <line
-            x1="304"
-            y1="272"
-            x2="464"
-            y2="272"
-            stroke="#087b78"
-            stroke-opacity=".35"
-            stroke-width=".8"
-          />
-          <rect x="305" y="273" width="158" height="143" fill="#edf5f2" />
-          <text class="cell-head ink" x="316" y="296">Frame increment</text>
-          <text class="cell-head accent" x="316" y="320">CIM → PIM → AWS PSM</text>
-          <text class="cell-tech muted" x="316" y="338">ETL · RECONCILE · ETL</text>
-          <text class="cell-text muted" x="316" y="360">Refine and assure models</text>
-          <text class="cell-text muted" x="316" y="376">EGL/EGX generation</text>
-          <text class="cell-text muted" x="316" y="392">Complete · integrate · test</text>
-          <line
-            x1="304"
-            y1="416"
-            x2="464"
-            y2="416"
-            stroke="#087b78"
-            stroke-opacity=".35"
-            stroke-width=".8"
-          />
-          <rect class="slot-a" x="305" y="417" width="158" height="95" />
-          <text class="gate ink" x="316" y="440">G2 · CIM ACCEPTED</text>
-          <text class="gate ink" x="316" y="456">G3 · PIM MAPPABLE</text>
-          <text class="gate ink" x="316" y="472">G4 · PSM GENERABLE</text>
-          <text class="gate ink" x="316" y="488">G5 · INCREMENT ACCEPTED</text>
-          <line
-            x1="304"
-            y1="512"
-            x2="464"
-            y2="512"
-            stroke="#087b78"
-            stroke-opacity=".35"
-            stroke-width=".8"
-          />
-          <rect x="305" y="513" width="158" height="86" rx="6" fill="#edf5f2" />
-          <text class="cell-head ink" x="316" y="540">Accepted vertical increment</text>
-          <text class="cell-text muted" x="316" y="556">models · trace · software</text>
-          <text class="cell-tech soft" x="316" y="576">WP-08…WP-20</text>
-        </g>
-
-        <!-- Phase 2 -->
-        <g>
-          <rect class="stage" x="488" y="136" width="160" height="464" rx="6" />
-          <rect class="header" x="488" y="136" width="160" height="72" rx="6" />
-          <rect class="header" x="488" y="200" width="160" height="8" />
-          <text class="phase-tag muted" x="500" y="156">PHASE 2</text>
-          <text class="phase-name ink" x="500" y="176">Release and</text>
-          <text class="phase-name ink" x="500" y="192">Transition</text>
-          <rect class="slot-a" x="489" y="208" width="158" height="64" />
-          <text class="cell-head ink" x="500" y="232">Is this exact candidate</text>
-          <text class="cell-text muted" x="500" y="248">safe to promote?</text>
-          <line class="hair" x1="488" y1="272" x2="648" y2="272" />
-          <rect class="slot-b" x="489" y="273" width="158" height="143" />
-          <text class="cell-head ink" x="500" y="296">Assemble immutable candidate</text>
-          <text class="cell-text muted" x="500" y="320">Compatibility and evidence</text>
-          <text class="cell-text muted" x="500" y="336">Release and recovery plan</text>
-          <text class="cell-text muted" x="500" y="352">Progressive promotion</text>
-          <text class="cell-text muted" x="500" y="368">Observe thresholds</text>
-          <text class="cell-text muted" x="500" y="384">Operational handover</text>
-          <line class="hair" x1="488" y1="416" x2="648" y2="416" />
-          <rect class="slot-a" x="489" y="417" width="158" height="95" />
-          <text class="gate ink" x="500" y="440">G6 · RELEASE AUTHORIZED</text>
-          <text class="gate ink" x="500" y="456">G7 · TRANSITIONED</text>
-          <text class="cell-text muted" x="500" y="480">Digests · tests · recovery</text>
-          <text class="cell-text muted" x="500" y="496">support ownership</text>
-          <line class="hair" x1="488" y1="512" x2="648" y2="512" />
-          <rect class="slot-b" x="489" y="513" width="158" height="86" rx="6" />
-          <text class="cell-head ink" x="500" y="540">Operational release</text>
-          <text class="cell-text muted" x="500" y="556">accepted by product + service</text>
-          <text class="cell-tech soft" x="500" y="576">WP-21…WP-24</text>
-        </g>
-
-        <!-- Phase 3 -->
-        <g>
-          <rect class="stage" x="672" y="136" width="160" height="464" rx="6" />
-          <rect class="header" x="672" y="136" width="160" height="72" rx="6" />
-          <rect class="header" x="672" y="200" width="160" height="8" />
-          <text class="phase-tag muted" x="684" y="156">PHASE 3 · PULL FLOW</text>
-          <text class="phase-name ink" x="684" y="176">Operate, Evolve</text>
-          <text class="phase-name ink" x="684" y="192">and Learn</text>
-          <rect class="slot-a" x="673" y="208" width="158" height="64" />
-          <text class="cell-head ink" x="684" y="232">Which demand should be pulled?</text>
-          <text class="cell-text muted" x="684" y="248">How does it affect delivery?</text>
-          <line class="hair" x1="672" y1="272" x2="832" y2="272" />
-          <rect class="slot-b" x="673" y="273" width="158" height="143" />
-          <text class="cell-head ink" x="684" y="296">Observe and capture WP-30</text>
-          <text class="cell-text muted" x="684" y="320">Classify 3 independent axes</text>
-          <text class="cell-text muted" x="684" y="336">Replenish · pull within WIP</text>
-          <text class="cell-text muted" x="684" y="352">Restore or evolve safely</text>
-          <text class="cell-text muted" x="684" y="368">Verify · reconcile · learn</text>
-          <text class="cell-text muted" x="684" y="384">Dispose through one route</text>
-          <line class="hair" x1="672" y1="416" x2="832" y2="416" />
-          <rect class="slot-a" x="673" y="417" width="158" height="95" />
-          <text class="gate ink" x="684" y="440">WIP · AGE · SLE · THROUGHPUT</text>
-          <text class="gate ink" x="684" y="456">SLO · RISK · SECURITY</text>
-          <text class="cell-text muted" x="684" y="480">WP-30 operational work item</text>
-          <text class="cell-text muted" x="684" y="496">WP-31 flow policy and board</text>
-          <line class="hair" x1="672" y1="512" x2="832" y2="512" />
-          <rect class="slot-b" x="673" y="513" width="158" height="86" rx="6" />
-          <text class="cell-head ink" x="684" y="540">Stable service plus</text>
-          <text class="cell-text muted" x="684" y="556">explicitly routed change</text>
-          <text class="cell-tech soft" x="684" y="576">WP-25…WP-27 · WP-29…WP-31</text>
-        </g>
-
-        <!-- Phase 4 -->
-        <g>
-          <rect class="stage" x="856" y="136" width="160" height="464" rx="6" />
-          <rect class="header" x="856" y="136" width="160" height="72" rx="6" />
-          <rect class="header" x="856" y="200" width="160" height="8" />
-          <text class="phase-tag muted" x="868" y="156">PHASE 4</text>
-          <text class="phase-name ink" x="868" y="176">Retire, Migrate</text>
-          <text class="phase-name ink" x="868" y="192">and Close</text>
-          <rect class="slot-a" x="857" y="208" width="158" height="64" />
-          <text class="cell-head ink" x="868" y="232">Can every user, data,</text>
-          <text class="cell-text muted" x="868" y="248">resource and duty close?</text>
-          <line class="hair" x1="856" y1="272" x2="1016" y2="272" />
-          <rect class="slot-b" x="857" y="273" width="158" height="143" />
-          <text class="cell-head ink" x="868" y="296">Decide and plan retirement</text>
-          <text class="cell-text muted" x="868" y="320">Migrate users and data</text>
-          <text class="cell-text muted" x="868" y="336">Close integrations</text>
-          <text class="cell-text muted" x="868" y="352">Revoke access</text>
-          <text class="cell-text muted" x="868" y="368">Remove cloud resources</text>
-          <text class="cell-text muted" x="868" y="384">Archive required evidence</text>
-          <line class="hair" x1="856" y1="416" x2="1016" y2="416" />
-          <rect class="slot-a" x="857" y="417" width="158" height="95" />
-          <text class="gate ink" x="868" y="440">G8 · LIFECYCLE CLOSED</text>
-          <text class="cell-text muted" x="868" y="464">Migration · retention</text>
-          <text class="cell-text muted" x="868" y="480">access · infrastructure</text>
-          <text class="cell-text muted" x="868" y="496">billing verified</text>
-          <line class="hair" x1="856" y1="512" x2="1016" y2="512" />
-          <rect class="slot-b" x="857" y="513" width="158" height="86" rx="6" />
-          <text class="cell-head ink" x="868" y="540">Verified closure and</text>
-          <text class="cell-text muted" x="868" y="556">reusable organizational learning</text>
-          <text class="cell-tech soft" x="868" y="576">WP-28 · WP-29</text>
-        </g>
-
-        <!-- Continuous disciplines are a single cross-cutting rail. -->
-        <rect class="discipline" x="120" y="688" width="896" height="44" rx="6" />
-        <text class="phase-tag ink" x="136" y="706">CONTINUOUS DISCIPLINES</text>
-        <text class="cell-text muted" x="136" y="722">
-          Product &amp; project management · risk · quality · security/privacy ·
-          configuration/change · trace/evidence · FinOps · knowledge · measurement · team
-          dependencies
-        </text>
-
-        <!-- Bottom legend strip. -->
-        <line x1="40" y1="752" x2="1080" y2="752" stroke="#ccd2cf" stroke-width=".8" />
-        <text class="legend-key muted" x="40" y="772">LEGEND</text>
-        <line
-          x1="112"
-          y1="768"
-          x2="144"
-          y2="768"
-          stroke="#617178"
-          stroke-width="1.2"
-          marker-end="url(#main-arrow)"
-        />
-        <text class="legend-text muted" x="156" y="772">primary lifecycle flow</text>
-        <line
-          x1="308"
-          y1="768"
-          x2="340"
-          y2="768"
-          stroke="#617178"
-          stroke-width="1"
-          stroke-dasharray="5 4"
-          marker-end="url(#main-arrow)"
-        />
-        <text class="legend-text muted" x="352" y="772">feedback and controlled re-entry</text>
-        <rect x="560" y="760" width="20" height="16" rx="3" fill="#d7e9e5" stroke="#087b78" />
-        <text class="legend-text muted" x="592" y="772">focal iterative delivery engine</text>
-        <text class="legend-key soft" x="1080" y="772" text-anchor="end">
-          SPEM-STRUCTURED · EVIDENCE-GATED · TAILORABLE
+        <text class="small muted" x="42" y="700">
+          SOLID = PHASE / HANDOVER FLOW · DASHED = FEEDBACK / CONTROLLED RE-ENTRY · CORAL =
+          CROSS-PROCESS SYNCHRONIZATION
         </text>
       </svg>
     </main>

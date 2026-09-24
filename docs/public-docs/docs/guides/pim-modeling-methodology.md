@@ -2,18 +2,19 @@
 
 The Platform-Independent Model (PIM) describes a serverless architecture without selecting a cloud
 provider. The PIM process covers service boundaries, contracts, data, compute, integrations, and
-policies. It defines six phases for new PIM work and for refinement after CIM-to-PIM transformation.
-Each phase contains activities and task uses. Its metamodel bindings identify the PIM classes covered
+policies. Each model-driven increment invokes six ordered stages for new PIM work and for refinement
+after CIM-to-PIM transformation; they are not product-lifecycle phases. Each stage contains substages
+and task uses. Its metamodel bindings identify the PIM classes covered
 by a task; process work products are recorded separately.
 
 Treat elements created by CIM-to-PIM transformation as draft architecture. Review them, refine the
-service slice, and record unresolved decisions before continuing. The phase order gives teams a
-working path. They can return to an earlier phase when a contract or integration gap requires a
+service slice, and record unresolved decisions before continuing. The stage order gives teams a
+working path. They can return to an earlier stage when a contract or integration gap requires a
 change.
 
-## PIM Phases
+## PIM Stages
 
-| Phase     | Name                         | In engine | Stages (summary)                                                 |
+| Stage     | Name                         | In engine | Substages (summary)                                              |
 | --------- | ---------------------------- | --------- | ---------------------------------------------------------------- |
 | `pim.ph1` | Architecture & Slice Framing | ✓         | Service Slice Planning, Architecture Posture, Service Boundaries |
 | `pim.ph2` | Contracts & Data             | ✓         | Contracts & Schemas, Data Architecture                           |
@@ -26,19 +27,19 @@ change.
 
 | Role                   | Responsibility in PIM                                                                    |
 | ---------------------- | ---------------------------------------------------------------------------------------- |
-| **Solution Architect** | Engine phases: slice framing, architecture, boundaries, contracts, integration, policies |
-| **Process Reviewer**   | Readiness phase: EVL gate approval and platform mapping readiness                        |
+| **Solution Architect** | Engine stages: slice framing, architecture, boundaries, contracts, integration, policies |
+| **Process Reviewer**   | Readiness stage: EVL gate approval and platform mapping readiness                        |
 
-## Phase Flow
+## Stage Flow
 
 ```mermaid
 flowchart TD
-  PH1["Phase 1, Architecture & Slice Framing"]
-  PH2["Phase 2, Contracts & Data"]
-  PH3["Phase 3, Compute & Exposure"]
-  PH4["Phase 4, Integration & Orchestration"]
-  PH5["Phase 5, Assurance & Configuration"]
-  PH6["Phase 6, Platform Readiness"]
+  PH1["Stage 1, Architecture & Slice Framing"]
+  PH2["Stage 2, Contracts & Data"]
+  PH3["Stage 3, Compute & Exposure"]
+  PH4["Stage 4, Integration & Orchestration"]
+  PH5["Stage 5, Assurance & Configuration"]
+  PH6["Stage 6, Platform Readiness"]
 
   PH1 --> PH2 --> PH3 --> PH4 --> PH5 --> PH6
   PH6 -->|EVL pass| GATE["PIM → PSM transform"]
@@ -51,7 +52,7 @@ flowchart TD
 
 ## Task Catalog
 
-Process `modriss.pim.modeling` · 6 phases · 32 TaskUses / TaskDefinitions · PIM metamodel coverage enforced in CI.
+Process `modriss.pim.modeling` · 6 stages · 32 TaskUses / TaskDefinitions · PIM metamodel coverage enforced in CI.
 
 ### Architecture & Slice Framing (`pim.ph1`)
 
@@ -59,11 +60,11 @@ Frame the current service slice, establish or refresh PIM posture, and align ser
 
 **Runs:** in engine cycle · **Role:** Solution Architect
 
-**Phase entry:**
+**Stage entry:**
 
 - CIM transform complete, prior PIM increment selected, or greenfield PIM
 
-**Phase exit:**
+**Stage exit:**
 
 - PIM root configured
 - Service-slice objective and architecture definition of done are agreed
@@ -240,11 +241,11 @@ Define API/event contracts and persistent data architecture for the increment sl
 
 **Runs:** in engine cycle · **Role:** Solution Architect
 
-**Phase entry:**
+**Stage entry:**
 
 - Architecture & Slice Framing complete
 
-**Phase exit:**
+**Stage exit:**
 
 - Contracts exist for APIs and events
 - Persistent stores cover domain data
@@ -378,11 +379,11 @@ Define compute units and expose them through a coherent API surface.
 
 **Runs:** in engine cycle · **Role:** Solution Architect
 
-**Phase entry:**
+**Stage entry:**
 
 - Contracts & Data complete for slice
 
-**Phase exit:**
+**Stage exit:**
 
 - Functions cover behavioral surface
 - Public API surface complete
@@ -495,11 +496,11 @@ Wire async integration topology and long-running workflow orchestration.
 
 **Runs:** in engine cycle · **Role:** Solution Architect
 
-**Phase entry:**
+**Stage entry:**
 
 - Compute & Exposure complete for slice
 
-**Phase exit:**
+**Stage exit:**
 
 - Async integration topology complete
 - Long-running processes orchestrated
@@ -646,11 +647,11 @@ Apply security, operational policies, and environment configuration across the s
 
 **Runs:** in engine cycle · **Role:** Solution Architect
 
-**Phase entry:**
+**Stage entry:**
 
 - Integration & Orchestration complete for slice
 
-**Phase exit:**
+**Stage exit:**
 
 - Auth model covers all public endpoints
 - Operational policies applied
@@ -972,11 +973,11 @@ Assess platform capability mapping, close traceability, and pass PIM EVL gate.
 
 **Runs:** in engine cycle · **Role:** Process Reviewer
 
-**Phase entry:**
+**Stage entry:**
 
 - Assurance & Configuration complete for slice
 
-**Phase exit:**
+**Stage exit:**
 
 - PIM EVL passes
 - Readiness gate approved

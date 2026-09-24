@@ -5176,7 +5176,7 @@
     {
       "id": "psm.ph1",
       "type": "Activity",
-      "activityKind": "Phase",
+      "activityKind": "MODRISS::Stage",
       "name": "Deployment & Slice Framing",
       "order": 1,
       "objective": "Frame the current deployable slice and establish or refresh AWS account, stack, and security foundations.",
@@ -5192,7 +5192,7 @@
         {
           "id": "psm.ph1.st0",
           "type": "Activity",
-          "activityKind": "MODRISS::Stage",
+          "activityKind": "MODRISS::SubStage",
           "name": "Deployable Slice Planning",
           "objective": "Select the AWS deployable slice and define deployment review expectations.",
           "roleUseRefs": ["ru.psm.ph1.st0.cloud-platform-engineer"],
@@ -5233,7 +5233,7 @@
         {
           "id": "psm.ph1.st1",
           "type": "Activity",
-          "activityKind": "MODRISS::Stage",
+          "activityKind": "MODRISS::SubStage",
           "name": "Account & Stage Strategy",
           "objective": "Create or refresh AwsPsmModel root with partition, region, naming, and tagging policies.",
           "roleUseRefs": [
@@ -5385,7 +5385,7 @@
         {
           "id": "psm.ph1.st2",
           "type": "Activity",
-          "activityKind": "MODRISS::Stage",
+          "activityKind": "MODRISS::SubStage",
           "name": "Stack Scaffolding",
           "objective": "Create SAM stack with globals and CloudFormation parameters.",
           "roleUseRefs": ["ru.psm.ph1.st2.cloud-platform-engineer"],
@@ -5492,7 +5492,7 @@
         {
           "id": "psm.ph1.st3",
           "type": "Activity",
-          "activityKind": "MODRISS::Stage",
+          "activityKind": "MODRISS::SubStage",
           "name": "Security Baseline",
           "objective": "Establish IAM roles, KMS keys, secrets, and SSM parameters.",
           "roleUseRefs": ["ru.psm.ph1.st3.cloud-platform-engineer"],
@@ -5624,7 +5624,7 @@
     {
       "id": "psm.ph2",
       "type": "Activity",
-      "activityKind": "Phase",
+      "activityKind": "MODRISS::Stage",
       "name": "Network & Identity",
       "order": 2,
       "objective": "Configure VPC networking and Cognito identity resources aligned to PIM auth model.",
@@ -5639,7 +5639,7 @@
         {
           "id": "psm.ph2.st1",
           "type": "Activity",
-          "activityKind": "MODRISS::Stage",
+          "activityKind": "MODRISS::SubStage",
           "name": "Networking",
           "objective": "Configure VPC, subnets, endpoints, and security groups for workloads.",
           "roleUseRefs": ["ru.psm.ph2.st1.cloud-platform-engineer"],
@@ -5787,7 +5787,7 @@
         {
           "id": "psm.ph2.st2",
           "type": "Activity",
-          "activityKind": "MODRISS::Stage",
+          "activityKind": "MODRISS::SubStage",
           "name": "Identity",
           "objective": "Configure Cognito user pools, clients, and identity pools.",
           "roleUseRefs": ["ru.psm.ph2.st2.cloud-platform-engineer"],
@@ -5918,7 +5918,7 @@
     {
       "id": "psm.ph3",
       "type": "Activity",
-      "activityKind": "Phase",
+      "activityKind": "MODRISS::Stage",
       "name": "Storage & Messaging",
       "order": 3,
       "objective": "Provision durable storage and messaging resources matching PIM data and event channels.",
@@ -5933,7 +5933,7 @@
         {
           "id": "psm.ph3.st1",
           "type": "Activity",
-          "activityKind": "MODRISS::Stage",
+          "activityKind": "MODRISS::SubStage",
           "name": "Durable Storage",
           "objective": "Provision DynamoDB tables and S3 buckets aligned to PIM data architecture.",
           "roleUseRefs": ["ru.psm.ph3.st1.cloud-platform-engineer"],
@@ -6104,7 +6104,7 @@
         {
           "id": "psm.ph3.st2",
           "type": "Activity",
-          "activityKind": "MODRISS::Stage",
+          "activityKind": "MODRISS::SubStage",
           "name": "Messaging",
           "objective": "Create SQS queues and SNS topics aligned to PIM event channels.",
           "roleUseRefs": ["ru.psm.ph3.st2.cloud-platform-engineer"],
@@ -6262,7 +6262,7 @@
     {
       "id": "psm.ph4",
       "type": "Activity",
-      "activityKind": "Phase",
+      "activityKind": "MODRISS::Stage",
       "name": "Event Fabric & Compute",
       "order": 4,
       "objective": "Configure EventBridge fabric and deploy Lambda compute matching PIM functions.",
@@ -6274,7 +6274,7 @@
         {
           "id": "psm.ph4.st1",
           "type": "Activity",
-          "activityKind": "MODRISS::Stage",
+          "activityKind": "MODRISS::SubStage",
           "name": "Event Fabric",
           "objective": "Configure EventBridge buses, rules, schedules, pipes, and API destinations.",
           "roleUseRefs": ["ru.psm.ph4.st1.cloud-platform-engineer"],
@@ -6436,7 +6436,7 @@
         {
           "id": "psm.ph4.st2",
           "type": "Activity",
-          "activityKind": "MODRISS::Stage",
+          "activityKind": "MODRISS::SubStage",
           "name": "Compute",
           "objective": "Deploy Lambda functions with event source mappings and permissions.",
           "roleUseRefs": ["ru.psm.ph4.st2.cloud-platform-engineer"],
@@ -6627,7 +6627,7 @@
     {
       "id": "psm.ph5",
       "type": "Activity",
-      "activityKind": "Phase",
+      "activityKind": "MODRISS::Stage",
       "name": "API & Orchestration",
       "order": 5,
       "objective": "Configure API Gateway exposure and Step Functions workflows with observability.",
@@ -6639,7 +6639,7 @@
         {
           "id": "psm.ph5.st1",
           "type": "Activity",
-          "activityKind": "MODRISS::Stage",
+          "activityKind": "MODRISS::SubStage",
           "name": "API Gateway",
           "objective": "Configure HTTP/REST/WebSocket APIs with routes, integrations, and authorizers.",
           "roleUseRefs": ["ru.psm.ph5.st1.cloud-platform-engineer"],
@@ -6801,7 +6801,7 @@
         {
           "id": "psm.ph5.st2",
           "type": "Activity",
-          "activityKind": "MODRISS::Stage",
+          "activityKind": "MODRISS::SubStage",
           "name": "Workflow & Observability",
           "objective": "Deploy Step Functions state machines and CloudWatch observability stack.",
           "roleUseRefs": ["ru.psm.ph5.st2.cloud-platform-engineer"],
@@ -7081,7 +7081,7 @@
     {
       "id": "psm.ph6",
       "type": "Activity",
-      "activityKind": "Phase",
+      "activityKind": "MODRISS::Stage",
       "name": "Integration Views & Readiness",
       "order": 6,
       "objective": "Create integration relationship views, close traceability, and pass PSM EVL gate.",
@@ -7097,7 +7097,7 @@
         {
           "id": "psm.ph6.st1",
           "type": "Activity",
-          "activityKind": "MODRISS::Stage",
+          "activityKind": "MODRISS::SubStage",
           "name": "Integration Views",
           "objective": "Create cross-resource relationship views for deployment wiring validation.",
           "roleUseRefs": ["ru.psm.ph6.st1.cloud-platform-engineer"],
@@ -7213,7 +7213,7 @@
         {
           "id": "psm.ph6.st2",
           "type": "Activity",
-          "activityKind": "MODRISS::Stage",
+          "activityKind": "MODRISS::SubStage",
           "name": "Trace & Readiness Gate",
           "objective": "Close trace links and production readiness before M2T generation.",
           "roleUseRefs": ["ru.psm.ph6.st2.process-reviewer"],
@@ -7375,7 +7375,7 @@
         {
           "id": "psm.ph6.st3",
           "type": "Activity",
-          "activityKind": "MODRISS::Stage",
+          "activityKind": "MODRISS::SubStage",
           "name": "Increment Review & Adapt",
           "objective": "Review the AWS deployment slice, accept the increment, and adapt the next cycle.",
           "roleUseRefs": ["ru.psm.ph6.st3.process-reviewer"],
@@ -7480,7 +7480,7 @@
       "predecessorRef": "psm.ph1",
       "successorRef": "psm.ph2",
       "linkKind": "finishToStart",
-      "relation": "phase-order"
+      "relation": "activity-order"
     },
     {
       "id": "ws.psm.ph2.psm.ph3",
@@ -7488,7 +7488,7 @@
       "predecessorRef": "psm.ph2",
       "successorRef": "psm.ph3",
       "linkKind": "finishToStart",
-      "relation": "phase-order"
+      "relation": "activity-order"
     },
     {
       "id": "ws.psm.ph3.psm.ph4",
@@ -7496,7 +7496,7 @@
       "predecessorRef": "psm.ph3",
       "successorRef": "psm.ph4",
       "linkKind": "finishToStart",
-      "relation": "phase-order"
+      "relation": "activity-order"
     },
     {
       "id": "ws.psm.ph4.psm.ph5",
@@ -7504,7 +7504,7 @@
       "predecessorRef": "psm.ph4",
       "successorRef": "psm.ph5",
       "linkKind": "finishToStart",
-      "relation": "phase-order"
+      "relation": "activity-order"
     },
     {
       "id": "ws.psm.ph5.psm.ph6",
@@ -7512,7 +7512,7 @@
       "predecessorRef": "psm.ph5",
       "successorRef": "psm.ph6",
       "linkKind": "finishToStart",
-      "relation": "phase-order"
+      "relation": "activity-order"
     },
     {
       "id": "ws.psm.ph1.st0.psm.ph1.st1",

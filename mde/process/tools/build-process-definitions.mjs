@@ -5,6 +5,7 @@ import { parseEcore, allConcepts } from "./lib/ecore-parser.mjs";
 import { PROCESS_PHASES } from "./lib/spem-process-spec.mjs";
 import {
   END_TO_END_ARTIFACT_KINDS,
+  END_TO_END_OPERATIONS_PROCESS,
   END_TO_END_PHASES,
   END_TO_END_ROLES,
 } from "./lib/spem-end-to-end.mjs";
@@ -374,13 +375,16 @@ function addWorkSequence(workSequences, sequence) {
 }
 
 function upsertWorkSequence(workSequences, sequence) {
-  const index = workSequences.findIndex(
-    (item) =>
-      item.id === sequence.id ||
-      (item.predecessorRef === sequence.predecessorRef &&
+  let index = workSequences.findIndex((item) => item.id === sequence.id);
+  if (index < 0) {
+    index = workSequences.findIndex(
+      (item) =>
+        item.predecessorRef === sequence.predecessorRef &&
         item.successorRef === sequence.successorRef &&
-        item.linkKind === (sequence.linkKind || "finishToStart")),
-  );
+        item.linkKind === (sequence.linkKind || "finishToStart") &&
+        !item.condition,
+    );
+  }
   const normalized = { type: "WorkSequence", linkKind: "finishToStart", ...sequence };
   if (index >= 0) workSequences[index] = normalized;
   else workSequences.push(normalized);
@@ -403,7 +407,10 @@ function addAdjacentSequences(items, kind, workSequences) {
 
 function buildWorkSequences(phases, engine, loops) {
   const workSequences = [];
-  addAdjacentSequences(phases, "phase-order", workSequences);
+  const topLevelRelation = phases.every(activity => activity.activityKind === "Phase")
+    ? "phase-order"
+    : "activity-order";
+  addAdjacentSequences(phases, topLevelRelation, workSequences);
 
   const walkStages = (stages) => {
     for (const stage of stages || []) {
@@ -531,10 +538,12 @@ function buildProcessDefinition(level) {
     inputWorkProductIdsByTaskId,
   );
 
+  // The source key/IDs retain "phase" for backward compatibility, but these
+  // repeatable modeling-process sections are SPEM Activities of kind Stage.
   const phases = phaseSpecs.map((phase) => ({
     id: phase.id,
     type: "Activity",
-    activityKind: "Phase",
+    activityKind: "MODRISS::Stage",
     name: phase.name,
     order: phase.order,
     objective: phase.objective,
@@ -552,7 +561,7 @@ function buildProcessDefinition(level) {
       workProductUses,
       roleUses,
       inputWorkProductIdsByTaskId,
-    ),
+    ).map(activity => ({ ...activity, activityKind: "MODRISS::SubStage" })),
   }));
 
   for (const phase of phaseSpecs) {
@@ -609,7 +618,10 @@ function buildEndToEnd() {
   const taskDefinitions = [];
   const inputWorkProductIdsByTaskId = new Map();
   collectTaskDefinitions(
-    END_TO_END_PHASES.flatMap((phase) => phase.stages),
+    [
+      ...END_TO_END_PHASES.flatMap((phase) => phase.stages),
+      ...END_TO_END_OPERATIONS_PROCESS.activities,
+    ],
     "end-to-end",
     null,
     new Map(),
@@ -643,6 +655,35 @@ function buildEndToEnd() {
       roleDefinitionRef: roleDefinitionRef(phase.primaryRole),
     });
   }
+  roleUses.push({
+    id: roleUseId(END_TO_END_OPERATIONS_PROCESS.id, END_TO_END_OPERATIONS_PROCESS.primaryRole),
+    type: "RoleUse",
+    activityRef: END_TO_END_OPERATIONS_PROCESS.id,
+    roleDefinitionRef: roleDefinitionRef(END_TO_END_OPERATIONS_PROCESS.primaryRole),
+  });
+  const operationsMaintenanceProcess = {
+    ...END_TO_END_OPERATIONS_PROCESS,
+    primaryRole: undefined,
+    type: "Process",
+    activityKind: "ProcessComponent",
+    roleUseRefs: [
+      roleUseId(
+        END_TO_END_OPERATIONS_PROCESS.id,
+        END_TO_END_OPERATIONS_PROCESS.primaryRole,
+      ),
+    ],
+    activities: enrichStages(
+      END_TO_END_OPERATIONS_PROCESS.activities,
+      "end-to-end",
+      null,
+      new Map(),
+      [],
+      END_TO_END_LOOPS,
+      workProductUses,
+      roleUses,
+      inputWorkProductIdsByTaskId,
+    ).map(activity => ({ ...activity, activityKind: "Activity" })),
+  };
   const processEngine = normalizeEngine(
     enrichEngineWithReworkLoops(
       "end-to-end",
@@ -657,7 +698,7 @@ function buildEndToEnd() {
     type: "Process",
     ...spemMetadata(),
     level: "end-to-end",
-    displayName: "Full Software Lifecycle with CIM → PIM → PSM",
+    displayName: "Integrated Product Lifecycle: Development/Delivery + Operations/Maintenance",
     methodContent: compileMethodContent({
       packageId: "modriss.method-content.end-to-end",
       roles: END_TO_END_ROLES,
@@ -671,6 +712,7 @@ function buildEndToEnd() {
     governance: PROCESS_GOVERNANCE["end-to-end"]?.governance,
     processEngine,
     phases,
+    processComponents: [operationsMaintenanceProcess],
     workSequences: buildWorkSequences(phases, processEngine, END_TO_END_LOOPS),
     changeManagement: {
       workflows: [
@@ -683,9 +725,9 @@ function buildEndToEnd() {
     milestones: [
       { type: "Milestone", id: "e2e.m0.method-tailored", name: "Process tailoring and team topology approved", phaseId: "e2e.ph0", stageId: "e2e.ph0.st3" },
       { type: "Milestone", id: "e2e.m1.increment-accepted", name: "Vertical increment accepted", phaseId: "e2e.ph1", stageId: "e2e.p7.artifact-completion" },
-      { type: "Milestone", id: "e2e.m2.release-promoted", name: "Release promoted and handed over", phaseId: "e2e.ph2", stageId: "e2e.ph2.st2" },
-      { type: "Milestone", id: "e2e.m3.operational-learning", name: "Operational learning reviewed", phaseId: "e2e.ph3", stageId: "e2e.ph3.st4" },
-      { type: "Milestone", id: "e2e.m4.retired", name: "Lifecycle retired and closed", phaseId: "e2e.ph4", stageId: "e2e.ph4.st3" },
+      { type: "Milestone", id: "e2e.m2.release-promoted", name: "Release promoted and handed over", phaseId: "e2e.ph1", stageId: "e2e.rel.a2" },
+      { type: "Milestone", id: "e2e.m3.operational-learning", name: "Operational learning reviewed", processComponentId: "modriss.operations-maintenance", activityId: "e2e.ops.a5" },
+      { type: "Milestone", id: "e2e.m4.retired", name: "Lifecycle retired and closed", phaseId: "e2e.ph2", stageId: "e2e.ph2.st3" },
     ],
   };
 }
@@ -705,10 +747,12 @@ function buildArtifactProcess() {
     taskDefinitions,
     inputWorkProductIdsByTaskId,
   );
+  // Artifact readiness is invoked per increment; its top-level sections are
+  // stages, not product-lifecycle phases. The JSON key remains compatible.
   const phases = source.phases.map((phase) => ({
     id: phase.id,
     type: "Activity",
-    activityKind: "Phase",
+    activityKind: "MODRISS::Stage",
     name: phase.name,
     order: phase.order,
     objective: phase.objective,
@@ -726,7 +770,7 @@ function buildArtifactProcess() {
       workProductUses,
       roleUses,
       inputWorkProductIdsByTaskId,
-    ),
+    ).map(activity => ({ ...activity, activityKind: "MODRISS::SubStage" })),
   }));
   for (const phase of source.phases) {
     roleUses.push({
@@ -771,8 +815,11 @@ for (const level of ["cim", "pim", "psm"]) {
   const def = buildProcessDefinition(level);
   const out = join(OUT_DIR, `${level}.json`);
   writeFileSync(out, `${JSON.stringify(def, null, 2)}\n`);
+  const topLevelLabel = def.phases.every(activity => activity.activityKind === "Phase")
+    ? "phases"
+    : "stages";
   console.log(
-    `Wrote ${out} (${def.phases.length} phases, ${collectProcessTasks(def).length} tasks)`,
+    `Wrote ${out} (${def.phases.length} ${topLevelLabel}, ${collectProcessTasks(def).length} tasks)`,
   );
 }
 

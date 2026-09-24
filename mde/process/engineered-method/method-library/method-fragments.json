@@ -67,7 +67,12 @@
       "resultContext": "A valuable vertical slice is ready with owners, risks, dependencies, and evidence.",
       "roles": ["R-02", "R-03", "R-05", "R-06", "R-07", "R-14"],
       "workProducts": ["WP-01", "WP-04", "WP-07"],
-      "source": ["MDASP Planning and Management", "Ramsin-Paige PR5/PR7"],
+      "source": [
+        "MDASP Planning and Management",
+        "Ramsin-Paige PR5/PR7",
+        "IBM RUP distinction between lifecycle phases and contained iterations",
+        "PMI Disciplined Agile continuous-delivery product lifecycle"
+      ],
       "selection": "required per increment",
       "requirements": ["MR-LC-03", "MR-RE-01", "MR-RE-03", "MR-MG-02"]
     },
@@ -203,20 +208,27 @@
     {
       "id": "MF-14",
       "name": "Progressive CI/CD and transition",
-      "kind": "phase",
+      "kind": "release-activity",
       "problem": "A technically valid candidate can still fail during promotion or handover.",
       "initialContext": "An immutable qualified candidate and recovery plan exist.",
       "resultContext": "The release is progressively promoted, observed, recorded, and accepted for operation.",
       "roles": ["R-02", "R-11", "R-13", "R-14", "R-15"],
       "workProducts": ["WP-21", "WP-22", "WP-23", "WP-24"],
-      "source": ["MDASP Deployment", "Deljouyi Transition", "Eidi deployment criteria"],
+      "source": [
+        "MDASP Deployment",
+        "Deljouyi Transition",
+        "Eidi deployment criteria",
+        "PMI Disciplined Agile continuous-delivery lifecycle: transition as a regular activity",
+        "DORA continuous delivery",
+        "AWS Serverless Lens deployment approaches"
+      ],
       "selection": "required; deployment strategy varies",
       "requirements": ["MR-SL-15", "MR-MG-04", "MR-MG-05"]
     },
     {
       "id": "MF-15",
       "name": "Operate, observe, control cost, and learn",
-      "kind": "phase",
+      "kind": "operations-activity",
       "problem": "A deployed serverless service needs operational ownership and feedback to remain valuable, reliable, secure, and economical.",
       "initialContext": "A release has operational ownership and telemetry.",
       "resultContext": "Service/product outcomes, SLOs, risk, security, and cost are controlled and feed prioritized change.",
@@ -229,7 +241,7 @@
     {
       "id": "MF-16",
       "name": "Incident, problem, and controlled change propagation",
-      "kind": "stage",
+      "kind": "operations-activity",
       "problem": "Emergency or evolutionary changes can diverge models, generators, code, and the running service.",
       "initialContext": "An incident, finding, dependency, or requested change exists.",
       "resultContext": "Service is restored where necessary and change is routed to the earliest authoritative source and re-evidenced.",
@@ -254,20 +266,51 @@
     },
     {
       "id": "MF-18",
-      "name": "Interrupt-driven operations and maintenance flow",
+      "name": "Kanban service-delivery and maintenance system",
       "kind": "process-component",
-      "problem": "Unpredictable production demand competes with planned delivery, while emergency speed can bypass model, trace, and release controls and create permanent divergence.",
+      "problem": "Production, maintenance, and improvement demand competes with planned delivery, while invisible queues or emergency speed can bypass model, trace, and release controls and create permanent divergence.",
       "initialContext": "A production service, an accepted operating baseline, service ownership, observability, and an explicit flow policy exist.",
-      "resultContext": "Operational demand is classified, pulled within capacity, resolved or routed, measured, and reconciled with authoritative sources and release evidence.",
+      "resultContext": "Service demand is visualized on a Kanban board, made ready and pulled within WIP controls, resolved or routed, measured, and reconciled with authoritative sources and release evidence.",
       "roles": ["R-05", "R-10", "R-11", "R-12", "R-13", "R-14"],
       "workProducts": ["WP-25", "WP-26", "WP-27", "WP-30", "WP-31"],
       "source": [
-        "Kanban Guide 2025 Definition of Workflow and active management",
+        "Kanban Guide 2025 Definition of Workflow, WIP control, SLE, and flow metrics",
+        "PMI Disciplined Agile Lean lifecycle, flow guidance, and value-stream optimization",
+        "Ahmad et al. 2018 systematic mapping of Kanban in software engineering",
         "SWEBOK v4.0a maintenance categories and emergency maintenance",
         "AWS Serverless Lens operational excellence"
       ],
       "selection": "required whenever MODRISS operates a production service; policy depth and support coverage are tailored",
       "requirements": ["MR-LC-08", "MR-LC-09", "MR-LC-10", "MR-MG-08", "MR-SL-16"]
+    },
+    {
+      "id": "MF-19",
+      "name": "DevOps cross-process coordination",
+      "kind": "integration-fragment",
+      "problem": "Development and operations can optimize locally while release readiness, production feedback, change ownership, and retirement obligations fall between processes.",
+      "initialContext": "Development and Delivery and Operations and Maintenance have named owners and a shared product boundary.",
+      "resultContext": "G7 handover, CI/CD evidence, telemetry, incident and maintenance change routing, learning, and G8 closure synchronize the two processes without merging their control systems.",
+      "roles": ["R-02", "R-04", "R-10", "R-11", "R-12", "R-13", "R-14", "R-15"],
+      "workProducts": [
+        "WP-20",
+        "WP-21",
+        "WP-22",
+        "WP-23",
+        "WP-24",
+        "WP-25",
+        "WP-26",
+        "WP-27",
+        "WP-29",
+        "WP-30",
+        "WP-31"
+      ],
+      "source": [
+        "PMI Disciplined DevOps",
+        "ISO/IEC/IEEE 12207:2026 concurrent lifecycle processes",
+        "Faustino et al. 2022 DevOps and IT service-management evidence"
+      ],
+      "selection": "required whenever a live release is operated",
+      "requirements": ["MR-LC-07", "MR-LC-08", "MR-LC-11", "MR-MG-04", "MR-MG-05", "MR-SL-16"]
     },
     {
       "id": "UF-01",

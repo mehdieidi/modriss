@@ -4846,7 +4846,7 @@
     {
       "id": "pim.ph1",
       "type": "Activity",
-      "activityKind": "Phase",
+      "activityKind": "MODRISS::Stage",
       "name": "Architecture & Slice Framing",
       "order": 1,
       "objective": "Frame the current service slice, establish or refresh PIM posture, and align serverless boundaries to CIM intent.",
@@ -4862,7 +4862,7 @@
         {
           "id": "pim.ph1.st0",
           "type": "Activity",
-          "activityKind": "MODRISS::Stage",
+          "activityKind": "MODRISS::SubStage",
           "name": "Service Slice Planning",
           "objective": "Select the PIM service slice and define architecture review expectations.",
           "roleUseRefs": ["ru.pim.ph1.st0.solution-architect"],
@@ -4903,7 +4903,7 @@
         {
           "id": "pim.ph1.st1",
           "type": "Activity",
-          "activityKind": "MODRISS::Stage",
+          "activityKind": "MODRISS::SubStage",
           "name": "Architecture Posture",
           "objective": "Create or refresh the PIMModel root with architecture style and implementation profile.",
           "roleUseRefs": ["ru.pim.ph1.st1.solution-architect", "ru.pim.ph1.st1.method-engineer"],
@@ -5052,7 +5052,7 @@
         {
           "id": "pim.ph1.st2",
           "type": "Activity",
-          "activityKind": "MODRISS::Stage",
+          "activityKind": "MODRISS::SubStage",
           "name": "Service Boundaries",
           "objective": "Define serverless services and element memberships aligned to bounded contexts.",
           "roleUseRefs": ["ru.pim.ph1.st2.solution-architect"],
@@ -5161,7 +5161,7 @@
     {
       "id": "pim.ph2",
       "type": "Activity",
-      "activityKind": "Phase",
+      "activityKind": "MODRISS::Stage",
       "name": "Contracts & Data",
       "order": 2,
       "objective": "Define API/event contracts and persistent data architecture for the increment slice.",
@@ -5176,7 +5176,7 @@
         {
           "id": "pim.ph2.st1",
           "type": "Activity",
-          "activityKind": "MODRISS::Stage",
+          "activityKind": "MODRISS::SubStage",
           "name": "Contracts & Schemas",
           "objective": "Model schemas, validation constraints, and event envelopes aligned to CIM behavior.",
           "roleUseRefs": ["ru.pim.ph2.st1.solution-architect"],
@@ -5315,7 +5315,7 @@
         {
           "id": "pim.ph2.st2",
           "type": "Activity",
-          "activityKind": "MODRISS::Stage",
+          "activityKind": "MODRISS::SubStage",
           "name": "Data Architecture",
           "objective": "Model data stores, access patterns, and change streams for domain persistence.",
           "roleUseRefs": ["ru.pim.ph2.st2.solution-architect"],
@@ -5514,7 +5514,7 @@
     {
       "id": "pim.ph3",
       "type": "Activity",
-      "activityKind": "Phase",
+      "activityKind": "MODRISS::Stage",
       "name": "Compute & Exposure",
       "order": 3,
       "objective": "Define compute units and expose them through a coherent API surface.",
@@ -5526,7 +5526,7 @@
         {
           "id": "pim.ph3.st1",
           "type": "Activity",
-          "activityKind": "MODRISS::Stage",
+          "activityKind": "MODRISS::SubStage",
           "name": "Compute Units",
           "objective": "Define functions with contracts and triggers mapped to CIM commands and events.",
           "roleUseRefs": ["ru.pim.ph3.st1.solution-architect"],
@@ -5674,7 +5674,7 @@
         {
           "id": "pim.ph3.st2",
           "type": "Activity",
-          "activityKind": "MODRISS::Stage",
+          "activityKind": "MODRISS::SubStage",
           "name": "API Surface",
           "objective": "Expose functions through APIs with routes, contracts, and error mappings.",
           "roleUseRefs": ["ru.pim.ph3.st2.solution-architect"],
@@ -5820,7 +5820,7 @@
     {
       "id": "pim.ph4",
       "type": "Activity",
-      "activityKind": "Phase",
+      "activityKind": "MODRISS::Stage",
       "name": "Integration & Orchestration",
       "order": 4,
       "objective": "Wire async integration topology and long-running workflow orchestration.",
@@ -5835,7 +5835,7 @@
         {
           "id": "pim.ph4.st1",
           "type": "Activity",
-          "activityKind": "MODRISS::Stage",
+          "activityKind": "MODRISS::SubStage",
           "name": "Integration Topology",
           "objective": "Model event channels, flows, and routing rules connecting services.",
           "roleUseRefs": ["ru.pim.ph4.st1.solution-architect"],
@@ -6001,7 +6001,7 @@
         {
           "id": "pim.ph4.st2",
           "type": "Activity",
-          "activityKind": "MODRISS::Stage",
+          "activityKind": "MODRISS::SubStage",
           "name": "Workflow Orchestration",
           "objective": "Model workflows from CIM business processes with human tasks and compensation.",
           "roleUseRefs": ["ru.pim.ph4.st2.solution-architect"],
@@ -6155,7 +6155,7 @@
     {
       "id": "pim.ph5",
       "type": "Activity",
-      "activityKind": "Phase",
+      "activityKind": "MODRISS::Stage",
       "name": "Assurance & Configuration",
       "order": 5,
       "objective": "Apply security, operational policies, and environment configuration across the slice.",
@@ -6171,7 +6171,7 @@
         {
           "id": "pim.ph5.st1",
           "type": "Activity",
-          "activityKind": "MODRISS::Stage",
+          "activityKind": "MODRISS::SubStage",
           "name": "Security & Identity",
           "objective": "Configure identity providers, principals, and authorization for APIs and functions.",
           "roleUseRefs": ["ru.pim.ph5.st1.solution-architect"],
@@ -6342,7 +6342,7 @@
         {
           "id": "pim.ph5.st2",
           "type": "Activity",
-          "activityKind": "MODRISS::Stage",
+          "activityKind": "MODRISS::SubStage",
           "name": "Architecture Policies",
           "objective": "Apply resilience, observability, governance, and cost policies to architecture elements.",
           "roleUseRefs": ["ru.pim.ph5.st2.solution-architect"],
@@ -6825,7 +6825,7 @@
         {
           "id": "pim.ph5.st3",
           "type": "Activity",
-          "activityKind": "MODRISS::Stage",
+          "activityKind": "MODRISS::SubStage",
           "name": "External & Config",
           "objective": "Model external integrations, environments, secrets, and deployment units.",
           "roleUseRefs": ["ru.pim.ph5.st3.solution-architect"],
@@ -7006,7 +7006,7 @@
     {
       "id": "pim.ph6",
       "type": "Activity",
-      "activityKind": "Phase",
+      "activityKind": "MODRISS::Stage",
       "name": "Platform Readiness",
       "order": 6,
       "objective": "Assess platform capability mapping, close traceability, and pass PIM EVL gate.",
@@ -7022,7 +7022,7 @@
         {
           "id": "pim.ph6.st1",
           "type": "Activity",
-          "activityKind": "MODRISS::Stage",
+          "activityKind": "MODRISS::SubStage",
           "name": "Platform Mapping Assessment",
           "objective": "Evaluate platform capability coverage and mapping readiness.",
           "roleUseRefs": ["ru.pim.ph6.st1.process-reviewer"],
@@ -7147,7 +7147,7 @@
         {
           "id": "pim.ph6.st2",
           "type": "Activity",
-          "activityKind": "MODRISS::Stage",
+          "activityKind": "MODRISS::SubStage",
           "name": "Trace & Readiness Gate",
           "objective": "Close trace links and production readiness before PIM→PSM transform.",
           "roleUseRefs": ["ru.pim.ph6.st2.process-reviewer"],
@@ -7318,7 +7318,7 @@
         {
           "id": "pim.ph6.st3",
           "type": "Activity",
-          "activityKind": "MODRISS::Stage",
+          "activityKind": "MODRISS::SubStage",
           "name": "Increment Review & Adapt",
           "objective": "Review the service slice architecture, accept the increment, and adapt the next cycle.",
           "roleUseRefs": ["ru.pim.ph6.st3.process-reviewer"],
@@ -7423,7 +7423,7 @@
       "predecessorRef": "pim.ph1",
       "successorRef": "pim.ph2",
       "linkKind": "finishToStart",
-      "relation": "phase-order"
+      "relation": "activity-order"
     },
     {
       "id": "ws.pim.ph2.pim.ph3",
@@ -7431,7 +7431,7 @@
       "predecessorRef": "pim.ph2",
       "successorRef": "pim.ph3",
       "linkKind": "finishToStart",
-      "relation": "phase-order"
+      "relation": "activity-order"
     },
     {
       "id": "ws.pim.ph3.pim.ph4",
@@ -7439,7 +7439,7 @@
       "predecessorRef": "pim.ph3",
       "successorRef": "pim.ph4",
       "linkKind": "finishToStart",
-      "relation": "phase-order"
+      "relation": "activity-order"
     },
     {
       "id": "ws.pim.ph4.pim.ph5",
@@ -7447,7 +7447,7 @@
       "predecessorRef": "pim.ph4",
       "successorRef": "pim.ph5",
       "linkKind": "finishToStart",
-      "relation": "phase-order"
+      "relation": "activity-order"
     },
     {
       "id": "ws.pim.ph5.pim.ph6",
@@ -7455,7 +7455,7 @@
       "predecessorRef": "pim.ph5",
       "successorRef": "pim.ph6",
       "linkKind": "finishToStart",
-      "relation": "phase-order"
+      "relation": "activity-order"
     },
     {
       "id": "ws.pim.ph1.st0.pim.ph1.st1",

@@ -35,7 +35,7 @@ MethodLibrary: MODRISS
 | `../12-method-library-and-fragment-report.md`          | Academic narrative explaining the library design, all method fragments, selection, assembly, governance, and validity boundary                               |
 | `lifecycle.puml`                                       | Normative overview of the product lifecycle, nested release cycle, increment cycle, and retirement decision                                                  |
 | `release-cycle.puml`                                   | Focused release-to-release control flow, including G6 rework, promotion rollback, G7, continued operation, and the next release                              |
-| `operations-flow.puml`                                 | Phase 3 pull flow from operational intake through classification, WIP/SLE control, verification, and three explicit dispositions                             |
+| `operations-flow.puml`                                 | Operations and Maintenance pull flow from intake through classification, WIP/SLE control, verification, and three explicit dispositions                      |
 | `model-driven-increment.puml`                          | Phase 1 detail from increment framing through CIM, PIM, PSM, generation, verification, and G5                                                                |
 | `change-routing.puml`                                  | Operational change classification and return to the earliest authoritative source                                                                            |
 | `diagram-catalog.md`                                   | Diagram hierarchy, semantic authority, and synchronization rules                                                                                             |
@@ -46,21 +46,25 @@ the engineered core-content catalog, and the reusable fragment catalog. Shared
 elements occur once in the canonical content package, while provenance records
 all source processes in which they appear.
 
-The lifecycle is intentionally cyclic rather than a one-shot sequence. After
-G7, the accepted release remains in operation. If retirement is not authorized
-and further work is selected, control returns from Phase 3 to Phase 1 with a
-new release hypothesis; Phase 0 is not repeated. Phase 4 is reached only by an
-explicit retirement decision.
+The lifecycle phases form a one-shot sequence, while Phase 1 contains a
+cyclic continuous-delivery Iteration. After G7, the accepted release remains
+in operation. If retirement is not authorized and further work is selected, a
+new release iteration begins at Phase 1 increment planning; no phase is
+repeated. Development Phase 2 is reached only by an explicit retirement
+decision, while Operations and Maintenance continues until G8.
 
-Phase 3 also contains a separately repeatable `KanbanFlow` Activity. It keeps
-unpredictable production demand out of fictional release schedules while
-remaining connected to the lifecycle: an item may finish as operations-only
-work, invoke the shortest safe model-driven/release path, or be committed to a
-planned release. Its MODRISS extension metadata records pull control, explicit
-WIP limits, service-level expectations, and the stage references serialized by
-the package builder. Maintenance purpose, emergency status, and class of
-service remain independent classifications; none is used as a proxy for the
-others.
+The Operations and Maintenance Process contains a separately repeatable
+`KanbanFlow` Activity: the Continuous Kanban Service-Delivery and Maintenance System. Its WP-31 board
+visualizes Requested, Ready, In Progress, Verify, and Done; replenishment
+selects eligible work, and pull into started work is constrained by explicit
+WIP controls and an SLE. An item may finish as operations-only work, invoke the
+shortest safe model-driven/release path, or be committed to a planned release.
+Its MODRISS extension metadata records this control and the stage references
+serialized by the package builder. Maintenance purpose, emergency status, and
+class of service remain independent classifications; none is used as a proxy
+for the others. The system follows the Kanban Guide and Disciplined Agile flow
+guidance. The enclosing process is explicitly ongoing and event-driven; it is
+not represented as a phase.
 
 ## Conformance statement
 

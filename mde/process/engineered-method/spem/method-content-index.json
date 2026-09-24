@@ -3089,6 +3089,610 @@
       "sourceVariants": []
     },
     {
+      "id": "task.e2e.ops.a1.t1",
+      "type": "TaskDefinition",
+      "name": "Review SLOs, telemetry, and product outcomes",
+      "purpose": "Review SLOs, telemetry, and product outcomes",
+      "performerRoleRefs": ["role.service-owner"],
+      "inputWorkProductRefs": [
+        "e2e-artifact.release-record",
+        "e2e-artifact.product-charter",
+        "e2e-artifact.operations-record",
+        "e2e-artifact.method-profile",
+        "e2e-artifact.service-flow-system"
+      ],
+      "inputSource": "declared",
+      "outputWorkProductRefs": [
+        "e2e-artifact.operations-record",
+        "e2e-artifact.operational-work-item"
+      ],
+      "workProductParameters": [
+        {
+          "type": "Default_TaskDefinitionParameter",
+          "workProductDefinitionRef": "e2e-artifact.release-record",
+          "direction": "in",
+          "optional": false
+        },
+        {
+          "type": "Default_TaskDefinitionParameter",
+          "workProductDefinitionRef": "e2e-artifact.product-charter",
+          "direction": "in",
+          "optional": false
+        },
+        {
+          "type": "Default_TaskDefinitionParameter",
+          "workProductDefinitionRef": "e2e-artifact.operations-record",
+          "direction": "in",
+          "optional": false
+        },
+        {
+          "type": "Default_TaskDefinitionParameter",
+          "workProductDefinitionRef": "e2e-artifact.method-profile",
+          "direction": "in",
+          "optional": false
+        },
+        {
+          "type": "Default_TaskDefinitionParameter",
+          "workProductDefinitionRef": "e2e-artifact.service-flow-system",
+          "direction": "in",
+          "optional": false
+        },
+        {
+          "type": "Default_TaskDefinitionParameter",
+          "workProductDefinitionRef": "e2e-artifact.operations-record",
+          "direction": "out",
+          "optional": false
+        },
+        {
+          "type": "Default_TaskDefinitionParameter",
+          "workProductDefinitionRef": "e2e-artifact.operational-work-item",
+          "direction": "out",
+          "optional": false
+        }
+      ],
+      "coverageGroups": [],
+      "steps": [
+        "Inspect service levels, errors, cost, security signals, usage, provider events, and product outcome measures.",
+        "Compare observations with the service and product hypotheses.",
+        "Capture actionable demand as visible service work items rather than inserting hidden work into a release plan."
+      ],
+      "entryCriteria": [],
+      "exitCriteria": ["Review SLOs, telemetry, and product outcomes evidence is recorded"],
+      "validationRules": ["Operational decisions are based on identified evidence and thresholds"],
+      "progressEvidence": "Review SLOs, telemetry, and product outcomes decision, evidence links, owner, and status are recorded",
+      "paletteFocus": [],
+      "metamodelBindings": [],
+      "sourceProcesses": ["end-to-end"],
+      "sourceVariants": []
+    },
+    {
+      "id": "task.e2e.ops.a2.t1",
+      "type": "TaskDefinition",
+      "name": "Triage and make service demand ready",
+      "purpose": "Triage and make service demand ready",
+      "performerRoleRefs": ["role.service-owner"],
+      "inputWorkProductRefs": [
+        "e2e-artifact.operational-work-item",
+        "e2e-artifact.operations-record",
+        "e2e-artifact.method-profile",
+        "e2e-artifact.service-flow-system"
+      ],
+      "inputSource": "declared",
+      "outputWorkProductRefs": [
+        "e2e-artifact.operational-work-item",
+        "e2e-artifact.service-flow-system"
+      ],
+      "workProductParameters": [
+        {
+          "type": "Default_TaskDefinitionParameter",
+          "workProductDefinitionRef": "e2e-artifact.operational-work-item",
+          "direction": "in",
+          "optional": false
+        },
+        {
+          "type": "Default_TaskDefinitionParameter",
+          "workProductDefinitionRef": "e2e-artifact.operations-record",
+          "direction": "in",
+          "optional": false
+        },
+        {
+          "type": "Default_TaskDefinitionParameter",
+          "workProductDefinitionRef": "e2e-artifact.method-profile",
+          "direction": "in",
+          "optional": false
+        },
+        {
+          "type": "Default_TaskDefinitionParameter",
+          "workProductDefinitionRef": "e2e-artifact.service-flow-system",
+          "direction": "in",
+          "optional": false
+        },
+        {
+          "type": "Default_TaskDefinitionParameter",
+          "workProductDefinitionRef": "e2e-artifact.operational-work-item",
+          "direction": "out",
+          "optional": false
+        },
+        {
+          "type": "Default_TaskDefinitionParameter",
+          "workProductDefinitionRef": "e2e-artifact.service-flow-system",
+          "direction": "out",
+          "optional": false
+        }
+      ],
+      "coverageGroups": [],
+      "steps": [
+        "Record the demand source, impact, affected service, evidence, owner, and requested outcome on the Kanban board.",
+        "Where the item is maintenance, classify its purpose as corrective, preventive, adaptive, additive, or perfective; record any emergency temporary-restoration status; assign a class of service separately according to the board policy.",
+        "Refine the item until it meets the Ready policy and identify its likely disposition: operations-only response, the shortest safe model-driven change path, or a planned release backlog."
+      ],
+      "entryCriteria": [],
+      "exitCriteria": ["Triage and make service demand ready evidence is recorded"],
+      "validationRules": [
+        "Maintenance purpose, emergency-temporary status, and class of service are recorded independently",
+        "Every ready item has an accountable owner, expected outcome, evidence need, and visible disposition"
+      ],
+      "progressEvidence": "Triage and make service demand ready decision, evidence links, owner, and status are recorded",
+      "paletteFocus": [],
+      "metamodelBindings": [],
+      "sourceProcesses": ["end-to-end"],
+      "sourceVariants": []
+    },
+    {
+      "id": "task.e2e.ops.a2.t2",
+      "type": "TaskDefinition",
+      "name": "Replenish, pull, and manage Kanban flow",
+      "purpose": "Replenish, pull, and manage Kanban flow",
+      "performerRoleRefs": ["role.delivery-lead"],
+      "inputWorkProductRefs": [
+        "e2e-artifact.operational-work-item",
+        "e2e-artifact.operations-record",
+        "e2e-artifact.method-profile",
+        "e2e-artifact.service-flow-system"
+      ],
+      "inputSource": "declared",
+      "outputWorkProductRefs": [
+        "e2e-artifact.operational-work-item",
+        "e2e-artifact.service-flow-system",
+        "e2e-artifact.operations-record"
+      ],
+      "workProductParameters": [
+        {
+          "type": "Default_TaskDefinitionParameter",
+          "workProductDefinitionRef": "e2e-artifact.operational-work-item",
+          "direction": "in",
+          "optional": false
+        },
+        {
+          "type": "Default_TaskDefinitionParameter",
+          "workProductDefinitionRef": "e2e-artifact.operations-record",
+          "direction": "in",
+          "optional": false
+        },
+        {
+          "type": "Default_TaskDefinitionParameter",
+          "workProductDefinitionRef": "e2e-artifact.method-profile",
+          "direction": "in",
+          "optional": false
+        },
+        {
+          "type": "Default_TaskDefinitionParameter",
+          "workProductDefinitionRef": "e2e-artifact.service-flow-system",
+          "direction": "in",
+          "optional": false
+        },
+        {
+          "type": "Default_TaskDefinitionParameter",
+          "workProductDefinitionRef": "e2e-artifact.operational-work-item",
+          "direction": "out",
+          "optional": false
+        },
+        {
+          "type": "Default_TaskDefinitionParameter",
+          "workProductDefinitionRef": "e2e-artifact.service-flow-system",
+          "direction": "out",
+          "optional": false
+        },
+        {
+          "type": "Default_TaskDefinitionParameter",
+          "workProductDefinitionRef": "e2e-artifact.operations-record",
+          "direction": "out",
+          "optional": false
+        }
+      ],
+      "coverageGroups": [],
+      "steps": [
+        "At the replenishment cadence, select eligible items into Ready according to capacity, risk, class-of-service policy, and value; pull a ready item only when the downstream WIP control permits.",
+        "Use the board to manage work-item age, blocked work, service-level expectations, and reserved service capacity; an expedite item may displace other work only under the explicit expedite policy and must remain visible.",
+        "Hold a daily flow review and periodic service-delivery review using WIP, throughput, cycle time, work-item age, SLE attainment, arrival rate, blocked time, and expedite frequency; adapt the Definition of Workflow through an explicit improvement decision."
+      ],
+      "entryCriteria": [],
+      "exitCriteria": ["Replenish, pull, and manage Kanban flow evidence is recorded"],
+      "validationRules": [
+        "A team does not start ordinary service work beyond its WIP control",
+        "The expedite class has at most one active item unless the method profile records an exceptional incident-command policy",
+        "Requested, Ready, In Progress, Verify, and Done states and their entry/exit policies are visible on the board"
+      ],
+      "progressEvidence": "Replenish, pull, and manage Kanban flow decision, evidence links, owner, and status are recorded",
+      "paletteFocus": [],
+      "metamodelBindings": [],
+      "sourceProcesses": ["end-to-end"],
+      "sourceVariants": []
+    },
+    {
+      "id": "task.e2e.ops.a3.t1",
+      "type": "TaskDefinition",
+      "name": "Manage incidents and emergency recovery",
+      "purpose": "Manage incidents and emergency recovery",
+      "performerRoleRefs": ["role.service-owner"],
+      "inputWorkProductRefs": [
+        "e2e-artifact.operational-work-item",
+        "e2e-artifact.service-flow-system",
+        "e2e-artifact.operations-record",
+        "e2e-artifact.release-record",
+        "e2e-artifact.method-profile"
+      ],
+      "inputSource": "declared",
+      "outputWorkProductRefs": [
+        "e2e-artifact.operations-record",
+        "e2e-artifact.operational-work-item"
+      ],
+      "workProductParameters": [
+        {
+          "type": "Default_TaskDefinitionParameter",
+          "workProductDefinitionRef": "e2e-artifact.operational-work-item",
+          "direction": "in",
+          "optional": false
+        },
+        {
+          "type": "Default_TaskDefinitionParameter",
+          "workProductDefinitionRef": "e2e-artifact.service-flow-system",
+          "direction": "in",
+          "optional": false
+        },
+        {
+          "type": "Default_TaskDefinitionParameter",
+          "workProductDefinitionRef": "e2e-artifact.operations-record",
+          "direction": "in",
+          "optional": false
+        },
+        {
+          "type": "Default_TaskDefinitionParameter",
+          "workProductDefinitionRef": "e2e-artifact.release-record",
+          "direction": "in",
+          "optional": false
+        },
+        {
+          "type": "Default_TaskDefinitionParameter",
+          "workProductDefinitionRef": "e2e-artifact.method-profile",
+          "direction": "in",
+          "optional": false
+        },
+        {
+          "type": "Default_TaskDefinitionParameter",
+          "workProductDefinitionRef": "e2e-artifact.operations-record",
+          "direction": "out",
+          "optional": false
+        },
+        {
+          "type": "Default_TaskDefinitionParameter",
+          "workProductDefinitionRef": "e2e-artifact.operational-work-item",
+          "direction": "out",
+          "optional": false
+        }
+      ],
+      "coverageGroups": [],
+      "steps": [
+        "Triage impact, stabilize service, communicate status, and execute approved recovery actions.",
+        "Record incident timeline, affected scope, decisions, temporary modifications, and evidence.",
+        "Create permanent corrective, security, or change work for systemic causes and keep it visible after restoration."
+      ],
+      "entryCriteria": [],
+      "exitCriteria": ["Manage incidents and emergency recovery evidence is recorded"],
+      "validationRules": [
+        "Recovery and customer impact are recorded before closure",
+        "An emergency temporary modification is not treated as the permanent corrective change"
+      ],
+      "progressEvidence": "Manage incidents and emergency recovery decision, evidence links, owner, and status are recorded",
+      "paletteFocus": [],
+      "metamodelBindings": [],
+      "sourceProcesses": ["end-to-end"],
+      "sourceVariants": []
+    },
+    {
+      "id": "task.e2e.ops.a3.t2",
+      "type": "TaskDefinition",
+      "name": "Perform problem and risk learning",
+      "purpose": "Perform problem and risk learning",
+      "performerRoleRefs": ["role.quality-engineer"],
+      "inputWorkProductRefs": [
+        "e2e-artifact.operational-work-item",
+        "e2e-artifact.service-flow-system",
+        "e2e-artifact.operations-record",
+        "e2e-artifact.increment-record",
+        "e2e-artifact.release-record",
+        "e2e-artifact.method-profile"
+      ],
+      "inputSource": "declared",
+      "outputWorkProductRefs": [
+        "e2e-artifact.operations-record",
+        "e2e-artifact.method-profile",
+        "e2e-artifact.operational-work-item"
+      ],
+      "workProductParameters": [
+        {
+          "type": "Default_TaskDefinitionParameter",
+          "workProductDefinitionRef": "e2e-artifact.operational-work-item",
+          "direction": "in",
+          "optional": false
+        },
+        {
+          "type": "Default_TaskDefinitionParameter",
+          "workProductDefinitionRef": "e2e-artifact.service-flow-system",
+          "direction": "in",
+          "optional": false
+        },
+        {
+          "type": "Default_TaskDefinitionParameter",
+          "workProductDefinitionRef": "e2e-artifact.operations-record",
+          "direction": "in",
+          "optional": false
+        },
+        {
+          "type": "Default_TaskDefinitionParameter",
+          "workProductDefinitionRef": "e2e-artifact.increment-record",
+          "direction": "in",
+          "optional": false
+        },
+        {
+          "type": "Default_TaskDefinitionParameter",
+          "workProductDefinitionRef": "e2e-artifact.release-record",
+          "direction": "in",
+          "optional": false
+        },
+        {
+          "type": "Default_TaskDefinitionParameter",
+          "workProductDefinitionRef": "e2e-artifact.method-profile",
+          "direction": "in",
+          "optional": false
+        },
+        {
+          "type": "Default_TaskDefinitionParameter",
+          "workProductDefinitionRef": "e2e-artifact.operations-record",
+          "direction": "out",
+          "optional": false
+        },
+        {
+          "type": "Default_TaskDefinitionParameter",
+          "workProductDefinitionRef": "e2e-artifact.method-profile",
+          "direction": "out",
+          "optional": false
+        },
+        {
+          "type": "Default_TaskDefinitionParameter",
+          "workProductDefinitionRef": "e2e-artifact.operational-work-item",
+          "direction": "out",
+          "optional": false
+        }
+      ],
+      "coverageGroups": [],
+      "steps": [
+        "Analyze contributing causes across requirements, models, transformation, generation, deployment, and operation.",
+        "Update controls, tests, model patterns, process guidance, or method profile as appropriate.",
+        "Place permanent corrective work on the Kanban board or deliberately commit it to a planned release, and verify reconciliation after any emergency downstream fix."
+      ],
+      "entryCriteria": [],
+      "exitCriteria": ["Perform problem and risk learning evidence is recorded"],
+      "validationRules": [
+        "The corrective action is routed to the earliest responsible source rather than only patched downstream"
+      ],
+      "progressEvidence": "Perform problem and risk learning decision, evidence links, owner, and status are recorded",
+      "paletteFocus": [],
+      "metamodelBindings": [],
+      "sourceProcesses": ["end-to-end"],
+      "sourceVariants": []
+    },
+    {
+      "id": "task.e2e.ops.a4.t1",
+      "type": "TaskDefinition",
+      "name": "Assess and route a maintenance change",
+      "purpose": "Assess and route a maintenance change",
+      "performerRoleRefs": ["role.delivery-lead"],
+      "inputWorkProductRefs": [
+        "e2e-artifact.operational-work-item",
+        "e2e-artifact.service-flow-system",
+        "e2e-artifact.operations-record",
+        "e2e-artifact.method-profile",
+        "e2e-artifact.increment-record",
+        "e2e-artifact.product-charter",
+        "e2e-artifact.release-record"
+      ],
+      "inputSource": "declared",
+      "outputWorkProductRefs": [
+        "e2e-artifact.increment-record",
+        "e2e-artifact.operations-record",
+        "e2e-artifact.operational-work-item"
+      ],
+      "workProductParameters": [
+        {
+          "type": "Default_TaskDefinitionParameter",
+          "workProductDefinitionRef": "e2e-artifact.operational-work-item",
+          "direction": "in",
+          "optional": false
+        },
+        {
+          "type": "Default_TaskDefinitionParameter",
+          "workProductDefinitionRef": "e2e-artifact.service-flow-system",
+          "direction": "in",
+          "optional": false
+        },
+        {
+          "type": "Default_TaskDefinitionParameter",
+          "workProductDefinitionRef": "e2e-artifact.operations-record",
+          "direction": "in",
+          "optional": false
+        },
+        {
+          "type": "Default_TaskDefinitionParameter",
+          "workProductDefinitionRef": "e2e-artifact.method-profile",
+          "direction": "in",
+          "optional": false
+        },
+        {
+          "type": "Default_TaskDefinitionParameter",
+          "workProductDefinitionRef": "e2e-artifact.increment-record",
+          "direction": "in",
+          "optional": false
+        },
+        {
+          "type": "Default_TaskDefinitionParameter",
+          "workProductDefinitionRef": "e2e-artifact.product-charter",
+          "direction": "in",
+          "optional": false
+        },
+        {
+          "type": "Default_TaskDefinitionParameter",
+          "workProductDefinitionRef": "e2e-artifact.release-record",
+          "direction": "in",
+          "optional": false
+        },
+        {
+          "type": "Default_TaskDefinitionParameter",
+          "workProductDefinitionRef": "e2e-artifact.increment-record",
+          "direction": "out",
+          "optional": false
+        },
+        {
+          "type": "Default_TaskDefinitionParameter",
+          "workProductDefinitionRef": "e2e-artifact.operations-record",
+          "direction": "out",
+          "optional": false
+        },
+        {
+          "type": "Default_TaskDefinitionParameter",
+          "workProductDefinitionRef": "e2e-artifact.operational-work-item",
+          "direction": "out",
+          "optional": false
+        }
+      ],
+      "coverageGroups": [],
+      "steps": [
+        "Classify the authoritative source as product/domain, architecture, platform, generator, artifact, or operations and confirm whether the item remains a bounded Kanban service item or is committed to a planned release.",
+        "Use traces and dependency ownership to identify impacted downstream levels and teams.",
+        "Send product-changing work to the Development and Delivery Process at the smallest affected phase or activity; after release, reconcile emergency downstream fixes into the authoritative source and close the service item only when evidence returns."
+      ],
+      "entryCriteria": [],
+      "exitCriteria": ["Assess and route a maintenance change evidence is recorded"],
+      "validationRules": [
+        "The change record identifies source revision, impacted levels, downstream evidence, acceptance decision, and service-work-item disposition"
+      ],
+      "progressEvidence": "Assess and route a maintenance change decision, evidence links, owner, and status are recorded",
+      "paletteFocus": [],
+      "metamodelBindings": [],
+      "sourceProcesses": ["end-to-end"],
+      "sourceVariants": []
+    },
+    {
+      "id": "task.e2e.ops.a5.t1",
+      "type": "TaskDefinition",
+      "name": "Inspect flow, quality, and coordination metrics",
+      "purpose": "Inspect flow, quality, and coordination metrics",
+      "performerRoleRefs": ["role.process-reviewer"],
+      "inputWorkProductRefs": [
+        "e2e-artifact.operational-work-item",
+        "e2e-artifact.service-flow-system",
+        "e2e-artifact.increment-record",
+        "e2e-artifact.operations-record",
+        "e2e-artifact.product-charter",
+        "e2e-artifact.method-profile",
+        "e2e-artifact.release-record"
+      ],
+      "inputSource": "declared",
+      "outputWorkProductRefs": [
+        "e2e-artifact.operations-record",
+        "e2e-artifact.method-profile",
+        "e2e-artifact.service-flow-system"
+      ],
+      "workProductParameters": [
+        {
+          "type": "Default_TaskDefinitionParameter",
+          "workProductDefinitionRef": "e2e-artifact.operational-work-item",
+          "direction": "in",
+          "optional": false
+        },
+        {
+          "type": "Default_TaskDefinitionParameter",
+          "workProductDefinitionRef": "e2e-artifact.service-flow-system",
+          "direction": "in",
+          "optional": false
+        },
+        {
+          "type": "Default_TaskDefinitionParameter",
+          "workProductDefinitionRef": "e2e-artifact.increment-record",
+          "direction": "in",
+          "optional": false
+        },
+        {
+          "type": "Default_TaskDefinitionParameter",
+          "workProductDefinitionRef": "e2e-artifact.operations-record",
+          "direction": "in",
+          "optional": false
+        },
+        {
+          "type": "Default_TaskDefinitionParameter",
+          "workProductDefinitionRef": "e2e-artifact.product-charter",
+          "direction": "in",
+          "optional": false
+        },
+        {
+          "type": "Default_TaskDefinitionParameter",
+          "workProductDefinitionRef": "e2e-artifact.method-profile",
+          "direction": "in",
+          "optional": false
+        },
+        {
+          "type": "Default_TaskDefinitionParameter",
+          "workProductDefinitionRef": "e2e-artifact.release-record",
+          "direction": "in",
+          "optional": false
+        },
+        {
+          "type": "Default_TaskDefinitionParameter",
+          "workProductDefinitionRef": "e2e-artifact.operations-record",
+          "direction": "out",
+          "optional": false
+        },
+        {
+          "type": "Default_TaskDefinitionParameter",
+          "workProductDefinitionRef": "e2e-artifact.method-profile",
+          "direction": "out",
+          "optional": false
+        },
+        {
+          "type": "Default_TaskDefinitionParameter",
+          "workProductDefinitionRef": "e2e-artifact.service-flow-system",
+          "direction": "out",
+          "optional": false
+        }
+      ],
+      "coverageGroups": [],
+      "steps": [
+        "Review planned-delivery forecast, Kanban WIP, throughput, cycle time, work-item age, SLE attainment, demand arrival rate, expedite frequency, rework, trace coverage, blockers, dependency age, escaped defects, and product outcomes.",
+        "Look for systemic queues, starvation between planned and service work, missing work products, invalid gates, and coordination failures.",
+        "Approve bounded changes to the Definition of Workflow, capacity policy, DevOps interface, or method profile and record their expected effect."
+      ],
+      "entryCriteria": [],
+      "exitCriteria": ["Inspect flow, quality, and coordination metrics evidence is recorded"],
+      "validationRules": [
+        "Metrics lead to inspectable improvement experiments rather than individual performance rankings"
+      ],
+      "progressEvidence": "Inspect flow, quality, and coordination metrics decision, evidence links, owner, and status are recorded",
+      "paletteFocus": [],
+      "metamodelBindings": [],
+      "sourceProcesses": ["end-to-end"],
+      "sourceVariants": []
+    },
+    {
       "id": "task.e2e.p0.increment-planning.t1",
       "type": "TaskDefinition",
       "name": "Plan the vertical increment",
@@ -3958,7 +4562,7 @@
       "coverageGroups": [],
       "steps": [
         "Define environments, support ownership, SLO hypotheses, observability expectations, rollback posture, and release cadence.",
-        "Define the operational pull system: workflow states, WIP limits, service classes, service-level expectations, capacity allocation, replenishment, and emergency preemption/reconciliation policy.",
+        "Define the Kanban service-delivery system: board states and start/finish points, WIP controls, classes of service, service-level expectations, capacity allocation, replenishment and review cadences, and expedite/reconciliation policy.",
         "Identify data migration, compatibility, and progressive-delivery constraints and record the initial release decision policy."
       ],
       "entryCriteria": [],
@@ -3975,941 +4579,6 @@
     },
     {
       "id": "task.e2e.ph2.st1.t1",
-      "type": "TaskDefinition",
-      "name": "Assemble the release candidate",
-      "purpose": "Assemble the release candidate",
-      "performerRoleRefs": ["role.release-engineer"],
-      "inputWorkProductRefs": [
-        "e2e-artifact.increment-record",
-        "e2e-artifact.product-charter",
-        "e2e-artifact.method-profile",
-        "e2e-artifact.team-topology"
-      ],
-      "inputSource": "declared",
-      "outputWorkProductRefs": ["e2e-artifact.release-record"],
-      "workProductParameters": [
-        {
-          "type": "Default_TaskDefinitionParameter",
-          "workProductDefinitionRef": "e2e-artifact.increment-record",
-          "direction": "in",
-          "optional": false
-        },
-        {
-          "type": "Default_TaskDefinitionParameter",
-          "workProductDefinitionRef": "e2e-artifact.product-charter",
-          "direction": "in",
-          "optional": false
-        },
-        {
-          "type": "Default_TaskDefinitionParameter",
-          "workProductDefinitionRef": "e2e-artifact.method-profile",
-          "direction": "in",
-          "optional": false
-        },
-        {
-          "type": "Default_TaskDefinitionParameter",
-          "workProductDefinitionRef": "e2e-artifact.team-topology",
-          "direction": "in",
-          "optional": false
-        },
-        {
-          "type": "Default_TaskDefinitionParameter",
-          "workProductDefinitionRef": "e2e-artifact.release-record",
-          "direction": "out",
-          "optional": false
-        }
-      ],
-      "coverageGroups": [],
-      "steps": [
-        "Select accepted increments and compatible model/artifact revisions.",
-        "Resolve cross-team dependency and compatibility checks.",
-        "Create the release record with exact inputs and promotion sequence."
-      ],
-      "entryCriteria": [],
-      "exitCriteria": ["Assemble the release candidate evidence is recorded"],
-      "validationRules": [
-        "Every release scope item maps to an accepted increment and exact artifact identity"
-      ],
-      "progressEvidence": "Assemble the release candidate decision, evidence links, owner, and status are recorded",
-      "paletteFocus": [],
-      "metamodelBindings": [],
-      "sourceProcesses": ["end-to-end"],
-      "sourceVariants": []
-    },
-    {
-      "id": "task.e2e.ph2.st1.t2",
-      "type": "TaskDefinition",
-      "name": "Review release evidence and go/no-go criteria",
-      "purpose": "Review release evidence and go/no-go criteria",
-      "performerRoleRefs": ["role.process-reviewer"],
-      "inputWorkProductRefs": [
-        "e2e-artifact.release-record",
-        "e2e-artifact.increment-record",
-        "e2e-artifact.product-charter",
-        "e2e-artifact.method-profile"
-      ],
-      "inputSource": "declared",
-      "outputWorkProductRefs": ["e2e-artifact.release-record"],
-      "workProductParameters": [
-        {
-          "type": "Default_TaskDefinitionParameter",
-          "workProductDefinitionRef": "e2e-artifact.release-record",
-          "direction": "in",
-          "optional": false
-        },
-        {
-          "type": "Default_TaskDefinitionParameter",
-          "workProductDefinitionRef": "e2e-artifact.increment-record",
-          "direction": "in",
-          "optional": false
-        },
-        {
-          "type": "Default_TaskDefinitionParameter",
-          "workProductDefinitionRef": "e2e-artifact.product-charter",
-          "direction": "in",
-          "optional": false
-        },
-        {
-          "type": "Default_TaskDefinitionParameter",
-          "workProductDefinitionRef": "e2e-artifact.method-profile",
-          "direction": "in",
-          "optional": false
-        },
-        {
-          "type": "Default_TaskDefinitionParameter",
-          "workProductDefinitionRef": "e2e-artifact.release-record",
-          "direction": "out",
-          "optional": false
-        }
-      ],
-      "coverageGroups": [],
-      "steps": [
-        "Inspect readiness assessments, validation results, security exceptions, rollback plan, operational runbooks, and approvals.",
-        "Confirm open blockers are zero or explicitly accepted under the tailored method profile.",
-        "Record the go/no-go decision and decision owners."
-      ],
-      "entryCriteria": [],
-      "exitCriteria": ["Review release evidence and go/no-go criteria evidence is recorded"],
-      "validationRules": ["Go/no-go is evidence-based and not inferred from task completion"],
-      "progressEvidence": "Review release evidence and go/no-go criteria decision, evidence links, owner, and status are recorded",
-      "paletteFocus": [],
-      "metamodelBindings": [],
-      "sourceProcesses": ["end-to-end"],
-      "sourceVariants": []
-    },
-    {
-      "id": "task.e2e.ph2.st2.t1",
-      "type": "TaskDefinition",
-      "name": "Deploy and validate progressively",
-      "purpose": "Deploy and validate progressively",
-      "performerRoleRefs": ["role.release-engineer"],
-      "inputWorkProductRefs": [
-        "e2e-artifact.release-record",
-        "e2e-artifact.product-charter",
-        "e2e-artifact.method-profile",
-        "e2e-artifact.team-topology"
-      ],
-      "inputSource": "declared",
-      "outputWorkProductRefs": ["e2e-artifact.release-record"],
-      "workProductParameters": [
-        {
-          "type": "Default_TaskDefinitionParameter",
-          "workProductDefinitionRef": "e2e-artifact.release-record",
-          "direction": "in",
-          "optional": false
-        },
-        {
-          "type": "Default_TaskDefinitionParameter",
-          "workProductDefinitionRef": "e2e-artifact.product-charter",
-          "direction": "in",
-          "optional": false
-        },
-        {
-          "type": "Default_TaskDefinitionParameter",
-          "workProductDefinitionRef": "e2e-artifact.method-profile",
-          "direction": "in",
-          "optional": false
-        },
-        {
-          "type": "Default_TaskDefinitionParameter",
-          "workProductDefinitionRef": "e2e-artifact.team-topology",
-          "direction": "in",
-          "optional": false
-        },
-        {
-          "type": "Default_TaskDefinitionParameter",
-          "workProductDefinitionRef": "e2e-artifact.release-record",
-          "direction": "out",
-          "optional": false
-        }
-      ],
-      "coverageGroups": [],
-      "steps": [
-        "Deploy the exact candidate to the approved environment sequence.",
-        "Run smoke, functional, security, data, observability, and compatibility checks.",
-        "Compare observed outcomes with release acceptance signals and stop or roll back on threshold breach."
-      ],
-      "entryCriteria": [],
-      "exitCriteria": ["Deploy and validate progressively evidence is recorded"],
-      "validationRules": [
-        "Promotion evidence identifies candidate, environment, timestamp, operator, and observed result"
-      ],
-      "progressEvidence": "Deploy and validate progressively decision, evidence links, owner, and status are recorded",
-      "paletteFocus": [],
-      "metamodelBindings": [],
-      "sourceProcesses": ["end-to-end"],
-      "sourceVariants": []
-    },
-    {
-      "id": "task.e2e.ph2.st2.t2",
-      "type": "TaskDefinition",
-      "name": "Complete handover and rollback rehearsal",
-      "purpose": "Complete handover and rollback rehearsal",
-      "performerRoleRefs": ["role.service-owner"],
-      "inputWorkProductRefs": [
-        "e2e-artifact.release-record",
-        "e2e-artifact.product-charter",
-        "e2e-artifact.method-profile",
-        "e2e-artifact.team-topology"
-      ],
-      "inputSource": "declared",
-      "outputWorkProductRefs": ["e2e-artifact.release-record", "e2e-artifact.operations-record"],
-      "workProductParameters": [
-        {
-          "type": "Default_TaskDefinitionParameter",
-          "workProductDefinitionRef": "e2e-artifact.release-record",
-          "direction": "in",
-          "optional": false
-        },
-        {
-          "type": "Default_TaskDefinitionParameter",
-          "workProductDefinitionRef": "e2e-artifact.product-charter",
-          "direction": "in",
-          "optional": false
-        },
-        {
-          "type": "Default_TaskDefinitionParameter",
-          "workProductDefinitionRef": "e2e-artifact.method-profile",
-          "direction": "in",
-          "optional": false
-        },
-        {
-          "type": "Default_TaskDefinitionParameter",
-          "workProductDefinitionRef": "e2e-artifact.team-topology",
-          "direction": "in",
-          "optional": false
-        },
-        {
-          "type": "Default_TaskDefinitionParameter",
-          "workProductDefinitionRef": "e2e-artifact.release-record",
-          "direction": "out",
-          "optional": false
-        },
-        {
-          "type": "Default_TaskDefinitionParameter",
-          "workProductDefinitionRef": "e2e-artifact.operations-record",
-          "direction": "out",
-          "optional": false
-        }
-      ],
-      "coverageGroups": [],
-      "steps": [
-        "Verify dashboards, alerts, runbooks, escalation paths, support ownership, and recovery access.",
-        "Confirm rollback and data-recovery actions are usable for the release.",
-        "Accept operational ownership or return the release to rework."
-      ],
-      "entryCriteria": [],
-      "exitCriteria": ["Complete handover and rollback rehearsal evidence is recorded"],
-      "validationRules": [
-        "Operational acceptance names an accountable service owner and recovery evidence"
-      ],
-      "progressEvidence": "Complete handover and rollback rehearsal decision, evidence links, owner, and status are recorded",
-      "paletteFocus": [],
-      "metamodelBindings": [],
-      "sourceProcesses": ["end-to-end"],
-      "sourceVariants": []
-    },
-    {
-      "id": "task.e2e.ph2.st3.t1",
-      "type": "TaskDefinition",
-      "name": "Review release outcome and update roadmap",
-      "purpose": "Review release outcome and update roadmap",
-      "performerRoleRefs": ["role.product-owner"],
-      "inputWorkProductRefs": [
-        "e2e-artifact.release-record",
-        "e2e-artifact.operations-record",
-        "e2e-artifact.product-charter",
-        "e2e-artifact.increment-record",
-        "e2e-artifact.method-profile"
-      ],
-      "inputSource": "declared",
-      "outputWorkProductRefs": ["e2e-artifact.release-record", "e2e-artifact.product-charter"],
-      "workProductParameters": [
-        {
-          "type": "Default_TaskDefinitionParameter",
-          "workProductDefinitionRef": "e2e-artifact.release-record",
-          "direction": "in",
-          "optional": false
-        },
-        {
-          "type": "Default_TaskDefinitionParameter",
-          "workProductDefinitionRef": "e2e-artifact.operations-record",
-          "direction": "in",
-          "optional": false
-        },
-        {
-          "type": "Default_TaskDefinitionParameter",
-          "workProductDefinitionRef": "e2e-artifact.product-charter",
-          "direction": "in",
-          "optional": false
-        },
-        {
-          "type": "Default_TaskDefinitionParameter",
-          "workProductDefinitionRef": "e2e-artifact.increment-record",
-          "direction": "in",
-          "optional": false
-        },
-        {
-          "type": "Default_TaskDefinitionParameter",
-          "workProductDefinitionRef": "e2e-artifact.method-profile",
-          "direction": "in",
-          "optional": false
-        },
-        {
-          "type": "Default_TaskDefinitionParameter",
-          "workProductDefinitionRef": "e2e-artifact.release-record",
-          "direction": "out",
-          "optional": false
-        },
-        {
-          "type": "Default_TaskDefinitionParameter",
-          "workProductDefinitionRef": "e2e-artifact.product-charter",
-          "direction": "out",
-          "optional": false
-        }
-      ],
-      "coverageGroups": [],
-      "steps": [
-        "Compare product and operational outcomes with the release hypothesis.",
-        "Accept outcomes, revise priorities, and create follow-up increments for gaps.",
-        "Record decisions and changes to scope, measures, and assumptions."
-      ],
-      "entryCriteria": [],
-      "exitCriteria": ["Review release outcome and update roadmap evidence is recorded"],
-      "validationRules": [
-        "Outcome learning changes a backlog, product decision, or explicitly confirms the hypothesis"
-      ],
-      "progressEvidence": "Review release outcome and update roadmap decision, evidence links, owner, and status are recorded",
-      "paletteFocus": [],
-      "metamodelBindings": [],
-      "sourceProcesses": ["end-to-end"],
-      "sourceVariants": []
-    },
-    {
-      "id": "task.e2e.ph3.st1.t1",
-      "type": "TaskDefinition",
-      "name": "Review SLOs, telemetry, and product outcomes",
-      "purpose": "Review SLOs, telemetry, and product outcomes",
-      "performerRoleRefs": ["role.service-owner"],
-      "inputWorkProductRefs": [
-        "e2e-artifact.release-record",
-        "e2e-artifact.product-charter",
-        "e2e-artifact.operations-record",
-        "e2e-artifact.method-profile",
-        "e2e-artifact.service-flow-system"
-      ],
-      "inputSource": "declared",
-      "outputWorkProductRefs": [
-        "e2e-artifact.operations-record",
-        "e2e-artifact.operational-work-item"
-      ],
-      "workProductParameters": [
-        {
-          "type": "Default_TaskDefinitionParameter",
-          "workProductDefinitionRef": "e2e-artifact.release-record",
-          "direction": "in",
-          "optional": false
-        },
-        {
-          "type": "Default_TaskDefinitionParameter",
-          "workProductDefinitionRef": "e2e-artifact.product-charter",
-          "direction": "in",
-          "optional": false
-        },
-        {
-          "type": "Default_TaskDefinitionParameter",
-          "workProductDefinitionRef": "e2e-artifact.operations-record",
-          "direction": "in",
-          "optional": false
-        },
-        {
-          "type": "Default_TaskDefinitionParameter",
-          "workProductDefinitionRef": "e2e-artifact.method-profile",
-          "direction": "in",
-          "optional": false
-        },
-        {
-          "type": "Default_TaskDefinitionParameter",
-          "workProductDefinitionRef": "e2e-artifact.service-flow-system",
-          "direction": "in",
-          "optional": false
-        },
-        {
-          "type": "Default_TaskDefinitionParameter",
-          "workProductDefinitionRef": "e2e-artifact.operations-record",
-          "direction": "out",
-          "optional": false
-        },
-        {
-          "type": "Default_TaskDefinitionParameter",
-          "workProductDefinitionRef": "e2e-artifact.operational-work-item",
-          "direction": "out",
-          "optional": false
-        }
-      ],
-      "coverageGroups": [],
-      "steps": [
-        "Inspect service levels, errors, cost, security signals, usage, provider events, and product outcome measures.",
-        "Compare observations with the service and product hypotheses.",
-        "Capture actionable demand as operational work items rather than inserting invisible work into a release plan."
-      ],
-      "entryCriteria": [],
-      "exitCriteria": ["Review SLOs, telemetry, and product outcomes evidence is recorded"],
-      "validationRules": ["Operational decisions are based on identified evidence and thresholds"],
-      "progressEvidence": "Review SLOs, telemetry, and product outcomes decision, evidence links, owner, and status are recorded",
-      "paletteFocus": [],
-      "metamodelBindings": [],
-      "sourceProcesses": ["end-to-end"],
-      "sourceVariants": []
-    },
-    {
-      "id": "task.e2e.ph3.st2.t1",
-      "type": "TaskDefinition",
-      "name": "Manage incidents and emergency recovery",
-      "purpose": "Manage incidents and emergency recovery",
-      "performerRoleRefs": ["role.service-owner"],
-      "inputWorkProductRefs": [
-        "e2e-artifact.operational-work-item",
-        "e2e-artifact.service-flow-system",
-        "e2e-artifact.operations-record",
-        "e2e-artifact.release-record",
-        "e2e-artifact.method-profile"
-      ],
-      "inputSource": "declared",
-      "outputWorkProductRefs": [
-        "e2e-artifact.operations-record",
-        "e2e-artifact.operational-work-item"
-      ],
-      "workProductParameters": [
-        {
-          "type": "Default_TaskDefinitionParameter",
-          "workProductDefinitionRef": "e2e-artifact.operational-work-item",
-          "direction": "in",
-          "optional": false
-        },
-        {
-          "type": "Default_TaskDefinitionParameter",
-          "workProductDefinitionRef": "e2e-artifact.service-flow-system",
-          "direction": "in",
-          "optional": false
-        },
-        {
-          "type": "Default_TaskDefinitionParameter",
-          "workProductDefinitionRef": "e2e-artifact.operations-record",
-          "direction": "in",
-          "optional": false
-        },
-        {
-          "type": "Default_TaskDefinitionParameter",
-          "workProductDefinitionRef": "e2e-artifact.release-record",
-          "direction": "in",
-          "optional": false
-        },
-        {
-          "type": "Default_TaskDefinitionParameter",
-          "workProductDefinitionRef": "e2e-artifact.method-profile",
-          "direction": "in",
-          "optional": false
-        },
-        {
-          "type": "Default_TaskDefinitionParameter",
-          "workProductDefinitionRef": "e2e-artifact.operations-record",
-          "direction": "out",
-          "optional": false
-        },
-        {
-          "type": "Default_TaskDefinitionParameter",
-          "workProductDefinitionRef": "e2e-artifact.operational-work-item",
-          "direction": "out",
-          "optional": false
-        }
-      ],
-      "coverageGroups": [],
-      "steps": [
-        "Triage impact, stabilize service, communicate status, and execute approved recovery actions.",
-        "Record incident timeline, affected scope, decisions, temporary modifications, and evidence.",
-        "Create permanent corrective, security, or change work for systemic causes and keep it visible after restoration."
-      ],
-      "entryCriteria": [],
-      "exitCriteria": ["Manage incidents and emergency recovery evidence is recorded"],
-      "validationRules": [
-        "Recovery and customer impact are recorded before closure",
-        "An emergency temporary modification is not treated as the permanent corrective change"
-      ],
-      "progressEvidence": "Manage incidents and emergency recovery decision, evidence links, owner, and status are recorded",
-      "paletteFocus": [],
-      "metamodelBindings": [],
-      "sourceProcesses": ["end-to-end"],
-      "sourceVariants": []
-    },
-    {
-      "id": "task.e2e.ph3.st2.t2",
-      "type": "TaskDefinition",
-      "name": "Perform problem and risk learning",
-      "purpose": "Perform problem and risk learning",
-      "performerRoleRefs": ["role.quality-engineer"],
-      "inputWorkProductRefs": [
-        "e2e-artifact.operational-work-item",
-        "e2e-artifact.service-flow-system",
-        "e2e-artifact.operations-record",
-        "e2e-artifact.increment-record",
-        "e2e-artifact.release-record",
-        "e2e-artifact.method-profile"
-      ],
-      "inputSource": "declared",
-      "outputWorkProductRefs": [
-        "e2e-artifact.operations-record",
-        "e2e-artifact.method-profile",
-        "e2e-artifact.operational-work-item"
-      ],
-      "workProductParameters": [
-        {
-          "type": "Default_TaskDefinitionParameter",
-          "workProductDefinitionRef": "e2e-artifact.operational-work-item",
-          "direction": "in",
-          "optional": false
-        },
-        {
-          "type": "Default_TaskDefinitionParameter",
-          "workProductDefinitionRef": "e2e-artifact.service-flow-system",
-          "direction": "in",
-          "optional": false
-        },
-        {
-          "type": "Default_TaskDefinitionParameter",
-          "workProductDefinitionRef": "e2e-artifact.operations-record",
-          "direction": "in",
-          "optional": false
-        },
-        {
-          "type": "Default_TaskDefinitionParameter",
-          "workProductDefinitionRef": "e2e-artifact.increment-record",
-          "direction": "in",
-          "optional": false
-        },
-        {
-          "type": "Default_TaskDefinitionParameter",
-          "workProductDefinitionRef": "e2e-artifact.release-record",
-          "direction": "in",
-          "optional": false
-        },
-        {
-          "type": "Default_TaskDefinitionParameter",
-          "workProductDefinitionRef": "e2e-artifact.method-profile",
-          "direction": "in",
-          "optional": false
-        },
-        {
-          "type": "Default_TaskDefinitionParameter",
-          "workProductDefinitionRef": "e2e-artifact.operations-record",
-          "direction": "out",
-          "optional": false
-        },
-        {
-          "type": "Default_TaskDefinitionParameter",
-          "workProductDefinitionRef": "e2e-artifact.method-profile",
-          "direction": "out",
-          "optional": false
-        },
-        {
-          "type": "Default_TaskDefinitionParameter",
-          "workProductDefinitionRef": "e2e-artifact.operational-work-item",
-          "direction": "out",
-          "optional": false
-        }
-      ],
-      "coverageGroups": [],
-      "steps": [
-        "Analyze contributing causes across requirements, models, transformation, generation, deployment, and operation.",
-        "Update controls, tests, model patterns, process guidance, or method profile as appropriate.",
-        "Route permanent change through the operational pull system or a planned release and verify reconciliation after any emergency downstream fix."
-      ],
-      "entryCriteria": [],
-      "exitCriteria": ["Perform problem and risk learning evidence is recorded"],
-      "validationRules": [
-        "The corrective action is routed to the earliest responsible source rather than only patched downstream"
-      ],
-      "progressEvidence": "Perform problem and risk learning decision, evidence links, owner, and status are recorded",
-      "paletteFocus": [],
-      "metamodelBindings": [],
-      "sourceProcesses": ["end-to-end"],
-      "sourceVariants": []
-    },
-    {
-      "id": "task.e2e.ph3.st2a.t1",
-      "type": "TaskDefinition",
-      "name": "Triage and classify operational demand",
-      "purpose": "Triage and classify operational demand",
-      "performerRoleRefs": ["role.service-owner"],
-      "inputWorkProductRefs": [
-        "e2e-artifact.operational-work-item",
-        "e2e-artifact.operations-record",
-        "e2e-artifact.method-profile",
-        "e2e-artifact.service-flow-system"
-      ],
-      "inputSource": "declared",
-      "outputWorkProductRefs": [
-        "e2e-artifact.operational-work-item",
-        "e2e-artifact.service-flow-system"
-      ],
-      "workProductParameters": [
-        {
-          "type": "Default_TaskDefinitionParameter",
-          "workProductDefinitionRef": "e2e-artifact.operational-work-item",
-          "direction": "in",
-          "optional": false
-        },
-        {
-          "type": "Default_TaskDefinitionParameter",
-          "workProductDefinitionRef": "e2e-artifact.operations-record",
-          "direction": "in",
-          "optional": false
-        },
-        {
-          "type": "Default_TaskDefinitionParameter",
-          "workProductDefinitionRef": "e2e-artifact.method-profile",
-          "direction": "in",
-          "optional": false
-        },
-        {
-          "type": "Default_TaskDefinitionParameter",
-          "workProductDefinitionRef": "e2e-artifact.service-flow-system",
-          "direction": "in",
-          "optional": false
-        },
-        {
-          "type": "Default_TaskDefinitionParameter",
-          "workProductDefinitionRef": "e2e-artifact.operational-work-item",
-          "direction": "out",
-          "optional": false
-        },
-        {
-          "type": "Default_TaskDefinitionParameter",
-          "workProductDefinitionRef": "e2e-artifact.service-flow-system",
-          "direction": "out",
-          "optional": false
-        }
-      ],
-      "coverageGroups": [],
-      "steps": [
-        "Record the demand source, impact, affected service and evidence.",
-        "Classify maintenance purpose as corrective, preventive, adaptive, additive, or perfective; record any emergency temporary-restoration status; classify service separately as expedite, fixed-date, standard, or risk-reduction.",
-        "Select an operations-only response, the shortest safe model-driven change path, or the planned release backlog."
-      ],
-      "entryCriteria": [],
-      "exitCriteria": ["Triage and classify operational demand evidence is recorded"],
-      "validationRules": [
-        "Maintenance purpose, emergency-temporary status, and service class are recorded independently",
-        "Every item has a visible disposition and accountable owner"
-      ],
-      "progressEvidence": "Triage and classify operational demand decision, evidence links, owner, and status are recorded",
-      "paletteFocus": [],
-      "metamodelBindings": [],
-      "sourceProcesses": ["end-to-end"],
-      "sourceVariants": []
-    },
-    {
-      "id": "task.e2e.ph3.st2a.t2",
-      "type": "TaskDefinition",
-      "name": "Replenish, pull, and manage operational flow",
-      "purpose": "Replenish, pull, and manage operational flow",
-      "performerRoleRefs": ["role.delivery-lead"],
-      "inputWorkProductRefs": [
-        "e2e-artifact.operational-work-item",
-        "e2e-artifact.operations-record",
-        "e2e-artifact.method-profile",
-        "e2e-artifact.service-flow-system"
-      ],
-      "inputSource": "declared",
-      "outputWorkProductRefs": [
-        "e2e-artifact.operational-work-item",
-        "e2e-artifact.service-flow-system",
-        "e2e-artifact.operations-record"
-      ],
-      "workProductParameters": [
-        {
-          "type": "Default_TaskDefinitionParameter",
-          "workProductDefinitionRef": "e2e-artifact.operational-work-item",
-          "direction": "in",
-          "optional": false
-        },
-        {
-          "type": "Default_TaskDefinitionParameter",
-          "workProductDefinitionRef": "e2e-artifact.operations-record",
-          "direction": "in",
-          "optional": false
-        },
-        {
-          "type": "Default_TaskDefinitionParameter",
-          "workProductDefinitionRef": "e2e-artifact.method-profile",
-          "direction": "in",
-          "optional": false
-        },
-        {
-          "type": "Default_TaskDefinitionParameter",
-          "workProductDefinitionRef": "e2e-artifact.service-flow-system",
-          "direction": "in",
-          "optional": false
-        },
-        {
-          "type": "Default_TaskDefinitionParameter",
-          "workProductDefinitionRef": "e2e-artifact.operational-work-item",
-          "direction": "out",
-          "optional": false
-        },
-        {
-          "type": "Default_TaskDefinitionParameter",
-          "workProductDefinitionRef": "e2e-artifact.service-flow-system",
-          "direction": "out",
-          "optional": false
-        },
-        {
-          "type": "Default_TaskDefinitionParameter",
-          "workProductDefinitionRef": "e2e-artifact.operations-record",
-          "direction": "out",
-          "optional": false
-        }
-      ],
-      "coverageGroups": [],
-      "steps": [
-        "Replenish the ready queue at the defined cadence and pull only when WIP capacity exists.",
-        "Manage item age, blocked work, service-level expectations, and reserved operational capacity; preempt only under the explicit expedite policy.",
-        "Review WIP, throughput, cycle time, work-item age, SLE attainment, interrupt demand, and expedite/preemption frequency without ranking individuals."
-      ],
-      "entryCriteria": [],
-      "exitCriteria": ["Replenish, pull, and manage operational flow evidence is recorded"],
-      "validationRules": [
-        "A team does not start ordinary operational work beyond its WIP limit",
-        "The expedite lane has at most one active item unless the method profile records an exceptional incident command policy"
-      ],
-      "progressEvidence": "Replenish, pull, and manage operational flow decision, evidence links, owner, and status are recorded",
-      "paletteFocus": [],
-      "metamodelBindings": [],
-      "sourceProcesses": ["end-to-end"],
-      "sourceVariants": []
-    },
-    {
-      "id": "task.e2e.ph3.st3.t1",
-      "type": "TaskDefinition",
-      "name": "Assess and propagate a change",
-      "purpose": "Assess and propagate a change",
-      "performerRoleRefs": ["role.delivery-lead"],
-      "inputWorkProductRefs": [
-        "e2e-artifact.operational-work-item",
-        "e2e-artifact.service-flow-system",
-        "e2e-artifact.operations-record",
-        "e2e-artifact.method-profile",
-        "e2e-artifact.increment-record",
-        "e2e-artifact.product-charter",
-        "e2e-artifact.release-record"
-      ],
-      "inputSource": "declared",
-      "outputWorkProductRefs": [
-        "e2e-artifact.increment-record",
-        "e2e-artifact.operations-record",
-        "e2e-artifact.operational-work-item"
-      ],
-      "workProductParameters": [
-        {
-          "type": "Default_TaskDefinitionParameter",
-          "workProductDefinitionRef": "e2e-artifact.operational-work-item",
-          "direction": "in",
-          "optional": false
-        },
-        {
-          "type": "Default_TaskDefinitionParameter",
-          "workProductDefinitionRef": "e2e-artifact.service-flow-system",
-          "direction": "in",
-          "optional": false
-        },
-        {
-          "type": "Default_TaskDefinitionParameter",
-          "workProductDefinitionRef": "e2e-artifact.operations-record",
-          "direction": "in",
-          "optional": false
-        },
-        {
-          "type": "Default_TaskDefinitionParameter",
-          "workProductDefinitionRef": "e2e-artifact.method-profile",
-          "direction": "in",
-          "optional": false
-        },
-        {
-          "type": "Default_TaskDefinitionParameter",
-          "workProductDefinitionRef": "e2e-artifact.increment-record",
-          "direction": "in",
-          "optional": false
-        },
-        {
-          "type": "Default_TaskDefinitionParameter",
-          "workProductDefinitionRef": "e2e-artifact.product-charter",
-          "direction": "in",
-          "optional": false
-        },
-        {
-          "type": "Default_TaskDefinitionParameter",
-          "workProductDefinitionRef": "e2e-artifact.release-record",
-          "direction": "in",
-          "optional": false
-        },
-        {
-          "type": "Default_TaskDefinitionParameter",
-          "workProductDefinitionRef": "e2e-artifact.increment-record",
-          "direction": "out",
-          "optional": false
-        },
-        {
-          "type": "Default_TaskDefinitionParameter",
-          "workProductDefinitionRef": "e2e-artifact.operations-record",
-          "direction": "out",
-          "optional": false
-        },
-        {
-          "type": "Default_TaskDefinitionParameter",
-          "workProductDefinitionRef": "e2e-artifact.operational-work-item",
-          "direction": "out",
-          "optional": false
-        }
-      ],
-      "coverageGroups": [],
-      "steps": [
-        "Classify the authoritative source as product/domain, architecture, platform, generator, artifact, or operations and confirm whether the item stays in operational flow or enters a planned release.",
-        "Use traces and dependency ownership to identify impacted downstream levels and teams.",
-        "Re-enter the smallest affected process stage, regenerate or redeploy through applicable release controls, and reconcile emergency downstream fixes into the authoritative source."
-      ],
-      "entryCriteria": [],
-      "exitCriteria": ["Assess and propagate a change evidence is recorded"],
-      "validationRules": [
-        "The change record identifies source revision, impacted levels, downstream evidence, acceptance decision, and operational-item disposition"
-      ],
-      "progressEvidence": "Assess and propagate a change decision, evidence links, owner, and status are recorded",
-      "paletteFocus": [],
-      "metamodelBindings": [],
-      "sourceProcesses": ["end-to-end"],
-      "sourceVariants": []
-    },
-    {
-      "id": "task.e2e.ph3.st4.t1",
-      "type": "TaskDefinition",
-      "name": "Inspect flow, quality, and coordination metrics",
-      "purpose": "Inspect flow, quality, and coordination metrics",
-      "performerRoleRefs": ["role.process-reviewer"],
-      "inputWorkProductRefs": [
-        "e2e-artifact.operational-work-item",
-        "e2e-artifact.service-flow-system",
-        "e2e-artifact.increment-record",
-        "e2e-artifact.operations-record",
-        "e2e-artifact.product-charter",
-        "e2e-artifact.method-profile",
-        "e2e-artifact.release-record"
-      ],
-      "inputSource": "declared",
-      "outputWorkProductRefs": [
-        "e2e-artifact.operations-record",
-        "e2e-artifact.method-profile",
-        "e2e-artifact.service-flow-system"
-      ],
-      "workProductParameters": [
-        {
-          "type": "Default_TaskDefinitionParameter",
-          "workProductDefinitionRef": "e2e-artifact.operational-work-item",
-          "direction": "in",
-          "optional": false
-        },
-        {
-          "type": "Default_TaskDefinitionParameter",
-          "workProductDefinitionRef": "e2e-artifact.service-flow-system",
-          "direction": "in",
-          "optional": false
-        },
-        {
-          "type": "Default_TaskDefinitionParameter",
-          "workProductDefinitionRef": "e2e-artifact.increment-record",
-          "direction": "in",
-          "optional": false
-        },
-        {
-          "type": "Default_TaskDefinitionParameter",
-          "workProductDefinitionRef": "e2e-artifact.operations-record",
-          "direction": "in",
-          "optional": false
-        },
-        {
-          "type": "Default_TaskDefinitionParameter",
-          "workProductDefinitionRef": "e2e-artifact.product-charter",
-          "direction": "in",
-          "optional": false
-        },
-        {
-          "type": "Default_TaskDefinitionParameter",
-          "workProductDefinitionRef": "e2e-artifact.method-profile",
-          "direction": "in",
-          "optional": false
-        },
-        {
-          "type": "Default_TaskDefinitionParameter",
-          "workProductDefinitionRef": "e2e-artifact.release-record",
-          "direction": "in",
-          "optional": false
-        },
-        {
-          "type": "Default_TaskDefinitionParameter",
-          "workProductDefinitionRef": "e2e-artifact.operations-record",
-          "direction": "out",
-          "optional": false
-        },
-        {
-          "type": "Default_TaskDefinitionParameter",
-          "workProductDefinitionRef": "e2e-artifact.method-profile",
-          "direction": "out",
-          "optional": false
-        },
-        {
-          "type": "Default_TaskDefinitionParameter",
-          "workProductDefinitionRef": "e2e-artifact.service-flow-system",
-          "direction": "out",
-          "optional": false
-        }
-      ],
-      "coverageGroups": [],
-      "steps": [
-        "Review planned-delivery forecast, WIP, throughput, cycle time, work-item age, SLE attainment, interrupt demand, expedite/preemption frequency, rework, trace coverage, blockers, dependency age, escaped defects, and product outcomes.",
-        "Look for systemic queues, starvation between planned and operational work, missing work products, invalid gates, and coordination failures.",
-        "Approve bounded process changes and record their expected effect."
-      ],
-      "entryCriteria": [],
-      "exitCriteria": ["Inspect flow, quality, and coordination metrics evidence is recorded"],
-      "validationRules": [
-        "Metrics lead to inspectable improvement experiments rather than individual performance rankings"
-      ],
-      "progressEvidence": "Inspect flow, quality, and coordination metrics decision, evidence links, owner, and status are recorded",
-      "paletteFocus": [],
-      "metamodelBindings": [],
-      "sourceProcesses": ["end-to-end"],
-      "sourceVariants": []
-    },
-    {
-      "id": "task.e2e.ph4.st1.t1",
       "type": "TaskDefinition",
       "name": "Approve retirement scope and plan",
       "purpose": "Approve retirement scope and plan",
@@ -4972,7 +4641,7 @@
       "sourceVariants": []
     },
     {
-      "id": "task.e2e.ph4.st2.t1",
+      "id": "task.e2e.ph2.st2.t1",
       "type": "TaskDefinition",
       "name": "Execute migration and data disposition",
       "purpose": "Execute migration and data disposition",
@@ -5033,7 +4702,7 @@
       "sourceVariants": []
     },
     {
-      "id": "task.e2e.ph4.st2.t2",
+      "id": "task.e2e.ph2.st2.t2",
       "type": "TaskDefinition",
       "name": "Decommission service and access",
       "purpose": "Decommission service and access",
@@ -5080,7 +4749,7 @@
       ],
       "coverageGroups": [],
       "steps": [
-        "Disable traffic, scheduled work, credentials, access paths, alerts, and environments in the approved order.",
+        "Continue required operational coverage during migration, then disable traffic, scheduled work, credentials, access paths, alerts, and environments in the approved order.",
         "Verify replacement ownership and customer communication.",
         "Retain required source, model, trace, release, incident, and decision records."
       ],
@@ -5096,7 +4765,7 @@
       "sourceVariants": []
     },
     {
-      "id": "task.e2e.ph4.st3.t1",
+      "id": "task.e2e.ph2.st3.t1",
       "type": "TaskDefinition",
       "name": "Complete closure review",
       "purpose": "Complete closure review",
@@ -5173,6 +4842,338 @@
         "Closure identifies retained evidence, unresolved obligations, and accountable custodians"
       ],
       "progressEvidence": "Complete closure review decision, evidence links, owner, and status are recorded",
+      "paletteFocus": [],
+      "metamodelBindings": [],
+      "sourceProcesses": ["end-to-end"],
+      "sourceVariants": []
+    },
+    {
+      "id": "task.e2e.rel.a1.t1",
+      "type": "TaskDefinition",
+      "name": "Assemble the release candidate",
+      "purpose": "Assemble the release candidate",
+      "performerRoleRefs": ["role.release-engineer"],
+      "inputWorkProductRefs": [
+        "e2e-artifact.increment-record",
+        "e2e-artifact.product-charter",
+        "e2e-artifact.method-profile",
+        "e2e-artifact.team-topology"
+      ],
+      "inputSource": "declared",
+      "outputWorkProductRefs": ["e2e-artifact.release-record"],
+      "workProductParameters": [
+        {
+          "type": "Default_TaskDefinitionParameter",
+          "workProductDefinitionRef": "e2e-artifact.increment-record",
+          "direction": "in",
+          "optional": false
+        },
+        {
+          "type": "Default_TaskDefinitionParameter",
+          "workProductDefinitionRef": "e2e-artifact.product-charter",
+          "direction": "in",
+          "optional": false
+        },
+        {
+          "type": "Default_TaskDefinitionParameter",
+          "workProductDefinitionRef": "e2e-artifact.method-profile",
+          "direction": "in",
+          "optional": false
+        },
+        {
+          "type": "Default_TaskDefinitionParameter",
+          "workProductDefinitionRef": "e2e-artifact.team-topology",
+          "direction": "in",
+          "optional": false
+        },
+        {
+          "type": "Default_TaskDefinitionParameter",
+          "workProductDefinitionRef": "e2e-artifact.release-record",
+          "direction": "out",
+          "optional": false
+        }
+      ],
+      "coverageGroups": [],
+      "steps": [
+        "Select accepted increments and compatible model/artifact revisions.",
+        "Resolve cross-team dependency and compatibility checks.",
+        "Create the release record with exact inputs and promotion sequence."
+      ],
+      "entryCriteria": [],
+      "exitCriteria": ["Assemble the release candidate evidence is recorded"],
+      "validationRules": [
+        "Every release scope item maps to an accepted increment and exact artifact identity"
+      ],
+      "progressEvidence": "Assemble the release candidate decision, evidence links, owner, and status are recorded",
+      "paletteFocus": [],
+      "metamodelBindings": [],
+      "sourceProcesses": ["end-to-end"],
+      "sourceVariants": []
+    },
+    {
+      "id": "task.e2e.rel.a1.t2",
+      "type": "TaskDefinition",
+      "name": "Review release evidence and go/no-go criteria",
+      "purpose": "Review release evidence and go/no-go criteria",
+      "performerRoleRefs": ["role.process-reviewer"],
+      "inputWorkProductRefs": [
+        "e2e-artifact.release-record",
+        "e2e-artifact.increment-record",
+        "e2e-artifact.product-charter",
+        "e2e-artifact.method-profile"
+      ],
+      "inputSource": "declared",
+      "outputWorkProductRefs": ["e2e-artifact.release-record"],
+      "workProductParameters": [
+        {
+          "type": "Default_TaskDefinitionParameter",
+          "workProductDefinitionRef": "e2e-artifact.release-record",
+          "direction": "in",
+          "optional": false
+        },
+        {
+          "type": "Default_TaskDefinitionParameter",
+          "workProductDefinitionRef": "e2e-artifact.increment-record",
+          "direction": "in",
+          "optional": false
+        },
+        {
+          "type": "Default_TaskDefinitionParameter",
+          "workProductDefinitionRef": "e2e-artifact.product-charter",
+          "direction": "in",
+          "optional": false
+        },
+        {
+          "type": "Default_TaskDefinitionParameter",
+          "workProductDefinitionRef": "e2e-artifact.method-profile",
+          "direction": "in",
+          "optional": false
+        },
+        {
+          "type": "Default_TaskDefinitionParameter",
+          "workProductDefinitionRef": "e2e-artifact.release-record",
+          "direction": "out",
+          "optional": false
+        }
+      ],
+      "coverageGroups": [],
+      "steps": [
+        "Inspect readiness assessments, validation results, security exceptions, rollback plan, operational runbooks, and approvals.",
+        "Confirm open blockers are zero or explicitly accepted under the tailored method profile.",
+        "Record the go/no-go decision and decision owners."
+      ],
+      "entryCriteria": [],
+      "exitCriteria": ["Review release evidence and go/no-go criteria evidence is recorded"],
+      "validationRules": ["Go/no-go is evidence-based and not inferred from task completion"],
+      "progressEvidence": "Review release evidence and go/no-go criteria decision, evidence links, owner, and status are recorded",
+      "paletteFocus": [],
+      "metamodelBindings": [],
+      "sourceProcesses": ["end-to-end"],
+      "sourceVariants": []
+    },
+    {
+      "id": "task.e2e.rel.a2.t1",
+      "type": "TaskDefinition",
+      "name": "Deploy and validate progressively",
+      "purpose": "Deploy and validate progressively",
+      "performerRoleRefs": ["role.release-engineer"],
+      "inputWorkProductRefs": [
+        "e2e-artifact.release-record",
+        "e2e-artifact.product-charter",
+        "e2e-artifact.method-profile",
+        "e2e-artifact.team-topology"
+      ],
+      "inputSource": "declared",
+      "outputWorkProductRefs": ["e2e-artifact.release-record"],
+      "workProductParameters": [
+        {
+          "type": "Default_TaskDefinitionParameter",
+          "workProductDefinitionRef": "e2e-artifact.release-record",
+          "direction": "in",
+          "optional": false
+        },
+        {
+          "type": "Default_TaskDefinitionParameter",
+          "workProductDefinitionRef": "e2e-artifact.product-charter",
+          "direction": "in",
+          "optional": false
+        },
+        {
+          "type": "Default_TaskDefinitionParameter",
+          "workProductDefinitionRef": "e2e-artifact.method-profile",
+          "direction": "in",
+          "optional": false
+        },
+        {
+          "type": "Default_TaskDefinitionParameter",
+          "workProductDefinitionRef": "e2e-artifact.team-topology",
+          "direction": "in",
+          "optional": false
+        },
+        {
+          "type": "Default_TaskDefinitionParameter",
+          "workProductDefinitionRef": "e2e-artifact.release-record",
+          "direction": "out",
+          "optional": false
+        }
+      ],
+      "coverageGroups": [],
+      "steps": [
+        "Deploy the exact candidate to the approved environment sequence.",
+        "Run smoke, functional, security, data, observability, and compatibility checks.",
+        "Compare observed outcomes with release acceptance signals and stop or roll back on threshold breach."
+      ],
+      "entryCriteria": [],
+      "exitCriteria": ["Deploy and validate progressively evidence is recorded"],
+      "validationRules": [
+        "Promotion evidence identifies candidate, environment, timestamp, operator, and observed result"
+      ],
+      "progressEvidence": "Deploy and validate progressively decision, evidence links, owner, and status are recorded",
+      "paletteFocus": [],
+      "metamodelBindings": [],
+      "sourceProcesses": ["end-to-end"],
+      "sourceVariants": []
+    },
+    {
+      "id": "task.e2e.rel.a2.t2",
+      "type": "TaskDefinition",
+      "name": "Complete handover and rollback rehearsal",
+      "purpose": "Complete handover and rollback rehearsal",
+      "performerRoleRefs": ["role.service-owner"],
+      "inputWorkProductRefs": [
+        "e2e-artifact.release-record",
+        "e2e-artifact.product-charter",
+        "e2e-artifact.method-profile",
+        "e2e-artifact.team-topology"
+      ],
+      "inputSource": "declared",
+      "outputWorkProductRefs": ["e2e-artifact.release-record", "e2e-artifact.operations-record"],
+      "workProductParameters": [
+        {
+          "type": "Default_TaskDefinitionParameter",
+          "workProductDefinitionRef": "e2e-artifact.release-record",
+          "direction": "in",
+          "optional": false
+        },
+        {
+          "type": "Default_TaskDefinitionParameter",
+          "workProductDefinitionRef": "e2e-artifact.product-charter",
+          "direction": "in",
+          "optional": false
+        },
+        {
+          "type": "Default_TaskDefinitionParameter",
+          "workProductDefinitionRef": "e2e-artifact.method-profile",
+          "direction": "in",
+          "optional": false
+        },
+        {
+          "type": "Default_TaskDefinitionParameter",
+          "workProductDefinitionRef": "e2e-artifact.team-topology",
+          "direction": "in",
+          "optional": false
+        },
+        {
+          "type": "Default_TaskDefinitionParameter",
+          "workProductDefinitionRef": "e2e-artifact.release-record",
+          "direction": "out",
+          "optional": false
+        },
+        {
+          "type": "Default_TaskDefinitionParameter",
+          "workProductDefinitionRef": "e2e-artifact.operations-record",
+          "direction": "out",
+          "optional": false
+        }
+      ],
+      "coverageGroups": [],
+      "steps": [
+        "Verify dashboards, alerts, runbooks, escalation paths, support ownership, and recovery access.",
+        "Confirm rollback and data-recovery actions are usable for the release.",
+        "Accept operational ownership or return the release to rework."
+      ],
+      "entryCriteria": [],
+      "exitCriteria": ["Complete handover and rollback rehearsal evidence is recorded"],
+      "validationRules": [
+        "Operational acceptance names an accountable service owner and recovery evidence"
+      ],
+      "progressEvidence": "Complete handover and rollback rehearsal decision, evidence links, owner, and status are recorded",
+      "paletteFocus": [],
+      "metamodelBindings": [],
+      "sourceProcesses": ["end-to-end"],
+      "sourceVariants": []
+    },
+    {
+      "id": "task.e2e.rel.a3.t1",
+      "type": "TaskDefinition",
+      "name": "Review release outcome and update roadmap",
+      "purpose": "Review release outcome and update roadmap",
+      "performerRoleRefs": ["role.product-owner"],
+      "inputWorkProductRefs": [
+        "e2e-artifact.release-record",
+        "e2e-artifact.operations-record",
+        "e2e-artifact.product-charter",
+        "e2e-artifact.increment-record",
+        "e2e-artifact.method-profile"
+      ],
+      "inputSource": "declared",
+      "outputWorkProductRefs": ["e2e-artifact.release-record", "e2e-artifact.product-charter"],
+      "workProductParameters": [
+        {
+          "type": "Default_TaskDefinitionParameter",
+          "workProductDefinitionRef": "e2e-artifact.release-record",
+          "direction": "in",
+          "optional": false
+        },
+        {
+          "type": "Default_TaskDefinitionParameter",
+          "workProductDefinitionRef": "e2e-artifact.operations-record",
+          "direction": "in",
+          "optional": false
+        },
+        {
+          "type": "Default_TaskDefinitionParameter",
+          "workProductDefinitionRef": "e2e-artifact.product-charter",
+          "direction": "in",
+          "optional": false
+        },
+        {
+          "type": "Default_TaskDefinitionParameter",
+          "workProductDefinitionRef": "e2e-artifact.increment-record",
+          "direction": "in",
+          "optional": false
+        },
+        {
+          "type": "Default_TaskDefinitionParameter",
+          "workProductDefinitionRef": "e2e-artifact.method-profile",
+          "direction": "in",
+          "optional": false
+        },
+        {
+          "type": "Default_TaskDefinitionParameter",
+          "workProductDefinitionRef": "e2e-artifact.release-record",
+          "direction": "out",
+          "optional": false
+        },
+        {
+          "type": "Default_TaskDefinitionParameter",
+          "workProductDefinitionRef": "e2e-artifact.product-charter",
+          "direction": "out",
+          "optional": false
+        }
+      ],
+      "coverageGroups": [],
+      "steps": [
+        "Compare product and operational outcomes with the release hypothesis.",
+        "Accept outcomes, revise priorities, and create follow-up increments for gaps.",
+        "Record decisions and changes to scope, measures, and assumptions."
+      ],
+      "entryCriteria": [],
+      "exitCriteria": ["Review release outcome and update roadmap evidence is recorded"],
+      "validationRules": [
+        "Outcome learning changes a backlog, product decision, or explicitly confirms the hypothesis"
+      ],
+      "progressEvidence": "Review release outcome and update roadmap decision, evidence links, owner, and status are recorded",
       "paletteFocus": [],
       "metamodelBindings": [],
       "sourceProcesses": ["end-to-end"],
@@ -11812,8 +11813,8 @@
       "id": "e2e-artifact.operational-work-item",
       "type": "WorkProductDefinition",
       "workProductKind": "Artifact",
-      "name": "Operational Work Item",
-      "description": "An unplanned production demand item with source, maintenance purpose, emergency-temporary status, service class, severity, owner, service-level expectation, state, age, evidence, and disposition.",
+      "name": "Service Work Item",
+      "description": "A production, maintenance, service, or improvement demand item with source, maintenance purpose where applicable, emergency-temporary status, class of service, severity, owner, service-level expectation, state, age, evidence, and disposition.",
       "sourceProcesses": ["end-to-end"],
       "sourceVariants": []
     },
@@ -11857,8 +11858,8 @@
       "id": "e2e-artifact.service-flow-system",
       "type": "WorkProductDefinition",
       "workProductKind": "Artifact",
-      "name": "Operations Flow Policy and Board",
-      "description": "The explicit pull-system policy: workflow states, WIP limits, service classes, service-level expectations, capacity policy, metrics, and visible board.",
+      "name": "Kanban Service-Delivery Policy and Board",
+      "description": "The explicit Definition of Workflow and visible Kanban board: requested/ready/started/finished points, workflow states, WIP controls, classes of service, service-level expectations, replenishment and review cadences, capacity policy, and flow metrics.",
       "sourceProcesses": ["end-to-end"],
       "sourceVariants": []
     },
@@ -12278,7 +12279,7 @@
       "type": "WorkProductDefinition",
       "methodWorkProductId": "WP-30",
       "workProductKind": "Artifact",
-      "name": "Operational Work Item",
+      "name": "Service Work Item",
       "description": "Demand source, affected service, maintenance purpose, emergency-temporary status, service class, severity, owner, SLE, state, age, evidence, authoritative re-entry point, and disposition.",
       "sourceProcesses": ["engineered-core"],
       "sourceVariants": []
@@ -12288,8 +12289,8 @@
       "type": "WorkProductDefinition",
       "methodWorkProductId": "WP-31",
       "workProductKind": "Artifact",
-      "name": "Operations Flow Policy and Board",
-      "description": "Workflow states, WIP limits, pull and replenishment rules, service classes, SLEs, capacity policy, emergency preemption, reconciliation rules, board, and flow measures.",
+      "name": "Kanban Service-Delivery Policy and Board",
+      "description": "Kanban board states and start/finish points, WIP controls, pull and replenishment rules, classes of service, SLEs, capacity and expedite policies, reconciliation rules, feedback cadences, and flow measures.",
       "sourceProcesses": ["engineered-core"],
       "sourceVariants": []
     },
@@ -12638,7 +12639,12 @@
       "workProducts": ["WP-01", "WP-04", "WP-07"],
       "selection": "required per increment",
       "requirements": ["MR-LC-03", "MR-RE-01", "MR-RE-03", "MR-MG-02"],
-      "references": ["MDASP Planning and Management", "Ramsin-Paige PR5/PR7"],
+      "references": [
+        "MDASP Planning and Management",
+        "Ramsin-Paige PR5/PR7",
+        "IBM RUP distinction between lifecycle phases and contained iterations",
+        "PMI Disciplined Agile continuous-delivery product lifecycle"
+      ],
       "sourceProcesses": ["engineered-fragments"],
       "sourceVariants": []
     },
@@ -12820,7 +12826,14 @@
       "workProducts": ["WP-21", "WP-22", "WP-23", "WP-24"],
       "selection": "required; deployment strategy varies",
       "requirements": ["MR-SL-15", "MR-MG-04", "MR-MG-05"],
-      "references": ["MDASP Deployment", "Deljouyi Transition", "Eidi deployment criteria"],
+      "references": [
+        "MDASP Deployment",
+        "Deljouyi Transition",
+        "Eidi deployment criteria",
+        "PMI Disciplined Agile continuous-delivery lifecycle: transition as a regular activity",
+        "DORA continuous delivery",
+        "AWS Serverless Lens deployment approaches"
+      ],
       "sourceProcesses": ["engineered-fragments"],
       "sourceVariants": []
     },
@@ -12878,20 +12891,55 @@
     {
       "id": "guidance.fragment.mf-18",
       "type": "Guidance",
-      "name": "MF-18 — Interrupt-driven operations and maintenance flow",
+      "name": "MF-18 — Kanban service-delivery and maintenance system",
       "guidanceKind": "Process Pattern",
-      "description": "Unpredictable production demand competes with planned delivery, while emergency speed can bypass model, trace, and release controls and create permanent divergence. Result: Operational demand is classified, pulled within capacity, resolved or routed, measured, and reconciled with authoritative sources and release evidence.",
+      "description": "Production, maintenance, and improvement demand competes with planned delivery, while invisible queues or emergency speed can bypass model, trace, and release controls and create permanent divergence. Result: Service demand is visualized on a Kanban board, made ready and pulled within WIP controls, resolved or routed, measured, and reconciled with authoritative sources and release evidence.",
       "sourcePatternId": "MF-18",
       "initialContext": "A production service, an accepted operating baseline, service ownership, observability, and an explicit flow policy exist.",
-      "resultContext": "Operational demand is classified, pulled within capacity, resolved or routed, measured, and reconciled with authoritative sources and release evidence.",
+      "resultContext": "Service demand is visualized on a Kanban board, made ready and pulled within WIP controls, resolved or routed, measured, and reconciled with authoritative sources and release evidence.",
       "roles": ["R-05", "R-10", "R-11", "R-12", "R-13", "R-14"],
       "workProducts": ["WP-25", "WP-26", "WP-27", "WP-30", "WP-31"],
       "selection": "required whenever MODRISS operates a production service; policy depth and support coverage are tailored",
       "requirements": ["MR-LC-08", "MR-LC-09", "MR-LC-10", "MR-MG-08", "MR-SL-16"],
       "references": [
-        "Kanban Guide 2025 Definition of Workflow and active management",
+        "Kanban Guide 2025 Definition of Workflow, WIP control, SLE, and flow metrics",
+        "PMI Disciplined Agile Lean lifecycle, flow guidance, and value-stream optimization",
+        "Ahmad et al. 2018 systematic mapping of Kanban in software engineering",
         "SWEBOK v4.0a maintenance categories and emergency maintenance",
         "AWS Serverless Lens operational excellence"
+      ],
+      "sourceProcesses": ["engineered-fragments"],
+      "sourceVariants": []
+    },
+    {
+      "id": "guidance.fragment.mf-19",
+      "type": "Guidance",
+      "name": "MF-19 — DevOps cross-process coordination",
+      "guidanceKind": "Process Pattern",
+      "description": "Development and operations can optimize locally while release readiness, production feedback, change ownership, and retirement obligations fall between processes. Result: G7 handover, CI/CD evidence, telemetry, incident and maintenance change routing, learning, and G8 closure synchronize the two processes without merging their control systems.",
+      "sourcePatternId": "MF-19",
+      "initialContext": "Development and Delivery and Operations and Maintenance have named owners and a shared product boundary.",
+      "resultContext": "G7 handover, CI/CD evidence, telemetry, incident and maintenance change routing, learning, and G8 closure synchronize the two processes without merging their control systems.",
+      "roles": ["R-02", "R-04", "R-10", "R-11", "R-12", "R-13", "R-14", "R-15"],
+      "workProducts": [
+        "WP-20",
+        "WP-21",
+        "WP-22",
+        "WP-23",
+        "WP-24",
+        "WP-25",
+        "WP-26",
+        "WP-27",
+        "WP-29",
+        "WP-30",
+        "WP-31"
+      ],
+      "selection": "required whenever a live release is operated",
+      "requirements": ["MR-LC-07", "MR-LC-08", "MR-LC-11", "MR-MG-04", "MR-MG-05", "MR-SL-16"],
+      "references": [
+        "PMI Disciplined DevOps",
+        "ISO/IEC/IEEE 12207:2026 concurrent lifecycle processes",
+        "Faustino et al. 2022 DevOps and IT service-management evidence"
       ],
       "sourceProcesses": ["engineered-fragments"],
       "sourceVariants": []
@@ -13035,10 +13083,10 @@
   "processComponents": [
     {
       "id": "modriss.end-to-end.modeling",
-      "name": "Full Software Lifecycle with CIM → PIM → PSM",
+      "name": "Integrated Product Lifecycle: Development/Delivery + Operations/Maintenance",
       "sourceProcess": "end-to-end",
-      "phaseCount": 5,
-      "workSequenceCount": 37,
+      "phaseCount": 3,
+      "workSequenceCount": 34,
       "repeatableActivities": [
         {
           "id": "modriss.end-to-end.modeling.iteration",
@@ -13060,31 +13108,40 @@
         {
           "id": "modriss.end-to-end.release-cycle",
           "type": "Activity",
-          "activityKind": "LifecycleLoop",
-          "name": "Active Product Release Cycle",
-          "isRepeatable": true,
-          "activityRefs": ["e2e.ph1", "e2e.ph2", "e2e.ph3"],
-          "repeatCondition": "retirement-not-authorized",
-          "exitCondition": "retirement-authorized",
-          "guidance": "While the product remains active, planned release work and interrupt-driven operational work proceed as connected but separately controlled flows; an accepted baseline remains in operation while a later release is engineered."
-        },
-        {
-          "id": "modriss.end-to-end.maintenance-flow",
-          "type": "Activity",
-          "activityKind": "KanbanFlow",
-          "name": "Interrupt-Driven Operations and Maintenance Flow",
+          "activityKind": "Iteration",
+          "name": "Continuous Delivery Release Cycle",
           "isRepeatable": true,
           "activityRefs": [
-            "e2e.ph3.st1",
-            "e2e.ph3.st2a",
-            "e2e.ph3.st2",
-            "e2e.ph3.st3",
-            "e2e.ph3.st4"
+            "e2e.p0.increment-planning",
+            "e2e.p1.cim-modeling",
+            "e2e.p2.cim-to-pim",
+            "e2e.p3.pim-refinement",
+            "e2e.p4.pim-to-psm",
+            "e2e.p5.psm-refinement",
+            "e2e.p6.m2t-generation",
+            "e2e.p7.artifact-completion",
+            "e2e.rel.a1",
+            "e2e.rel.a2",
+            "e2e.rel.a3"
           ],
-          "repeatCondition": "service-operational-and-retirement-not-authorized",
+          "repeatCondition": "next-release-selected-and-retirement-not-authorized",
           "exitCondition": "retirement-authorized",
+          "guidance": "Repeat delivery Activities—not Phases—for each selected release inside the single Active Product Construction and Evolution Phase. Operations and Maintenance independently sustains accepted live baselines."
+        },
+        {
+          "id": "modriss.end-to-end.service-delivery-flow",
+          "type": "Activity",
+          "activityKind": "KanbanFlow",
+          "name": "Continuous Kanban Service-Delivery and Maintenance System",
+          "isRepeatable": true,
+          "isOngoing": true,
+          "isEventDriven": true,
+          "processComponentRef": "modriss.operations-maintenance",
+          "activityRefs": ["e2e.ops.a1", "e2e.ops.a2", "e2e.ops.a3", "e2e.ops.a4", "e2e.ops.a5"],
+          "repeatCondition": "at-least-one-live-release-and-G8-not-accepted",
+          "exitCondition": "G8-lifecycle-closed-and-no-live-release-remains",
           "flowControl": "pull-with-explicit-WIP-limits-and-service-level-expectations",
-          "guidance": "Production demand is captured when it emerges, classified by maintenance purpose, emergency-temporary status, and service class, and pulled only with capacity. Operations-only work may complete in this flow; product changes use the shortest safe MDE path and applicable release controls; broad changes enter a planned release."
+          "guidance": "Production, maintenance, and improvement demand is visualized on the service Kanban board, made ready through explicit policies, and pulled only within WIP controls. Operations-only work may complete in this system; bounded product changes use the shortest safe MDE path and applicable release controls; broader changes are deliberately committed to a planned release."
         }
       ]
     },

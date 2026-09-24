@@ -2,17 +2,18 @@
 
 The Platform-Specific Model (PSM) binds the PIM to AWS resources and deployment configuration. The
 language covers SAM stacks, IAM, Lambda, API Gateway, DynamoDB, messaging, EventBridge, Step
-Functions, and observability. The AWS PSM process defines six phases for new AWS PSM work and for refinement
-after PIM-to-PSM transformation. Activities and task uses make up each phase; metamodel bindings show
+Functions, and observability. Each model-driven increment invokes six ordered stages for new AWS PSM
+work and for refinement after PIM-to-PSM transformation; they are not product-lifecycle phases.
+Substages and task uses make up each stage; metamodel bindings show
 which AWS PSM classes a task covers, while its process work products are tracked separately.
 
 Treat resources created by PIM-to-PSM transformation as a draft deployment model. Review the AWS
-mapping and refine the slice before generation. The phase order provides a working path. Return to an
-earlier phase when review finds a wiring or deployment gap.
+mapping and refine the slice before generation. The stage order provides a working path. Return to an
+earlier stage when review finds a wiring or deployment gap.
 
-## PSM Phases
+## PSM Stages
 
-| Phase     | Name                          | In engine | Stages (summary)                                                                 |
+| Stage     | Name                          | In engine | Substages (summary)                                                              |
 | --------- | ----------------------------- | --------- | -------------------------------------------------------------------------------- |
 | `psm.ph1` | Deployment & Slice Framing    | ✓         | Deployable Slice Planning, Account & Stage, Stack Scaffolding, Security Baseline |
 | `psm.ph2` | Network & Identity            | ✓         | Networking, Identity (Cognito)                                                   |
@@ -25,19 +26,19 @@ earlier phase when review finds a wiring or deployment gap.
 
 | Role                        | Responsibility in PSM                                                        |
 | --------------------------- | ---------------------------------------------------------------------------- |
-| **Cloud Platform Engineer** | Engine phases: deployable-slice framing, AWS stacks, resources, integrations |
+| **Cloud Platform Engineer** | Engine stages: deployable-slice framing, AWS stacks, resources, integrations |
 | **Process Reviewer**        | Readiness cycle: integration views, trace closure, EVL gate                  |
 
-## Phase Flow
+## Stage Flow
 
 ```mermaid
 flowchart TD
-  PH1["Phase 1, Deployment & Slice Framing"]
-  PH2["Phase 2, Network & Identity"]
-  PH3["Phase 3, Storage & Messaging"]
-  PH4["Phase 4, Event Fabric & Compute"]
-  PH5["Phase 5, API & Orchestration"]
-  PH6["Phase 6, Integration Views & Readiness"]
+  PH1["Stage 1, Deployment & Slice Framing"]
+  PH2["Stage 2, Network & Identity"]
+  PH3["Stage 3, Storage & Messaging"]
+  PH4["Stage 4, Event Fabric & Compute"]
+  PH5["Stage 5, API & Orchestration"]
+  PH6["Stage 6, Integration Views & Readiness"]
 
   PH1 --> PH2 --> PH3 --> PH4 --> PH5 --> PH6
   PH6 -->|EVL pass| GATE["M2T artifact generation"]
@@ -50,7 +51,7 @@ flowchart TD
 
 ## Task Catalog
 
-Process `modriss.psm.modeling` · 6 phases · 28 TaskUses / TaskDefinitions · PSM metamodel coverage enforced in CI.
+Process `modriss.psm.modeling` · 6 stages · 28 TaskUses / TaskDefinitions · PSM metamodel coverage enforced in CI.
 
 ### Deployment & Slice Framing (`psm.ph1`)
 
@@ -58,11 +59,11 @@ Frame the current deployable slice and establish or refresh AWS account, stack, 
 
 **Runs:** in engine cycle · **Role:** Cloud Platform Engineer
 
-**Phase entry:**
+**Stage entry:**
 
 - PIM transform complete, prior PSM increment selected, or greenfield PSM
 
-**Phase exit:**
+**Stage exit:**
 
 - AWS root and stage strategy configured
 - Deployable-slice objective and deployment definition of done are agreed
@@ -311,11 +312,11 @@ Configure VPC networking and Cognito identity resources aligned to PIM auth mode
 
 **Runs:** in engine cycle · **Role:** Cloud Platform Engineer
 
-**Phase entry:**
+**Stage entry:**
 
 - Deployment & Slice Framing complete
 
-**Phase exit:**
+**Stage exit:**
 
 - Network posture defined for workloads
 - Identity resources match PIM auth model
@@ -442,11 +443,11 @@ Provision durable storage and messaging resources matching PIM data and event ch
 
 **Runs:** in engine cycle · **Role:** Cloud Platform Engineer
 
-**Phase entry:**
+**Stage entry:**
 
 - Network & Identity complete
 
-**Phase exit:**
+**Stage exit:**
 
 - Durable stores match PIM data model
 - Messaging matches PIM event channels
@@ -591,11 +592,11 @@ Configure EventBridge fabric and deploy Lambda compute matching PIM functions.
 
 **Runs:** in engine cycle · **Role:** Cloud Platform Engineer
 
-**Phase entry:**
+**Stage entry:**
 
 - Storage & Messaging complete for slice
 
-**Phase exit:**
+**Stage exit:**
 
 - Event fabric matches PIM integration
 - Compute matches PIM functions
@@ -758,11 +759,11 @@ Configure API Gateway exposure and Step Functions workflows with observability.
 
 **Runs:** in engine cycle · **Role:** Cloud Platform Engineer
 
-**Phase entry:**
+**Stage entry:**
 
 - Event Fabric & Compute complete for slice
 
-**Phase exit:**
+**Stage exit:**
 
 - API Gateway matches PIM APIs
 - Workflows and observability complete
@@ -964,11 +965,11 @@ Create integration relationship views, close traceability, and pass PSM EVL gate
 
 **Runs:** in engine cycle · **Role:** Process Reviewer
 
-**Phase entry:**
+**Stage entry:**
 
 - API & Orchestration complete for slice
 
-**Phase exit:**
+**Stage exit:**
 
 - PSM EVL passes
 - Readiness gate approved

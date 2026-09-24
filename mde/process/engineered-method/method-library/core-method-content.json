@@ -293,7 +293,7 @@
         "type": "WorkProductDefinition",
         "methodWorkProductId": "WP-30",
         "workProductKind": "Artifact",
-        "name": "Operational Work Item",
+        "name": "Service Work Item",
         "description": "Demand source, affected service, maintenance purpose, emergency-temporary status, service class, severity, owner, SLE, state, age, evidence, authoritative re-entry point, and disposition."
       },
       {
@@ -301,8 +301,8 @@
         "type": "WorkProductDefinition",
         "methodWorkProductId": "WP-31",
         "workProductKind": "Artifact",
-        "name": "Operations Flow Policy and Board",
-        "description": "Workflow states, WIP limits, pull and replenishment rules, service classes, SLEs, capacity policy, emergency preemption, reconciliation rules, board, and flow measures."
+        "name": "Kanban Service-Delivery Policy and Board",
+        "description": "Kanban board states and start/finish points, WIP controls, pull and replenishment rules, classes of service, SLEs, capacity and expedite policies, reconciliation rules, feedback cadences, and flow measures."
       }
     ],
     "guidance": []

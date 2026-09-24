@@ -6,26 +6,22 @@ Use `modriss-lifecycle-manuscript.svg` as the main development-process figure.
 
 Suggested caption:
 
-> **The MODRISS full-lifecycle software development process.** The five phases
-> organize opportunity and situational tailoring, iterative model-driven
-> delivery, release and transition, operation and evolution, and retirement.
-> Each phase answers a governing question, performs defined work, produces
-> reviewable evidence, and yields a primary lifecycle output. Solid arrows show
-> progression; dashed arrows show evidence-driven re-entry and organizational
-> learning. Management, risk, quality, security/privacy, configuration/change,
-> traceability, FinOps, knowledge, measurement, and team dependencies continue
-> across the lifecycle.
+> **The MODRISS integrated product lifecycle.** Development and Delivery uses
+> three one-time sequential phases for inception, the active product life, and
+> retirement. Model-driven increments and release activities repeat within the
+> active-product phase. The distinct ongoing, event-driven Operations and Maintenance Process
+> sustains live releases through Kanban. G7 handover, telemetry/change feedback,
+> retirement, and G8 synchronize the lanes; the DevOps rail names their shared
+> integration responsibilities.
 
 Suggested in-text interpretation:
 
-> The phases are not a waterfall. Phase 1 repeats for thin vertical increments;
-> releases can contain several accepted increments; operational findings return
-> through one of three explicit dispositions; and retirement is governed as a
-> release with explicit closure evidence. After G7, the accepted release stays
-> in operation while a later release may be engineered through Phases 1–3. The
-> dashed Phase 3-to-Phase 1 path denotes only selected bounded or planned
-> release work; operations-only demand remains in Phase 3. Phase 4 is entered
-> only after an explicit retirement decision.
+> Each phase occurs once and in sequence; the release iteration repeats
+> activities inside Phase 1. After G7, Operations and Maintenance continues for the accepted
+> baseline while another release may be engineered. Product-changing service
+> work returns to the earliest authoritative source; operations-only work stays
+> on the Kanban board. Phase 2 begins only after retirement is authorized, and
+> operations ends only when G8 confirms that no live release remains.
 
 ## Operational pull-flow detail
 
@@ -34,7 +30,7 @@ demand coexists with planned releases.
 
 Suggested caption:
 
-> **The MODRISS interrupt-driven operations and maintenance flow.** Production
+> **The MODRISS Kanban service-delivery and maintenance system.** Service
 > demand is captured as WP-30, classified along three independent axes, and
 > replenished and pulled under the WP-31 Definition of Workflow. Verification
 > precedes one accepted disposition: operations-only closure, the shortest safe
@@ -56,7 +52,7 @@ Suggested caption:
 > Gates G2–G5 accept exact revisions; generated output remains a draft until
 > reviewed, and findings are routed to the earliest authoritative source.
 
-## Alternative phase-oriented lifecycle figure
+## Alternative lifecycle figure
 
 Use `modriss-lifecycle-2.svg` when a conventional process
 overview, with a large nested construction phase, is preferable to the
@@ -64,14 +60,10 @@ semantic-slot presentation of the primary figure.
 
 Suggested caption:
 
-> **Phase-oriented view of the MODRISS full-lifecycle process.** Initiation and
-> situational tailoring establish the development setting. Iterative model-
-> driven delivery then refines a bounded increment through CIM, PIM, and AWS
-> PSM models, generates implementation and deployment artifacts, and verifies
-> the resulting software. Accepted increments enter release and transition,
-> operation and evolution, and eventual retirement. Dashed paths denote
-> iteration, selected next-release work, and evidence-driven re-entry; the lower rail identifies continuous
-> management and engineering disciplines that apply throughout the lifecycle.
+> **Coordinated-process view of MODRISS.** Development and Delivery creates and
+> retires releases through sequential phases; Operations and Maintenance
+> sustains each live baseline using event-driven Kanban flow. DevOps practices
+> provide the cross-process interface.
 
 ## Typesetting
 

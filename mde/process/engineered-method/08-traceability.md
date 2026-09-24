@@ -13,18 +13,18 @@ such as PIM refinement realizes several requirements at once.
 
 ## Requirement-to-fragment trace
 
-| Requirement family                                                       | Primary fragments                       | Process phases        |
-| ------------------------------------------------------------------------ | --------------------------------------- | --------------------- |
-| Full lifecycle and gates (`MR-LC-*`)                                     | MF-01, MF-03, MF-04, MF-13–MF-18, UF-01 | 0–4                   |
-| Requirements and user involvement (`MR-RE-*`)                            | MF-04–MF-06, MF-15–MF-16                | 0, 1, 3               |
-| MDE boundaries, transformation, synchronization, validation (`MR-MDE-*`) | MF-05–MF-12, UF-01                      | 1 and continuous      |
-| Serverless exploration (`MR-SL-01`–`04`)                                 | MF-01–MF-03                             | 0, revisited at 1/2/3 |
-| Serverless modeling/design/security (`MR-SL-05`–`12`)                    | MF-05, MF-08–MF-10                      | 1                     |
-| Generation, testing, deployment (`MR-SL-13`–`15`)                        | MF-11–MF-14                             | 1–2                   |
-| Observability, cold start, feedback, lock-in (`MR-SL-16`–`18`)           | MF-02, MF-08, MF-10, MF-13–MF-16, MF-18 | 0–3                   |
-| Planned/interrupt flow and maintenance (`MR-LC-08`–`10`, `MR-MG-08`)     | MF-16, MF-18, UF-01                     | 3 and continuous      |
-| Management and scale (`MR-MG-*`)                                         | MF-03–MF-04, MF-13–MF-18, UF-01         | continuous            |
-| Usability/configurability (`MR-Q-*`)                                     | MF-03, all documented components, UF-01 | method-wide           |
+| Requirement family                                                                                          | Primary fragments                       | Process location                                                     |
+| ----------------------------------------------------------------------------------------------------------- | --------------------------------------- | -------------------------------------------------------------------- |
+| Full lifecycle and gates (`MR-LC-*`)                                                                        | MF-01, MF-03, MF-04, MF-13–MF-19, UF-01 | Phases 0–2 plus Operations and Maintenance                           |
+| Requirements and user involvement (`MR-RE-*`)                                                               | MF-04–MF-06, MF-15–MF-16                | Phases 0–2 and service feedback                                      |
+| MDE boundaries, transformation, synchronization, validation (`MR-MDE-*`)                                    | MF-05–MF-12, UF-01                      | 1 and continuous                                                     |
+| Serverless exploration (`MR-SL-01`–`04`)                                                                    | MF-01–MF-03                             | Phase 0, revisited in Phase 1 and retirement                         |
+| Serverless modeling/design/security (`MR-SL-05`–`12`)                                                       | MF-05, MF-08–MF-10                      | 1                                                                    |
+| Generation, testing, deployment (`MR-SL-13`–`15`)                                                           | MF-11–MF-14                             | Repeatable activities in Phase 1                                     |
+| Observability, cold start, feedback, lock-in (`MR-SL-16`–`18`)                                              | MF-02, MF-08, MF-10, MF-13–MF-16, MF-18 | Phases 0–2 and Operations and Maintenance                            |
+| Planned delivery/Kanban service flow, maintenance, and DevOps synchronization (`MR-LC-08`–`11`, `MR-MG-08`) | MF-16, MF-18, MF-19, UF-01              | Phase 1, Phase 2, and the ongoing Operations and Maintenance Process |
+| Management and scale (`MR-MG-*`)                                                                            | MF-03–MF-04, MF-13–MF-18, UF-01         | continuous                                                           |
+| Usability/configurability (`MR-Q-*`)                                                                        | MF-03, all documented components, UF-01 | method-wide                                                          |
 
 Detailed requirement arrays are stored on every entry in
 `method-library/method-fragments.json`.
@@ -51,7 +51,7 @@ Detailed requirement arrays are stored on every entry in
 | Artifact completion/readiness          | `mde/process/process-definitions/artifact.json` (16 TaskDefinitions)                                                                                              |
 | Integrated executable process          | `mde/process/process-definitions/end-to-end.json`                                                                                                                 |
 | Nested lifecycle and release semantics | `mde/process/engineered-method/spem/lifecycle.puml`, `release-cycle.puml`, and generated conditional `WorkSequence` elements in `modriss-method-library.spem.xml` |
-| Interrupt-driven maintenance semantics | `processEngine.maintenanceFlow` in `end-to-end.json`, WP-30/WP-31, MF-18, and `templates/operations-flow-policy.md`                                               |
+| Kanban service-delivery semantics      | `processEngine.serviceDeliveryFlow` in `end-to-end.json`, WP-30/WP-31, MF-18, and `templates/operations-flow-policy.md`                                           |
 | Human modeling guidance                | `docs/public-docs/docs/guides/{cim,pim,psm,end-to-end}-modeling-methodology.md`                                                                                   |
 | Operations/release guidance            | `docs/devops-sre/` and public operations documentation                                                                                                            |
 

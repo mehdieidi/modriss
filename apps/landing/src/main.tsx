@@ -202,39 +202,37 @@ function App() {
           <h2 id="process-title">A development process for engineering and evolving software in the serverless paradigm</h2>
         </div>
         <div className="process-summary">
-          <p>MODRISS is not a single pass. A product lifecycle contains repeated releases; each release assembles one or more small vertical increments. The accepted baseline stays live while later releases are engineered.</p>
-          <p>Planned release work and unpredictable production demand use connected but distinct controls: release/increment planning for the former, and explicit pull, WIP, service-class, and service-level policies for the latter. The process is tailorable, evidence-gated, and represented with SPEM 2.0 concepts.</p>
+          <p>MODRISS is not a single pass. Its three lifecycle phases occur once and in sequence. Inside the active-product phase, repeated release iterations assemble one or more small vertical increments while the accepted baseline remains live.</p>
+          <p>The integrated lifecycle coordinates two processes: sequential, phase-based Development and Delivery, and ongoing, event-driven Operations and Maintenance. DevOps practices connect them through CI/CD, operational readiness, telemetry, change routing, and shared learning.</p>
           <a className="text-link" href={processDocsUrl}>Study the full lifecycle process <Icon name="arrow" size={15} /></a>
         </div>
       </div>
 
       <figure className="process-figure" aria-labelledby="process-map-title process-map-caption">
         <div className="process-map-heading">
-          <div><span>Nested process cycles</span><h3 id="process-map-title">Cycles within the lifecycle</h3></div>
-          <p>Each smaller cycle runs inside the one above it.</p>
+          <div><span>Integrated lifecycle</span><h3 id="process-map-title">Two processes, one product lifecycle</h3></div>
+          <p>Development delivers releases while operations sustains the live baseline.</p>
         </div>
 
-        <div className="lifecycle-cycle" aria-label="A product lifecycle begins once, contains repeating release cycles made of increments, and ends only after retirement is authorized">
+        <div className="lifecycle-cycle" aria-label="Development proceeds through sequential phases while an ongoing Operations and Maintenance process sustains live releases">
           <article className="lifecycle-boundary lifecycle-start">
             <span>Phase 0 · once</span>
-            <h4>Initiate &amp; tailor</h4>
+            <h4>Inception &amp; tailor</h4>
             <small>G0 · G1</small>
           </article>
 
           <i className="lifecycle-flow" aria-hidden="true">→</i>
 
           <div className="active-lifecycle-stack">
-            <div className="release-card-back release-card-back-far" aria-hidden="true" />
-            <div className="release-card-back release-card-back-near" aria-hidden="true" />
-            <section className="active-lifecycle" aria-label="Repeating active product lifecycle">
+            <section className="active-lifecycle" aria-label="One-time active product phase containing repeatable delivery activities">
               <header className="active-lifecycle-heading">
-                <div><span>Active product lifecycle</span><b>Release n</b></div>
-                <small>repeats until retirement</small>
+                <div><span>Phase 1 · once</span><b>Active product life</b></div>
+                <small>Activities and iterations repeat · phases do not</small>
               </header>
 
               <div className="release-cycle">
                 <section className="increment-zone">
-                  <header><span>Phase 1</span><b>1+ increments</b></header>
+                  <header><span>Iteration</span><b>1+ increments</b></header>
                   <div className="increment-stack">
                     <div className="increment-card-back increment-card-back-far" aria-hidden="true" />
                     <div className="increment-card-back increment-card-back-near" aria-hidden="true" />
@@ -250,37 +248,60 @@ function App() {
                 <i className="cycle-flow" aria-hidden="true">→</i>
 
                 <article className="release-node">
-                  <span>Phase 2</span>
-                  <h4>Qualify &amp; release</h4>
+                  <span>Release activities</span>
+                  <h4>Qualify, promote &amp; hand over</h4>
                   <div><b>Candidate</b><i aria-hidden="true">→</i><b>Promote</b></div>
                   <small>G6 · G7</small>
                 </article>
 
-                <i className="cycle-flow" aria-hidden="true">→</i>
-
-                <article className="release-node operate-node">
-                  <span>Phase 3</span>
-                  <h4>Operate, pull &amp; learn</h4>
-                  <div><b>WIP</b><b>SLE</b><b>SLOs</b><b>Risk</b></div>
-                  <small>interrupt-driven · baseline stays live</small>
-                </article>
               </div>
 
-              <div className="release-return"><span aria-hidden="true">↶</span><b>Evidence</b><i aria-hidden="true">→</i><strong>Release n+1</strong></div>
+              <div className="release-return"><span aria-hidden="true">↶</span><b>Outcome evidence</b><i aria-hidden="true">→</i><strong>Next release iteration</strong></div>
             </section>
           </div>
 
           <i className="lifecycle-flow lifecycle-exit-flow" aria-hidden="true">→</i>
 
           <article className="lifecycle-boundary lifecycle-end">
-            <span>Phase 4 · when authorized</span>
+            <span>Phase 2 · once authorized</span>
             <h4>Retire &amp; close</h4>
             <small>G8</small>
           </article>
         </div>
 
+        <div className="devops-interface" aria-label="DevOps coordination between the two processes">
+          <b>DevOps</b>
+          <div className="devops-channels">
+            <span><i aria-hidden="true">↓</i>G7 release</span>
+            <span><i aria-hidden="true">↑</i>Feedback</span>
+            <span><i aria-hidden="true">↕</i>Retirement</span>
+          </div>
+        </div>
+
+        <article className="operations-process" aria-label="Distinct concurrent Operations and Maintenance process with Kanban pull flow">
+          <header>
+            <span>Concurrent process · not a phase</span>
+            <h4>Operations &amp; Maintenance</h4>
+            <div className="live-baseline"><i aria-hidden="true" />Live baseline</div>
+          </header>
+          <div className="operations-mechanism">
+            <div className="kanban-label"><b>Kanban pull</b><span>WIP + SLE</span></div>
+            <ol className="kanban-mini" aria-label="Requested, Ready, Doing, Verify, Done">
+              <li><span>Requested</span></li>
+              <li><span>Ready</span></li>
+              <li><span>Doing</span><small>2/2</small></li>
+              <li><span>Verify</span><small>1/2</small></li>
+              <li><span>Done</span></li>
+            </ol>
+            <div className="operations-routes">
+              <span><i aria-hidden="true">↺</i>Runbook</span>
+              <span><i aria-hidden="true">↑</i>Product change</span>
+            </div>
+          </div>
+        </article>
+
         <div className="discipline-rail"><b>Continuous disciplines</b><span>Management · risk · quality · security · change · traceability · FinOps · learning</span></div>
-        <figcaption id="process-map-caption">One lifecycle contains many planned releases and a concurrent operational pull flow. Each release contains one or more increments; production demand is handled when it emerges and routed back through authoritative sources when change is required.</figcaption>
+        <figcaption id="process-map-caption">Three one-time sequential Development and Delivery phases coexist with a distinct ongoing, event-driven Operations and Maintenance process. Release iterations repeat only inside Phase 1. DevOps interfaces carry G7 handover, CI/CD evidence, telemetry, maintenance change, learning, and retirement coordination between the processes; both close at G8.</figcaption>
       </figure>
     </section>
 

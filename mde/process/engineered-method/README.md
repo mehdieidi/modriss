@@ -71,14 +71,18 @@ the integrated lifecycle. This package provides the missing academic argument:
 why the lifecycle has this structure, which method fragments it reuses, which
 situational factors control it, and how it is evaluated.
 
-The full lifecycle contains a repeatable release cycle rather than one terminal
-release. G7 establishes the currently accepted operating baseline. While that
-baseline continues to run, planned increments use the release engine and
-unpredictable production demand uses a distinct pull-controlled maintenance
-flow. Operations-only work can finish there; model/product changes take the
-shortest safe MDE and release path; broader changes are explicitly committed to
-a later release. Phase 4 is reached only through an explicit retirement
-decision. The detailed views and synchronization rules are indexed in
+The integrated lifecycle coordinates two process components. Development and
+Delivery uses three one-time sequential phases: inception, the active product
+life, and retirement. Model-driven iterations and release activities repeat
+inside the active-product phase; phases never repeat.
+Operations and Maintenance begins at the first G7 handover and is explicitly
+ongoing and event-driven. Its Kanban system controls production and maintenance
+demand while later releases are engineered. DevOps interfaces connect CI/CD,
+operational readiness, telemetry, product-changing service work, and learning.
+Operations-only work can finish there; model/product changes take the shortest
+safe MDE and release path; broader changes are committed to a later release.
+Development Phase 2 begins only through an explicit retirement decision, and
+both processes finish at G8. The detailed views and synchronization rules are indexed in
 [`spem/diagram-catalog.md`](spem/diagram-catalog.md).
 
 The assistant-validation boundary remains unchanged. Assistant-generated model

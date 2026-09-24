@@ -30,24 +30,26 @@ should remain semantically equivalent to `lifecycle.puml`.
 
 ## Release semantics
 
-Three nested cycles and one concurrent service flow are deliberately separated:
+Two coordinated processes and their nested cadences are deliberately separated:
 
-1. The product/service lifecycle runs from Phase 0 to an authorized Phase 4.
-2. The release cycle repeats Phases 1–3 while the product remains active.
+1. Development and Delivery has three one-time sequential phases, from Phase 0
+   through the active-product Phase 1 to an authorized retirement Phase 2.
+2. The release cycle is an Iteration of construction, qualification,
+   promotion, handover, and review Activities inside Phase 1; no phase repeats.
 3. The increment cycle repeats inside Phase 1 until the candidate has the
    accepted scope for a release.
-4. The Phase 3 operational flow continuously captures and pulls unpredictable
+4. The ongoing, event-driven Operations and Maintenance Process continuously captures and pulls unpredictable
    production demand under WIP and service-level policies while the accepted
    baseline runs and planned delivery may proceed.
 
 G7 accepts an operating baseline; it does not end the lifecycle. A later
 release begins only after explicit selection, by forming a new hypothesis and
-returning to Phase 1, normally
+returning to Phase 1 increment planning, normally
 while the accepted release continues to serve users. A rejected candidate or
 failed promotion also returns to Phase 1 for correction at the earliest
-authoritative source. Operations-only items loop within Phase 3 and do not
-create releases. Only an explicit retirement authorization routes Phase 3 to
-Phase 4.
+authoritative source. Operations-only items loop within the operations process
+and do not create releases. Explicit retirement synchronizes Operations and
+Maintenance with Development Phase 2; both terminate at G8.
 
 ## Why there is not one diagram per task
 

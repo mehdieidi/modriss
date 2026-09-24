@@ -1,66 +1,29 @@
-@startuml end-to-end-process
-title End-to-End Lifecycle and Nested SPEM-Mapped Iterations
+@startuml
+title MODRISS End-to-End Process — Development/Delivery + Operations/Maintenance
+skinparam backgroundColor #F5F3ED
 start
-
-partition "e2e.ph0 — Initiate / Tailor / Organize" {
-  :Product and system intent;
-  :Serverless suitability and provider decision;
-  :Situational method profile, team topology\nand assurance baseline;
-}
-
-repeat
-  :Open release cycle\n(outcome hypothesis + candidate scope);
-
+|Development and Delivery|
+:e2e.ph0 — Phase 0: Inception, Tailoring & Organization;
+fork
+  :e2e.ph1 — Phase 1: Active Product Construction & Evolution;
   repeat
-    repeat
-      partition "e2e.ph1 — Iterative-Incremental Delivery" {
-        :e2e.p0 — Frame increment;
-        :e2e.p1 — CIM child process and G2;
-        :e2e.p2/p3 — CIM→PIM ETL, reconcile, PIM and G3;
-        :e2e.p4/p5 — PIM→PSM ETL, reconcile, AWS PSM and G4;
-        :e2e.p6/p7 — EGL/EGX generation, artifact readiness and G5;
-      }
-    repeat while (More increments required for candidate?) is (yes)
-    -> no;
-
-    partition "e2e.ph2 — Release Assembly & Qualification" {
-      :e2e.ph2.st1 — Assemble immutable candidate;
-      :Review release evidence and recovery posture at G6;
-    }
-  repeat while (G6 candidate rejected?) is (yes — re-enter e2e.ph1)
-  -> no — authorized;
-
-  partition "e2e.ph2 — Progressive Promotion & Transition" {
-    :e2e.ph2.st2 — Promote, observe and stop/rollback on breach;
-    if (Promotion and operational acceptance succeed?) then (G7 yes)
-      :e2e.ph2.st3 — Handover, release review and G7;
-    else (no)
-      :Stop or roll back; retain the last accepted baseline;
-      :Queue corrective work for the next e2e.ph1 pass;
-    endif
-  }
-
-  partition "e2e.ph3 — Operate / Evolve / Learn" {
-    :e2e.ph3.st1 — Operate and observe accepted baseline;
-    :e2e.ph3.st2a — Capture, classify, replenish and pull\nWP-30 work under the WP-31 Definition of Workflow;
-    :e2e.ph3.st2 — Incident, problem and risk response;
-    :e2e.ph3.st3 — Dispose as operations-only, bounded MDE/release,\nor explicit planned-release commitment;
-    :e2e.ph3.st4 — Product and method retrospective;
-    note right
-      The accepted baseline continues while planned delivery
-      proceeds. Pull is controlled by WIP limits and SLEs;
-      operations-only work does not start a release.
-    end note
-  }
-
-repeat while (Retirement authorized?) is (no — selected next release)
--> yes;
-
-partition "e2e.ph4 — Retire / Migrate / Close" {
-  :e2e.ph4.st1 — Retirement decision and plan;
-  :e2e.ph4.st2 — Migrate and decommission;
-  :e2e.ph4.st3 — Closure and organizational learning at G8;
-}
-
+    :e2e.p0..p7 — Model-driven increment activities;
+    :e2e.rel.a1..a3 — Release and transition activities;
+    :G7 sends accepted release to Operations and Maintenance;
+  repeat while (Next release selected and retirement not authorized?) is (next release)
+  :e2e.ph2 — Phase 2: Retire, Migrate & Close;
+fork again
+  |Operations and Maintenance|
+  repeat
+    :e2e.ops.a1 — Operate and Observe;
+    :e2e.ops.a2 — Kanban Service-Delivery;
+    :e2e.ops.a3 — Incident, Problem and Risk Response;
+    :e2e.ops.a4 — Maintenance Change and Reconciliation;
+    :e2e.ops.a5 — Service and Process Improvement;
+    note right: The accepted baseline remains in operation\nwhile later releases are developed.
+  repeat while (Any live release remains?) is (yes)
+end fork
+|Development and Delivery|
+:G8 closes both processes;
 stop
 @enduml

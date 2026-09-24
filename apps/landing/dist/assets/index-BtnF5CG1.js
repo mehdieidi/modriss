@@ -12035,10 +12035,10 @@ function ie() {
                 className: `process-summary`,
                 children: [
                   (0, g.jsx)(`p`, {
-                    children: `MODRISS is not a single pass. A product lifecycle contains repeated releases; each release assembles one or more small vertical increments. The accepted baseline stays live while later releases are engineered.`,
+                    children: `MODRISS is not a single pass. Its three lifecycle phases occur once and in sequence. Inside the active-product phase, repeated release iterations assemble one or more small vertical increments while the accepted baseline remains live.`,
                   }),
                   (0, g.jsx)(`p`, {
-                    children: `Planned release work and unpredictable production demand use connected but distinct controls: release/increment planning for the former, and explicit pull, WIP, service-class, and service-level policies for the latter. The process is tailorable, evidence-gated, and represented with SPEM 2.0 concepts.`,
+                    children: `The integrated lifecycle coordinates two processes: sequential, phase-based Development and Delivery, and ongoing, event-driven Operations and Maintenance. DevOps practices connect them through CI/CD, operational readiness, telemetry, change routing, and shared learning.`,
                   }),
                   (0, g.jsxs)(`a`, {
                     className: `text-link`,
@@ -12061,25 +12061,27 @@ function ie() {
                 children: [
                   (0, g.jsxs)(`div`, {
                     children: [
-                      (0, g.jsx)(`span`, { children: `Nested process cycles` }),
+                      (0, g.jsx)(`span`, { children: `Integrated lifecycle` }),
                       (0, g.jsx)(`h3`, {
                         id: `process-map-title`,
-                        children: `Cycles within the lifecycle`,
+                        children: `Two processes, one product lifecycle`,
                       }),
                     ],
                   }),
-                  (0, g.jsx)(`p`, { children: `Each smaller cycle runs inside the one above it.` }),
+                  (0, g.jsx)(`p`, {
+                    children: `Development delivers releases while operations sustains the live baseline.`,
+                  }),
                 ],
               }),
               (0, g.jsxs)(`div`, {
                 className: `lifecycle-cycle`,
-                "aria-label": `A product lifecycle begins once, contains repeating release cycles made of increments, and ends only after retirement is authorized`,
+                "aria-label": `Development proceeds through sequential phases while an ongoing Operations and Maintenance process sustains live releases`,
                 children: [
                   (0, g.jsxs)(`article`, {
                     className: `lifecycle-boundary lifecycle-start`,
                     children: [
                       (0, g.jsx)(`span`, { children: `Phase 0 · once` }),
-                      (0, g.jsx)(`h4`, { children: `Initiate & tailor` }),
+                      (0, g.jsx)(`h4`, { children: `Inception & tailor` }),
                       (0, g.jsx)(`small`, { children: `G0 · G1` }),
                     ],
                   }),
@@ -12088,152 +12090,119 @@ function ie() {
                     "aria-hidden": `true`,
                     children: `→`,
                   }),
-                  (0, g.jsxs)(`div`, {
+                  (0, g.jsx)(`div`, {
                     className: `active-lifecycle-stack`,
-                    children: [
-                      (0, g.jsx)(`div`, {
-                        className: `release-card-back release-card-back-far`,
-                        "aria-hidden": `true`,
-                      }),
-                      (0, g.jsx)(`div`, {
-                        className: `release-card-back release-card-back-near`,
-                        "aria-hidden": `true`,
-                      }),
-                      (0, g.jsxs)(`section`, {
-                        className: `active-lifecycle`,
-                        "aria-label": `Repeating active product lifecycle`,
-                        children: [
-                          (0, g.jsxs)(`header`, {
-                            className: `active-lifecycle-heading`,
-                            children: [
-                              (0, g.jsxs)(`div`, {
-                                children: [
-                                  (0, g.jsx)(`span`, { children: `Active product lifecycle` }),
-                                  (0, g.jsx)(`b`, { children: `Release n` }),
-                                ],
-                              }),
-                              (0, g.jsx)(`small`, { children: `repeats until retirement` }),
-                            ],
-                          }),
-                          (0, g.jsxs)(`div`, {
-                            className: `release-cycle`,
-                            children: [
-                              (0, g.jsxs)(`section`, {
-                                className: `increment-zone`,
-                                children: [
-                                  (0, g.jsxs)(`header`, {
-                                    children: [
-                                      (0, g.jsx)(`span`, { children: `Phase 1` }),
-                                      (0, g.jsx)(`b`, { children: `1+ increments` }),
-                                    ],
-                                  }),
-                                  (0, g.jsxs)(`div`, {
-                                    className: `increment-stack`,
-                                    children: [
-                                      (0, g.jsx)(`div`, {
-                                        className: `increment-card-back increment-card-back-far`,
-                                        "aria-hidden": `true`,
-                                      }),
-                                      (0, g.jsx)(`div`, {
-                                        className: `increment-card-back increment-card-back-near`,
-                                        "aria-hidden": `true`,
-                                      }),
-                                      (0, g.jsxs)(`article`, {
-                                        className: `increment-card`,
-                                        children: [
-                                          (0, g.jsxs)(`div`, {
-                                            children: [
-                                              (0, g.jsx)(`b`, { children: `Increment k` }),
-                                              (0, g.jsx)(`span`, {
-                                                children: `one valuable slice`,
-                                              }),
-                                            ],
-                                          }),
-                                          (0, g.jsxs)(`ol`, {
-                                            "aria-label": `Model-driven path through one increment`,
-                                            children: [
-                                              (0, g.jsx)(`li`, { children: `CIM` }),
-                                              (0, g.jsx)(`li`, { children: `PIM` }),
-                                              (0, g.jsx)(`li`, { children: `PSM` }),
-                                              (0, g.jsx)(`li`, { children: `Artifacts` }),
-                                            ],
-                                          }),
-                                          (0, g.jsxs)(`small`, {
-                                            children: [
-                                              (0, g.jsx)(`span`, {
-                                                "aria-hidden": `true`,
-                                                children: `↻`,
-                                              }),
-                                              ` review · rework · accept`,
-                                            ],
-                                          }),
-                                        ],
-                                      }),
-                                    ],
-                                  }),
-                                  (0, g.jsx)(`div`, {
-                                    className: `increment-gates`,
-                                    children: `G2 → G5`,
-                                  }),
-                                ],
-                              }),
-                              (0, g.jsx)(`i`, {
-                                className: `cycle-flow`,
-                                "aria-hidden": `true`,
-                                children: `→`,
-                              }),
-                              (0, g.jsxs)(`article`, {
-                                className: `release-node`,
-                                children: [
-                                  (0, g.jsx)(`span`, { children: `Phase 2` }),
-                                  (0, g.jsx)(`h4`, { children: `Qualify & release` }),
-                                  (0, g.jsxs)(`div`, {
-                                    children: [
-                                      (0, g.jsx)(`b`, { children: `Candidate` }),
-                                      (0, g.jsx)(`i`, { "aria-hidden": `true`, children: `→` }),
-                                      (0, g.jsx)(`b`, { children: `Promote` }),
-                                    ],
-                                  }),
-                                  (0, g.jsx)(`small`, { children: `G6 · G7` }),
-                                ],
-                              }),
-                              (0, g.jsx)(`i`, {
-                                className: `cycle-flow`,
-                                "aria-hidden": `true`,
-                                children: `→`,
-                              }),
-                              (0, g.jsxs)(`article`, {
-                                className: `release-node operate-node`,
-                                children: [
-                                  (0, g.jsx)(`span`, { children: `Phase 3` }),
-                                  (0, g.jsx)(`h4`, { children: `Operate, pull & learn` }),
-                                  (0, g.jsxs)(`div`, {
-                                    children: [
-                                      (0, g.jsx)(`b`, { children: `WIP` }),
-                                      (0, g.jsx)(`b`, { children: `SLE` }),
-                                      (0, g.jsx)(`b`, { children: `SLOs` }),
-                                      (0, g.jsx)(`b`, { children: `Risk` }),
-                                    ],
-                                  }),
-                                  (0, g.jsx)(`small`, {
-                                    children: `interrupt-driven · baseline stays live`,
-                                  }),
-                                ],
-                              }),
-                            ],
-                          }),
-                          (0, g.jsxs)(`div`, {
-                            className: `release-return`,
-                            children: [
-                              (0, g.jsx)(`span`, { "aria-hidden": `true`, children: `↶` }),
-                              (0, g.jsx)(`b`, { children: `Evidence` }),
-                              (0, g.jsx)(`i`, { "aria-hidden": `true`, children: `→` }),
-                              (0, g.jsx)(`strong`, { children: `Release n+1` }),
-                            ],
-                          }),
-                        ],
-                      }),
-                    ],
+                    children: (0, g.jsxs)(`section`, {
+                      className: `active-lifecycle`,
+                      "aria-label": `One-time active product phase containing repeatable delivery activities`,
+                      children: [
+                        (0, g.jsxs)(`header`, {
+                          className: `active-lifecycle-heading`,
+                          children: [
+                            (0, g.jsxs)(`div`, {
+                              children: [
+                                (0, g.jsx)(`span`, { children: `Phase 1 · once` }),
+                                (0, g.jsx)(`b`, { children: `Active product life` }),
+                              ],
+                            }),
+                            (0, g.jsx)(`small`, {
+                              children: `Activities and iterations repeat · phases do not`,
+                            }),
+                          ],
+                        }),
+                        (0, g.jsxs)(`div`, {
+                          className: `release-cycle`,
+                          children: [
+                            (0, g.jsxs)(`section`, {
+                              className: `increment-zone`,
+                              children: [
+                                (0, g.jsxs)(`header`, {
+                                  children: [
+                                    (0, g.jsx)(`span`, { children: `Iteration` }),
+                                    (0, g.jsx)(`b`, { children: `1+ increments` }),
+                                  ],
+                                }),
+                                (0, g.jsxs)(`div`, {
+                                  className: `increment-stack`,
+                                  children: [
+                                    (0, g.jsx)(`div`, {
+                                      className: `increment-card-back increment-card-back-far`,
+                                      "aria-hidden": `true`,
+                                    }),
+                                    (0, g.jsx)(`div`, {
+                                      className: `increment-card-back increment-card-back-near`,
+                                      "aria-hidden": `true`,
+                                    }),
+                                    (0, g.jsxs)(`article`, {
+                                      className: `increment-card`,
+                                      children: [
+                                        (0, g.jsxs)(`div`, {
+                                          children: [
+                                            (0, g.jsx)(`b`, { children: `Increment k` }),
+                                            (0, g.jsx)(`span`, { children: `one valuable slice` }),
+                                          ],
+                                        }),
+                                        (0, g.jsxs)(`ol`, {
+                                          "aria-label": `Model-driven path through one increment`,
+                                          children: [
+                                            (0, g.jsx)(`li`, { children: `CIM` }),
+                                            (0, g.jsx)(`li`, { children: `PIM` }),
+                                            (0, g.jsx)(`li`, { children: `PSM` }),
+                                            (0, g.jsx)(`li`, { children: `Artifacts` }),
+                                          ],
+                                        }),
+                                        (0, g.jsxs)(`small`, {
+                                          children: [
+                                            (0, g.jsx)(`span`, {
+                                              "aria-hidden": `true`,
+                                              children: `↻`,
+                                            }),
+                                            ` review · rework · accept`,
+                                          ],
+                                        }),
+                                      ],
+                                    }),
+                                  ],
+                                }),
+                                (0, g.jsx)(`div`, {
+                                  className: `increment-gates`,
+                                  children: `G2 → G5`,
+                                }),
+                              ],
+                            }),
+                            (0, g.jsx)(`i`, {
+                              className: `cycle-flow`,
+                              "aria-hidden": `true`,
+                              children: `→`,
+                            }),
+                            (0, g.jsxs)(`article`, {
+                              className: `release-node`,
+                              children: [
+                                (0, g.jsx)(`span`, { children: `Release activities` }),
+                                (0, g.jsx)(`h4`, { children: `Qualify, promote & hand over` }),
+                                (0, g.jsxs)(`div`, {
+                                  children: [
+                                    (0, g.jsx)(`b`, { children: `Candidate` }),
+                                    (0, g.jsx)(`i`, { "aria-hidden": `true`, children: `→` }),
+                                    (0, g.jsx)(`b`, { children: `Promote` }),
+                                  ],
+                                }),
+                                (0, g.jsx)(`small`, { children: `G6 · G7` }),
+                              ],
+                            }),
+                          ],
+                        }),
+                        (0, g.jsxs)(`div`, {
+                          className: `release-return`,
+                          children: [
+                            (0, g.jsx)(`span`, { "aria-hidden": `true`, children: `↶` }),
+                            (0, g.jsx)(`b`, { children: `Outcome evidence` }),
+                            (0, g.jsx)(`i`, { "aria-hidden": `true`, children: `→` }),
+                            (0, g.jsx)(`strong`, { children: `Next release iteration` }),
+                          ],
+                        }),
+                      ],
+                    }),
                   }),
                   (0, g.jsx)(`i`, {
                     className: `lifecycle-flow lifecycle-exit-flow`,
@@ -12243,9 +12212,107 @@ function ie() {
                   (0, g.jsxs)(`article`, {
                     className: `lifecycle-boundary lifecycle-end`,
                     children: [
-                      (0, g.jsx)(`span`, { children: `Phase 4 · when authorized` }),
+                      (0, g.jsx)(`span`, { children: `Phase 2 · once authorized` }),
                       (0, g.jsx)(`h4`, { children: `Retire & close` }),
                       (0, g.jsx)(`small`, { children: `G8` }),
+                    ],
+                  }),
+                ],
+              }),
+              (0, g.jsxs)(`div`, {
+                className: `devops-interface`,
+                "aria-label": `DevOps coordination between the two processes`,
+                children: [
+                  (0, g.jsx)(`b`, { children: `DevOps` }),
+                  (0, g.jsxs)(`div`, {
+                    className: `devops-channels`,
+                    children: [
+                      (0, g.jsxs)(`span`, {
+                        children: [
+                          (0, g.jsx)(`i`, { "aria-hidden": `true`, children: `↓` }),
+                          `G7 release`,
+                        ],
+                      }),
+                      (0, g.jsxs)(`span`, {
+                        children: [
+                          (0, g.jsx)(`i`, { "aria-hidden": `true`, children: `↑` }),
+                          `Feedback`,
+                        ],
+                      }),
+                      (0, g.jsxs)(`span`, {
+                        children: [
+                          (0, g.jsx)(`i`, { "aria-hidden": `true`, children: `↕` }),
+                          `Retirement`,
+                        ],
+                      }),
+                    ],
+                  }),
+                ],
+              }),
+              (0, g.jsxs)(`article`, {
+                className: `operations-process`,
+                "aria-label": `Distinct concurrent Operations and Maintenance process with Kanban pull flow`,
+                children: [
+                  (0, g.jsxs)(`header`, {
+                    children: [
+                      (0, g.jsx)(`span`, { children: `Concurrent process · not a phase` }),
+                      (0, g.jsx)(`h4`, { children: `Operations & Maintenance` }),
+                      (0, g.jsxs)(`div`, {
+                        className: `live-baseline`,
+                        children: [(0, g.jsx)(`i`, { "aria-hidden": `true` }), `Live baseline`],
+                      }),
+                    ],
+                  }),
+                  (0, g.jsxs)(`div`, {
+                    className: `operations-mechanism`,
+                    children: [
+                      (0, g.jsxs)(`div`, {
+                        className: `kanban-label`,
+                        children: [
+                          (0, g.jsx)(`b`, { children: `Kanban pull` }),
+                          (0, g.jsx)(`span`, { children: `WIP + SLE` }),
+                        ],
+                      }),
+                      (0, g.jsxs)(`ol`, {
+                        className: `kanban-mini`,
+                        "aria-label": `Requested, Ready, Doing, Verify, Done`,
+                        children: [
+                          (0, g.jsx)(`li`, {
+                            children: (0, g.jsx)(`span`, { children: `Requested` }),
+                          }),
+                          (0, g.jsx)(`li`, { children: (0, g.jsx)(`span`, { children: `Ready` }) }),
+                          (0, g.jsxs)(`li`, {
+                            children: [
+                              (0, g.jsx)(`span`, { children: `Doing` }),
+                              (0, g.jsx)(`small`, { children: `2/2` }),
+                            ],
+                          }),
+                          (0, g.jsxs)(`li`, {
+                            children: [
+                              (0, g.jsx)(`span`, { children: `Verify` }),
+                              (0, g.jsx)(`small`, { children: `1/2` }),
+                            ],
+                          }),
+                          (0, g.jsx)(`li`, { children: (0, g.jsx)(`span`, { children: `Done` }) }),
+                        ],
+                      }),
+                      (0, g.jsxs)(`div`, {
+                        className: `operations-routes`,
+                        children: [
+                          (0, g.jsxs)(`span`, {
+                            children: [
+                              (0, g.jsx)(`i`, { "aria-hidden": `true`, children: `↺` }),
+                              `Runbook`,
+                            ],
+                          }),
+                          (0, g.jsxs)(`span`, {
+                            children: [
+                              (0, g.jsx)(`i`, { "aria-hidden": `true`, children: `↑` }),
+                              `Product change`,
+                            ],
+                          }),
+                        ],
+                      }),
                     ],
                   }),
                 ],
@@ -12261,7 +12328,7 @@ function ie() {
               }),
               (0, g.jsx)(`figcaption`, {
                 id: `process-map-caption`,
-                children: `One lifecycle contains many planned releases and a concurrent operational pull flow. Each release contains one or more increments; production demand is handled when it emerges and routed back through authoritative sources when change is required.`,
+                children: `Three one-time sequential Development and Delivery phases coexist with a distinct ongoing, event-driven Operations and Maintenance process. Release iterations repeat only inside Phase 1. DevOps interfaces carry G7 handover, CI/CD evidence, telemetry, maintenance change, learning, and retirement coordination between the processes; both close at G8.`,
               }),
             ],
           }),

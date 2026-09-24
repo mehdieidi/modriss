@@ -74,26 +74,28 @@ safety-certified. Domain-specific standards and assurance cases must extend it.
 
 ## Conditional configuration packages
 
-| Package                                   | Trigger                                                                  | Adds or strengthens                                                                                                                                    |
-| ----------------------------------------- | ------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| CP-01 Multi-team scale                    | more than one independently planning team                                | bounded ownership, contract governance, dependencies, integration ownership, release coordination                                                      |
-| CP-02 Sensitive/regulated data            | confidential/restricted data or external obligation                      | privacy analysis, residency, encryption, access evidence, retention/disposition, independent review                                                    |
-| CP-03 High availability/disaster recovery | stringent SLO or recovery objective                                      | failure analysis, multi-zone/region decisions, backup/restore, failover rehearsal, chaos/fault tests                                                   |
-| CP-04 Portability/multi-cloud             | provider undecided, exit requirement, or multiple providers              | provider-neutral contracts, capability intersection, adapter boundaries, portability tests, separate PSM profiles                                      |
-| CP-05 Legacy migration                    | coexistence, strangler, replacement, or data migration                   | baseline discovery, compatibility, dual-run, reconciliation, cutover, decommissioning                                                                  |
-| CP-06 High release risk                   | irreversible data change, broad blast radius, or critical service        | independent authorization, rehearsal, canary/blue-green, extended observation, rollback/roll-forward                                                   |
-| CP-07 External suppliers                  | SaaS, partner, or managed dependency                                     | supplier responsibility, SLA/security review, sandbox/contract tests, exit and incident coordination                                                   |
-| CP-08 AI-assisted modeling                | assistant enabled                                                        | structural-only assistant gate, human review, provenance, budgets, privacy, prompt/model policy; EVL remains separate explicit validation              |
-| CP-09 Sustained operational demand        | production service has intermittent/sustained interrupts or 24×7 support | operational Kanban flow, maintenance/service classification, capacity and preemption policy, WIP/SLE tuning, on-call hand-off, service-delivery review |
+| Package                                   | Trigger                                                           | Adds or strengthens                                                                                                                              |
+| ----------------------------------------- | ----------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| CP-01 Multi-team scale                    | more than one independently planning team                         | bounded ownership, contract governance, dependencies, integration ownership, release coordination                                                |
+| CP-02 Sensitive/regulated data            | confidential/restricted data or external obligation               | privacy analysis, residency, encryption, access evidence, retention/disposition, independent review                                              |
+| CP-03 High availability/disaster recovery | stringent SLO or recovery objective                               | failure analysis, multi-zone/region decisions, backup/restore, failover rehearsal, chaos/fault tests                                             |
+| CP-04 Portability/multi-cloud             | provider undecided, exit requirement, or multiple providers       | provider-neutral contracts, capability intersection, adapter boundaries, portability tests, separate PSM profiles                                |
+| CP-05 Legacy migration                    | coexistence, strangler, replacement, or data migration            | baseline discovery, compatibility, dual-run, reconciliation, cutover, decommissioning                                                            |
+| CP-06 High release risk                   | irreversible data change, broad blast radius, or critical service | independent authorization, rehearsal, canary/blue-green, extended observation, rollback/roll-forward                                             |
+| CP-07 External suppliers                  | SaaS, partner, or managed dependency                              | supplier responsibility, SLA/security review, sandbox/contract tests, exit and incident coordination                                             |
+| CP-08 AI-assisted modeling                | assistant enabled                                                 | structural-only assistant gate, human review, provenance, budgets, privacy, prompt/model policy; EVL remains separate explicit validation        |
+| CP-09 Sustained service demand            | production service has variable demand or 24×7 support            | Kanban service flow, maintenance/service classification, capacity and expedite policy, WIP/SLE tuning, on-call hand-off, service-delivery review |
 
-## Dual-flow governance
+## Two-process and dual-control governance
 
-MODRISS uses two connected control systems. Planned product work is committed
-at release and increment horizons, then refined adaptively. Production demand
-is captured when it emerges and pulled under the Operations Flow Policy and
+MODRISS coordinates two processes with two connected control systems.
+Development and Delivery commits planned product work
+at release and increment horizons and then refines it adaptively. Production demand
+is owned by the ongoing Operations and Maintenance Process, captured when it
+emerges, and pulled under the Kanban Service-Delivery Policy and
 Board. The Product Owner orders planned value; the Service Owner owns service
-impact and urgency; the Delivery Lead protects system flow and makes capacity
-and preemption visible.
+impact and urgency; the Delivery Lead protects system flow and makes capacity,
+expedite decisions, and any displaced work visible.
 
 The Method Profile must define:
 
@@ -116,6 +118,8 @@ policy, SLE, and flow-measure requirements
 ([Kanban Guides, 2025](https://kanbanguides.org/the-kanban-guide/)). They do not
 turn maintenance into a second sprint backlog or reserve a universal percentage
 of capacity; those are situational decisions reviewed from observed demand.
+G7 handover, CI/CD evidence, telemetry and maintenance-change routing, and G8
+closure are governed as DevOps synchronization points between the processes.
 
 ## Release management
 
@@ -200,8 +204,8 @@ weighted but missing critical links cannot be averaged away.
 ### Measurement and improvement
 
 Recommended measures include outcome progress, increment flow time, planned
-release forecast, operational WIP, throughput, cycle time, work-item age, SLE
-attainment, interrupt arrival rate, expedite/preemption frequency, capacity
+release forecast, service WIP, throughput, cycle time, work-item age, SLE
+attainment, demand arrival rate, expedite frequency, displaced-work duration, capacity
 allocation and starvation signals, rework,
 escaped defects, trace closure, open blocker age, manual-decision closure,
 dependency age, deployment frequency, change failure/recovery, SLO performance,

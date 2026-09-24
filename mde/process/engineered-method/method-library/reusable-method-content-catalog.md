@@ -6,7 +6,7 @@
 
 ## Scope and notation
 
-The consolidated repository contains 17 RoleDefinitions, 134 TaskDefinitions, 92 WorkProductDefinitions, and 45 Guidance elements. Stable identifiers are shown because the delivery processes refer to these definitions through RoleUse, TaskUse, WorkProductUse, and ProcessParameter elements. “Provenance” identifies the source component from which an element was consolidated.
+The consolidated repository contains 17 RoleDefinitions, 134 TaskDefinitions, 92 WorkProductDefinitions, and 46 Guidance elements. Stable identifiers are shown because the delivery processes refer to these definitions through RoleUse, TaskUse, WorkProductUse, and ProcessParameter elements. “Provenance” identifies the source component from which an element was consolidated.
 
 ## Role definitions
 
@@ -115,6 +115,104 @@ Conceptual role mapping: `R-01`. Provenance: Engineered core content.
 ## Task definitions
 
 ### End-to-end lifecycle (32 tasks)
+
+#### Review SLOs, telemetry, and product outcomes (`task.e2e.ops.a1.t1`)
+
+Review SLOs, telemetry, and product outcomes. The task is performed by `role.service-owner`. It consumes `e2e-artifact.release-record`, `e2e-artifact.product-charter`, `e2e-artifact.operations-record`, `e2e-artifact.method-profile`, `e2e-artifact.service-flow-system` and produces or updates `e2e-artifact.operations-record`, `e2e-artifact.operational-work-item`.
+
+**Work.**
+
+- Inspect service levels, errors, cost, security signals, usage, provider events, and product outcome measures.
+- Compare observations with the service and product hypotheses.
+- Capture actionable demand as visible service work items rather than inserting hidden work into a release plan.
+
+**Exit.** Review SLOs, telemetry, and product outcomes evidence is recorded.
+
+**Checks.** Operational decisions are based on identified evidence and thresholds.
+
+#### Triage and make service demand ready (`task.e2e.ops.a2.t1`)
+
+Triage and make service demand ready. The task is performed by `role.service-owner`. It consumes `e2e-artifact.operational-work-item`, `e2e-artifact.operations-record`, `e2e-artifact.method-profile`, `e2e-artifact.service-flow-system` and produces or updates `e2e-artifact.operational-work-item`, `e2e-artifact.service-flow-system`.
+
+**Work.**
+
+- Record the demand source, impact, affected service, evidence, owner, and requested outcome on the Kanban board.
+- Where the item is maintenance, classify its purpose as corrective, preventive, adaptive, additive, or perfective; record any emergency temporary-restoration status; assign a class of service separately according to the board policy.
+- Refine the item until it meets the Ready policy and identify its likely disposition: operations-only response, the shortest safe model-driven change path, or a planned release backlog.
+
+**Exit.** Triage and make service demand ready evidence is recorded.
+
+**Checks.** Maintenance purpose, emergency-temporary status, and class of service are recorded independently. Every ready item has an accountable owner, expected outcome, evidence need, and visible disposition.
+
+#### Replenish, pull, and manage Kanban flow (`task.e2e.ops.a2.t2`)
+
+Replenish, pull, and manage Kanban flow. The task is performed by `role.delivery-lead`. It consumes `e2e-artifact.operational-work-item`, `e2e-artifact.operations-record`, `e2e-artifact.method-profile`, `e2e-artifact.service-flow-system` and produces or updates `e2e-artifact.operational-work-item`, `e2e-artifact.service-flow-system`, `e2e-artifact.operations-record`.
+
+**Work.**
+
+- At the replenishment cadence, select eligible items into Ready according to capacity, risk, class-of-service policy, and value; pull a ready item only when the downstream WIP control permits.
+- Use the board to manage work-item age, blocked work, service-level expectations, and reserved service capacity; an expedite item may displace other work only under the explicit expedite policy and must remain visible.
+- Hold a daily flow review and periodic service-delivery review using WIP, throughput, cycle time, work-item age, SLE attainment, arrival rate, blocked time, and expedite frequency; adapt the Definition of Workflow through an explicit improvement decision.
+
+**Exit.** Replenish, pull, and manage Kanban flow evidence is recorded.
+
+**Checks.** A team does not start ordinary service work beyond its WIP control. The expedite class has at most one active item unless the method profile records an exceptional incident-command policy. Requested, Ready, In Progress, Verify, and Done states and their entry/exit policies are visible on the board.
+
+#### Manage incidents and emergency recovery (`task.e2e.ops.a3.t1`)
+
+Manage incidents and emergency recovery. The task is performed by `role.service-owner`. It consumes `e2e-artifact.operational-work-item`, `e2e-artifact.service-flow-system`, `e2e-artifact.operations-record`, `e2e-artifact.release-record`, `e2e-artifact.method-profile` and produces or updates `e2e-artifact.operations-record`, `e2e-artifact.operational-work-item`.
+
+**Work.**
+
+- Triage impact, stabilize service, communicate status, and execute approved recovery actions.
+- Record incident timeline, affected scope, decisions, temporary modifications, and evidence.
+- Create permanent corrective, security, or change work for systemic causes and keep it visible after restoration.
+
+**Exit.** Manage incidents and emergency recovery evidence is recorded.
+
+**Checks.** Recovery and customer impact are recorded before closure. An emergency temporary modification is not treated as the permanent corrective change.
+
+#### Perform problem and risk learning (`task.e2e.ops.a3.t2`)
+
+Perform problem and risk learning. The task is performed by `role.quality-engineer`. It consumes `e2e-artifact.operational-work-item`, `e2e-artifact.service-flow-system`, `e2e-artifact.operations-record`, `e2e-artifact.increment-record`, `e2e-artifact.release-record`, `e2e-artifact.method-profile` and produces or updates `e2e-artifact.operations-record`, `e2e-artifact.method-profile`, `e2e-artifact.operational-work-item`.
+
+**Work.**
+
+- Analyze contributing causes across requirements, models, transformation, generation, deployment, and operation.
+- Update controls, tests, model patterns, process guidance, or method profile as appropriate.
+- Place permanent corrective work on the Kanban board or deliberately commit it to a planned release, and verify reconciliation after any emergency downstream fix.
+
+**Exit.** Perform problem and risk learning evidence is recorded.
+
+**Checks.** The corrective action is routed to the earliest responsible source rather than only patched downstream.
+
+#### Assess and route a maintenance change (`task.e2e.ops.a4.t1`)
+
+Assess and route a maintenance change. The task is performed by `role.delivery-lead`. It consumes `e2e-artifact.operational-work-item`, `e2e-artifact.service-flow-system`, `e2e-artifact.operations-record`, `e2e-artifact.method-profile`, `e2e-artifact.increment-record`, `e2e-artifact.product-charter`, `e2e-artifact.release-record` and produces or updates `e2e-artifact.increment-record`, `e2e-artifact.operations-record`, `e2e-artifact.operational-work-item`.
+
+**Work.**
+
+- Classify the authoritative source as product/domain, architecture, platform, generator, artifact, or operations and confirm whether the item remains a bounded Kanban service item or is committed to a planned release.
+- Use traces and dependency ownership to identify impacted downstream levels and teams.
+- Send product-changing work to the Development and Delivery Process at the smallest affected phase or activity; after release, reconcile emergency downstream fixes into the authoritative source and close the service item only when evidence returns.
+
+**Exit.** Assess and route a maintenance change evidence is recorded.
+
+**Checks.** The change record identifies source revision, impacted levels, downstream evidence, acceptance decision, and service-work-item disposition.
+
+#### Inspect flow, quality, and coordination metrics (`task.e2e.ops.a5.t1`)
+
+Inspect flow, quality, and coordination metrics. The task is performed by `role.process-reviewer`. It consumes `e2e-artifact.operational-work-item`, `e2e-artifact.service-flow-system`, `e2e-artifact.increment-record`, `e2e-artifact.operations-record`, `e2e-artifact.product-charter`, `e2e-artifact.method-profile`, `e2e-artifact.release-record` and produces or updates `e2e-artifact.operations-record`, `e2e-artifact.method-profile`, `e2e-artifact.service-flow-system`.
+
+**Work.**
+
+- Review planned-delivery forecast, Kanban WIP, throughput, cycle time, work-item age, SLE attainment, demand arrival rate, expedite frequency, rework, trace coverage, blockers, dependency age, escaped defects, and product outcomes.
+- Look for systemic queues, starvation between planned and service work, missing work products, invalid gates, and coordination failures.
+- Approve bounded changes to the Definition of Workflow, capacity policy, DevOps interface, or method profile and record their expected effect.
+
+**Exit.** Inspect flow, quality, and coordination metrics evidence is recorded.
+
+**Checks.** Metrics lead to inspectable improvement experiments rather than individual performance rankings.
 
 #### Plan the vertical increment (`task.e2e.p0.increment-planning.t1`)
 
@@ -333,182 +431,14 @@ Define operational and release strategy. The task is performed by `role.service-
 **Work.**
 
 - Define environments, support ownership, SLO hypotheses, observability expectations, rollback posture, and release cadence.
-- Define the operational pull system: workflow states, WIP limits, service classes, service-level expectations, capacity allocation, replenishment, and emergency preemption/reconciliation policy.
+- Define the Kanban service-delivery system: board states and start/finish points, WIP controls, classes of service, service-level expectations, capacity allocation, replenishment and review cadences, and expedite/reconciliation policy.
 - Identify data migration, compatibility, and progressive-delivery constraints and record the initial release decision policy.
 
 **Exit.** Define operational and release strategy evidence is recorded.
 
 **Checks.** The release strategy names promotion, rollback, and post-deployment validation evidence. The operational policy prevents unknown future maintenance demand from being represented as pre-scheduled tasks.
 
-#### Assemble the release candidate (`task.e2e.ph2.st1.t1`)
-
-Assemble the release candidate. The task is performed by `role.release-engineer`. It consumes `e2e-artifact.increment-record`, `e2e-artifact.product-charter`, `e2e-artifact.method-profile`, `e2e-artifact.team-topology` and produces or updates `e2e-artifact.release-record`.
-
-**Work.**
-
-- Select accepted increments and compatible model/artifact revisions.
-- Resolve cross-team dependency and compatibility checks.
-- Create the release record with exact inputs and promotion sequence.
-
-**Exit.** Assemble the release candidate evidence is recorded.
-
-**Checks.** Every release scope item maps to an accepted increment and exact artifact identity.
-
-#### Review release evidence and go/no-go criteria (`task.e2e.ph2.st1.t2`)
-
-Review release evidence and go/no-go criteria. The task is performed by `role.process-reviewer`. It consumes `e2e-artifact.release-record`, `e2e-artifact.increment-record`, `e2e-artifact.product-charter`, `e2e-artifact.method-profile` and produces or updates `e2e-artifact.release-record`.
-
-**Work.**
-
-- Inspect readiness assessments, validation results, security exceptions, rollback plan, operational runbooks, and approvals.
-- Confirm open blockers are zero or explicitly accepted under the tailored method profile.
-- Record the go/no-go decision and decision owners.
-
-**Exit.** Review release evidence and go/no-go criteria evidence is recorded.
-
-**Checks.** Go/no-go is evidence-based and not inferred from task completion.
-
-#### Deploy and validate progressively (`task.e2e.ph2.st2.t1`)
-
-Deploy and validate progressively. The task is performed by `role.release-engineer`. It consumes `e2e-artifact.release-record`, `e2e-artifact.product-charter`, `e2e-artifact.method-profile`, `e2e-artifact.team-topology` and produces or updates `e2e-artifact.release-record`.
-
-**Work.**
-
-- Deploy the exact candidate to the approved environment sequence.
-- Run smoke, functional, security, data, observability, and compatibility checks.
-- Compare observed outcomes with release acceptance signals and stop or roll back on threshold breach.
-
-**Exit.** Deploy and validate progressively evidence is recorded.
-
-**Checks.** Promotion evidence identifies candidate, environment, timestamp, operator, and observed result.
-
-#### Complete handover and rollback rehearsal (`task.e2e.ph2.st2.t2`)
-
-Complete handover and rollback rehearsal. The task is performed by `role.service-owner`. It consumes `e2e-artifact.release-record`, `e2e-artifact.product-charter`, `e2e-artifact.method-profile`, `e2e-artifact.team-topology` and produces or updates `e2e-artifact.release-record`, `e2e-artifact.operations-record`.
-
-**Work.**
-
-- Verify dashboards, alerts, runbooks, escalation paths, support ownership, and recovery access.
-- Confirm rollback and data-recovery actions are usable for the release.
-- Accept operational ownership or return the release to rework.
-
-**Exit.** Complete handover and rollback rehearsal evidence is recorded.
-
-**Checks.** Operational acceptance names an accountable service owner and recovery evidence.
-
-#### Review release outcome and update roadmap (`task.e2e.ph2.st3.t1`)
-
-Review release outcome and update roadmap. The task is performed by `role.product-owner`. It consumes `e2e-artifact.release-record`, `e2e-artifact.operations-record`, `e2e-artifact.product-charter`, `e2e-artifact.increment-record`, `e2e-artifact.method-profile` and produces or updates `e2e-artifact.release-record`, `e2e-artifact.product-charter`.
-
-**Work.**
-
-- Compare product and operational outcomes with the release hypothesis.
-- Accept outcomes, revise priorities, and create follow-up increments for gaps.
-- Record decisions and changes to scope, measures, and assumptions.
-
-**Exit.** Review release outcome and update roadmap evidence is recorded.
-
-**Checks.** Outcome learning changes a backlog, product decision, or explicitly confirms the hypothesis.
-
-#### Review SLOs, telemetry, and product outcomes (`task.e2e.ph3.st1.t1`)
-
-Review SLOs, telemetry, and product outcomes. The task is performed by `role.service-owner`. It consumes `e2e-artifact.release-record`, `e2e-artifact.product-charter`, `e2e-artifact.operations-record`, `e2e-artifact.method-profile`, `e2e-artifact.service-flow-system` and produces or updates `e2e-artifact.operations-record`, `e2e-artifact.operational-work-item`.
-
-**Work.**
-
-- Inspect service levels, errors, cost, security signals, usage, provider events, and product outcome measures.
-- Compare observations with the service and product hypotheses.
-- Capture actionable demand as operational work items rather than inserting invisible work into a release plan.
-
-**Exit.** Review SLOs, telemetry, and product outcomes evidence is recorded.
-
-**Checks.** Operational decisions are based on identified evidence and thresholds.
-
-#### Manage incidents and emergency recovery (`task.e2e.ph3.st2.t1`)
-
-Manage incidents and emergency recovery. The task is performed by `role.service-owner`. It consumes `e2e-artifact.operational-work-item`, `e2e-artifact.service-flow-system`, `e2e-artifact.operations-record`, `e2e-artifact.release-record`, `e2e-artifact.method-profile` and produces or updates `e2e-artifact.operations-record`, `e2e-artifact.operational-work-item`.
-
-**Work.**
-
-- Triage impact, stabilize service, communicate status, and execute approved recovery actions.
-- Record incident timeline, affected scope, decisions, temporary modifications, and evidence.
-- Create permanent corrective, security, or change work for systemic causes and keep it visible after restoration.
-
-**Exit.** Manage incidents and emergency recovery evidence is recorded.
-
-**Checks.** Recovery and customer impact are recorded before closure. An emergency temporary modification is not treated as the permanent corrective change.
-
-#### Perform problem and risk learning (`task.e2e.ph3.st2.t2`)
-
-Perform problem and risk learning. The task is performed by `role.quality-engineer`. It consumes `e2e-artifact.operational-work-item`, `e2e-artifact.service-flow-system`, `e2e-artifact.operations-record`, `e2e-artifact.increment-record`, `e2e-artifact.release-record`, `e2e-artifact.method-profile` and produces or updates `e2e-artifact.operations-record`, `e2e-artifact.method-profile`, `e2e-artifact.operational-work-item`.
-
-**Work.**
-
-- Analyze contributing causes across requirements, models, transformation, generation, deployment, and operation.
-- Update controls, tests, model patterns, process guidance, or method profile as appropriate.
-- Route permanent change through the operational pull system or a planned release and verify reconciliation after any emergency downstream fix.
-
-**Exit.** Perform problem and risk learning evidence is recorded.
-
-**Checks.** The corrective action is routed to the earliest responsible source rather than only patched downstream.
-
-#### Triage and classify operational demand (`task.e2e.ph3.st2a.t1`)
-
-Triage and classify operational demand. The task is performed by `role.service-owner`. It consumes `e2e-artifact.operational-work-item`, `e2e-artifact.operations-record`, `e2e-artifact.method-profile`, `e2e-artifact.service-flow-system` and produces or updates `e2e-artifact.operational-work-item`, `e2e-artifact.service-flow-system`.
-
-**Work.**
-
-- Record the demand source, impact, affected service and evidence.
-- Classify maintenance purpose as corrective, preventive, adaptive, additive, or perfective; record any emergency temporary-restoration status; classify service separately as expedite, fixed-date, standard, or risk-reduction.
-- Select an operations-only response, the shortest safe model-driven change path, or the planned release backlog.
-
-**Exit.** Triage and classify operational demand evidence is recorded.
-
-**Checks.** Maintenance purpose, emergency-temporary status, and service class are recorded independently. Every item has a visible disposition and accountable owner.
-
-#### Replenish, pull, and manage operational flow (`task.e2e.ph3.st2a.t2`)
-
-Replenish, pull, and manage operational flow. The task is performed by `role.delivery-lead`. It consumes `e2e-artifact.operational-work-item`, `e2e-artifact.operations-record`, `e2e-artifact.method-profile`, `e2e-artifact.service-flow-system` and produces or updates `e2e-artifact.operational-work-item`, `e2e-artifact.service-flow-system`, `e2e-artifact.operations-record`.
-
-**Work.**
-
-- Replenish the ready queue at the defined cadence and pull only when WIP capacity exists.
-- Manage item age, blocked work, service-level expectations, and reserved operational capacity; preempt only under the explicit expedite policy.
-- Review WIP, throughput, cycle time, work-item age, SLE attainment, interrupt demand, and expedite/preemption frequency without ranking individuals.
-
-**Exit.** Replenish, pull, and manage operational flow evidence is recorded.
-
-**Checks.** A team does not start ordinary operational work beyond its WIP limit. The expedite lane has at most one active item unless the method profile records an exceptional incident command policy.
-
-#### Assess and propagate a change (`task.e2e.ph3.st3.t1`)
-
-Assess and propagate a change. The task is performed by `role.delivery-lead`. It consumes `e2e-artifact.operational-work-item`, `e2e-artifact.service-flow-system`, `e2e-artifact.operations-record`, `e2e-artifact.method-profile`, `e2e-artifact.increment-record`, `e2e-artifact.product-charter`, `e2e-artifact.release-record` and produces or updates `e2e-artifact.increment-record`, `e2e-artifact.operations-record`, `e2e-artifact.operational-work-item`.
-
-**Work.**
-
-- Classify the authoritative source as product/domain, architecture, platform, generator, artifact, or operations and confirm whether the item stays in operational flow or enters a planned release.
-- Use traces and dependency ownership to identify impacted downstream levels and teams.
-- Re-enter the smallest affected process stage, regenerate or redeploy through applicable release controls, and reconcile emergency downstream fixes into the authoritative source.
-
-**Exit.** Assess and propagate a change evidence is recorded.
-
-**Checks.** The change record identifies source revision, impacted levels, downstream evidence, acceptance decision, and operational-item disposition.
-
-#### Inspect flow, quality, and coordination metrics (`task.e2e.ph3.st4.t1`)
-
-Inspect flow, quality, and coordination metrics. The task is performed by `role.process-reviewer`. It consumes `e2e-artifact.operational-work-item`, `e2e-artifact.service-flow-system`, `e2e-artifact.increment-record`, `e2e-artifact.operations-record`, `e2e-artifact.product-charter`, `e2e-artifact.method-profile`, `e2e-artifact.release-record` and produces or updates `e2e-artifact.operations-record`, `e2e-artifact.method-profile`, `e2e-artifact.service-flow-system`.
-
-**Work.**
-
-- Review planned-delivery forecast, WIP, throughput, cycle time, work-item age, SLE attainment, interrupt demand, expedite/preemption frequency, rework, trace coverage, blockers, dependency age, escaped defects, and product outcomes.
-- Look for systemic queues, starvation between planned and operational work, missing work products, invalid gates, and coordination failures.
-- Approve bounded process changes and record their expected effect.
-
-**Exit.** Inspect flow, quality, and coordination metrics evidence is recorded.
-
-**Checks.** Metrics lead to inspectable improvement experiments rather than individual performance rankings.
-
-#### Approve retirement scope and plan (`task.e2e.ph4.st1.t1`)
+#### Approve retirement scope and plan (`task.e2e.ph2.st1.t1`)
 
 Approve retirement scope and plan. The task is performed by `role.product-owner`. It consumes `e2e-artifact.operations-record`, `e2e-artifact.release-record`, `e2e-artifact.product-charter`, `e2e-artifact.method-profile` and produces or updates `e2e-artifact.retirement-record`.
 
@@ -522,7 +452,7 @@ Approve retirement scope and plan. The task is performed by `role.product-owner`
 
 **Checks.** The plan identifies affected stakeholders, dependencies, and irreversible actions.
 
-#### Execute migration and data disposition (`task.e2e.ph4.st2.t1`)
+#### Execute migration and data disposition (`task.e2e.ph2.st2.t1`)
 
 Execute migration and data disposition. The task is performed by `role.cloud-platform-engineer`. It consumes `e2e-artifact.retirement-record`, `e2e-artifact.operations-record`, `e2e-artifact.release-record`, `e2e-artifact.method-profile` and produces or updates `e2e-artifact.retirement-record`.
 
@@ -536,13 +466,13 @@ Execute migration and data disposition. The task is performed by `role.cloud-pla
 
 **Checks.** No data or integration is silently abandoned.
 
-#### Decommission service and access (`task.e2e.ph4.st2.t2`)
+#### Decommission service and access (`task.e2e.ph2.st2.t2`)
 
 Decommission service and access. The task is performed by `role.service-owner`. It consumes `e2e-artifact.retirement-record`, `e2e-artifact.operations-record`, `e2e-artifact.release-record`, `e2e-artifact.team-topology` and produces or updates `e2e-artifact.retirement-record`.
 
 **Work.**
 
-- Disable traffic, scheduled work, credentials, access paths, alerts, and environments in the approved order.
+- Continue required operational coverage during migration, then disable traffic, scheduled work, credentials, access paths, alerts, and environments in the approved order.
 - Verify replacement ownership and customer communication.
 - Retain required source, model, trace, release, incident, and decision records.
 
@@ -550,7 +480,7 @@ Decommission service and access. The task is performed by `role.service-owner`. 
 
 **Checks.** Decommission evidence covers runtime, data, access, cost, and support surfaces.
 
-#### Complete closure review (`task.e2e.ph4.st3.t1`)
+#### Complete closure review (`task.e2e.ph2.st3.t1`)
 
 Complete closure review. The task is performed by `role.process-reviewer`. It consumes `e2e-artifact.retirement-record`, `e2e-artifact.operations-record`, `e2e-artifact.product-charter`, `e2e-artifact.increment-record`, `e2e-artifact.method-profile`, `e2e-artifact.release-record` and produces or updates `e2e-artifact.retirement-record`, `e2e-artifact.method-profile`.
 
@@ -563,6 +493,76 @@ Complete closure review. The task is performed by `role.process-reviewer`. It co
 **Exit.** Complete closure review evidence is recorded.
 
 **Checks.** Closure identifies retained evidence, unresolved obligations, and accountable custodians.
+
+#### Assemble the release candidate (`task.e2e.rel.a1.t1`)
+
+Assemble the release candidate. The task is performed by `role.release-engineer`. It consumes `e2e-artifact.increment-record`, `e2e-artifact.product-charter`, `e2e-artifact.method-profile`, `e2e-artifact.team-topology` and produces or updates `e2e-artifact.release-record`.
+
+**Work.**
+
+- Select accepted increments and compatible model/artifact revisions.
+- Resolve cross-team dependency and compatibility checks.
+- Create the release record with exact inputs and promotion sequence.
+
+**Exit.** Assemble the release candidate evidence is recorded.
+
+**Checks.** Every release scope item maps to an accepted increment and exact artifact identity.
+
+#### Review release evidence and go/no-go criteria (`task.e2e.rel.a1.t2`)
+
+Review release evidence and go/no-go criteria. The task is performed by `role.process-reviewer`. It consumes `e2e-artifact.release-record`, `e2e-artifact.increment-record`, `e2e-artifact.product-charter`, `e2e-artifact.method-profile` and produces or updates `e2e-artifact.release-record`.
+
+**Work.**
+
+- Inspect readiness assessments, validation results, security exceptions, rollback plan, operational runbooks, and approvals.
+- Confirm open blockers are zero or explicitly accepted under the tailored method profile.
+- Record the go/no-go decision and decision owners.
+
+**Exit.** Review release evidence and go/no-go criteria evidence is recorded.
+
+**Checks.** Go/no-go is evidence-based and not inferred from task completion.
+
+#### Deploy and validate progressively (`task.e2e.rel.a2.t1`)
+
+Deploy and validate progressively. The task is performed by `role.release-engineer`. It consumes `e2e-artifact.release-record`, `e2e-artifact.product-charter`, `e2e-artifact.method-profile`, `e2e-artifact.team-topology` and produces or updates `e2e-artifact.release-record`.
+
+**Work.**
+
+- Deploy the exact candidate to the approved environment sequence.
+- Run smoke, functional, security, data, observability, and compatibility checks.
+- Compare observed outcomes with release acceptance signals and stop or roll back on threshold breach.
+
+**Exit.** Deploy and validate progressively evidence is recorded.
+
+**Checks.** Promotion evidence identifies candidate, environment, timestamp, operator, and observed result.
+
+#### Complete handover and rollback rehearsal (`task.e2e.rel.a2.t2`)
+
+Complete handover and rollback rehearsal. The task is performed by `role.service-owner`. It consumes `e2e-artifact.release-record`, `e2e-artifact.product-charter`, `e2e-artifact.method-profile`, `e2e-artifact.team-topology` and produces or updates `e2e-artifact.release-record`, `e2e-artifact.operations-record`.
+
+**Work.**
+
+- Verify dashboards, alerts, runbooks, escalation paths, support ownership, and recovery access.
+- Confirm rollback and data-recovery actions are usable for the release.
+- Accept operational ownership or return the release to rework.
+
+**Exit.** Complete handover and rollback rehearsal evidence is recorded.
+
+**Checks.** Operational acceptance names an accountable service owner and recovery evidence.
+
+#### Review release outcome and update roadmap (`task.e2e.rel.a3.t1`)
+
+Review release outcome and update roadmap. The task is performed by `role.product-owner`. It consumes `e2e-artifact.release-record`, `e2e-artifact.operations-record`, `e2e-artifact.product-charter`, `e2e-artifact.increment-record`, `e2e-artifact.method-profile` and produces or updates `e2e-artifact.release-record`, `e2e-artifact.product-charter`.
+
+**Work.**
+
+- Compare product and operational outcomes with the release hypothesis.
+- Accept outcomes, revise priorities, and create follow-up increments for gaps.
+- Record decisions and changes to scope, measures, and assumptions.
+
+**Exit.** Review release outcome and update roadmap evidence is recorded.
+
+**Checks.** Outcome learning changes a backlog, product decision, or explicitly confirms the hypothesis.
 
 ### CIM modeling component (26 tasks)
 
@@ -2283,9 +2283,9 @@ Slice goal, scope, acceptance evidence, model revisions, transformation runs, an
 
 Tailored lifecycle, roles, work products, gates, evidence rules, and metrics for the project context. Kind: Artifact. Provenance: End-to-end lifecycle.
 
-### Operational Work Item (`e2e-artifact.operational-work-item`)
+### Service Work Item (`e2e-artifact.operational-work-item`)
 
-An unplanned production demand item with source, maintenance purpose, emergency-temporary status, service class, severity, owner, service-level expectation, state, age, evidence, and disposition. Kind: Artifact. Provenance: End-to-end lifecycle.
+A production, maintenance, service, or improvement demand item with source, maintenance purpose where applicable, emergency-temporary status, class of service, severity, owner, service-level expectation, state, age, evidence, and disposition. Kind: Artifact. Provenance: End-to-end lifecycle.
 
 ### Operations and Learning Record (`e2e-artifact.operations-record`)
 
@@ -2303,9 +2303,9 @@ Release scope, exact model and artifact revisions, approvals, deployment evidenc
 
 Retirement decision, migration/data disposition, decommission evidence, and retained knowledge. Kind: Artifact. Provenance: End-to-end lifecycle.
 
-### Operations Flow Policy and Board (`e2e-artifact.service-flow-system`)
+### Kanban Service-Delivery Policy and Board (`e2e-artifact.service-flow-system`)
 
-The explicit pull-system policy: workflow states, WIP limits, service classes, service-level expectations, capacity policy, metrics, and visible board. Kind: Artifact. Provenance: End-to-end lifecycle.
+The explicit Definition of Workflow and visible Kanban board: requested/ready/started/finished points, workflow states, WIP controls, classes of service, service-level expectations, replenishment and review cadences, capacity policy, and flow metrics. Kind: Artifact. Provenance: End-to-end lifecycle.
 
 ### Team Topology and Dependency Map (`e2e-artifact.team-topology`)
 
@@ -2483,13 +2483,13 @@ SLI and SLO evidence, incidents, capacity, cost, security, product outcomes, and
 
 SLOs, dashboards, alerts, runbooks, support, access, backup and recovery, and known risks. Kind: Artifact. Provenance: Engineered core content.
 
-### Operational Work Item (`wp.operational-work-item`)
+### Service Work Item (`wp.operational-work-item`)
 
 Demand source, affected service, maintenance purpose, emergency-temporary status, service class, severity, owner, SLE, state, age, evidence, authoritative re-entry point, and disposition. Kind: Artifact. Provenance: Engineered core content.
 
-### Operations Flow Policy and Board (`wp.operations-flow-policy-board`)
+### Kanban Service-Delivery Policy and Board (`wp.operations-flow-policy-board`)
 
-Workflow states, WIP limits, pull and replenishment rules, service classes, SLEs, capacity policy, emergency preemption, reconciliation rules, board, and flow measures. Kind: Artifact. Provenance: Engineered core content.
+Kanban board states and start/finish points, WIP controls, pull and replenishment rules, classes of service, SLEs, capacity and expedite policies, reconciliation rules, feedback cadences, and flow measures. Kind: Artifact. Provenance: Engineered core content.
 
 ### PIM to PSM Transformation Run (`wp.pim-psm-transformation-run`)
 
@@ -2741,11 +2741,17 @@ A service can be switched off while data, consumers, access, resources, costs, o
 
 Guidance kind: Process Pattern. Pattern source: `MF-17`. Provenance: Engineered fragment catalog.
 
-### MF-18 — Interrupt-driven operations and maintenance flow (`guidance.fragment.mf-18`)
+### MF-18 — Kanban service-delivery and maintenance system (`guidance.fragment.mf-18`)
 
-Unpredictable production demand competes with planned delivery, while emergency speed can bypass model, trace, and release controls and create permanent divergence. Result: Operational demand is classified, pulled within capacity, resolved or routed, measured, and reconciled with authoritative sources and release evidence.
+Production, maintenance, and improvement demand competes with planned delivery, while invisible queues or emergency speed can bypass model, trace, and release controls and create permanent divergence. Result: Service demand is visualized on a Kanban board, made ready and pulled within WIP controls, resolved or routed, measured, and reconciled with authoritative sources and release evidence.
 
 Guidance kind: Process Pattern. Pattern source: `MF-18`. Provenance: Engineered fragment catalog.
+
+### MF-19 — DevOps cross-process coordination (`guidance.fragment.mf-19`)
+
+Development and operations can optimize locally while release readiness, production feedback, change ownership, and retirement obligations fall between processes. Result: G7 handover, CI/CD evidence, telemetry, incident and maintenance change routing, learning, and G8 closure synchronize the two processes without merging their control systems.
+
+Guidance kind: Process Pattern. Pattern source: `MF-19`. Provenance: Engineered fragment catalog.
 
 ### UF-01 — Integrated management, assurance, and evidence (`guidance.fragment.uf-01`)
 

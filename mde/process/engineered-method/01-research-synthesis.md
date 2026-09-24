@@ -126,12 +126,27 @@ feedback, and retirement explicit.
 
 The supplied corpus establishes the method-engineering procedure and the MDE
 backbone, but it does not fully specify how unpredictable production work
-coexists with planned releases. Four current primary or official sources close
+coexists with planned releases or how to classify that work structurally.
+Nine current primary, standards, or official sources close
 that design gap:
 
+- [OMG SPEM 2.0](https://www.omg.org/spec/SPEM/2.0/PDF/) defines Phase as a
+  significant bounded period ending at a major checkpoint and supplies
+  `isOngoing` and `isEventDriven` for continuous or occurrence-triggered work;
+- [ISO/IEC/IEEE 12207:2026](https://www.iso.org/standard/90219.html) distinguishes
+  development, operation, maintenance, and disposal processes and permits them
+  to be applied concurrently, iteratively, and recursively;
+- [IBM's RUP project-planning guidance](https://www.ibm.com/docs/en/rational-clearquest/10.0.8?topic=settings-project-planning)
+  distinguishes its sequential lifecycle phases from the iterations contained
+  by each phase;
+- [PMI's Disciplined Agile delivery lifecycles](https://www.pmi.org/disciplined-agile/lifecycle)
+  distinguish phase-oriented project lifecycles from continuous-delivery
+  product-team lifecycles, in which transition becomes a regular delivery
+  activity rather than a recurring phase;
 - the [Kanban Guide (May 2025)](https://kanbanguides.org/the-kanban-guide/)
   defines the minimum workflow, WIP, explicit-policy, service-level-expectation,
-  pull, and flow-measure commitments used by the Phase 3 service system;
+  pull, and flow-measure commitments used by the Operations and Maintenance
+  service system;
 - [SWEBOK v4.0a](https://ieeecs-media.computer.org/media/education/swebok/swebok-v4.pdf)
   supplies corrective, preventive, adaptive, additive, perfective, and
   emergency maintenance distinctions, including the difference between a
@@ -141,7 +156,10 @@ that design gap:
   security, progressive deployment, and rollback concerns; and
 - [DORA continuous-delivery guidance](https://dora.dev/capabilities/continuous-delivery/)
   supports small, reversible, automated, production-ready changes while
-  retaining empirical feedback and release safety.
+  retaining empirical feedback and release safety;
+- [PMI Disciplined DevOps](https://www.pmi.org/disciplined-agile/process/disciplined-devops)
+  supplies the integration of development, operations, support, release,
+  security, and improvement across the value stream.
 
 These sources are supplementary design evidence, not additional items in the
 six-paper supplied corpus. Their fragments are specialized and assembled under
@@ -160,8 +178,10 @@ The repository already implements a substantial modeling framework:
   documentation, and trace artifacts;
 - executable process definitions contain 26 CIM tasks, 32 PIM tasks, 28 PSM
   tasks, and 16 artifact-readiness tasks; and
-- the integrated process already distinguishes initiation, iterative model
-  delivery, release, operations, and retirement.
+- the integrated process distinguishes three one-time sequential
+  development/delivery phases from repeated delivery activities and from
+  ongoing operations and maintenance, with explicit handover, feedback,
+  release, and retirement connections.
 
 This analysis changes the engineering problem. The CIM/PIM/PSM task catalogs
 are not discarded. They are treated as verified candidate method chunks. The
@@ -191,8 +211,9 @@ MODRISS uses a hybrid of the supplied approaches:
 7. **Integrate domain-specific practices.** Add serverless suitability, cost,
    event, state, failure, security, portability, observability, CI/CD, and
    operations fragments.
-8. **Separate planned and interrupt-driven control.** Keep release/increment
-   commitments distinct from the operational pull system, then define explicit
+8. **Combine planned delivery with Kanban service delivery.** Keep
+   release/increment commitments distinct from the continuous service Kanban
+   system, then define explicit
    bridges for operations-only completion, bounded maintenance release, or
    planned-backlog commitment.
 9. **Configure instead of cloning.** Define situational factors and selectable

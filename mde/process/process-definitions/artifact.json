@@ -1780,7 +1780,7 @@
     {
       "id": "artifact.ph1",
       "type": "Activity",
-      "activityKind": "Phase",
+      "activityKind": "MODRISS::Stage",
       "name": "Inspect & Baseline Generated Project",
       "order": 1,
       "objective": "Turn the PSM-generated project into a traceable, reviewed, version-controlled release baseline and identify model changes that must return to PSM.",
@@ -1798,7 +1798,7 @@
         {
           "id": "artifact.ph1.st1",
           "type": "Activity",
-          "activityKind": "MODRISS::Stage",
+          "activityKind": "MODRISS::SubStage",
           "name": "Inventory Generated Output",
           "objective": "Understand exactly what was generated and how it maps to the intended deployment.",
           "roleUseRefs": [
@@ -1883,7 +1883,7 @@
         {
           "id": "artifact.ph1.st2",
           "type": "Activity",
-          "activityKind": "MODRISS::Stage",
+          "activityKind": "MODRISS::SubStage",
           "name": "Classify Refinements",
           "objective": "Keep architecture changes in the model and implementation-specific refinements in the project.",
           "roleUseRefs": [
@@ -1980,7 +1980,7 @@
     {
       "id": "artifact.ph2",
       "type": "Activity",
-      "activityKind": "Phase",
+      "activityKind": "MODRISS::Stage",
       "name": "Harden Environment & Delivery Configuration",
       "order": 2,
       "objective": "Make the generated project safe and repeatable across target environments without embedding secrets or account-specific assumptions.",
@@ -1997,7 +1997,7 @@
         {
           "id": "artifact.ph2.st1",
           "type": "Activity",
-          "activityKind": "MODRISS::Stage",
+          "activityKind": "MODRISS::SubStage",
           "name": "Externalize Environment Configuration",
           "objective": "Separate deploy-time configuration and secret references from source and templates.",
           "roleUseRefs": [
@@ -2110,7 +2110,7 @@
         {
           "id": "artifact.ph2.st2",
           "type": "Activity",
-          "activityKind": "MODRISS::Stage",
+          "activityKind": "MODRISS::SubStage",
           "name": "Harden Delivery Automation",
           "objective": "Create a controlled path for building and deploying the exact release candidate.",
           "roleUseRefs": [
@@ -2243,7 +2243,7 @@
     {
       "id": "artifact.ph3",
       "type": "Activity",
-      "activityKind": "Phase",
+      "activityKind": "MODRISS::Stage",
       "name": "Verify Release Candidate",
       "order": 3,
       "objective": "Prove that the exact release candidate is buildable, secure, functional, observable, and deployable before production approval.",
@@ -2261,7 +2261,7 @@
         {
           "id": "artifact.ph3.st1",
           "type": "Activity",
-          "activityKind": "MODRISS::Stage",
+          "activityKind": "MODRISS::SubStage",
           "name": "Build & Static Verification",
           "objective": "Check packaging, template validity, dependencies, and security posture.",
           "roleUseRefs": [
@@ -2410,7 +2410,7 @@
         {
           "id": "artifact.ph3.st2",
           "type": "Activity",
-          "activityKind": "MODRISS::Stage",
+          "activityKind": "MODRISS::SubStage",
           "name": "Deploy & Exercise Non-Production",
           "objective": "Demonstrate the release candidate in a production-like environment.",
           "roleUseRefs": [
@@ -2561,7 +2561,7 @@
     {
       "id": "artifact.ph4",
       "type": "Activity",
-      "activityKind": "Phase",
+      "activityKind": "MODRISS::Stage",
       "name": "Approve Release & Operational Handover",
       "order": 4,
       "objective": "Prepare a controlled production release with recovery, ownership, communications, and post-deployment verification defined.",
@@ -2576,7 +2576,7 @@
         {
           "id": "artifact.ph4.st1",
           "type": "Activity",
-          "activityKind": "MODRISS::Stage",
+          "activityKind": "MODRISS::SubStage",
           "name": "Plan Release & Recovery",
           "objective": "Make production deployment and failure recovery deliberate and executable.",
           "roleUseRefs": [
@@ -2732,7 +2732,7 @@
         {
           "id": "artifact.ph4.st2",
           "type": "Activity",
-          "activityKind": "MODRISS::Stage",
+          "activityKind": "MODRISS::SubStage",
           "name": "Handover & Post-Deployment Validation",
           "objective": "Ensure the service can be supported after deployment and verify production health immediately after release.",
           "roleUseRefs": [
@@ -2915,7 +2915,7 @@
       "predecessorRef": "artifact.ph1",
       "successorRef": "artifact.ph2",
       "linkKind": "finishToStart",
-      "relation": "phase-order"
+      "relation": "activity-order"
     },
     {
       "id": "ws.artifact.ph2.artifact.ph3",
@@ -2923,7 +2923,7 @@
       "predecessorRef": "artifact.ph2",
       "successorRef": "artifact.ph3",
       "linkKind": "finishToStart",
-      "relation": "phase-order"
+      "relation": "activity-order"
     },
     {
       "id": "ws.artifact.ph3.artifact.ph4",
@@ -2931,7 +2931,7 @@
       "predecessorRef": "artifact.ph3",
       "successorRef": "artifact.ph4",
       "linkKind": "finishToStart",
-      "relation": "phase-order"
+      "relation": "activity-order"
     },
     {
       "id": "ws.artifact.ph1.st1.artifact.ph1.st2",

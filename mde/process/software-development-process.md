@@ -14,11 +14,15 @@ DSMLs support work within that process at different abstraction levels:
   policies, observability, and deployment intent.
 
 The generated artifacts are then reviewed, verified, released, operated,
-changed, and eventually retired. The process therefore has two structures:
+changed, and eventually retired. The lifecycle therefore has three nested or
+coordinated structures:
 
-1. a **full lifecycle** around the product/system; and
-2. a repeatable **vertical increment engine** for planned delivery; and
-3. a concurrent **interrupt-driven maintenance flow** for unpredictable production demand.
+1. a sequential, phase-based **Development and Delivery Process**;
+2. a repeatable **vertical increment and release engine** within that process;
+   and
+3. an ongoing, event-driven **Operations and Maintenance Process** using a
+   continuous Kanban service-delivery system for production, maintenance,
+   incident, risk, and improvement demand.
 
 The machine-readable definitions are in
 [`process-definitions/`](process-definitions/). This document is the normative
@@ -32,18 +36,20 @@ The process design adapts established lifecycle and method-engineering ideas to
 the serverless research context. Its activities and evidence are tailored to
 project conditions.
 
-| Foundation                           | How MODRISS uses it                                                                                                                                                                                                                                                                           |
-| ------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **SPEM 2.0**                         | Separates reusable method content (RoleDefinitions, TaskDefinitions, WorkProductDefinitions, Guidance) from process uses (RoleUses, TaskUses, WorkProductUses, Activities, and WorkSequences). MODRISS preserves a UI-friendly phase/stage projection while compiling it to that distinction. |
-| **ISO/IEC/IEEE 12207**               | Supplies the software lifecycle scope: agreement, organizational/project enablement, technical management, technical development, operation, maintenance, and disposal. MODRISS tailors these activities while retaining evidence and decision responsibilities.                              |
-| **ISO/IEC/IEEE 15288**               | Supplies the system lifecycle perspective and supports concurrent, iterative, recursive, and incremental work. This is why architecture, operations, quality, security, and transition are not postponed until after modeling.                                                                |
-| **Situational method engineering**   | Informs the selection and tailoring of reusable method content and process activities according to project context, risk, criticality, novelty, team structure, and delivery constraints. Tailoring decisions are themselves versioned work products.                                         |
-| **Agile principles and Scrum**       | Supplies empirical control, small usable increments, inspection, adaptation, a product backlog, explicit ownership, and a definition of done. MODRISS does not equate agility with skipping architecture, assurance, or lifecycle obligations.                                                |
-| **MDA/MDE process-pattern research** | Supports the distinction between model refinement, transformation, traceability, human review of generated decisions, and feedback from later representations to earlier models.                                                                                                              |
+| Foundation                               | How MODRISS uses it                                                                                                                                                                                                                                              |
+| ---------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **SPEM 2.0**                             | Separates reusable method content from process uses. Its bounded Phase concept and ongoing/event-driven Work Breakdown Element properties justify modeling operations as a Process rather than a sequential phase.                                               |
+| **RUP and Disciplined Agile lifecycles** | Distinguish sequential lifecycle phases from their contained iterations and distinguish phase-oriented projects from continuous-delivery product teams. MODRISS therefore models recurring release/transition work as Phase 1 activities, not phases.            |
+| **ISO/IEC/IEEE 12207**                   | Supplies the software lifecycle scope: agreement, organizational/project enablement, technical management, technical development, operation, maintenance, and disposal. MODRISS tailors these activities while retaining evidence and decision responsibilities. |
+| **ISO/IEC/IEEE 15288**                   | Supplies the system lifecycle perspective and supports concurrent, iterative, recursive, and incremental work. This is why architecture, operations, quality, security, and transition are not postponed until after modeling.                                   |
+| **Situational method engineering**       | Informs the selection and tailoring of reusable method content and process activities according to project context, risk, criticality, novelty, team structure, and delivery constraints. Tailoring decisions are themselves versioned work products.            |
+| **Agile principles and Scrum**           | Supplies empirical control, small usable increments, inspection, adaptation, a product backlog, explicit ownership, and a definition of done. MODRISS does not equate agility with skipping architecture, assurance, or lifecycle obligations.                   |
+| **Kanban and Disciplined DevOps**        | Supplies pull/WIP/SLE controls inside Operations and Maintenance and the cross-process integration of development, operations, support, release, security, CI/CD, feedback, and improvement.                                                                     |
+| **MDA/MDE process-pattern research**     | Supports the distinction between model refinement, transformation, traceability, human review of generated decisions, and feedback from later representations to earlier models.                                                                                 |
 
 Primary references:
 
-- [OMG SPEM 2.0](https://www.omg.org/spec/SPEM/2.0/About-SPEM)
+- [OMG SPEM 2.0](https://www.omg.org/spec/SPEM/2.0/PDF/)
 - [ISO/IEC/IEEE 12207:2026](https://www.iso.org/standard/90219.html)
 - [ISO/IEC/IEEE 15288:2023](https://www.iso.org/standard/81702.html)
 - [Brinkkemper, “Method engineering”](<https://doi.org/10.1016/S0950-5849(95)01059-9>)
@@ -51,6 +57,13 @@ Primary references:
 - [Asadi, Esfahani & Ramsin, “Process patterns for MDA-based software development”](https://mason.gmu.edu/~nesfaha2/Publications/SERA2010.pdf)
 - [Agile Manifesto principles](https://agilemanifesto.org/principles)
 - [The 2020 Scrum Guide](https://scrumguides.org/scrum-guide.html)
+- [The Kanban Guide (2025)](https://kanbanguides.org/the-kanban-guide/)
+- [PMI Disciplined Agile: Starting With Iterations or Flow](https://www.pmi.org/disciplined-agile/starting-with-iterations-or-flow)
+- [PMI Disciplined Agile: Designing the Kanban Board](https://www.pmi.org/disciplined-agile/designing-the-kanban-board)
+- [PMI Disciplined DevOps](https://www.pmi.org/disciplined-agile/process/disciplined-devops)
+- [IBM RUP project planning](https://www.ibm.com/docs/en/rational-clearquest/10.0.8?topic=settings-project-planning)
+- [PMI Disciplined Agile: Full Delivery Lifecycles](https://www.pmi.org/disciplined-agile/lifecycle)
+- [Ahmad et al. (2018), _Kanban in software engineering_](https://doi.org/10.1016/j.jss.2017.11.045)
 
 The normative process endpoint is therefore a SPEM-mapped MODRISS JSON DSL,
 not a native SPEM/XMI instance. Its `metamodelBindings` connect TaskDefinitions
@@ -110,6 +123,9 @@ transformation changes.
   the tasks that precede it.
 - A **method profile** records process tailoring: selected, combined, or
   omitted activities, roles, evidence, thresholds, and rationale.
+- A **phase** is a bounded sequential period in Development and Delivery ending
+  at a major checkpoint. A **stage** and optional **substage** decompose a phase
+  or ongoing process into Activities; a **task** is the assignable work unit.
 
 ## Lifecycle architecture
 
@@ -121,9 +137,9 @@ Frame increment -> CIM -> CIM/PIM -> PIM -> PIM/PSM -> PSM -> M2T -> readiness
         ^                                                               |
         |---------------- inspect, adapt, rework, accept ----------------|
         |
-        +--> assemble release -> progressive transition -> operate/learn
-                                  ^                         |
-                                  |---- controlled change -|
+        +--> assemble release -> progressive transition --G7--> Operations & Maintenance
+                  ^                                             | Kanban pull flow
+                  |-------- telemetry / maintenance change -----|
         |
         +--> retire / migrate / close
 ```
@@ -132,9 +148,9 @@ The model-driven increment cycle is one part of the development process. It can
 repeat many times before one release, and the product can operate through many
 releases. The cycle does not cover the full product lifecycle on its own.
 
-## Lifecycle phases and responsibilities
+## Development and Delivery phases
 
-### 0. Initiate, tailor, and organize
+### Phase 0. Inception, tailoring, and organization
 
 The product owner and sponsor define the outcome hypothesis, boundaries,
 constraints, and initial release hypothesis. The Method Engineer performs a
@@ -152,7 +168,11 @@ Required outputs include:
 - quality/security/operations baseline;
 - first increment goal and evidence plan.
 
-### 1. Iterative-incremental model-driven delivery
+### Phase 1. Active product construction and evolution
+
+This phase occurs once and spans the product's active life. It contains
+repeatable model-driven increment and continuous-delivery release activities;
+none of those repeated units is a phase.
 
 Each increment is a thin, valuable, testable vertical slice. The integrated
 engine coordinates the child processes in this order:
@@ -184,7 +204,7 @@ Each accepted increment records:
 - acceptance, deferral, or rework decision;
 - retrospective and next-step changes.
 
-### 2. Release and transition
+#### Repeatable release and transition activities
 
 Accepted increments are assembled into a release candidate. Release assembly
 checks compatibility and dependency closure. The release decision reviews the
@@ -195,15 +215,21 @@ progressive across environments with observable stop/rollback thresholds.
 Handover is complete only when the service owner accepts dashboards, alerts,
 runbooks, support ownership, recovery access, and post-deployment validation.
 
-### 3. Operate, evolve, and learn
+## Operations and Maintenance Process
 
-Operation is part of the lifecycle, not an afterthought. The service owner
+This is an ongoing, event-driven process, not a phase. It starts at the first
+G7 handover, runs concurrently with later development and releases, and ends
+at G8 only when no live release remains. The service owner
 reviews SLOs, telemetry, cost, security signals, product outcomes, incidents,
-and customer impact. Because this demand cannot be predicted honestly, it is
-captured as it appears and pulled through an explicit workflow with WIP limits,
-service classes, service-level expectations, replenishment, and flow measures.
-Planned delivery retains its release/increment commitments; the method profile
-defines capacity and preemption between the two systems.
+and customer impact. Demand is visualized on a Kanban board and managed through
+an explicit Definition of Workflow with Requested, Ready, In Progress, Verify,
+and Done states; WIP controls; classes of service; service-level expectations;
+replenishment; flow reviews; and flow metrics. Planned delivery retains its
+release/increment commitments; the method profile defines capacity between the
+two systems and an exceptional expedite policy. This implements the Kanban
+Guide's core practices and Disciplined Agile's contextual use of flow and
+value-stream optimization. DevOps practices supply its integration points with
+Development and Delivery without merging the two control systems.
 
 Maintenance purpose—corrective, preventive, adaptive, additive, or
 perfective—emergency-temporary status, and the expedite, fixed-date, standard,
@@ -224,13 +250,15 @@ and receives new evidence. Patching generated output is allowed only for
 implementation-specific refinements; structural changes must return to the
 model or generator source.
 
-### 4. Retire, migrate, and close
+### Phase 2. Retire, migrate, and close
 
 Retirement covers the product decision, user communication, replacement or
 migration, data retention/disposition, integration shutdown, access removal,
 infrastructure decommissioning, cost closure, evidence retention, and
 organizational learning. A lifecycle is not complete while data, integrations,
 credentials, support obligations, or legal records remain ownerless.
+Operations and Maintenance continues during migration and decommissioning and
+terminates with Development and Delivery at G8.
 
 ## Roles and team coordination
 

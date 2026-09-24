@@ -6,15 +6,15 @@ partition "Program Initiation (engine)" {
   :Stage, Strategic Framing;
 }
 repeat
-  partition "Phase 1, Increment Framing (engine)" {
+  partition "Stage 1, Increment Framing (engine)" {
     :Stage, Capability Slice Planning;
   }
-  partition "Phase 2, Context Discovery (engine)" {
+  partition "Stage 2, Context Discovery (engine)" {
     :Stage, Participation Model;
     :Stage, Capability Landscape;
     :Stage, Ubiquitous Language;
   }
-  partition "Phase 3, Domain Exploration (engine, iterative)" {
+  partition "Stage 3, Domain Exploration (engine, iterative)" {
     repeat
       :Revisit Ubiquitous Language;
       :Stage, Information Architecture;
@@ -22,7 +22,7 @@ repeat
       :Stage, Behavior Surface;
     repeat while (Naming conflicts, missing taxonomy/structure, or incoherent CQRS?) is (yes)
   }
-  partition "Phase 4, Domain Synthesis (engine)" {
+  partition "Stage 4, Domain Synthesis (engine)" {
     repeat
       :Stage, Aggregate Boundaries;
       :Stage, Process & Decisions;
@@ -30,7 +30,7 @@ repeat
       :Review ownership and revise Behavior Surface if needed;
     repeat while (Ownership conflicts?) is (yes)
   }
-  partition "Phase 5, Convergence & Readiness (engine)" {
+  partition "Stage 5, Convergence & Readiness (engine)" {
     repeat
       :Stage, Requirements (Twin Peaks);
       :Review requirements trace and refine Structural Model if needed;

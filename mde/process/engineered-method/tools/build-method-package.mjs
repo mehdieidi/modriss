@@ -92,7 +92,7 @@ const index = {
     repeatableActivities: [
       source.model.processEngine?.iteration,
       source.model.processEngine?.releaseCycle,
-      source.model.processEngine?.maintenanceFlow,
+      source.model.processEngine?.serviceDeliveryFlow,
     ].filter(Boolean),
   })),
   methodRoleMappings: coreContentSource.model.roleMappings ?? [],
@@ -291,10 +291,11 @@ const taskUseXml = (taskUse, depth) => {
 };
 
 const activityXml = (activity, depth, kind) => {
-  const lines = [line(depth, `<nestedBreakdownElement xmi:type="spem:Activity" xmi:id="${xmiId(activity.id)}" name="${escapeXml(activity.name ?? activity.id)}" modriss:kind="${escapeXml(kind)}" modriss:sourceId="${escapeXml(activity.id)}">`)];
+  const lines = [line(depth, `<nestedBreakdownElement xmi:type="spem:Activity" xmi:id="${xmiId(activity.id)}" name="${escapeXml(activity.name ?? activity.id)}" modriss:kind="${escapeXml(kind)}" modriss:sourceId="${escapeXml(activity.id)}"${attr('modriss:isOngoing', activity.isOngoing == null ? null : String(activity.isOngoing))}${attr('modriss:isEventDriven', activity.isEventDriven == null ? null : String(activity.isEventDriven))}>`)];
   for (const taskUse of activity.taskUses ?? []) lines.push(...taskUseXml(taskUse, depth + 1));
   for (const subStage of activity.subStages ?? []) lines.push(...activityXml(subStage, depth + 1, 'MODRISS::SubStage'));
-  for (const stage of activity.stages ?? []) lines.push(...activityXml(stage, depth + 1, 'MODRISS::Stage'));
+  for (const stage of activity.stages ?? []) lines.push(...activityXml(stage, depth + 1, stage.activityKind ?? 'MODRISS::Stage'));
+  for (const childActivity of activity.activities ?? []) lines.push(...activityXml(childActivity, depth + 1, childActivity.activityKind ?? 'Activity'));
   lines.push(line(depth, '</nestedBreakdownElement>'));
   return lines;
 };
@@ -309,10 +310,11 @@ const processXml = (source, depth) => {
   for (const use of model.workProductUses ?? []) {
     lines.push(line(depth + 1, `<nestedBreakdownElement xmi:type="spem:WorkProductUse" xmi:id="${xmiId(use.id)}" name="${escapeXml(use.id)}" workProduct="${xmiId(use.workProductDefinitionRef)}" modriss:activityRef="${xmiId(use.activityRef)}" modriss:usage="${escapeXml(use.usage)}"/>`));
   }
-  for (const phase of model.phases ?? []) lines.push(...activityXml(phase, depth + 1, 'Phase'));
-  for (const repeatable of [model.processEngine?.iteration, model.processEngine?.releaseCycle, model.processEngine?.maintenanceFlow].filter(Boolean)) {
+  for (const phase of model.phases ?? []) lines.push(...activityXml(phase, depth + 1, phase.activityKind ?? 'Phase'));
+  for (const component of model.processComponents ?? []) lines.push(...activityXml(component, depth + 1, 'ProcessComponent'));
+  for (const repeatable of [model.processEngine?.iteration, model.processEngine?.releaseCycle, model.processEngine?.serviceDeliveryFlow].filter(Boolean)) {
     const activityRefs = (repeatable.activityRefs ?? []).map(xmiId).join(' ');
-    lines.push(line(depth + 1, `<nestedBreakdownElement xmi:type="spem:Activity" xmi:id="${xmiId(repeatable.id)}" name="${escapeXml(repeatable.name)}" modriss:sourceId="${escapeXml(repeatable.id)}" modriss:kind="${escapeXml(repeatable.activityKind ?? 'Iteration')}" modriss:isRepeatable="${Boolean(repeatable.isRepeatable)}"${attr('modriss:activityRefs', activityRefs)}${attr('modriss:repeatCondition', repeatable.repeatCondition)}${attr('modriss:exitCondition', repeatable.exitCondition)}${attr('modriss:flowControl', repeatable.flowControl)}${attr('modriss:guidance', repeatable.guidance)}/>`));
+    lines.push(line(depth + 1, `<nestedBreakdownElement xmi:type="spem:Activity" xmi:id="${xmiId(repeatable.id)}" name="${escapeXml(repeatable.name)}" modriss:sourceId="${escapeXml(repeatable.id)}" modriss:kind="${escapeXml(repeatable.activityKind ?? 'Iteration')}" modriss:isRepeatable="${Boolean(repeatable.isRepeatable)}"${attr('modriss:isOngoing', repeatable.isOngoing == null ? null : String(repeatable.isOngoing))}${attr('modriss:isEventDriven', repeatable.isEventDriven == null ? null : String(repeatable.isEventDriven))}${attr('modriss:processComponentRef', repeatable.processComponentRef ? xmiId(repeatable.processComponentRef) : null)}${attr('modriss:activityRefs', activityRefs)}${attr('modriss:repeatCondition', repeatable.repeatCondition)}${attr('modriss:exitCondition', repeatable.exitCondition)}${attr('modriss:flowControl', repeatable.flowControl)}${attr('modriss:guidance', repeatable.guidance)}/>`));
   }
   for (const sequence of model.workSequences ?? []) {
     lines.push(line(depth + 1, `<nestedBreakdownElement xmi:type="spem:WorkSequence" xmi:id="${xmiId(sequence.id)}" predecessor="${xmiId(sequence.predecessorRef)}" successor="${xmiId(sequence.successorRef)}" linkKind="${escapeXml(sequence.linkKind)}" modriss:relation="${escapeXml(sequence.relation ?? '')}"${attr('modriss:condition', sequence.condition)}${attr('modriss:guidance', sequence.guidance)}/>`));

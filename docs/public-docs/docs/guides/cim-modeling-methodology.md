@@ -1,13 +1,14 @@
 # CIM Modeling Process
 
 The Computation-Independent Model (CIM) records business intent, domain structure, behavior, and
-governance before provider and implementation decisions are made. The CIM process has five phases. Each
-phase contains activities that appear as stages in the workbench, with task uses that select reusable
+governance before provider and implementation decisions are made. Each model-driven increment invokes
+five ordered stages; they are not product-lifecycle phases. Each stage contains substages in the
+workbench, with task uses that select reusable
 task definitions.
 
 A task may produce a process work product, such as an increment plan or readiness assessment. Its
 `metamodelBindings` separately identify the CIM classes and enumerations that the task covers. Use
-the **Guided Modeling** panel, when enabled, or this guide to follow phase, stage, and task progress.
+the **Guided Modeling** panel, when enabled, or this guide to follow stage, substage, and task progress.
 Tasks also identify a viewpoint and palette focus for the editor. When review finds a gap, revisit the
 earlier stage that owns it and continue within the same engine cycle.
 
@@ -27,13 +28,13 @@ that frames, models, validates, reviews, and adapts **one capability slice per r
 CIM engine cycle: **Increment Framing → Context Discovery → Domain Exploration → Domain Synthesis →
 Convergence, Readiness & Review → ↻**
 
-The first cycle creates the CIM root; later cycles refresh the same phase for the next slice. While
+The first cycle creates the CIM root; later cycles refresh the same stage for the next slice. While
 modeling inside a cycle, use **engine rework loops** (e.g. language refinement back to glossary, Twin
 Peaks back to domain structure).
 
-## CIM Phases
+## CIM Stages
 
-| Phase     | Name                    | In engine | Stages                                                                    |
+| Stage     | Name                    | In engine | Substages                                                                 |
 | --------- | ----------------------- | --------- | ------------------------------------------------------------------------- |
 | `cim.ph1` | Increment Framing       | ✓         | Program Charter, Capability Slice Planning, Strategic Framing             |
 | `cim.ph2` | Context Discovery       | ✓         | Participation Model, Capability Landscape, Ubiquitous Language            |
@@ -46,18 +47,18 @@ Peaks back to domain structure).
 | Role                      | Responsibility in CIM                                                             |
 | ------------------------- | --------------------------------------------------------------------------------- |
 | **Business Modeler**      | Increment framing through synthesis: intent, domain, behavior, process, contracts |
-| **Requirements Engineer** | Convergence phase: requirements, acceptance criteria, governance constraints      |
+| **Requirements Engineer** | Convergence stage: requirements, acceptance criteria, governance constraints      |
 | **Process Reviewer**      | EVL gate approval and production readiness sign-off                               |
 
-## Phase Flow
+## Stage Flow
 
 ```mermaid
 flowchart TD
-  PH1["Phase 1, Increment Framing"]
-  PH2["Phase 2, Context Discovery"]
-  PH3["Phase 3, Domain Exploration"]
-  PH4["Phase 4, Domain Synthesis"]
-  PH5["Phase 5, Convergence & Readiness"]
+  PH1["Stage 1, Increment Framing"]
+  PH2["Stage 2, Context Discovery"]
+  PH3["Stage 3, Domain Exploration"]
+  PH4["Stage 4, Domain Synthesis"]
+  PH5["Stage 5, Convergence & Readiness"]
 
   PH1 --> PH2 --> PH3 --> PH4 --> PH5
   PH3 -.->|Twin Peaks / rework loops| PH2
@@ -65,9 +66,9 @@ flowchart TD
   PH5 -->|EVL pass| GATE["CIM → PIM transform"]
 ```
 
-## Phase Overview
+## Stage Overview
 
-| Phase | Name                    | Primary role                             | Key artifacts                                                 |
+| Stage | Name                    | Primary role                             | Key artifacts                                                 |
 | ----- | ----------------------- | ---------------------------------------- | ------------------------------------------------------------- |
 | 1     | Increment Framing       | Business Modeler                         | CIM Model Root, CIM Increment Plan, Strategic Intent          |
 | 2     | Context Discovery       | Business Modeler                         | Participation Model, Capability, Glossary                     |
@@ -80,7 +81,7 @@ flowchart TD
 
 ## Task Catalog
 
-Process `modriss.cim.modeling` · 5 phases · 26 TaskUses / TaskDefinitions · CIM metamodel coverage enforced in CI.
+Process `modriss.cim.modeling` · 5 stages · 26 TaskUses / TaskDefinitions · CIM metamodel coverage enforced in CI.
 
 ### Increment Framing (`cim.ph1`)
 
@@ -88,11 +89,11 @@ Frame the current capability slice, establish or refresh the CIM program contain
 
 **Runs:** in engine cycle · **Role:** Business Modeler
 
-**Phase entry:**
+**Stage entry:**
 
 - MODRISS project created or prior CIM increment selected for evolution
 
-**Phase exit:**
+**Stage exit:**
 
 - CIMModel root exists
 - Capability-slice objective and definition of done are agreed
@@ -253,11 +254,11 @@ Map who participates in the domain, what the organization can do, and shared voc
 
 **Runs:** in engine cycle · **Role:** Business Modeler
 
-**Phase entry:**
+**Stage entry:**
 
 - Increment Framing complete
 
-**Phase exit:**
+**Stage exit:**
 
 - Actors, capabilities, and glossary cover the increment slice
 
@@ -397,11 +398,11 @@ Explore information, structure, and behavior using Twin Peaks, iterate until CQR
 
 **Runs:** in engine cycle · **Role:** Business Modeler
 
-**Phase entry:**
+**Stage entry:**
 
 - Context Discovery complete for slice
 
-**Phase exit:**
+**Stage exit:**
 
 - Commands, queries, and events cover primary use cases
 
@@ -639,11 +640,11 @@ Synthesize transactional boundaries, orchestration, and bounded contexts from ex
 
 **Runs:** in engine cycle · **Role:** Business Modeler
 
-**Phase entry:**
+**Stage entry:**
 
 - Domain Exploration coherent for slice
 
-**Phase exit:**
+**Stage exit:**
 
 - Bounded contexts assigned with memberships
 
@@ -794,11 +795,11 @@ Backfill requirements, record transformation contracts, close traceability and E
 
 **Runs:** in engine cycle · **Role:** Requirements Engineer
 
-**Phase entry:**
+**Stage entry:**
 
 - Domain Synthesis complete for slice
 
-**Phase exit:**
+**Stage exit:**
 
 - CIM EVL passes
 - Readiness gate approved

@@ -187,9 +187,12 @@ not a claim that the JSON is native SPEM XMI.
 SPEM 2.0 provides `Activity` and a general Kind mechanism. `Phase` and
 `Iteration` are standard examples of Activities qualified by a Kind; `Stage`
 is a MODRISS extension, represented as `Activity(kind =
-"MODRISS::Stage")`. The JSON keeps the convenient `phases`, `stages`, and
-`subStages` keys for the guided-modeling UI, but every such node is explicitly
-typed as an Activity.
+"MODRISS::Stage")`. The JSON keeps the legacy `phases` container and `ph*`
+IDs for guided-modeling compatibility. In the CIM, PIM, PSM, and artifact
+subprocesses, those top-level entries are explicitly typed
+`MODRISS::Stage` and their children `MODRISS::SubStage`, because the entire
+subprocess can recur for another increment. Only the three top-level entries
+of the end-to-end lifecycle are typed `Phase`.
 
 The MODRISS `processEngine` is not a SPEM metaclass. It is an operational
 extension whose `iteration` mapping identifies an `Activity(kind =
@@ -198,14 +201,16 @@ rework paths are represented by WorkSequences with conditions and guidance.
 This preserves the agile increment engine without misrepresenting it as a
 standard SPEM class.
 
-The end-to-end process distinguishes two repeatable Activities. The
-`processEngine.iteration` Activity is the Phase 1 vertical increment loop. The
-`processEngine.releaseCycle` Activity contains Phases 1–3 and repeats while
-retirement is not authorized. Its explicit WorkSequences route release
-rejection from Phase 2 to Phase 1, route evidence for a later release from
-Phase 3 to Phase 1, and permit Phase 3 to reach Phase 4 only under an authorized
-retirement condition. The accepted release remains operational while a later
-release is developed.
+The end-to-end process distinguishes two repeatable Activities inside the
+single active-product phase. `processEngine.iteration` is the vertical
+model-driven increment. `processEngine.releaseCycle` is an `Iteration` that
+references construction, qualification, promotion, handover, and review
+Activities; it does not reference or repeat a Phase. The separate
+`modriss.operations-maintenance` Process is ongoing and event-driven: it begins
+at G7, sustains accepted live releases while later releases are developed, and
+terminates at G8. Explicit WorkSequences route release rejection and
+operational product changes to increment planning, and authorized retirement
+from both active streams into Phase 2.
 
 ## Explicit sequencing
 
@@ -225,10 +230,16 @@ the process semantics.
 
 For the full lifecycle, the decisive conditional sequences are:
 
-- Phase 2 → Phase 1 when G6 rejects a candidate or promotion fails;
-- Phase 3 → Phase 1 when retirement is not authorized and a next release or
-  change is selected; and
-- Phase 3 → Phase 4 only when retirement is authorized.
+- release qualification/promotion → increment planning when G6 rejects a
+  candidate or promotion fails;
+- Operations and Maintenance → increment planning when a product-changing
+  service item is selected;
+- Phase 1 → Phase 2 when retirement is authorized and no development/release
+  work is in flight;
+- Operations and Maintenance → Phase 2 to coordinate live-service retirement;
+  and
+- Phase 2 → Operations and Maintenance as a finish-to-finish constraint so the
+  service process ends only at G8.
 
 ## Compliance boundary
 

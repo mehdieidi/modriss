@@ -40,8 +40,8 @@ export const END_TO_END_ARTIFACT_KINDS = [
   { id: "e2e-artifact.increment-record", name: "Increment Record", description: "Slice goal, scope, acceptance evidence, model revisions, transformation runs, and retrospective results." },
   { id: "e2e-artifact.release-record", name: "Release Record", description: "Release scope, exact model and artifact revisions, approvals, deployment evidence, rollback identity, and outcome." },
   { id: "e2e-artifact.operations-record", name: "Operations and Learning Record", description: "SLOs, incidents, changes, product outcomes, and method-improvement actions." },
-  { id: "e2e-artifact.operational-work-item", name: "Operational Work Item", description: "An unplanned production demand item with source, maintenance purpose, emergency-temporary status, service class, severity, owner, service-level expectation, state, age, evidence, and disposition." },
-  { id: "e2e-artifact.service-flow-system", name: "Operations Flow Policy and Board", description: "The explicit pull-system policy: workflow states, WIP limits, service classes, service-level expectations, capacity policy, metrics, and visible board." },
+  { id: "e2e-artifact.operational-work-item", name: "Service Work Item", description: "A production, maintenance, service, or improvement demand item with source, maintenance purpose where applicable, emergency-temporary status, class of service, severity, owner, service-level expectation, state, age, evidence, and disposition." },
+  { id: "e2e-artifact.service-flow-system", name: "Kanban Service-Delivery Policy and Board", description: "The explicit Definition of Workflow and visible Kanban board: requested/ready/started/finished points, workflow states, WIP controls, classes of service, service-level expectations, replenishment and review cadences, capacity policy, and flow metrics." },
   { id: "e2e-artifact.retirement-record", name: "Retirement and Closure Record", description: "Retirement decision, migration/data disposition, decommission evidence, and retained knowledge." },
 ];
 
@@ -61,7 +61,7 @@ export const END_TO_END_ROLES = [
   { id: "method-engineer", name: "Method Engineer", responsibilities: ["Tailors the development process and maintains its alignment with the modeling framework as metamodels change"] },
 ];
 
-const END_TO_END_PHASES_SOURCE = [
+const END_TO_END_LIFECYCLE_ACTIVITIES_SOURCE = [
   {
     id: "e2e.ph0",
     name: "Initiate, Tailor & Organize",
@@ -87,7 +87,7 @@ const END_TO_END_PHASES_SOURCE = [
       ]),
       stage("e2e.ph0.st4", "Quality, Security & Operations Baseline", "Set cross-cutting quality, security, operational, and release constraints before design detail accumulates.", "quality-engineer", [
         task("e2e.ph0.st4.t1", "Define quality and security control objectives", "security-engineer", ["Identify privacy, threat, compliance, resilience, performance, accessibility, and audit obligations.", "Map control objectives to model evidence, generated artifact evidence, and explicit human decisions.", "Set severity and blocking policies."], ["e2e-artifact.method-profile"], { validationRules: ["Critical controls have an accountable owner and verification evidence path"] }),
-        task("e2e.ph0.st4.t2", "Define operational and release strategy", "service-owner", ["Define environments, support ownership, SLO hypotheses, observability expectations, rollback posture, and release cadence.", "Define the operational pull system: workflow states, WIP limits, service classes, service-level expectations, capacity allocation, replenishment, and emergency preemption/reconciliation policy.", "Identify data migration, compatibility, and progressive-delivery constraints and record the initial release decision policy."], ["e2e-artifact.product-charter", "e2e-artifact.method-profile", "e2e-artifact.service-flow-system"], { validationRules: ["The release strategy names promotion, rollback, and post-deployment validation evidence", "The operational policy prevents unknown future maintenance demand from being represented as pre-scheduled tasks"] }),
+        task("e2e.ph0.st4.t2", "Define operational and release strategy", "service-owner", ["Define environments, support ownership, SLO hypotheses, observability expectations, rollback posture, and release cadence.", "Define the Kanban service-delivery system: board states and start/finish points, WIP controls, classes of service, service-level expectations, capacity allocation, replenishment and review cadences, and expedite/reconciliation policy.", "Identify data migration, compatibility, and progressive-delivery constraints and record the initial release decision policy."], ["e2e-artifact.product-charter", "e2e-artifact.method-profile", "e2e-artifact.service-flow-system"], { validationRules: ["The release strategy names promotion, rollback, and post-deployment validation evidence", "The operational policy prevents unknown future maintenance demand from being represented as pre-scheduled tasks"] }),
       ]),
     ],
   },
@@ -129,7 +129,7 @@ const END_TO_END_PHASES_SOURCE = [
     ],
   },
   {
-    id: "e2e.ph2",
+    id: "e2e.release-activities",
     name: "Release & Transition",
     order: 2,
     objective: "Assemble accepted increments into a controlled release, promote progressively, validate in the target environment, and hand over operational ownership.",
@@ -138,71 +138,107 @@ const END_TO_END_PHASES_SOURCE = [
     exitCriteria: ["Release outcome is recorded", "Service ownership and rollback posture are accepted", "Post-deployment validation is complete"],
     inEngine: false,
     stages: [
-      stage("e2e.ph2.st1", "Release Train Assembly", "Compose and verify a release from accepted increment records.", "release-engineer", [
-        task("e2e.ph2.st1.t1", "Assemble the release candidate", "release-engineer", ["Select accepted increments and compatible model/artifact revisions.", "Resolve cross-team dependency and compatibility checks.", "Create the release record with exact inputs and promotion sequence."], ["e2e-artifact.release-record"], { validationRules: ["Every release scope item maps to an accepted increment and exact artifact identity"] }),
-        task("e2e.ph2.st1.t2", "Review release evidence and go/no-go criteria", "process-reviewer", ["Inspect readiness assessments, validation results, security exceptions, rollback plan, operational runbooks, and approvals.", "Confirm open blockers are zero or explicitly accepted under the tailored method profile.", "Record the go/no-go decision and decision owners."], ["e2e-artifact.release-record"], { validationRules: ["Go/no-go is evidence-based and not inferred from task completion"] }),
+      stage("e2e.rel.a1", "Release Train Assembly", "Compose and verify a release from accepted increment records.", "release-engineer", [
+        task("e2e.rel.a1.t1", "Assemble the release candidate", "release-engineer", ["Select accepted increments and compatible model/artifact revisions.", "Resolve cross-team dependency and compatibility checks.", "Create the release record with exact inputs and promotion sequence."], ["e2e-artifact.release-record"], { validationRules: ["Every release scope item maps to an accepted increment and exact artifact identity"] }),
+        task("e2e.rel.a1.t2", "Review release evidence and go/no-go criteria", "process-reviewer", ["Inspect readiness assessments, validation results, security exceptions, rollback plan, operational runbooks, and approvals.", "Confirm open blockers are zero or explicitly accepted under the tailored method profile.", "Record the go/no-go decision and decision owners."], ["e2e-artifact.release-record"], { validationRules: ["Go/no-go is evidence-based and not inferred from task completion"] }),
       ]),
-      stage("e2e.ph2.st2", "Progressive Promotion", "Promote the release through environments with controlled observation and rollback readiness.", "release-engineer", [
-        task("e2e.ph2.st2.t1", "Deploy and validate progressively", "release-engineer", ["Deploy the exact candidate to the approved environment sequence.", "Run smoke, functional, security, data, observability, and compatibility checks.", "Compare observed outcomes with release acceptance signals and stop or roll back on threshold breach."], ["e2e-artifact.release-record"], { validationRules: ["Promotion evidence identifies candidate, environment, timestamp, operator, and observed result"] }),
-        task("e2e.ph2.st2.t2", "Complete handover and rollback rehearsal", "service-owner", ["Verify dashboards, alerts, runbooks, escalation paths, support ownership, and recovery access.", "Confirm rollback and data-recovery actions are usable for the release.", "Accept operational ownership or return the release to rework."], ["e2e-artifact.release-record", "e2e-artifact.operations-record"], { validationRules: ["Operational acceptance names an accountable service owner and recovery evidence"] }),
+      stage("e2e.rel.a2", "Progressive Promotion", "Promote the release through environments with controlled observation and rollback readiness.", "release-engineer", [
+        task("e2e.rel.a2.t1", "Deploy and validate progressively", "release-engineer", ["Deploy the exact candidate to the approved environment sequence.", "Run smoke, functional, security, data, observability, and compatibility checks.", "Compare observed outcomes with release acceptance signals and stop or roll back on threshold breach."], ["e2e-artifact.release-record"], { validationRules: ["Promotion evidence identifies candidate, environment, timestamp, operator, and observed result"] }),
+        task("e2e.rel.a2.t2", "Complete handover and rollback rehearsal", "service-owner", ["Verify dashboards, alerts, runbooks, escalation paths, support ownership, and recovery access.", "Confirm rollback and data-recovery actions are usable for the release.", "Accept operational ownership or return the release to rework."], ["e2e-artifact.release-record", "e2e-artifact.operations-record"], { validationRules: ["Operational acceptance names an accountable service owner and recovery evidence"] }),
       ]),
-      stage("e2e.ph2.st3", "Release Review", "Inspect release outcomes and feed product, process, and architecture learning back into the backlog.", "product-owner", [
-        task("e2e.ph2.st3.t1", "Review release outcome and update roadmap", "product-owner", ["Compare product and operational outcomes with the release hypothesis.", "Accept outcomes, revise priorities, and create follow-up increments for gaps.", "Record decisions and changes to scope, measures, and assumptions."], ["e2e-artifact.release-record", "e2e-artifact.product-charter"], { validationRules: ["Outcome learning changes a backlog, product decision, or explicitly confirms the hypothesis"] }),
+      stage("e2e.rel.a3", "Release Review", "Inspect release outcomes and feed product, process, and architecture learning back into the backlog.", "product-owner", [
+        task("e2e.rel.a3.t1", "Review release outcome and update roadmap", "product-owner", ["Compare product and operational outcomes with the release hypothesis.", "Accept outcomes, revise priorities, and create follow-up increments for gaps.", "Record decisions and changes to scope, measures, and assumptions."], ["e2e-artifact.release-record", "e2e-artifact.product-charter"], { validationRules: ["Outcome learning changes a backlog, product decision, or explicitly confirms the hypothesis"] }),
       ]),
     ],
   },
   {
-    id: "e2e.ph3",
-    name: "Operate, Evolve & Learn",
-    order: 3,
-    objective: "Operate the service and use an explicit pull system for unpredictable production demand while planned releases continue through the increment engine; restore service, reconcile authoritative sources, and learn.",
+    id: "e2e.ops",
+    name: "Operations and Maintenance",
+    order: null,
+    objective: "Operate the service and manage production, maintenance, and improvement demand through a continuous Kanban service-delivery system while planned releases continue through the increment engine; restore service, reconcile authoritative sources, and learn.",
     primaryRole: "service-owner",
     entryCriteria: ["A service or operational capability has been released or is being maintained"],
     exitCriteria: ["Operational demand and flow decisions are visible", "Changes are traced through the appropriate lifecycle path", "Product and method learning is reviewed at the agreed cadence"],
-    inEngine: true,
+    inEngine: false,
     stages: [
-      stage("e2e.ph3.st1", "Operate and Observe", "Use operational evidence to assess service health, user outcomes, and control effectiveness.", "service-owner", [
-        task("e2e.ph3.st1.t1", "Review SLOs, telemetry, and product outcomes", "service-owner", ["Inspect service levels, errors, cost, security signals, usage, provider events, and product outcome measures.", "Compare observations with the service and product hypotheses.", "Capture actionable demand as operational work items rather than inserting invisible work into a release plan."], ["e2e-artifact.operations-record", "e2e-artifact.operational-work-item"], { iterative: true, validationRules: ["Operational decisions are based on identified evidence and thresholds"] }),
+      stage("e2e.ops.a1", "Operate and Observe", "Use operational evidence to assess service health, user outcomes, and control effectiveness.", "service-owner", [
+        task("e2e.ops.a1.t1", "Review SLOs, telemetry, and product outcomes", "service-owner", ["Inspect service levels, errors, cost, security signals, usage, provider events, and product outcome measures.", "Compare observations with the service and product hypotheses.", "Capture actionable demand as visible service work items rather than inserting hidden work into a release plan."], ["e2e-artifact.operations-record", "e2e-artifact.operational-work-item"], { iterative: true, validationRules: ["Operational decisions are based on identified evidence and thresholds"] }),
       ], { iterative: true }),
-      stage("e2e.ph3.st2a", "Operational Demand Intake & Pull Control", "Control unpredictable production demand through explicit classification, replenishment, pull, WIP, and service expectations.", "delivery-lead", [
-        task("e2e.ph3.st2a.t1", "Triage and classify operational demand", "service-owner", ["Record the demand source, impact, affected service and evidence.", "Classify maintenance purpose as corrective, preventive, adaptive, additive, or perfective; record any emergency temporary-restoration status; classify service separately as expedite, fixed-date, standard, or risk-reduction.", "Select an operations-only response, the shortest safe model-driven change path, or the planned release backlog."], ["e2e-artifact.operational-work-item", "e2e-artifact.service-flow-system"], { iterative: true, validationRules: ["Maintenance purpose, emergency-temporary status, and service class are recorded independently", "Every item has a visible disposition and accountable owner"] }),
-        task("e2e.ph3.st2a.t2", "Replenish, pull, and manage operational flow", "delivery-lead", ["Replenish the ready queue at the defined cadence and pull only when WIP capacity exists.", "Manage item age, blocked work, service-level expectations, and reserved operational capacity; preempt only under the explicit expedite policy.", "Review WIP, throughput, cycle time, work-item age, SLE attainment, interrupt demand, and expedite/preemption frequency without ranking individuals."], ["e2e-artifact.operational-work-item", "e2e-artifact.service-flow-system", "e2e-artifact.operations-record"], { iterative: true, validationRules: ["A team does not start ordinary operational work beyond its WIP limit", "The expedite lane has at most one active item unless the method profile records an exceptional incident command policy"] }),
+      stage("e2e.ops.a2", "Kanban Service-Delivery Management", "Visualize and manage service demand through an explicit Definition of Workflow, replenishment, pull, WIP controls, service expectations, and feedback cadences.", "delivery-lead", [
+        task("e2e.ops.a2.t1", "Triage and make service demand ready", "service-owner", ["Record the demand source, impact, affected service, evidence, owner, and requested outcome on the Kanban board.", "Where the item is maintenance, classify its purpose as corrective, preventive, adaptive, additive, or perfective; record any emergency temporary-restoration status; assign a class of service separately according to the board policy.", "Refine the item until it meets the Ready policy and identify its likely disposition: operations-only response, the shortest safe model-driven change path, or a planned release backlog."], ["e2e-artifact.operational-work-item", "e2e-artifact.service-flow-system"], { iterative: true, validationRules: ["Maintenance purpose, emergency-temporary status, and class of service are recorded independently", "Every ready item has an accountable owner, expected outcome, evidence need, and visible disposition"] }),
+        task("e2e.ops.a2.t2", "Replenish, pull, and manage Kanban flow", "delivery-lead", ["At the replenishment cadence, select eligible items into Ready according to capacity, risk, class-of-service policy, and value; pull a ready item only when the downstream WIP control permits.", "Use the board to manage work-item age, blocked work, service-level expectations, and reserved service capacity; an expedite item may displace other work only under the explicit expedite policy and must remain visible.", "Hold a daily flow review and periodic service-delivery review using WIP, throughput, cycle time, work-item age, SLE attainment, arrival rate, blocked time, and expedite frequency; adapt the Definition of Workflow through an explicit improvement decision."], ["e2e-artifact.operational-work-item", "e2e-artifact.service-flow-system", "e2e-artifact.operations-record"], { iterative: true, validationRules: ["A team does not start ordinary service work beyond its WIP control", "The expedite class has at most one active item unless the method profile records an exceptional incident-command policy", "Requested, Ready, In Progress, Verify, and Done states and their entry/exit policies are visible on the board"] }),
       ], { iterative: true }),
-      stage("e2e.ph3.st2", "Incident, Problem & Risk Response", "Restore service and address systemic causes while preserving traceability and learning.", "service-owner", [
-        task("e2e.ph3.st2.t1", "Manage incidents and emergency recovery", "service-owner", ["Triage impact, stabilize service, communicate status, and execute approved recovery actions.", "Record incident timeline, affected scope, decisions, temporary modifications, and evidence.", "Create permanent corrective, security, or change work for systemic causes and keep it visible after restoration."], ["e2e-artifact.operations-record", "e2e-artifact.operational-work-item"], { iterative: true, validationRules: ["Recovery and customer impact are recorded before closure", "An emergency temporary modification is not treated as the permanent corrective change"] }),
-        task("e2e.ph3.st2.t2", "Perform problem and risk learning", "quality-engineer", ["Analyze contributing causes across requirements, models, transformation, generation, deployment, and operation.", "Update controls, tests, model patterns, process guidance, or method profile as appropriate.", "Route permanent change through the operational pull system or a planned release and verify reconciliation after any emergency downstream fix."], ["e2e-artifact.operations-record", "e2e-artifact.method-profile", "e2e-artifact.operational-work-item"], { validationRules: ["The corrective action is routed to the earliest responsible source rather than only patched downstream"] }),
+      stage("e2e.ops.a3", "Incident, Problem & Risk Response", "Restore service and address systemic causes while preserving traceability and learning.", "service-owner", [
+        task("e2e.ops.a3.t1", "Manage incidents and emergency recovery", "service-owner", ["Triage impact, stabilize service, communicate status, and execute approved recovery actions.", "Record incident timeline, affected scope, decisions, temporary modifications, and evidence.", "Create permanent corrective, security, or change work for systemic causes and keep it visible after restoration."], ["e2e-artifact.operations-record", "e2e-artifact.operational-work-item"], { iterative: true, validationRules: ["Recovery and customer impact are recorded before closure", "An emergency temporary modification is not treated as the permanent corrective change"] }),
+        task("e2e.ops.a3.t2", "Perform problem and risk learning", "quality-engineer", ["Analyze contributing causes across requirements, models, transformation, generation, deployment, and operation.", "Update controls, tests, model patterns, process guidance, or method profile as appropriate.", "Place permanent corrective work on the Kanban board or deliberately commit it to a planned release, and verify reconciliation after any emergency downstream fix."], ["e2e-artifact.operations-record", "e2e-artifact.method-profile", "e2e-artifact.operational-work-item"], { validationRules: ["The corrective action is routed to the earliest responsible source rather than only patched downstream"] }),
       ], { iterative: true }),
-      stage("e2e.ph3.st3", "Change Propagation", "Evolve the product through a controlled impact-analysis and re-execution path.", "delivery-lead", [
-        task("e2e.ph3.st3.t1", "Assess and propagate a change", "delivery-lead", ["Classify the authoritative source as product/domain, architecture, platform, generator, artifact, or operations and confirm whether the item stays in operational flow or enters a planned release.", "Use traces and dependency ownership to identify impacted downstream levels and teams.", "Re-enter the smallest affected process stage, regenerate or redeploy through applicable release controls, and reconcile emergency downstream fixes into the authoritative source."], ["e2e-artifact.increment-record", "e2e-artifact.operations-record", "e2e-artifact.operational-work-item"], { iterative: true, validationRules: ["The change record identifies source revision, impacted levels, downstream evidence, acceptance decision, and operational-item disposition"] }),
+      stage("e2e.ops.a4", "Maintenance Change and Reconciliation", "Evolve the product through controlled impact analysis, authoritative-source change, release, and emergency-fix reconciliation.", "delivery-lead", [
+        task("e2e.ops.a4.t1", "Assess and route a maintenance change", "delivery-lead", ["Classify the authoritative source as product/domain, architecture, platform, generator, artifact, or operations and confirm whether the item remains a bounded Kanban service item or is committed to a planned release.", "Use traces and dependency ownership to identify impacted downstream levels and teams.", "Send product-changing work to the Development and Delivery Process at the smallest affected phase or activity; after release, reconcile emergency downstream fixes into the authoritative source and close the service item only when evidence returns."], ["e2e-artifact.increment-record", "e2e-artifact.operations-record", "e2e-artifact.operational-work-item"], { iterative: true, validationRules: ["The change record identifies source revision, impacted levels, downstream evidence, acceptance decision, and service-work-item disposition"] }),
       ], { iterative: true }),
-      stage("e2e.ph3.st4", "Process and Product Retrospective", "Improve the product and development process using evidence from increments, releases, incidents, and dependencies.", "process-reviewer", [
-        task("e2e.ph3.st4.t1", "Inspect flow, quality, and coordination metrics", "process-reviewer", ["Review planned-delivery forecast, WIP, throughput, cycle time, work-item age, SLE attainment, interrupt demand, expedite/preemption frequency, rework, trace coverage, blockers, dependency age, escaped defects, and product outcomes.", "Look for systemic queues, starvation between planned and operational work, missing work products, invalid gates, and coordination failures.", "Approve bounded process changes and record their expected effect."], ["e2e-artifact.operations-record", "e2e-artifact.method-profile", "e2e-artifact.service-flow-system"], { iterative: true, validationRules: ["Metrics lead to inspectable improvement experiments rather than individual performance rankings"] }),
+      stage("e2e.ops.a5", "Service and Process Improvement", "Improve the product and both connected processes using evidence from releases, service work, incidents, and dependencies.", "process-reviewer", [
+        task("e2e.ops.a5.t1", "Inspect flow, quality, and coordination metrics", "process-reviewer", ["Review planned-delivery forecast, Kanban WIP, throughput, cycle time, work-item age, SLE attainment, demand arrival rate, expedite frequency, rework, trace coverage, blockers, dependency age, escaped defects, and product outcomes.", "Look for systemic queues, starvation between planned and service work, missing work products, invalid gates, and coordination failures.", "Approve bounded changes to the Definition of Workflow, capacity policy, DevOps interface, or method profile and record their expected effect."], ["e2e-artifact.operations-record", "e2e-artifact.method-profile", "e2e-artifact.service-flow-system"], { iterative: true, validationRules: ["Metrics lead to inspectable improvement experiments rather than individual performance rankings"] }),
       ], { iterative: true }),
     ],
   },
   {
-    id: "e2e.ph4",
+    id: "e2e.ph2",
     name: "Retire, Migrate & Close",
-    order: 4,
+    order: 2,
     objective: "Retire a product or service safely, preserve required knowledge and evidence, and close the lifecycle with explicit learning.",
     primaryRole: "service-owner",
     entryCriteria: ["A retirement decision is authorized", "Replacement, migration, or end-of-life obligations are known"],
     exitCriteria: ["Users, data, integrations, environments, and operational ownership are safely transitioned or closed", "Required records and lessons are retained"],
     inEngine: false,
     stages: [
-      stage("e2e.ph4.st1", "Retirement Decision & Plan", "Define why, when, and how the service will be retired.", "product-owner", [
-        task("e2e.ph4.st1.t1", "Approve retirement scope and plan", "product-owner", ["Confirm business, technical, legal, security, and operational reasons for retirement.", "Define replacement, user communication, compatibility, rollback, and exit criteria.", "Assign owners and schedule decision checkpoints."], ["e2e-artifact.retirement-record"], { validationRules: ["The plan identifies affected stakeholders, dependencies, and irreversible actions"] }),
+      stage("e2e.ph2.st1", "Retirement Decision & Plan", "Define why, when, and how the service will be retired while operations continue safely.", "product-owner", [
+        task("e2e.ph2.st1.t1", "Approve retirement scope and plan", "product-owner", ["Confirm business, technical, legal, security, and operational reasons for retirement.", "Define replacement, user communication, compatibility, rollback, and exit criteria.", "Assign owners and schedule decision checkpoints."], ["e2e-artifact.retirement-record"], { validationRules: ["The plan identifies affected stakeholders, dependencies, and irreversible actions"] }),
       ]),
-      stage("e2e.ph4.st2", "Migrate and Decommission", "Move or dispose of data, users, integrations, infrastructure, and operational obligations safely.", "cloud-platform-engineer", [
-        task("e2e.ph4.st2.t1", "Execute migration and data disposition", "cloud-platform-engineer", ["Execute migration, archival, retention, deletion, or export according to approved policy.", "Validate completeness, confidentiality, integrity, and recoverability where required.", "Record final data and integration evidence."], ["e2e-artifact.retirement-record"], { validationRules: ["No data or integration is silently abandoned"] }),
-        task("e2e.ph4.st2.t2", "Decommission service and access", "service-owner", ["Disable traffic, scheduled work, credentials, access paths, alerts, and environments in the approved order.", "Verify replacement ownership and customer communication.", "Retain required source, model, trace, release, incident, and decision records."], ["e2e-artifact.retirement-record"], { validationRules: ["Decommission evidence covers runtime, data, access, cost, and support surfaces"] }),
+      stage("e2e.ph2.st2", "Migrate and Decommission", "Move or dispose of data, users, integrations, infrastructure, and operational obligations safely.", "cloud-platform-engineer", [
+        task("e2e.ph2.st2.t1", "Execute migration and data disposition", "cloud-platform-engineer", ["Execute migration, archival, retention, deletion, or export according to approved policy.", "Validate completeness, confidentiality, integrity, and recoverability where required.", "Record final data and integration evidence."], ["e2e-artifact.retirement-record"], { validationRules: ["No data or integration is silently abandoned"] }),
+        task("e2e.ph2.st2.t2", "Decommission service and access", "service-owner", ["Continue required operational coverage during migration, then disable traffic, scheduled work, credentials, access paths, alerts, and environments in the approved order.", "Verify replacement ownership and customer communication.", "Retain required source, model, trace, release, incident, and decision records."], ["e2e-artifact.retirement-record"], { validationRules: ["Decommission evidence covers runtime, data, access, cost, and support surfaces"] }),
       ]),
-      stage("e2e.ph4.st3", "Closure & Organizational Learning", "Close the lifecycle and feed reusable learning into future process profiles and product planning.", "process-reviewer", [
-        task("e2e.ph4.st3.t1", "Complete closure review", "process-reviewer", ["Confirm retirement exit criteria and records are complete.", "Review product, architecture, operational, and process outcomes.", "Publish reusable patterns, risks, and process changes for future projects."], ["e2e-artifact.retirement-record", "e2e-artifact.method-profile"], { validationRules: ["Closure identifies retained evidence, unresolved obligations, and accountable custodians"] }),
+      stage("e2e.ph2.st3", "Closure & Organizational Learning", "Close the lifecycle, terminate the Operations and Maintenance Process, and feed reusable learning into future method profiles and product planning.", "process-reviewer", [
+        task("e2e.ph2.st3.t1", "Complete closure review", "process-reviewer", ["Confirm retirement exit criteria and records are complete.", "Review product, architecture, operational, and process outcomes.", "Publish reusable patterns, risks, and process changes for future projects."], ["e2e-artifact.retirement-record", "e2e-artifact.method-profile"], { validationRules: ["Closure identifies retained evidence, unresolved obligations, and accountable custodians"] }),
       ]),
     ],
   },
 ];
+
+// The product lifecycle uses Phase only for one-time, sequential macro periods.
+// Release planning, construction iterations, qualification, deployment, and
+// handover are repeatable Activities inside the single active-life phase.
+const inceptionPhase = END_TO_END_LIFECYCLE_ACTIVITIES_SOURCE.find(
+  activity => activity.id === "e2e.ph0",
+);
+const activeLifePhase = END_TO_END_LIFECYCLE_ACTIVITIES_SOURCE.find(
+  activity => activity.id === "e2e.ph1",
+);
+const releaseActivityGroup = END_TO_END_LIFECYCLE_ACTIVITIES_SOURCE.find(
+  activity => activity.name === "Release & Transition",
+);
+const retirementPhase = END_TO_END_LIFECYCLE_ACTIVITIES_SOURCE.find(
+  activity => activity.id === "e2e.ph2",
+);
+
+inceptionPhase.name = "Inception, Tailoring & Organization";
+activeLifePhase.name = "Active Product Construction & Evolution";
+activeLifePhase.objective =
+  "Construct and evolve the product through repeatable model-driven increments and releases while the independent Operations and Maintenance Process sustains accepted live baselines.";
+activeLifePhase.entryCriteria = [
+  "G1 authorizes the product, method profile, team topology, and first delivery hypothesis",
+];
+activeLifePhase.exitCriteria = [
+  "Retirement is authorized and no development or release work remains in flight",
+];
+activeLifePhase.inEngine = false;
+activeLifePhase.tailoringNote =
+  "This Phase occurs once. Repeatable delivery iterations and release activities run inside it; they are not phases.";
+activeLifePhase.stages = [...activeLifePhase.stages, ...releaseActivityGroup.stages];
+
+END_TO_END_LIFECYCLE_ACTIVITIES_SOURCE.splice(
+  END_TO_END_LIFECYCLE_ACTIVITIES_SOURCE.indexOf(releaseActivityGroup),
+  1,
+);
 
 // Inputs are method-authoring decisions.  Empty arrays are intentional and
 // mean that the task has no required WorkProductDefinition input.
@@ -272,108 +308,108 @@ const END_TO_END_INPUT_ARTIFACT_IDS = {
     "e2e-artifact.method-profile",
     "e2e-artifact.product-charter",
   ],
-  "e2e.ph2.st1.t1": [
+  "e2e.rel.a1.t1": [
     "e2e-artifact.increment-record",
     "e2e-artifact.product-charter",
     "e2e-artifact.method-profile",
     "e2e-artifact.team-topology",
   ],
-  "e2e.ph2.st1.t2": [
+  "e2e.rel.a1.t2": [
     "e2e-artifact.release-record",
     "e2e-artifact.increment-record",
+    "e2e-artifact.product-charter",
+    "e2e-artifact.method-profile",
+  ],
+  "e2e.rel.a2.t1": [
+    "e2e-artifact.release-record",
+    "e2e-artifact.product-charter",
+    "e2e-artifact.method-profile",
+    "e2e-artifact.team-topology",
+  ],
+  "e2e.rel.a2.t2": [
+    "e2e-artifact.release-record",
+    "e2e-artifact.product-charter",
+    "e2e-artifact.method-profile",
+    "e2e-artifact.team-topology",
+  ],
+  "e2e.rel.a3.t1": [
+    "e2e-artifact.release-record",
+    "e2e-artifact.operations-record",
+    "e2e-artifact.product-charter",
+    "e2e-artifact.increment-record",
+    "e2e-artifact.method-profile",
+  ],
+  "e2e.ops.a1.t1": [
+    "e2e-artifact.release-record",
+    "e2e-artifact.product-charter",
+    "e2e-artifact.operations-record",
+    "e2e-artifact.method-profile",
+    "e2e-artifact.service-flow-system",
+  ],
+  "e2e.ops.a2.t1": [
+    "e2e-artifact.operational-work-item",
+    "e2e-artifact.operations-record",
+    "e2e-artifact.method-profile",
+    "e2e-artifact.service-flow-system",
+  ],
+  "e2e.ops.a2.t2": [
+    "e2e-artifact.operational-work-item",
+    "e2e-artifact.operations-record",
+    "e2e-artifact.method-profile",
+    "e2e-artifact.service-flow-system",
+  ],
+  "e2e.ops.a3.t1": [
+    "e2e-artifact.operational-work-item",
+    "e2e-artifact.service-flow-system",
+    "e2e-artifact.operations-record",
+    "e2e-artifact.release-record",
+    "e2e-artifact.method-profile",
+  ],
+  "e2e.ops.a3.t2": [
+    "e2e-artifact.operational-work-item",
+    "e2e-artifact.service-flow-system",
+    "e2e-artifact.operations-record",
+    "e2e-artifact.increment-record",
+    "e2e-artifact.release-record",
+    "e2e-artifact.method-profile",
+  ],
+  "e2e.ops.a4.t1": [
+    "e2e-artifact.operational-work-item",
+    "e2e-artifact.service-flow-system",
+    "e2e-artifact.operations-record",
+    "e2e-artifact.method-profile",
+    "e2e-artifact.increment-record",
+    "e2e-artifact.product-charter",
+    "e2e-artifact.release-record",
+  ],
+  "e2e.ops.a5.t1": [
+    "e2e-artifact.operational-work-item",
+    "e2e-artifact.service-flow-system",
+    "e2e-artifact.increment-record",
+    "e2e-artifact.operations-record",
+    "e2e-artifact.product-charter",
+    "e2e-artifact.method-profile",
+    "e2e-artifact.release-record",
+  ],
+  "e2e.ph2.st1.t1": [
+    "e2e-artifact.operations-record",
+    "e2e-artifact.release-record",
     "e2e-artifact.product-charter",
     "e2e-artifact.method-profile",
   ],
   "e2e.ph2.st2.t1": [
+    "e2e-artifact.retirement-record",
+    "e2e-artifact.operations-record",
     "e2e-artifact.release-record",
-    "e2e-artifact.product-charter",
     "e2e-artifact.method-profile",
-    "e2e-artifact.team-topology",
   ],
   "e2e.ph2.st2.t2": [
+    "e2e-artifact.retirement-record",
+    "e2e-artifact.operations-record",
     "e2e-artifact.release-record",
-    "e2e-artifact.product-charter",
-    "e2e-artifact.method-profile",
     "e2e-artifact.team-topology",
   ],
   "e2e.ph2.st3.t1": [
-    "e2e-artifact.release-record",
-    "e2e-artifact.operations-record",
-    "e2e-artifact.product-charter",
-    "e2e-artifact.increment-record",
-    "e2e-artifact.method-profile",
-  ],
-  "e2e.ph3.st1.t1": [
-    "e2e-artifact.release-record",
-    "e2e-artifact.product-charter",
-    "e2e-artifact.operations-record",
-    "e2e-artifact.method-profile",
-    "e2e-artifact.service-flow-system",
-  ],
-  "e2e.ph3.st2a.t1": [
-    "e2e-artifact.operational-work-item",
-    "e2e-artifact.operations-record",
-    "e2e-artifact.method-profile",
-    "e2e-artifact.service-flow-system",
-  ],
-  "e2e.ph3.st2a.t2": [
-    "e2e-artifact.operational-work-item",
-    "e2e-artifact.operations-record",
-    "e2e-artifact.method-profile",
-    "e2e-artifact.service-flow-system",
-  ],
-  "e2e.ph3.st2.t1": [
-    "e2e-artifact.operational-work-item",
-    "e2e-artifact.service-flow-system",
-    "e2e-artifact.operations-record",
-    "e2e-artifact.release-record",
-    "e2e-artifact.method-profile",
-  ],
-  "e2e.ph3.st2.t2": [
-    "e2e-artifact.operational-work-item",
-    "e2e-artifact.service-flow-system",
-    "e2e-artifact.operations-record",
-    "e2e-artifact.increment-record",
-    "e2e-artifact.release-record",
-    "e2e-artifact.method-profile",
-  ],
-  "e2e.ph3.st3.t1": [
-    "e2e-artifact.operational-work-item",
-    "e2e-artifact.service-flow-system",
-    "e2e-artifact.operations-record",
-    "e2e-artifact.method-profile",
-    "e2e-artifact.increment-record",
-    "e2e-artifact.product-charter",
-    "e2e-artifact.release-record",
-  ],
-  "e2e.ph3.st4.t1": [
-    "e2e-artifact.operational-work-item",
-    "e2e-artifact.service-flow-system",
-    "e2e-artifact.increment-record",
-    "e2e-artifact.operations-record",
-    "e2e-artifact.product-charter",
-    "e2e-artifact.method-profile",
-    "e2e-artifact.release-record",
-  ],
-  "e2e.ph4.st1.t1": [
-    "e2e-artifact.operations-record",
-    "e2e-artifact.release-record",
-    "e2e-artifact.product-charter",
-    "e2e-artifact.method-profile",
-  ],
-  "e2e.ph4.st2.t1": [
-    "e2e-artifact.retirement-record",
-    "e2e-artifact.operations-record",
-    "e2e-artifact.release-record",
-    "e2e-artifact.method-profile",
-  ],
-  "e2e.ph4.st2.t2": [
-    "e2e-artifact.retirement-record",
-    "e2e-artifact.operations-record",
-    "e2e-artifact.release-record",
-    "e2e-artifact.team-topology",
-  ],
-  "e2e.ph4.st3.t1": [
     "e2e-artifact.retirement-record",
     "e2e-artifact.operations-record",
     "e2e-artifact.product-charter",
@@ -383,8 +419,28 @@ const END_TO_END_INPUT_ARTIFACT_IDS = {
   ],
 };
 
-export const END_TO_END_PHASES = applyDeclaredTaskInputs(
-  END_TO_END_PHASES_SOURCE,
+const END_TO_END_ACTIVITIES_WITH_INPUTS = applyDeclaredTaskInputs(
+  END_TO_END_LIFECYCLE_ACTIVITIES_SOURCE,
   END_TO_END_INPUT_ARTIFACT_IDS,
   "end-to-end",
 );
+
+export const END_TO_END_PHASES = END_TO_END_ACTIVITIES_WITH_INPUTS.filter(
+  activity => activity.id !== "e2e.ops",
+);
+
+const operationsWithInputs = END_TO_END_ACTIVITIES_WITH_INPUTS.find(
+  activity => activity.id === "e2e.ops",
+);
+
+export const END_TO_END_OPERATIONS_PROCESS = {
+  id: "modriss.operations-maintenance",
+  name: "Operations and Maintenance Process",
+  objective: operationsWithInputs.objective,
+  primaryRole: operationsWithInputs.primaryRole,
+  entryCriteria: ["G7 operational handover has accepted at least one live release"],
+  exitCriteria: ["G8 lifecycle closure is accepted and no live release remains"],
+  isOngoing: true,
+  isEventDriven: true,
+  activities: operationsWithInputs.stages,
+};

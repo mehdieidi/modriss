@@ -6,7 +6,7 @@ skinparam shadowing false
 
 start
 :Capture roadmap request, telemetry signal, incident,\nsecurity finding, provider change or cost anomaly;
-:Create WP-30 operational work item and preserve evidence;
+:Create WP-30 service work item on the Kanban board and preserve evidence;
 :Classify maintenance purpose, emergency status and\nclass of service as independent axes;
 :Replenish and pull under WP-31 WIP, capacity,\npriority and service-level-expectation policies;
 

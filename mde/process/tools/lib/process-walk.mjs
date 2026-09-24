@@ -89,6 +89,9 @@ export function collectProcessTasks(process) {
   for (const phase of process?.phases || []) {
     walkProcessStages(phase.stages || [], phase.id, [], process, out);
   }
+  for (const component of process?.processComponents || []) {
+    walkProcessStages(component.activities || [], component.id, [], process, out);
+  }
   return out;
 }
 

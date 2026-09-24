@@ -28,30 +28,30 @@ end-to-end,TaskDefinition,task.e2e.p4.pim-to-psm.t1,Execute and inspect PIM-to-P
 end-to-end,TaskDefinition,task.e2e.p5.psm-refinement.t1,Run the PSM increment,mde/process/process-definitions/end-to-end.json
 end-to-end,TaskDefinition,task.e2e.p6.m2t-generation.t1,Generate and fingerprint the artifact baseline,mde/process/process-definitions/end-to-end.json
 end-to-end,TaskDefinition,task.e2e.p7.artifact-completion.t1,Run artifact readiness and accept the increment,mde/process/process-definitions/end-to-end.json
-end-to-end,TaskDefinition,task.e2e.ph2.st1.t1,Assemble the release candidate,mde/process/process-definitions/end-to-end.json
-end-to-end,TaskDefinition,task.e2e.ph2.st1.t2,Review release evidence and go/no-go criteria,mde/process/process-definitions/end-to-end.json
-end-to-end,TaskDefinition,task.e2e.ph2.st2.t1,Deploy and validate progressively,mde/process/process-definitions/end-to-end.json
-end-to-end,TaskDefinition,task.e2e.ph2.st2.t2,Complete handover and rollback rehearsal,mde/process/process-definitions/end-to-end.json
-end-to-end,TaskDefinition,task.e2e.ph2.st3.t1,Review release outcome and update roadmap,mde/process/process-definitions/end-to-end.json
-end-to-end,TaskDefinition,task.e2e.ph3.st1.t1,"Review SLOs, telemetry, and product outcomes",mde/process/process-definitions/end-to-end.json
-end-to-end,TaskDefinition,task.e2e.ph3.st2a.t1,Triage and classify operational demand,mde/process/process-definitions/end-to-end.json
-end-to-end,TaskDefinition,task.e2e.ph3.st2a.t2,"Replenish, pull, and manage operational flow",mde/process/process-definitions/end-to-end.json
-end-to-end,TaskDefinition,task.e2e.ph3.st2.t1,Manage incidents and emergency recovery,mde/process/process-definitions/end-to-end.json
-end-to-end,TaskDefinition,task.e2e.ph3.st2.t2,Perform problem and risk learning,mde/process/process-definitions/end-to-end.json
-end-to-end,TaskDefinition,task.e2e.ph3.st3.t1,Assess and propagate a change,mde/process/process-definitions/end-to-end.json
-end-to-end,TaskDefinition,task.e2e.ph3.st4.t1,"Inspect flow, quality, and coordination metrics",mde/process/process-definitions/end-to-end.json
-end-to-end,TaskDefinition,task.e2e.ph4.st1.t1,Approve retirement scope and plan,mde/process/process-definitions/end-to-end.json
-end-to-end,TaskDefinition,task.e2e.ph4.st2.t1,Execute migration and data disposition,mde/process/process-definitions/end-to-end.json
-end-to-end,TaskDefinition,task.e2e.ph4.st2.t2,Decommission service and access,mde/process/process-definitions/end-to-end.json
-end-to-end,TaskDefinition,task.e2e.ph4.st3.t1,Complete closure review,mde/process/process-definitions/end-to-end.json
+end-to-end,TaskDefinition,task.e2e.rel.a1.t1,Assemble the release candidate,mde/process/process-definitions/end-to-end.json
+end-to-end,TaskDefinition,task.e2e.rel.a1.t2,Review release evidence and go/no-go criteria,mde/process/process-definitions/end-to-end.json
+end-to-end,TaskDefinition,task.e2e.rel.a2.t1,Deploy and validate progressively,mde/process/process-definitions/end-to-end.json
+end-to-end,TaskDefinition,task.e2e.rel.a2.t2,Complete handover and rollback rehearsal,mde/process/process-definitions/end-to-end.json
+end-to-end,TaskDefinition,task.e2e.rel.a3.t1,Review release outcome and update roadmap,mde/process/process-definitions/end-to-end.json
+end-to-end,TaskDefinition,task.e2e.ph2.st1.t1,Approve retirement scope and plan,mde/process/process-definitions/end-to-end.json
+end-to-end,TaskDefinition,task.e2e.ph2.st2.t1,Execute migration and data disposition,mde/process/process-definitions/end-to-end.json
+end-to-end,TaskDefinition,task.e2e.ph2.st2.t2,Decommission service and access,mde/process/process-definitions/end-to-end.json
+end-to-end,TaskDefinition,task.e2e.ph2.st3.t1,Complete closure review,mde/process/process-definitions/end-to-end.json
+end-to-end,TaskDefinition,task.e2e.ops.a1.t1,"Review SLOs, telemetry, and product outcomes",mde/process/process-definitions/end-to-end.json
+end-to-end,TaskDefinition,task.e2e.ops.a2.t1,Triage and make service demand ready,mde/process/process-definitions/end-to-end.json
+end-to-end,TaskDefinition,task.e2e.ops.a2.t2,"Replenish, pull, and manage Kanban flow",mde/process/process-definitions/end-to-end.json
+end-to-end,TaskDefinition,task.e2e.ops.a3.t1,Manage incidents and emergency recovery,mde/process/process-definitions/end-to-end.json
+end-to-end,TaskDefinition,task.e2e.ops.a3.t2,Perform problem and risk learning,mde/process/process-definitions/end-to-end.json
+end-to-end,TaskDefinition,task.e2e.ops.a4.t1,Assess and route a maintenance change,mde/process/process-definitions/end-to-end.json
+end-to-end,TaskDefinition,task.e2e.ops.a5.t1,"Inspect flow, quality, and coordination metrics",mde/process/process-definitions/end-to-end.json
 end-to-end,WorkProductDefinition,e2e-artifact.product-charter,Product and System Charter,mde/process/process-definitions/end-to-end.json
 end-to-end,WorkProductDefinition,e2e-artifact.method-profile,Situational Method Profile,mde/process/process-definitions/end-to-end.json
 end-to-end,WorkProductDefinition,e2e-artifact.team-topology,Team Topology and Dependency Map,mde/process/process-definitions/end-to-end.json
 end-to-end,WorkProductDefinition,e2e-artifact.increment-record,Increment Record,mde/process/process-definitions/end-to-end.json
 end-to-end,WorkProductDefinition,e2e-artifact.release-record,Release Record,mde/process/process-definitions/end-to-end.json
 end-to-end,WorkProductDefinition,e2e-artifact.operations-record,Operations and Learning Record,mde/process/process-definitions/end-to-end.json
-end-to-end,WorkProductDefinition,e2e-artifact.operational-work-item,Operational Work Item,mde/process/process-definitions/end-to-end.json
-end-to-end,WorkProductDefinition,e2e-artifact.service-flow-system,Operations Flow Policy and Board,mde/process/process-definitions/end-to-end.json
+end-to-end,WorkProductDefinition,e2e-artifact.operational-work-item,Service Work Item,mde/process/process-definitions/end-to-end.json
+end-to-end,WorkProductDefinition,e2e-artifact.service-flow-system,Kanban Service-Delivery Policy and Board,mde/process/process-definitions/end-to-end.json
 end-to-end,WorkProductDefinition,e2e-artifact.retirement-record,Retirement and Closure Record,mde/process/process-definitions/end-to-end.json
 end-to-end,Guidance,e2e.guid.incremental-vertical,Thin vertical increments,mde/process/process-definitions/end-to-end.json
 end-to-end,Guidance,e2e.guid.human-in-loop,Human-in-the-loop transforms,mde/process/process-definitions/end-to-end.json
@@ -298,8 +298,8 @@ engineered-core,WorkProductDefinition,wp.incident-problem-record,Incident and Pr
 engineered-core,WorkProductDefinition,wp.change-impact-record,Change and Impact Record,mde/process/engineered-method/method-library/core-method-content.json
 engineered-core,WorkProductDefinition,wp.retirement-closure-record,"Retirement, Migration, and Closure Record",mde/process/engineered-method/method-library/core-method-content.json
 engineered-core,WorkProductDefinition,wp.retrospective-improvement-record,Retrospective and Improvement Record,mde/process/engineered-method/method-library/core-method-content.json
-engineered-core,WorkProductDefinition,wp.operational-work-item,Operational Work Item,mde/process/engineered-method/method-library/core-method-content.json
-engineered-core,WorkProductDefinition,wp.operations-flow-policy-board,Operations Flow Policy and Board,mde/process/engineered-method/method-library/core-method-content.json
+engineered-core,WorkProductDefinition,wp.operational-work-item,Service Work Item,mde/process/engineered-method/method-library/core-method-content.json
+engineered-core,WorkProductDefinition,wp.operations-flow-policy-board,Kanban Service-Delivery Policy and Board,mde/process/engineered-method/method-library/core-method-content.json
 engineered-fragments,Guidance,guidance.fragment.mf-01,MF-01 — Opportunity and feasibility,mde/process/engineered-method/method-library/method-fragments.json
 engineered-fragments,Guidance,guidance.fragment.mf-02,"MF-02 — Serverless suitability, cost, risk, and provider decision",mde/process/engineered-method/method-library/method-fragments.json
 engineered-fragments,Guidance,guidance.fragment.mf-03,MF-03 — Situational method tailoring,mde/process/engineered-method/method-library/method-fragments.json
@@ -317,5 +317,6 @@ engineered-fragments,Guidance,guidance.fragment.mf-14,MF-14 — Progressive CI/C
 engineered-fragments,Guidance,guidance.fragment.mf-15,"MF-15 — Operate, observe, control cost, and learn",mde/process/engineered-method/method-library/method-fragments.json
 engineered-fragments,Guidance,guidance.fragment.mf-16,"MF-16 — Incident, problem, and controlled change propagation",mde/process/engineered-method/method-library/method-fragments.json
 engineered-fragments,Guidance,guidance.fragment.mf-17,"MF-17 — Retirement, migration, and closure",mde/process/engineered-method/method-library/method-fragments.json
-engineered-fragments,Guidance,guidance.fragment.mf-18,MF-18 — Interrupt-driven operations and maintenance flow,mde/process/engineered-method/method-library/method-fragments.json
+engineered-fragments,Guidance,guidance.fragment.mf-18,MF-18 — Kanban service-delivery and maintenance system,mde/process/engineered-method/method-library/method-fragments.json
+engineered-fragments,Guidance,guidance.fragment.mf-19,MF-19 — DevOps cross-process coordination,mde/process/engineered-method/method-library/method-fragments.json
 engineered-fragments,Guidance,guidance.fragment.uf-01,"UF-01 — Integrated management, assurance, and evidence",mde/process/engineered-method/method-library/method-fragments.json

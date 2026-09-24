@@ -33,19 +33,41 @@ Result: the requirements and situational-factor catalog in
 
 ### Iteration 1 — instantiate the lifecycle architecture
 
-SPEM was selected for method representation. MDASP was instantiated as the
-initial backbone, but its three broad phases were refined into five lifecycle
-phases so releases, operations, and retirement would not be hidden inside
-deployment and maintenance:
+SPEM was selected for method representation. The initial single sequence was
+rejected because an operational service has no fixed phase duration or one-time
+exit. SPEM defines Phase as a significant period ending at a major checkpoint,
+but provides `isOngoing` and `isEventDriven` for work without a fixed end or
+work initiated by occurrences ([OMG, SPEM 2.0](https://www.omg.org/spec/SPEM/2.0/PDF/)).
+ISO/IEC/IEEE 12207 also distinguishes development, operation, maintenance, and
+disposal processes and permits concurrent application
+([ISO/IEC/IEEE 12207:2026](https://www.iso.org/standard/90219.html)).
 
-1. Initiate, Tailor, and Organize;
-2. Iterative-Incremental Model-Driven Delivery;
-3. Release and Transition;
-4. Operate, Evolve, and Learn; and
-5. Retire, Migrate, and Close.
+RUP makes the structural distinction explicit: lifecycle phases occur in
+sequence, and each phase contains one or more iterations
+([IBM, _RUP project planning_](https://www.ibm.com/docs/en/rational-clearquest/10.0.8?topic=settings-project-planning)).
+Disciplined Agile further distinguishes phase-oriented project lifecycles from
+continuous-delivery lifecycles used by stable product teams, where transition
+becomes a regular delivery activity rather than a repeated phase
+([PMI, _Full Delivery Lifecycles_](https://www.pmi.org/disciplined-agile/lifecycle);
+[PMI, _Full Delivery Lifecycles Introduction_](https://www.pmi.org/disciplined-agile/process/introduction-to-dad/full-delivery-lifecycles-introduction)).
+The assembled lifecycle therefore coordinates two process components:
 
-This preserves MDASP's initiation–construction–deployment logic while adding a
-long-lived product/service lifecycle.
+1. **Development and Delivery**, with three one-time sequential phases: Phase
+   0 Inception, Tailoring, and Organization; Phase 1 Active Product
+   Construction and Evolution; and Phase 2 Retire, Migrate, and Close.
+   Model-driven increments and release/transition activities repeat inside
+   Phase 1; phases do not repeat.
+2. **Operations and Maintenance**, an ongoing, event-driven process that starts
+   at the first G7 handover, manages live releases through Kanban, and ends at
+   G8 after the final release is decommissioned.
+
+DevOps is the cross-process integration mechanism rather than an extra phase:
+the processes remain distinct while they
+share delivery automation, operational readiness, telemetry, incident/change
+routing, release evidence, and improvement feedback. This agrees with
+Disciplined DevOps' end-to-end integration of development, IT operations,
+support, release management, security, and data management
+([PMI, _Disciplined DevOps_](https://www.pmi.org/disciplined-agile/process/disciplined-devops)).
 
 ### Iteration 2 — create the artifact chain
 
@@ -113,22 +135,36 @@ full round-trip transformation, quantitative cost estimation, automated
 cold-start testing, native vendor-tool SPEM interchange, and empirical method
 validation remain open or partial.
 
-### Iteration 7 — engineer planned/interrupt-driven coexistence
+### Iteration 7 — engineer planned delivery and Kanban service coexistence
 
 The lifecycle was stress-tested against an operating service: planned product
 work can be forecast at release and increment horizons, whereas incidents,
 vulnerabilities, provider events, cost anomalies, and maintenance requests
 arrive unpredictably. Treating both as one sprint/release backlog either hides
-interrupts or makes planned commitments meaningless.
+service demand or makes planned commitments meaningless.
 
-MF-18 was therefore assembled from the Kanban Guide's pull-system controls,
-SWEBOK maintenance categories, AWS Serverless Lens operational practices, and
-the existing MODRISS trace/release fragments. It adds WP-30 Operational Work
-Item and WP-31 Operations Flow Policy and Board. Its three result ports are:
+MF-18 was therefore assembled from the
+[Kanban Guide's](https://kanbanguides.org/the-kanban-guide/) Definition of
+Workflow, WIP, SLE, and flow-metric controls; [Disciplined Agile's Lean
+lifecycle](https://www.pmi.org/-/media/pmi/microsites/disciplined-agile/posters/life-cycle-posters-11x17_lean.pdf)
+and value-stream guidance; the peer-reviewed Kanban mapping study by
+[Ahmad et al. (2018)](https://doi.org/10.1016/j.jss.2017.11.045); SWEBOK
+maintenance categories; AWS Serverless Lens operational
+practices; and the existing MODRISS trace/release fragments. It adds WP-30
+Service Work Item and WP-31 Kanban Service-Delivery Policy and Board. Its three
+result ports are:
 operations-only completion, a bounded change through the shortest safe MDE and
 release path, or explicit commitment to a future planned release. Emergency
 restoration is allowed, but a temporary downstream modification cannot close
 until permanent correction or authoritative-source reconciliation is tracked.
+
+This is not an independently invented operational lifecycle or a phase. It is
+the flow-control system within the ongoing Operations and Maintenance Process.
+The board makes
+Requested, Ready, In Progress, Verify, and Done states visible; replenishment
+controls selection; WIP controls govern started work; and feedback cadences
+adapt the Definition of Workflow. Disciplined Agile justifies choosing a flow
+way of working for service demand while retaining iterative planned releases.
 
 ## Reusable fragment catalog
 
@@ -155,7 +191,8 @@ machine-readable catalog is in `method-library/method-fragments.json`.
 | MF-15 | Operate, observe, control cost, and learn                 | Eidi observability/feedback; lifecycle completeness                | Required                              |
 | MF-16 | Incident, problem, and controlled change propagation      | Maintenance plus source/target synchronization                     | Required                              |
 | MF-17 | Retirement, migration, and closure                        | Complete lifecycle requirement                                     | Required                              |
-| MF-18 | Interrupt-driven operations and maintenance flow          | Kanban Guide; SWEBOK maintenance; AWS Serverless Lens              | Required for production operation     |
+| MF-18 | Kanban service-delivery and maintenance system            | Kanban Guide; Disciplined Agile Lean; Ahmad et al.; SWEBOK; AWS    | Required for production operation     |
+| MF-19 | DevOps cross-process coordination                         | PMI Disciplined DevOps; ISO/IEC/IEEE 12207; Faustino et al.        | Required for production operation     |
 | UF-01 | Integrated management, assurance, and evidence            | Ramsin–Paige umbrella activities; MDASP postmortem/generalization  | Continuous; depth is tailored         |
 
 `UF-01` is a composite continuous pattern. It is decomposed operationally in

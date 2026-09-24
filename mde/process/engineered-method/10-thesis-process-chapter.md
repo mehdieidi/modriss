@@ -260,7 +260,7 @@ The stabilized set contains 61 requirements in six families.
 
 | Family                        | IDs        | Count | Main concern                                                                                                     |
 | ----------------------------- | ---------- | ----: | ---------------------------------------------------------------------------------------------------------------- |
-| Lifecycle                     | `MR-LC-*`  |    10 | Full lifecycle, gates, concurrency, feedback, method-content separation, and planned/interrupt flow              |
+| Lifecycle                     | `MR-LC-*`  |    10 | Full lifecycle, gates, concurrency, feedback, method-content separation, and planned/Kanban service flow         |
 | Requirements and stakeholders | `MR-RE-*`  |     5 | Outcomes, events, NFRs, user involvement, evolution, and traceability                                            |
 | Model-driven engineering      | `MR-MDE-*` |    12 | Level boundaries, transformations, identity, reconciliation, validation, reuse, and standards                    |
 | Serverless engineering        | `MR-SL-*`  |    18 | Suitability, cost, provider choice, events, state, failure, security, testing, delivery, operations, and lock-in |
@@ -276,11 +276,15 @@ reviewable at a gate.
 
 ### 3.5 Construct the lifecycle top-down
 
-The initial MDASP initiation–construction–deployment structure was expanded
-into five phases: initiation and tailoring; model-driven delivery; release and
-transition; operation and evolution; and retirement. The expansion keeps
-release decisions distinct from construction, recognizes the service's life
-after deployment, and prevents retirement from remaining an undocumented
+The initial MDASP initiation–construction–deployment structure was reconstructed
+as two coordinated processes. Development and Delivery contains three one-time
+sequential phases: inception and tailoring; active product construction and
+evolution; and retirement. Repeating model-driven increments and
+release/transition work are activities inside the active-product phase, not
+phases. Operations and Maintenance is a separate ongoing,
+event-driven process for live releases. The construction keeps release decisions
+distinct from construction, recognizes the service's life after deployment,
+and prevents retirement from remaining an undocumented
 operational afterthought.
 
 ### 3.6 Build an artifact chain
@@ -361,47 +365,55 @@ security, quality, and operational readiness.
 
 ## 5. The engineered lifecycle
 
-Figure 1 presents the final lifecycle. It deliberately shows two structures at
-once. Horizontally, a product or service progresses through initiation,
-delivery, release, operation, and retirement. Inside Phase 1, a vertical
-increment moves through the model-driven engineering chain. Dashed paths show
-that operational evidence and lifecycle learning can return work to an earlier
-authoritative source. The bar beneath the phases represents continuous
-disciplines rather than a separate late-stage review.
+Figure 1 presents the final lifecycle as two lanes. Development and Delivery
+progresses through three one-time sequential phases; Operations and Maintenance starts
+at the first G7 handover and continues for as long as a release is live. Inside
+Phase 1, a vertical increment moves through the model-driven engineering chain.
+Dashed paths show operational feedback and controlled re-entry. The DevOps rail
+shows shared integration responsibilities rather than a third process.
 
 ![The MODRISS full-lifecycle software development process](diagrams/modriss-lifecycle-manuscript.svg)
 
-**Figure 1. The MODRISS full-lifecycle software development process.** Each
-phase answers a governing question, performs defined work, produces reviewable
-evidence, and yields a primary outcome. Solid arrows show lifecycle progression;
-dashed arrows show controlled re-entry and learning.
+**Figure 1. The MODRISS integrated product lifecycle.** Solid arrows show
+sequential Development and Delivery progression; coral handoffs synchronize
+the two processes; dashed arrows show operational feedback and controlled
+re-entry.
 
-The phases are dominant modes of work, not departments or one-time waterfall
-handoffs. Feasibility can be revisited when operations reveal a false cost
-assumption. Architecture work can overlap with requirements discovery when the
-affected scope and revisions are clear. A release may contain several accepted
-increments. The process nevertheless uses explicit gates because iteration
-without stable decisions makes traceability and responsibility difficult to
-defend.
+Terminology is structural. A SPEM Phase is a significant bounded period ending
+at a major checkpoint; a Process is the enclosing enactable behavior; Activity
+groups task uses; and Iteration repeats activities. MODRISS specializes
+Activity into Stage and optional Substage for decomposition, while Task remains
+the assignable unit of work. Each phase is sequential and non-repeatable. RUP
+likewise places iterations inside sequential lifecycle phases (IBM, n.d.). For
+stable product teams, Disciplined Agile's continuous-delivery lifecycle treats
+transition as a regular activity rather than a repeatedly instantiated phase
+(Project Management Institute, n.d.-d, n.d.-e). Accordingly, the MODRISS
+release iteration repeats activities inside Phase 1 and never repeats a phase.
+Operations instead uses SPEM's `isOngoing` and
+`isEventDriven` properties because it lacks a fixed duration and reacts to
+production occurrences (OMG, 2008).
 
-The lifecycle therefore has three nested cycles and one concurrent service
-flow. The outer product/service
-lifecycle begins with Phase 0 and ends only when Phase 4 retirement is
-authorized. Within it, a release cycle traverses Phases 1, 2, and 3 repeatedly.
-Within each release, Phase 1 executes one or more vertical increment cycles.
+The lifecycle therefore has nested development cycles and a concurrent service
+process. The outer product/service lifecycle begins with Phase 0, spans the
+active product life in Phase 1, and ends only when Phase 2 retirement is
+authorized. Within Phase 1, a continuous-delivery iteration repeats planning,
+one or more vertical model-driven increments, qualification, progressive
+promotion, operational handover, and outcome review activities.
 After G7, the deployed baseline remains in operation while roadmap demand,
 telemetry, incidents, risks, cost evidence, and user feedback are evaluated.
 If further work is selected, the team defines a new release hypothesis and
-returns to Phase 1; it does not restart initiation and it does not proceed to
-retirement by default. A G6 rejection or failed promotion also returns to
-Phase 1 for correction and requalification. In parallel, Phase 3 uses an
-interrupt-driven pull system for production demand; operational work can finish
-there, traverse a bounded MDE/release path, or be committed to a planned
-release. This distinction makes the apparently linear phase layout compatible
-with continuous product evolution without pretending that incidents can be
+returns to the relevant Phase 1 activity; it does not restart inception and it
+does not proceed to retirement by default. A G6 rejection or failed promotion
+also returns to increment planning for correction and requalification. In
+parallel, the Operations and
+Maintenance Process uses a continuous Kanban service-delivery system for production, maintenance, and
+improvement demand; service work can finish there, traverse a bounded
+MDE/release path, or be committed to a planned release. This distinction makes
+the apparently linear phase layout compatible with continuous product
+evolution without pretending that incidents can be
 pre-scheduled.
 
-### 5.1 Phase 0 — Initiate, Tailor, and Organize
+### 5.1 Phase 0 — Inception, Tailoring, and Organization
 
 Phase 0 begins with the product or service problem, not with a preferred cloud
 service. The Product Owner, Sponsor, Domain Expert, Solution Architect, and
@@ -477,10 +489,10 @@ transformations create reviewable drafts. Gates G2–G5 accept exact revisions,
 and findings return to the earliest authoritative source rather than being
 patched only in a downstream artifact.
 
-### 5.3 Phase 2 — Release and Transition
+### 5.3 Repeatable Release and Transition Activities in Phase 1
 
-An accepted increment is not automatically a production release. Phase 2
-assembles compatible increments and freezes the exact model revisions,
+An accepted increment is not automatically a production release. This
+activity group assembles compatible increments and freezes the exact model revisions,
 transformation profiles, generator versions, source revisions, artifact
 digests, schemas, configuration, database changes, and dependencies that form
 the candidate. Compatibility, consumer readiness, data migration, quotas,
@@ -502,7 +514,7 @@ considered complete merely because infrastructure exists in the target account.
 Nor is G7 a terminal point: it establishes the operating baseline from which a
 later release may be justified and engineered.
 
-### 5.4 Phase 3 — Operate, Evolve, and Learn
+### 5.4 Operations and Maintenance Process
 
 The running service is managed against product outcomes and SLOs. The process
 expects observation of latency, availability, errors, throttling, concurrency,
@@ -512,10 +524,16 @@ Routine recovery, dependency updates, access review, key rotation, patching,
 and continuity work remain owned. Actionable signals become Operational Work
 Items rather than invisible additions to a release plan.
 
-Phase 3 is governed as a service-delivery pull system. Its Definition of
-Workflow names intake, triage, ready, active, verify, and done states; WIP
-limits; explicit policies; service-level expectations; replenishment; and flow
-measures, following the Kanban Guide (Kanban Guides, 2025). The Method Profile
+The ongoing, event-driven process is governed as a Kanban service-delivery system. Its visible board and
+Definition of Workflow name Requested, Ready, In Progress, Verify, and Done
+states; explicit start/finish points; WIP controls; policies; service-level
+expectations; replenishment and review cadences; and flow measures, following
+the Kanban Guide (Kanban Guides, 2025). Disciplined Agile supplies the
+contextual choice of a flow way of working, Kanban-board/value-stream guidance,
+and guided improvement while planned releases retain their iterative cadence
+(Project Management Institute, n.d.-a, n.d.-b). The peer-reviewed mapping study
+by Ahmad et al. (2018) supports Kanban's relevance to both software development
+and maintenance but also cautions that evidence is contextual. The Method Profile
 defines capacity allocation between planned delivery and operational demand.
 
 Maintenance purpose, emergency status, and service class are independent.
@@ -530,11 +548,11 @@ is deliberately committed to a future planned release.
 
 Figure 3 makes this concurrent control system explicit.
 
-![The MODRISS interrupt-driven operations and maintenance flow](diagrams/modriss-operational-flow.svg)
+![The MODRISS Kanban service-delivery and maintenance system](diagrams/modriss-operational-flow.svg)
 
-**Figure 3. The MODRISS interrupt-driven operations and maintenance flow.** An
-Operational Work Item moves from capture through independent classification,
-replenishment, pull, verification, and one explicit disposition. WP-31 defines
+**Figure 3. The MODRISS Kanban service-delivery and maintenance system.** A
+Service Work Item moves across a visible board from Requested through Ready,
+In Progress, Verify, and Done. WP-31 defines
 the workflow, WIP limits, service-level expectations, replenishment, capacity,
 and expedite authority. Operations-only work does not manufacture a release;
 only bounded MDE/release work or explicit planned-release commitment crosses
@@ -564,12 +582,12 @@ system and its authoritative models gradually become unrelated artifacts.
 
 Retrospectives compare actual outcomes, SLOs, cost, risk, estimates, and flow.
 They review planned-release forecast alongside operational WIP, throughput,
-cycle time, item age, SLE attainment, interrupt rate, expedite/preemption, and
+cycle time, item age, SLE attainment, demand arrival rate, expedite use, and
 capacity allocation against the original hypotheses. Metrics improve the
 system and never rank individuals. Reusable models, transformations, tests,
 templates, runbooks, and reusable method content are generalized only after review.
 
-### 5.5 Phase 4 — Retire, Migrate, and Close
+### 5.5 Phase 2 — Retire, Migrate, and Close
 
 Retirement is treated as a controlled release. The team identifies the reason,
 successor, users and consumers, legal and contractual obligations, data
@@ -598,7 +616,7 @@ vary by project profile.
 
 ### 6.1 Process-pattern repository
 
-Eighteen lifecycle patterns and one composite continuous pattern form the
+Nineteen lifecycle/integration patterns and one composite continuous pattern form the
 method repository.
 
 | ID    | Pattern                                                   | Default use                                      |
@@ -620,7 +638,8 @@ method repository.
 | MF-15 | Operate, observe, control cost, and learn                 | Required                                         |
 | MF-16 | Incident, problem, and controlled change propagation      | Required                                         |
 | MF-17 | Retirement, migration, and closure                        | Required                                         |
-| MF-18 | Interrupt-driven operations and maintenance flow          | Required during production operation             |
+| MF-18 | Kanban service-delivery and maintenance system            | Required during production operation             |
+| MF-19 | DevOps cross-process coordination                         | Required during production operation             |
 | UF-01 | Integrated management, assurance, and evidence            | Continuous; depth is tailored                    |
 
 Each pattern records its problem, initial context, result context, roles, work
@@ -705,8 +724,8 @@ criteria, consumers, provenance, and retention rule.
 |                            | WP-27 | Change and Impact Record                        | Requirements Engineer               |
 |                            | WP-28 | Retirement/Migration Plan and Closure Record    | Service Owner                       |
 |                            | WP-29 | Retrospective and Improvement Record            | Method Engineer                     |
-|                            | WP-30 | Operational Work Item                           | Service Owner                       |
-|                            | WP-31 | Operations Flow Policy and Board                | Delivery Lead                       |
+|                            | WP-30 | Service Work Item                               | Service Owner                       |
+|                            | WP-31 | Kanban Service-Delivery Policy and Board        | Delivery Lead                       |
 
 Ordinary work products progress through `identified`, `draft`, `reviewed`,
 `accepted`, `baselined`, `superseded`, and `archived`. Rejection, deferral, and
@@ -951,7 +970,7 @@ increment gates, release, an operating period, a controlled change or incident,
 and retirement or a retirement rehearsal. Measures include cycle and wait time,
 effort by activity family, rework, trace closure, transformation conflicts,
 finding stage, escaped defects, forecast and observed cost, SLO evidence,
-operational WIP, item age, SLE attainment, interrupt/preemption frequency,
+service WIP, item age, SLE attainment, demand/expedite frequency,
 planned-release disruption, emergency-reconciliation time, deviations, and
 practitioner experience. Independent assessors should rescore
 the criteria from the evidence package and preserve disagreements.
@@ -992,6 +1011,10 @@ situational enactment is the central design choice of the MODRISS process.
 
 ## References
 
+Ahmad, M. O., Dennehy, D., Conboy, K., and Oivo, M. (2018). “Kanban in
+Software Engineering: A Systematic Mapping Study.” _Journal of Systems and
+Software_, 137, 96–113. <https://doi.org/10.1016/j.jss.2017.11.045>.
+
 Asadi, M., Esfahani, N., and Ramsin, R. (2010). “Process Patterns for
 MDA-Based Software Development.” In _Proceedings of the 8th ACIS International
 Conference on Software Engineering Research, Management and Applications
@@ -1021,6 +1044,40 @@ Knowledge (SWEBOK Guide), Version 4.0a_.
 
 Kanban Guides (2025). _The Kanban Guide_, May 2025.
 <https://kanbanguides.org/the-kanban-guide/>.
+
+Project Management Institute (PMI) (n.d.-a). “Starting With Iterations or
+Flow.” _Disciplined Agile_.
+<https://www.pmi.org/disciplined-agile/starting-with-iterations-or-flow>.
+
+Project Management Institute (PMI) (n.d.-b). “Designing the Kanban Board.”
+_Disciplined Agile_.
+<https://www.pmi.org/disciplined-agile/designing-the-kanban-board>.
+
+Project Management Institute (PMI) (n.d.-c). “Disciplined DevOps.”
+_Disciplined Agile_.
+<https://www.pmi.org/disciplined-agile/process/disciplined-devops>.
+
+Project Management Institute (PMI) (n.d.-d). “Full Delivery Lifecycles.”
+_Disciplined Agile_. <https://www.pmi.org/disciplined-agile/lifecycle>.
+
+Project Management Institute (PMI) (n.d.-e). “Full Delivery Lifecycles
+Introduction.” _Disciplined Agile_.
+<https://www.pmi.org/disciplined-agile/process/introduction-to-dad/full-delivery-lifecycles-introduction>.
+
+IBM (n.d.). “Rational Unified Process: Project Planning.”
+<https://www.ibm.com/docs/en/rational-clearquest/10.0.8?topic=settings-project-planning>.
+
+Faustino, J., Pereira, R., Alturas, B., and Silva, M. M. (2022). “Agile
+Information Technology Service Management with DevOps: An Incident Management
+Case Study.” _Software: Practice and Experience_, 52(1), 322–339.
+<https://doi.org/10.1002/spe.3096>.
+
+ISO/IEC/IEEE (2026). _ISO/IEC/IEEE 12207:2026 Systems and Software Engineering
+— Software Life Cycle Processes_. <https://www.iso.org/standard/90219.html>.
+
+ISO/IEC/IEEE (2022). _ISO/IEC/IEEE 14764:2022 Software Engineering — Software
+Life Cycle Processes — Maintenance_.
+<https://www.iso.org/standard/80710.html>.
 
 Object Management Group (OMG) (2008). _Software & Systems Process Engineering
 Metamodel Specification, Version 2.0_. OMG formal/2008-04-01.

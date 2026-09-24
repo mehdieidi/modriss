@@ -1,108 +1,57 @@
 @startuml
-title MODRISS Full Lifecycle — SPEM 2.0 Logical Activity View
-
+title MODRISS Integrated Product Lifecycle — Two Coordinated Processes
 skinparam backgroundColor #F5F3ED
 skinparam shadowing false
-skinparam activity {
-  BackgroundColor #FCFBF7
-  BorderColor #617178
-  FontColor #102C3A
-  DiamondBackgroundColor #D7E9E5
-  DiamondBorderColor #087B78
-}
-skinparam note {
-  BackgroundColor #EBE8DF
-  BorderColor #B4653C
-}
+skinparam activity { BackgroundColor #FCFBF7; BorderColor #617178; FontColor #102C3A; DiamondBackgroundColor #D7E9E5; DiamondBorderColor #087B78 }
 
+|Development and Delivery|
 start
+:Phase 0 — Inception, Tailoring & Organization\n«Activity, Phase; occurs once»;
+if (G0/G1 authorized?) then (yes)
+else (redirect / stop)
+  stop
+endif
 
-partition "Phase 0 — Initiate, Tailor & Organize\n«Activity, Phase»" {
-  :Define opportunity, outcomes and feasibility\n«TaskUse»;
-  :Assess serverless suitability, cost, risk\nand provider options «TaskUse»;
-  :Tailor method; establish team, quality,\nsecurity, operations and release baseline «TaskUse»;
-  if (Product and method authorized?) then (G0/G1 yes)
-  else (redirect / stop)
-    :Record stop, redirect or bounded experiment\n«WorkProductUse»;
-    stop
-  endif
-}
-
-repeat
-  :Open the next release cycle and set\nits outcome hypothesis and scope;
-
+fork
+  :Phase 1 — Active Product Construction & Evolution\n«Activity, Phase; occurs once»;
   repeat
     repeat
-      partition "Phase 1 — Iterative Model-Driven Delivery\n«Activity, Iteration»" {
-        :Frame one thin vertical increment\n«TaskUse»;
-        :CIM child process and G2 acceptance\n«ProcessComponentUse»;
-        :CIM → PIM ETL, reconcile, refine PIM\nand obtain G3 «TaskUse»;
-        :PIM → AWS PSM ETL, reconcile, refine PSM\nand obtain G4 «TaskUse»;
-        :EGL/EGX generation, completion, integration,\ntesting and G5 acceptance «TaskUse»;
-      }
-    repeat while (Another increment needed for this candidate?) is (yes)
-    -> no;
-
-    partition "Phase 2a — Assemble & Qualify\n«Activity, Release Candidate»" {
-      :Assemble immutable candidate, compatibility,\nverification and recovery evidence «TaskUse»;
-      :Review exact candidate at G6\n«Milestone»;
-    }
-  repeat while (G6 release candidate rejected?) is (yes — route findings to Phase 1)
-  -> no — authorized;
-
-  partition "Phase 2b — Promote & Transition\n«Activity, Phase»" {
-    :Promote progressively and observe\npredefined stop thresholds «TaskUse»;
-    if (Promotion and operational acceptance succeed?) then (G7 yes)
-      :Hand over the new operating baseline\n«Milestone G7»;
-    else (no)
-      :Stop or roll back; retain the last accepted\nbaseline and create corrective work «TaskUse»;
+      :Model-driven increment iteration\nvertical slice; G2–G5\n«Activity, Iteration»;
+    repeat while (Another increment?) is (yes)
+    :Release and transition activities\nqualify, promote, hand over; G6–G7\n«Activity»;
+    if (Candidate or promotion rejected?) then (yes)
+      :Retain accepted baseline; route correction\nto earliest authoritative source;
+    else (accepted)
+      |Operations and Maintenance|
+      :Accept live release at G7;
+      |Development and Delivery|
     endif
-  }
+  repeat while (Next release selected and retirement not authorized?) is (next release)
+  :Phase 2 — Retire, Migrate & Close\n«Activity, Phase; occurs once»;
+fork again
+  |Operations and Maintenance|
+  repeat
+    :Operate & observe live release;
+    :Kanban service delivery\nRequested → Ready → In Progress → Verify → Done;
+    :Respond to incident/problem or maintain;
+    if (Product change?) then (yes)
+      |Development and Delivery|
+      :Route to earliest authoritative source\nand applicable release controls;
+      |Operations and Maintenance|
+    else (operations-only)
+    endif
+    :Verify, reconcile and learn;
+  repeat while (Any live release remains?) is (yes)
+end fork
 
-  partition "Phase 3 — Operate, Evolve & Learn\n«Activity, Continuous Phase»" {
-    repeat
-      :Operate the accepted baseline; observe outcomes,\nSLOs, security, cost and provider health «TaskUse»;
-      :Capture one operational work item in WP-30\nand preserve evidence «TaskUse»;
-      :Classify maintenance purpose, emergency status,\nand class of service as independent axes «TaskUse»;
-      :Replenish and pull within explicit WIP limits,\ncapacity and service-level expectations «TaskUse»;
-      :Restore or evolve safely; verify evidence and\nreconcile temporary changes «TaskUse»;
-      if (Disposition?) then (operations-only)
-        :Close with operational evidence; no release re-entry;
-      elseif (bounded MDE/release path) then (shortest safe path)
-        :Route to earliest authoritative source and\npropagate through applicable G2–G7 controls;
-      else (planned release backlog)
-        :Select explicitly into a later release hypothesis;
-      endif
-    repeat while (No bounded/planned release selected\nand retirement not authorized?) is (continue pull flow)
-    -> release or retirement selected;
-    note right
-      The accepted release remains in operation while
-      planned delivery proceeds. Operations-only demand
-      stays in Phase 3; only explicit selection re-enters
-      the model-driven release stream.
-    end note
-  }
-
-repeat while (Retirement authorized?) is (no — begin selected release cycle)
--> yes;
-
-partition "Phase 4 — Retire, Migrate & Close\n«Activity, Phase»" {
-  :Plan migration, retention and decommission\n«TaskUse»;
-  :Migrate consumers and data; remove resources,\naccess, integrations and continuing cost «TaskUse»;
-  :Verify closure and retain organizational learning\n«Milestone G8»;
-}
-
+|Development and Delivery|
+:G8 — closure accepted;
 stop
 
 legend bottom
-  Nested cadence: one product/service lifecycle contains many release cycles;
-  one release cycle contains one or more accepted vertical increments.
-
-  Continuous across all phases: product/project management; risk and opportunity;
-  quality assurance; security/privacy; configuration/change/traceability;
-  FinOps; documentation/knowledge; measurement and process improvement.
-
-  Assistant boundary: assistant apply/repair/commit paths use structural
-  Ecore/EMF conformance only. EVL belongs to explicit model-validation workflows.
+  Phase = bounded sequential period ending at a major checkpoint.
+  The three phases occur once; only Phase 1 activities and iterations repeat.
+  Operations and Maintenance = ongoing, event-driven Process, not a Phase.
+  DevOps coordinates G7 handover, CI/CD, telemetry, change, evidence and G8.
 endlegend
 @enduml

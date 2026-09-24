@@ -630,7 +630,6 @@ button {
 }
 .active-lifecycle-stack {
   min-width: 0;
-  padding: 0 14px 14px 0;
   position: relative;
 }
 .release-card-back {
@@ -684,7 +683,7 @@ button {
 .release-cycle {
   padding: 22px 0 18px;
   display: grid;
-  grid-template-columns: minmax(250px, 1.42fr) 28px minmax(145px, 0.76fr) 28px minmax(145px, 0.76fr);
+  grid-template-columns: minmax(250px, 1.42fr) 28px minmax(170px, 0.76fr);
   align-items: center;
 }
 .increment-zone {
@@ -818,6 +817,178 @@ button {
 }
 .operate-node > div b {
   background: var(--paper);
+}
+.operations-process {
+  margin-top: 0;
+  display: grid;
+  grid-template-columns: 190px minmax(0, 1fr);
+  background: #fff8f4;
+  border: 1px solid var(--copper);
+}
+.devops-interface {
+  margin: 10px 148px 0;
+  min-height: 42px;
+  display: flex;
+  align-items: stretch;
+  background: #f7eee8;
+  border: 1px solid #ddb19f;
+  font-size: 8px;
+}
+.devops-interface > b {
+  width: 86px;
+  display: grid;
+  place-items: center;
+  background: var(--copper);
+  color: var(--white);
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.devops-channels {
+  flex: 1;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+}
+.devops-channels span {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: var(--ink-soft);
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+.devops-channels span + span {
+  border-left: 1px solid #ddb19f;
+}
+.devops-channels i {
+  color: var(--copper);
+  font-size: 16px;
+  font-style: normal;
+  line-height: 1;
+}
+.process-figure > .operations-process {
+  margin: 0 148px;
+}
+.operations-process > header {
+  padding: 18px;
+  border-right: 1px solid #ddb19f;
+}
+.operations-process > header > span {
+  color: var(--copper);
+  font-size: 7px;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+.operations-process h4 {
+  margin: 7px 0 14px;
+  font: 400 18px var(--serif);
+}
+.live-baseline {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--ink-soft);
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.live-baseline i {
+  width: 8px;
+  height: 8px;
+  background: var(--teal);
+  border-radius: 50%;
+}
+.operations-mechanism {
+  padding: 16px;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-areas:
+    "label board board"
+    "routes routes routes";
+  gap: 12px 16px;
+  align-items: center;
+}
+.kanban-label {
+  grid-area: label;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  color: var(--copper);
+  font-size: 8px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.kanban-label span {
+  color: var(--muted);
+  font-size: 7px;
+}
+.kanban-mini {
+  grid-area: board;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(54px, 1fr));
+  gap: 12px;
+  list-style: none;
+}
+.kanban-mini li {
+  min-height: 46px;
+  padding: 9px 7px;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 5px;
+  background: var(--white);
+  border: 1px solid #cdbdb4;
+  color: var(--ink-soft);
+  font-size: 8px;
+  font-weight: 700;
+  text-align: center;
+}
+.kanban-mini li:not(:last-child)::after {
+  content: "›";
+  position: absolute;
+  top: 50%;
+  right: -10px;
+  translate: 0 -52%;
+  color: var(--copper);
+  font-size: 14px;
+}
+.kanban-mini small {
+  align-self: center;
+  padding: 1px 4px;
+  border: 1px solid #ddb19f;
+  border-radius: 2px;
+  color: var(--copper);
+  font-size: 7px;
+}
+.operations-routes {
+  grid-area: routes;
+  padding-top: 9px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 22px;
+  border-top: 1px solid #ead2c7;
+}
+.operations-routes span {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--ink-soft);
+  font-size: 7px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.operations-routes i {
+  color: var(--copper);
+  font-size: 14px;
+  font-style: normal;
 }
 .release-return {
   padding: 12px 18px;
@@ -1176,10 +1347,11 @@ footer > p {
     padding: 18px;
   }
   .release-cycle {
-    grid-template-columns: minmax(226px, 1.35fr) 20px minmax(126px, 0.72fr) 20px minmax(
-        126px,
-        0.72fr
-      );
+    grid-template-columns: minmax(226px, 1.35fr) 20px minmax(150px, 0.72fr);
+  }
+  .devops-interface,
+  .process-figure > .operations-process {
+    margin-inline: 126px;
   }
   .increment-card li {
     padding-inline: 6px;
@@ -1397,6 +1569,58 @@ footer > p {
   }
   .release-node {
     min-height: 0;
+  }
+  .operations-process {
+    grid-template-columns: 1fr;
+  }
+  .devops-interface,
+  .process-figure > .operations-process {
+    margin-inline: 0;
+  }
+  .devops-interface {
+    min-height: 0;
+    flex-direction: column;
+  }
+  .devops-interface > b {
+    width: auto;
+    padding: 7px;
+  }
+  .devops-channels span {
+    min-height: 38px;
+    gap: 4px;
+    font-size: 7px;
+  }
+  .operations-process > header {
+    border-right: 0;
+    border-bottom: 1px solid #ddb19f;
+  }
+  .operations-mechanism {
+    display: block;
+    overflow: hidden;
+  }
+  .kanban-label {
+    margin-bottom: 10px;
+    flex-direction: row;
+    justify-content: space-between;
+  }
+  .kanban-mini {
+    grid-template-columns: repeat(5, minmax(42px, 1fr));
+    gap: 7px;
+    overflow: visible;
+    padding-bottom: 0;
+  }
+  .kanban-mini li {
+    min-height: 42px;
+    padding-inline: 3px;
+    font-size: 6.5px;
+  }
+  .kanban-mini li:not(:last-child)::after {
+    right: -6px;
+    font-size: 11px;
+  }
+  .operations-routes {
+    margin-top: 8px;
+    justify-content: flex-start;
   }
   .release-return {
     justify-content: flex-start;

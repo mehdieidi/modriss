@@ -3534,7 +3534,7 @@
     {
       "id": "cim.ph1",
       "type": "Activity",
-      "activityKind": "Phase",
+      "activityKind": "MODRISS::Stage",
       "name": "Increment Framing",
       "order": 1,
       "objective": "Frame the current capability slice, establish or refresh the CIM program container, and anchor modeling in measurable intent.",
@@ -3550,7 +3550,7 @@
         {
           "id": "cim.ph1.st1",
           "type": "Activity",
-          "activityKind": "MODRISS::Stage",
+          "activityKind": "MODRISS::SubStage",
           "name": "Program Charter",
           "objective": "Create the CIMModel root and modeling conventions on the first cycle; refresh them when the program scope changes.",
           "roleUseRefs": ["ru.cim.ph1.st1.business-modeler", "ru.cim.ph1.st1.method-engineer"],
@@ -3627,7 +3627,7 @@
         {
           "id": "cim.ph1.st2",
           "type": "Activity",
-          "activityKind": "MODRISS::Stage",
+          "activityKind": "MODRISS::SubStage",
           "name": "Capability Slice Planning",
           "objective": "Select the smallest valuable capability slice and define the cycle-level definition of done.",
           "roleUseRefs": ["ru.cim.ph1.st2.business-modeler"],
@@ -3676,7 +3676,7 @@
         {
           "id": "cim.ph1.st3",
           "type": "Activity",
-          "activityKind": "MODRISS::Stage",
+          "activityKind": "MODRISS::SubStage",
           "name": "Strategic Framing",
           "objective": "Capture measurable business intent for the selected slice using GQM before domain modeling.",
           "roleUseRefs": ["ru.cim.ph1.st3.business-modeler"],
@@ -3778,7 +3778,7 @@
     {
       "id": "cim.ph2",
       "type": "Activity",
-      "activityKind": "Phase",
+      "activityKind": "MODRISS::Stage",
       "name": "Context Discovery",
       "order": 2,
       "objective": "Map who participates in the domain, what the organization can do, and shared vocabulary.",
@@ -3790,7 +3790,7 @@
         {
           "id": "cim.ph2.st1",
           "type": "Activity",
-          "activityKind": "MODRISS::Stage",
+          "activityKind": "MODRISS::SubStage",
           "name": "Participation Model",
           "objective": "Model human/system actors, roles, and boundary external systems.",
           "roleUseRefs": ["ru.cim.ph2.st1.business-modeler"],
@@ -3901,7 +3901,7 @@
         {
           "id": "cim.ph2.st2",
           "type": "Activity",
-          "activityKind": "MODRISS::Stage",
+          "activityKind": "MODRISS::SubStage",
           "name": "Capability Topology",
           "objective": "Map business capabilities to goals and record dependencies.",
           "roleUseRefs": ["ru.cim.ph2.st2.business-modeler"],
@@ -4008,7 +4008,7 @@
         {
           "id": "cim.ph2.st3",
           "type": "Activity",
-          "activityKind": "MODRISS::Stage",
+          "activityKind": "MODRISS::SubStage",
           "name": "Ubiquitous Language",
           "objective": "Build shared glossary before structural modeling (DDD).",
           "roleUseRefs": ["ru.cim.ph2.st3.business-modeler"],
@@ -4080,7 +4080,7 @@
     {
       "id": "cim.ph3",
       "type": "Activity",
-      "activityKind": "Phase",
+      "activityKind": "MODRISS::Stage",
       "name": "Domain Exploration",
       "order": 3,
       "objective": "Explore information, structure, and behavior using Twin Peaks, iterate until CQRS surface is coherent.",
@@ -4092,7 +4092,7 @@
         {
           "id": "cim.ph3.st1",
           "type": "Activity",
-          "activityKind": "MODRISS::Stage",
+          "activityKind": "MODRISS::SubStage",
           "name": "Information Architecture",
           "objective": "Classify data and name information items before entities (CIM-ENTITY-001).",
           "roleUseRefs": ["ru.cim.ph3.st1.business-modeler"],
@@ -4240,7 +4240,7 @@
         {
           "id": "cim.ph3.st2",
           "type": "Activity",
-          "activityKind": "MODRISS::Stage",
+          "activityKind": "MODRISS::SubStage",
           "name": "Structural Domain Model",
           "objective": "Model entities, value objects, relationships, lifecycle, and invariants.",
           "roleUseRefs": ["ru.cim.ph3.st2.business-modeler"],
@@ -4407,7 +4407,7 @@
         {
           "id": "cim.ph3.st3",
           "type": "Activity",
-          "activityKind": "MODRISS::Stage",
+          "activityKind": "MODRISS::SubStage",
           "name": "Behavior Surface",
           "objective": "CQRS and event storming, commands, queries, events linked to actors and capabilities.",
           "roleUseRefs": ["ru.cim.ph3.st3.business-modeler"],
@@ -4665,7 +4665,7 @@
     {
       "id": "cim.ph4",
       "type": "Activity",
-      "activityKind": "Phase",
+      "activityKind": "MODRISS::Stage",
       "name": "Domain Synthesis",
       "order": 4,
       "objective": "Synthesize transactional boundaries, orchestration, and bounded contexts from explored domain.",
@@ -4677,7 +4677,7 @@
         {
           "id": "cim.ph4.st1",
           "type": "Activity",
-          "activityKind": "MODRISS::Stage",
+          "activityKind": "MODRISS::SubStage",
           "name": "Aggregate Boundaries",
           "objective": "Group entities into consistency boundaries with command/event ownership.",
           "roleUseRefs": ["ru.cim.ph4.st1.business-modeler"],
@@ -4767,7 +4767,7 @@
         {
           "id": "cim.ph4.st2",
           "type": "Activity",
-          "activityKind": "MODRISS::Stage",
+          "activityKind": "MODRISS::SubStage",
           "name": "Process Orchestration",
           "objective": "Model long-running business flows, policies, and decisions.",
           "roleUseRefs": ["ru.cim.ph4.st2.business-modeler"],
@@ -4942,7 +4942,7 @@
         {
           "id": "cim.ph4.st3",
           "type": "Activity",
-          "activityKind": "MODRISS::Stage",
+          "activityKind": "MODRISS::SubStage",
           "name": "Bounded Context Synthesis",
           "objective": "Assign capabilities, domain, behavior, and policies into cohesive contexts.",
           "roleUseRefs": ["ru.cim.ph4.st3.business-modeler"],
@@ -5041,7 +5041,7 @@
     {
       "id": "cim.ph5",
       "type": "Activity",
-      "activityKind": "Phase",
+      "activityKind": "MODRISS::Stage",
       "name": "Convergence & Readiness",
       "order": 5,
       "objective": "Backfill requirements, record transformation contracts, close traceability and EVL gate.",
@@ -5057,7 +5057,7 @@
         {
           "id": "cim.ph5.st1",
           "type": "Activity",
-          "activityKind": "MODRISS::Stage",
+          "activityKind": "MODRISS::SubStage",
           "name": "Requirements Engineering",
           "objective": "Twin Peaks backfill, formalize requirements traced to modeled elements.",
           "roleUseRefs": ["ru.cim.ph5.st1.requirements-engineer"],
@@ -5241,7 +5241,7 @@
         {
           "id": "cim.ph5.st2",
           "type": "Activity",
-          "activityKind": "MODRISS::Stage",
+          "activityKind": "MODRISS::SubStage",
           "name": "Transformation Contracts",
           "objective": "Document risks, assumptions, and CIM→PIM transformation profile.",
           "roleUseRefs": ["ru.cim.ph5.st2.business-modeler"],
@@ -5330,7 +5330,7 @@
         {
           "id": "cim.ph5.st3",
           "type": "Activity",
-          "activityKind": "MODRISS::Stage",
+          "activityKind": "MODRISS::SubStage",
           "name": "Traceability & Readiness Gate",
           "objective": "Close trace links and production readiness before CIM→PIM.",
           "roleUseRefs": ["ru.cim.ph5.st3.process-reviewer"],
@@ -5465,7 +5465,7 @@
         {
           "id": "cim.ph5.st4",
           "type": "Activity",
-          "activityKind": "MODRISS::Stage",
+          "activityKind": "MODRISS::SubStage",
           "name": "Increment Review & Adapt",
           "objective": "Review the CIM slice with stakeholders, accept the increment, and adapt the next cycle.",
           "roleUseRefs": ["ru.cim.ph5.st4.process-reviewer"],
@@ -5561,7 +5561,7 @@
       "predecessorRef": "cim.ph1",
       "successorRef": "cim.ph2",
       "linkKind": "finishToStart",
-      "relation": "phase-order"
+      "relation": "activity-order"
     },
     {
       "id": "ws.cim.ph2.cim.ph3",
@@ -5569,7 +5569,7 @@
       "predecessorRef": "cim.ph2",
       "successorRef": "cim.ph3",
       "linkKind": "finishToStart",
-      "relation": "phase-order"
+      "relation": "activity-order"
     },
     {
       "id": "ws.cim.ph3.cim.ph4",
@@ -5577,7 +5577,7 @@
       "predecessorRef": "cim.ph3",
       "successorRef": "cim.ph4",
       "linkKind": "finishToStart",
-      "relation": "phase-order"
+      "relation": "activity-order"
     },
     {
       "id": "ws.cim.ph4.cim.ph5",
@@ -5585,7 +5585,7 @@
       "predecessorRef": "cim.ph4",
       "successorRef": "cim.ph5",
       "linkKind": "finishToStart",
-      "relation": "phase-order"
+      "relation": "activity-order"
     },
     {
       "id": "ws.cim.ph1.st1.cim.ph1.st2",

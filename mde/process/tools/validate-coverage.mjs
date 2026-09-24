@@ -93,21 +93,26 @@ function validateProcess(process, fileName, metamodelClassifiers = null) {
 
   const registerActivity = (activity) => {
     activities.set(activity.id, activity);
+    nodeIds.add(activity.id);
   };
   const taskUses = [];
+  const registerActivityTree = (activity, childProperty = "subStages") => {
+    registerActivity(activity);
+    for (const taskUse of activity.taskUses || []) {
+      taskUses.push(taskUse);
+      taskUseContexts.set(taskUse.id, activity.id);
+    }
+    for (const child of activity[childProperty] || []) registerActivityTree(child, "subStages");
+  };
   for (const phase of process.phases || []) {
     registerActivity(phase);
     for (const stage of phase.stages || []) {
-      const visitActivity = (activity) => {
-        registerActivity(activity);
-        for (const taskUse of activity.taskUses || []) {
-          taskUses.push(taskUse);
-          taskUseContexts.set(taskUse.id, activity.id);
-        }
-        for (const child of activity.subStages || []) visitActivity(child);
-      };
-      visitActivity(stage);
+      registerActivityTree(stage);
     }
+  }
+  for (const component of process.processComponents || []) {
+    registerActivity(component);
+    for (const activity of component.activities || []) registerActivityTree(activity);
   }
   registerUnique([...activities.values()], "process.activities", canonicalProcessIds);
   registerUnique(taskUses, "process.taskUses", canonicalProcessIds);
@@ -360,6 +365,10 @@ function validateProcess(process, fileName, metamodelClassifiers = null) {
     checkRoleUses(`phase ${phase.id}`, phase.roleUseRefs, phase.id);
     for (const stage of phase.stages || []) visitStage(stage);
   }
+  for (const component of process.processComponents || []) {
+    checkRoleUses(`process component ${component.id}`, component.roleUseRefs, component.id);
+    for (const activity of component.activities || []) visitStage(activity);
+  }
 
   for (const roleUse of process.roleUses || []) {
     const activity = activities.get(roleUse.activityRef);
@@ -399,7 +408,7 @@ function validateProcess(process, fileName, metamodelClassifiers = null) {
     if (!["finishToStart", "finishToFinish", "startToStart", "startToFinish"].includes(sequence.linkKind)) {
       errors.push(`work sequence ${sequence.id} has invalid link kind ${sequence.linkKind}`);
     }
-    const sequenceKey = `${sequence.predecessorRef}|${sequence.successorRef}|${sequence.linkKind}`;
+    const sequenceKey = `${sequence.predecessorRef}|${sequence.successorRef}|${sequence.linkKind}|${sequence.condition || ""}`;
     if (sequenceKeys.has(sequenceKey)) {
       errors.push(`work sequence ${sequence.id} duplicates semantic edge ${sequenceKey}`);
     }

@@ -58,9 +58,10 @@ demonstration. At minimum:
 
 A case should contain a meaningful change after initial deployment so the
 operations-to-model feedback path is exercised. At least one case should expose
-the team to multiple unpredictable operational items, including a time-critical
-item, so planned/interrupt coexistence and recovery from preemption can be
-observed. A toy generation-only example cannot validate the lifecycle claim.
+the team to multiple service work items, including a time-critical item, so
+planned delivery/Kanban coexistence, WIP behavior, expedite-policy use, and
+recovery of displaced work can be observed. A toy generation-only example
+cannot validate the lifecycle claim.
 
 ## Unit of analysis and observation points
 
@@ -97,7 +98,7 @@ Collect evidence at these observation points:
 - transformation/generation time versus review and manual-completion time.
 - operational arrival rate, WIP, throughput, cycle time, work-item age, blocked
   time, and SLE attainment by service class;
-- expedite frequency, preemption count/duration, capacity allocation changes,
+- expedite frequency, displaced-work count/duration, capacity allocation changes,
   and effect on the planned-release forecast;
 - operational disposition counts: operations-only, bounded MDE/release path,
   or committed planned backlog; and

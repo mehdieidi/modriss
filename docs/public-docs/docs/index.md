@@ -14,16 +14,16 @@ MODRISS is an ongoing academic research project at the Methodology Engineering L
 
 ## Methodology structure
 
-The MODRISS methodology comprises a development process and a modeling framework. The process defines lifecycle phases, activities, roles, tasks, work products, decision points, iterations, and cross-cutting activities. The modeling framework defines the domain-specific languages and metamodels, their semantics and constraints, model transformations, code generation, notation, and tool support. In the process definitions, reusable method content describes role, task, work-product, and guidance definitions; process activities specify how that content is used.
+The MODRISS methodology comprises a development process and a modeling framework. The process coordinates sequential Development and Delivery phases with an ongoing, event-driven Operations and Maintenance process, and defines activities, roles, tasks, work products, decision points, iterations, and cross-cutting activities. The modeling framework defines the domain-specific languages and metamodels, their semantics and constraints, model transformations, code generation, notation, and tool support. In the process definitions, reusable method content describes role, task, work-product, and guidance definitions; process activities specify how that content is used.
 
 <figure class="doc-diagram">
   <a class="doc-diagram__link" href="assets/diagrams/modriss-lifecycle-manuscript.svg" aria-label="Open the full-size MODRISS lifecycle diagram">
-    <img src="assets/diagrams/modriss-lifecycle-manuscript.svg" alt="The MODRISS lifecycle: initiation and tailoring, iterative model-driven delivery, release and transition, operation and learning, and authorized retirement." />
+    <img src="assets/diagrams/modriss-lifecycle-manuscript.svg" alt="Sequential Development and Delivery phases coordinated with an ongoing Operations and Maintenance process." />
   </a>
-  <figcaption>The five phases in the maintained software development process.</figcaption>
+  <figcaption>Two coordinated processes in the maintained product lifecycle.</figcaption>
 </figure>
 
-The model-driven delivery engine operates within the iterative delivery phase. It takes one capability increment through CIM, PIM, AWS PSM, generation, and readiness review. Accepted increments can be assembled into a release. Operational evidence can inform later changes to the product and its development process.
+The model-driven delivery engine operates within the single active-product phase. It takes one capability increment through CIM, PIM, AWS PSM, generation, and readiness review. Accepted increments can be assembled, qualified, and promoted through repeatable release activities. Operational evidence can inform later changes to the product and its development process; neither the increment nor release cycle repeats a lifecycle phase.
 
 ## Documentation structure
 

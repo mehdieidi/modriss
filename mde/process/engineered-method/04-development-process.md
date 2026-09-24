@@ -10,37 +10,76 @@ several times within a release.
 The default lifecycle is iterative, incremental, risk-driven,
 architecture-conscious, requirements-based, and evidence-gated. Planned
 delivery is plan-driven at release and increment horizons and adaptive inside
-them. Unpredictable production demand is interrupt-driven and controlled by a
-pull system; it is not represented as fictional pre-scheduled maintenance.
-Phases express
-dominant objectives rather than hard departmental handoffs. Activities from
-different phases may overlap when inputs, ownership, and decision authority are
-explicit.
+them. Production, maintenance, and improvement demand is managed by a
+concurrent Operations and Maintenance Process using a continuous Kanban
+service-delivery system; future incidents are not represented as fictional
+pre-scheduled maintenance. The two processes form one integrated product
+lifecycle through DevOps coordination, shared evidence, CI/CD, telemetry, and
+change routing.
+
+## Normative process vocabulary
+
+- A **process** is an enactable arrangement of work toward an objective.
+  MODRISS coordinates a Development and Delivery Process with an Operations and
+  Maintenance Process.
+- A **phase** is a significant, bounded period in Development and Delivery that
+  ends at a major checkpoint or milestone. The three phase occurrences are
+  sequential and non-repeatable. Iterations and release activities repeat
+  _within_ Phase 1; a repeated unit is never called a phase.
+- A **stage** is a MODRISS decomposition of a phase or ongoing process into a
+  coherent activity group with an outcome. A **substage** is its optional finer
+  decomposition. Neither is another lifecycle phase.
+- A **task** is the assignable unit of work performed by roles using and
+  producing work products. An **activity** groups task uses.
+- An **iteration** repeats bounded activities to produce an increment; a
+  **release** packages accepted increments and passes transition controls.
+
+This vocabulary specializes SPEM 2.0. `Process`, `Activity`, `Phase`,
+`Iteration`, and `TaskUse` remain normative metaclasses; `Stage` and `Substage`
+are explicit MODRISS activity kinds. SPEM defines a Phase as a significant
+period ending in a major checkpoint and represents work without a fixed end or
+work triggered by occurrences through `isOngoing` and `isEventDriven`.
+Production operation is therefore a Process, not a Phase
+([OMG, SPEM 2.0](https://www.omg.org/spec/SPEM/2.0/PDF/)).
+This interpretation follows RUP's explicit distinction between four lifecycle
+phases and the iterations contained by each phase
+([IBM, _RUP project planning_](https://www.ibm.com/docs/en/rational-clearquest/10.0.8?topic=settings-project-planning)).
+It also follows Disciplined Agile's distinction between phase-oriented project
+lifecycles and continuous-delivery product-team lifecycles: for a stable
+product team, transition evolves from a recurring phase into release
+activities within continuous delivery
+([PMI, _Full Delivery Lifecycles_](https://www.pmi.org/disciplined-agile/lifecycle);
+[PMI, _Full Delivery Lifecycles Introduction_](https://www.pmi.org/disciplined-agile/process/introduction-to-dad/full-delivery-lifecycles-introduction)).
 
 ## Lifecycle at a glance
 
-| Phase                                          | Objective                                                                                                               | Exit outcome                                                      |
-| ---------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------- |
-| 0. Initiate, Tailor, and Organize              | Establish value, feasibility, fit, method profile, controls, teams, and first release hypothesis.                       | Authorized product/service endeavor and enactable method profile. |
-| 1. Iterative-Incremental Model-Driven Delivery | Turn a valuable slice into accepted CIM, PIM, PSM, generated, and verified artifacts.                                   | Accepted vertical increment or explicit rework/defer decision.    |
-| 2. Release and Transition                      | Assemble compatible increments, qualify a release, promote progressively, and hand over operation.                      | Deployed release accepted by product and service owners.          |
-| 3. Operate, Evolve, and Learn                  | Run the service, meet outcomes/SLOs, control cost/risk, respond to incidents, and propagate change.                     | Stable service plus prioritized evidence-driven changes.          |
-| 4. Retire, Migrate, and Close                  | End or replace the service without leaving users, data, integrations, access, infrastructure, or obligations ownerless. | Verified decommissioning and retained organizational knowledge.   |
+| One-time Development and Delivery phase      | Objective                                                                                                                     | Exit outcome                                                      |
+| -------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------- |
+| 0. Inception, Tailoring, and Organization    | Establish value, feasibility, fit, method profile, controls, teams, and first release hypothesis.                             | Authorized product/service endeavor and enactable method profile. |
+| 1. Active Product Construction and Evolution | Repeatedly construct vertical model-driven increments, qualify releases, promote them, and learn while the product is active. | Accepted releases and an evolving operational product/service.    |
+| 2. Retire, Migrate, and Close                | End or replace the service without leaving users, data, integrations, access, infrastructure, or obligations ownerless.       | Verified decommissioning and retained organizational knowledge.   |
 
-### Nested lifecycle cadence
+The concurrent **Operations and Maintenance Process** starts when G7 accepts
+the first live release. Its activities operate and observe, manage Kanban flow,
+respond to incidents and problems, route maintenance changes, and improve the
+service and process. It ends at G8 only after no live release remains.
 
-The five phases are not one pass from left to right. MODRISS separates four
-cadences that are easy to confuse in a single overview figure:
+### Integrated lifecycle cadence
+
+MODRISS separates four temporal structures that are easy to confuse:
 
 1. **Product/service lifecycle:** Phase 0 establishes the endeavor once;
-   Phase 4 closes it only after an explicit retirement decision.
-2. **Release cycle:** Phases 1, 2, and 3 repeat for each release. Operational
-   evidence and roadmap demand form the hypothesis for a later release and
-   return work to Phase 1 at the earliest authoritative source.
-3. **Increment cycle:** Phase 1 repeats one or more bounded vertical increments
-   before a release candidate is assembled. Each increment crosses the
+   Phase 1 spans its active life; Phase 2 closes it after an explicit
+   retirement decision. No phase repeats.
+2. **Development/release cycle:** inside Phase 1, a continuous-delivery
+   iteration repeats planning, construction, qualification, progressive
+   promotion, handover, and outcome review activities. Operational evidence
+   and roadmap demand provide input to a later iteration at the earliest
+   authoritative source.
+3. **Increment cycle:** one or more bounded vertical model-driven iterations
+   precede release-candidate assembly. Each increment crosses the
    required CIM, PIM, PSM, generation, implementation, and verification work.
-4. **Continuous operation and maintenance flow:** The last accepted release
+4. **Operations and Maintenance Process:** The last accepted release
    remains in operation while the next release is engineered. Production
    demand is captured as it emerges and pulled under explicit WIP and service
    policies. Beginning a later release does not restart the product lifecycle
@@ -49,11 +88,12 @@ cadences that are easy to confuse in a single overview figure:
 Consequently, G7 is not the end of the process. After transition, the team may
 continue observing the current release without immediately changing it, start
 a new release from planned or operationally discovered work, or initiate
-Phase 4 when retirement is authorized. If G6 rejects a candidate, or promotion
+Phase 2 when retirement is authorized. If G6 rejects a candidate, or promotion
 crosses a stop threshold, the team retains the last accepted operating
-baseline and returns corrective work to Phase 1 before requalification.
+baseline and returns corrective work to the applicable Phase 1 activity before
+requalification.
 
-## Phase 0 — Initiate, Tailor, and Organize
+## Phase 0 — Inception, Tailoring, and Organization
 
 ### 0.1 Frame the opportunity and product system
 
@@ -115,9 +155,15 @@ Gate G1 — **Process and organization ready**. The first increment has a bounde
 outcome, owners, dependencies, risk treatment, evidence expectations, and a
 valid method profile.
 
-## Phase 1 — Iterative-Incremental Model-Driven Delivery
+## Phase 1 — Active Product Construction and Evolution
 
-### The vertical increment loop
+This phase occurs once and spans the active life of the product. It contains a
+repeatable Development and Delivery activity cycle; it does not contain a
+sequence of recurring lifecycle phases. A stable product team may deliver many
+releases from this phase while Operations and Maintenance independently
+sustains the currently live release.
+
+### Repeatable model-driven increment iteration
 
 One increment implements a coherent outcome slice through all necessary levels.
 It is not “finish all CIM, then all PIM, then all PSM.” Earlier levels may be
@@ -234,9 +280,12 @@ trace gaps, findings, dependency age, cost forecasts, and method friction.
 Update backlog, risks, architecture decisions, method profile, and reusable
 assets. A retrospective may produce an improvement action or a reasoned no-op.
 
-## Phase 2 — Release and Transition
+### Repeatable release and transition activities
 
-### 2.1 Assemble the release candidate
+These are activities in the Phase 1 continuous-delivery iteration. They may
+run once per release candidate, but they are not a lifecycle phase.
+
+#### R1. Assemble the release candidate
 
 Select accepted increments and freeze exact model revisions, transformation
 profiles, generator versions, source revisions, artifact digests, schemas,
@@ -244,7 +293,7 @@ configuration, database changes, and dependencies. Check backward/forward
 compatibility, event/API evolution, consumer readiness, data migration, quota
 capacity, and feature-control strategy.
 
-### 2.2 Qualify release and recovery
+#### R2. Qualify release and recovery
 
 Re-run risk-proportional verification against the immutable candidate. Review
 security and privacy findings, software supply chain, infrastructure change,
@@ -256,14 +305,14 @@ Gate G6 — **Release authorized / rejected / exception accepted**. Approval
 identifies the exact candidate and evidence; task completion alone cannot
 override a blocker.
 
-### 2.3 Promote progressively
+#### R3. Promote progressively
 
 Promote through environments using the selected strategy: canary, weighted
 alias, blue/green, feature control, or carefully governed direct promotion for
 low-risk situations. Automate checks and define stop, rollback, and escalation
 thresholds. Observe business, technical, security, and cost signals.
 
-### 2.4 Operational handover and outcome review
+#### R4. Operational handover and outcome review
 
 The Service Owner accepts dashboards, alerts, traces, runbooks, on-call/support
 ownership, access, recovery procedures, known errors, risk acceptances, and
@@ -279,40 +328,60 @@ risks, cost evidence, and user feedback are assessed for a subsequent release.
 That release receives a new hypothesis, increment set, immutable candidate,
 G6 decision, and G7 transition record.
 
-## Phase 3 — Operate, Evolve, and Learn
+## Operations and Maintenance Process — ongoing and event-driven
 
-Phase 3 is a continuing service-delivery system, not a pre-planned iteration.
-It applies the Kanban Guide's minimum definition of workflow—work-item
+This is a continuing Kanban service-delivery system, not a phase, pre-planned
+iteration, or independently invented lifecycle. In SPEM terms it is an
+ongoing (`isOngoing=true`) and event-driven (`isEventDriven=true`) Process. It applies
+the Kanban Guide's minimum definition of workflow—work-item
 definition, start/finish states, WIP control, explicit policies, and a service
 level expectation—and actively manages WIP, item age, blockers, cycle time,
 and throughput [Kanban Guide 2025](https://kanbanguides.org/the-kanban-guide/).
+Disciplined Agile supports the contextual choice of flow for service work while
+planned releases retain an iterative lifecycle, and it emphasizes visibility
+and optimization across the end-to-end value stream
+([PMI, _Starting With Iterations or Flow_](https://www.pmi.org/disciplined-agile/starting-with-iterations-or-flow);
+[PMI, _Value Streams_](https://www.pmi.org/disciplined-agile/process/value-streams)).
+This construction is also consistent with peer-reviewed mapping evidence that
+Kanban has been used in software development and maintenance, while its results
+remain contextual rather than universally guaranteed
+([Ahmad et al., 2018](https://doi.org/10.1016/j.jss.2017.11.045)).
+ISO/IEC/IEEE 12207 treats development, operation, maintenance, and disposal as
+distinct lifecycle processes and permits lifecycle processes to be applied
+concurrently, iteratively, and recursively
+([ISO/IEC/IEEE 12207:2026](https://www.iso.org/standard/90219.html)). DevOps is
+the integration layer: shared responsibility, delivery automation, operations,
+support, release management, security, feedback, and improvement span the value
+stream without erasing each process's different control system
+([PMI, _Disciplined DevOps_](https://www.pmi.org/disciplined-agile/process/disciplined-devops)).
 It coexists with the planned release stream:
 
-| Control dimension | Planned delivery stream                            | Operational service stream                                                            |
-| ----------------- | -------------------------------------------------- | ------------------------------------------------------------------------------------- |
-| Trigger           | roadmap, approved change, release hypothesis       | telemetry, user/support request, incident, vulnerability, provider or cost signal     |
-| Commitment        | release and increment planning                     | replenishment and pull when WIP capacity exists                                       |
-| Unit              | vertical model-driven increment                    | operational work item                                                                 |
-| Main control      | scope, dependency, risk, gate and release forecast | explicit workflow, WIP, service class, SLE and item age                               |
-| Completion        | accepted increment/release evidence                | operations-only resolution, safely released change, or committed planned backlog item |
+| Control dimension | Planned delivery stream                            | Operational service stream                                                                      |
+| ----------------- | -------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| Trigger           | roadmap, approved change, release hypothesis       | telemetry, user/support request, incident, vulnerability, provider, cost, or improvement signal |
+| Commitment        | release and increment planning                     | replenishment selection and pull when downstream WIP capacity exists                            |
+| Unit              | vertical model-driven increment                    | service work item                                                                               |
+| Main control      | scope, dependency, risk, gate and release forecast | explicit workflow, WIP, service class, SLE and item age                                         |
+| Completion        | accepted increment/release evidence                | operations-only resolution, safely released change, or committed planned backlog item           |
 
 The Method Profile defines the capacity policy between the streams. Reserved
-operational capacity may be used by planned work when no operational item is
-ready, but a new interrupt can preempt work only according to the explicit
-expedite policy. MODRISS therefore acknowledges uncertainty without making the
-team permanently idle or allowing every request to become an emergency.
+service capacity may be used by planned work when no service item is ready. An
+expedite item may displace active work only according to the explicit expedite
+policy and remains visible on the board. MODRISS therefore acknowledges
+uncertainty without making the team permanently idle or allowing every request
+to become an emergency.
 
-### 3.1 Operate and observe
+### Activity O1 — Operate and observe
 
 Operate against SLOs and product outcomes. Monitor latency, availability,
 errors, throttling, concurrency, retries, dead letters, workflow failures,
 security signals, quota usage, cold starts, cost/unit economics, customer
 impact, and provider health. Execute routine recovery, patching, access review,
 certificate/key rotation, dependency update, and continuity work. Each
-actionable signal becomes WP-30, an Operational Work Item, with its origin,
+actionable signal becomes WP-30, a Service Work Item, with its origin,
 evidence, affected service, owner, and age.
 
-### 3.2 Triage demand and control pull flow
+### Activity O2 — Manage the Kanban service-delivery board
 
 Classify each work item on three independent axes. Maintenance purpose
 describes _why_ the system changes: corrective, preventive, adaptive, additive,
@@ -323,12 +392,23 @@ categories and distinction between a temporary emergency modification and a
 subsequent permanent correction follow SWEBOK v4.0a
 ([IEEE Computer Society, 2024](https://ieeecs-media.computer.org/media/education/swebok/swebok-v4.pdf)).
 
-WP-31 records the Definition of Workflow: intake, triage, ready, active,
-verify, and done states; WIP limits; service-class selection rules; SLEs;
-replenishment; capacity policy; blocking/escalation rules; and exit evidence.
-The default expedite WIP limit is one. A project may replace it only with a
-documented incident-command policy. Unknown future work is never added to the
-schedule; actual demand is made visible when it arrives.
+WP-31 records the Definition of Workflow and board: Requested, Ready, In
+Progress, Verify, and Done states; explicit started and finished points; WIP
+controls; class-of-service rules; SLEs; replenishment; feedback cadences;
+capacity policy; blocking/escalation rules; and exit evidence. The Requested
+column combines intake and triage without counting unselected demand as WIP.
+Pulling an item into In Progress is the started point; accepting it in Done is
+the finished point. The default expedite limit is one active item. A project
+may replace it only with a documented incident-command policy. Future incidents
+are never added to the schedule; actual demand is made visible when it arrives.
+
+Replenishment selects eligible Requested items into Ready within capacity. A
+daily flow review inspects age, blockers and WIP; a periodic service-delivery
+review compares flow/SLE outcomes with service outcomes; and an operations/risk
+review changes capacity or routes broader work to planned delivery. These are
+feedback cadences, not extra lifecycle phases. The board follows PMI's guidance
+to derive columns from the value stream and expose queues where delay occurs
+([PMI, _Designing the Kanban Board_](https://www.pmi.org/disciplined-agile/designing-the-kanban-board)).
 
 At replenishment, the team chooses one of three dispositions:
 
@@ -338,7 +418,7 @@ At replenishment, the team chooses one of three dispositions:
 3. move a broader or deferrable change into a planned release backlog with an
    explicit commitment decision.
 
-### 3.3 Respond to incidents and problems
+### Activity O3 — Respond to incidents and problems
 
 Restore service first under the incident process, preserve an evidence
 timeline, communicate, and track temporary changes. Emergency work uses the
@@ -349,7 +429,7 @@ changes. A temporary operational modification remains open until it is removed
 or reconciled by permanent corrective work. Blameless learning does not remove
 accountable follow-through.
 
-### 3.4 Route and propagate change
+### Activity O4 — Route maintenance change and reconcile
 
 Route changes to the earliest authoritative source:
 
@@ -373,27 +453,27 @@ serverless workloads
 ([AWS Well-Architected operational excellence](https://docs.aws.amazon.com/wellarchitected/2024-06-27/framework/oe-design-principles.html);
 [Serverless Lens deployment approaches](https://docs.aws.amazon.com/wellarchitected/latest/serverless-applications-lens/deployment-approaches.html)).
 
-### 3.5 Learn and generalize
+### Activity O5 — Improve service and process
 
 Compare actual outcomes, SLOs, cost, risks, estimates, and process measures with
 hypotheses. Review WIP, throughput, work-item age, cycle time, SLE attainment,
-interrupt demand, expedite frequency, preemption, operational capacity usage,
+demand arrival rate, expedite frequency, displaced work, service capacity usage,
 and effects on the planned-release forecast. These are system-improvement
 measures, never individual performance rankings. Generalize reusable models,
 patterns, transformations, tests,
 runbooks, and method fragments only after review. Update training and the
 method library through versioned change.
 
-## Phase 4 — Retire, Migrate, and Close
+## Phase 2 — Retire, Migrate, and Close
 
-### 4.1 Decide and plan retirement
+### 2.1 Decide and plan retirement
 
 Define reason, scope, successor, users/consumers, contractual and legal
 obligations, data retention/disposition, integrations, access, infrastructure,
 communications, rollback window, and evidence retention. Treat retirement as a
 release with acceptance criteria.
 
-### 4.2 Migrate and decommission
+### 2.2 Migrate and decommission
 
 Migrate or export data, users, events, and integrations; validate completeness;
 notify consumers; stop traffic and schedules; revoke credentials and access;
@@ -401,14 +481,18 @@ remove subscriptions, queues, endpoints, domains, alarms, and resources in a
 controlled sequence; and verify billing/cost closure. Preserve required models,
 code, logs, decisions, and audit evidence.
 
-### 4.3 Close and learn
+### 2.3 Close and learn
 
 Confirm that no data, integration, account, infrastructure, support obligation,
 or legal record is ownerless. Archive evidence, review outcomes, publish
 lessons, and return reusable assets to the library.
 
+During Phase 2, Operations and Maintenance continues to protect the live
+baseline, support migration, and handle emerging demand. It terminates only
+when G8 confirms that no live release or operational obligation remains.
+
 Gate G8 — **Lifecycle closed**. Product, Service, Security/Privacy, and Records
-owners accept closure.
+owners accept closure; both coordinated processes are complete.
 
 ## Process-run state model
 
