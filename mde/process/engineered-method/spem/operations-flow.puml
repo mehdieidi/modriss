@@ -24,7 +24,8 @@ repeat
   endif
   :Review service and process outcomes;
 repeat while (Any live release remains?) is (continue pull flow)
-:Coordinate retirement and accept G8 closure;
+:Complete operational shutdown evidence;
+:Accept shared G8 closure only when no live release remains;
 stop
 note right
   Activities and feedback cadences are not phases.

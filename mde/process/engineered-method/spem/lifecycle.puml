@@ -12,24 +12,30 @@ else (redirect / stop)
   stop
 endif
 
-fork
-  :Phase 1 — Active Product Construction & Evolution\n«Activity, Phase; occurs once»;
+:Phase 1 — Active Product Construction & Evolution\n«Activity, Phase; occurs once»;
+repeat
   repeat
-    repeat
-      :Model-driven increment iteration\nvertical slice; G2–G5\n«Activity, Iteration»;
-    repeat while (Another increment?) is (yes)
-    :Release and transition activities\nqualify, promote, hand over; G6–G7\n«Activity»;
-    if (Candidate or promotion rejected?) then (yes)
-      :Retain accepted baseline; route correction\nto earliest authoritative source;
-    else (accepted)
-      |Operations and Maintenance|
-      :Accept live release at G7;
-      |Development and Delivery|
-    endif
-  repeat while (Next release selected and retirement not authorized?) is (next release)
+    :Model-driven increment iteration\nvertical slice; G2–G5\n«Activity, Iteration»;
+  repeat while (Another increment?) is (yes)
+  :Release and transition activities\nqualify, promote, hand over; G6–G7\n«Activity»;
+  if (Candidate or promotion rejected?) then (yes)
+    :Retain accepted baseline; route correction\nto earliest authoritative source;
+  else (accepted)
+    :First accepted release is ready for G7 handover;
+  endif
+repeat while (First release accepted at G7?) is (rework)
+:G7 hands the first accepted release to Operations and Maintenance;
+
+fork
+  while (Next release selected and retirement not authorized?) is (next release)
+    :Run another model-driven increment and release iteration;
+    :G7 updates the accepted live-release set;
+  endwhile (retirement authorized)
   :Phase 2 — Retire, Migrate & Close\n«Activity, Phase; occurs once»;
+  :Contribute Development and Delivery closure evidence to shared G8;
 fork again
   |Operations and Maintenance|
+  :Start the ongoing process at first G7;
   repeat
     :Operate & observe live release;
     :Kanban service delivery\nRequested → Ready → In Progress → Verify → Done;
@@ -42,16 +48,18 @@ fork again
     endif
     :Verify, reconcile and learn;
   repeat while (Any live release remains?) is (yes)
+  :Contribute operational shutdown evidence to shared G8;
 end fork
 
 |Development and Delivery|
-:G8 — closure accepted;
+:G8 — accept shared closure evidence\nonly when no live release remains;
 stop
 
 legend bottom
   Phase = bounded sequential period ending at a major checkpoint.
   The three phases occur once; only Phase 1 activities and iterations repeat.
   Operations and Maintenance = ongoing, event-driven Process, not a Phase.
-  DevOps coordinates G7 handover, CI/CD, telemetry, change, evidence and G8.
+  DevOps coordinates G7 handover, CI/CD, telemetry, change and evidence.
+  G8 is a shared closure criterion, not an activity-flow edge between the processes.
 endlegend
 @enduml

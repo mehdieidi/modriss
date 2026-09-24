@@ -54,18 +54,20 @@ Suggested caption:
 > Gates G2–G5 accept exact revisions; generated output remains a draft until
 > reviewed, and findings are routed to the earliest authoritative source.
 
-## Alternative lifecycle figure
+## Compatibility lifecycle filename
 
-Use `modriss-lifecycle-2.svg` when a conventional process
-overview, with a large nested construction phase, is preferable to the
-semantic-slot presentation of the primary figure.
+`modriss-lifecycle-2.svg` mirrors the primary lifecycle figure and is retained
+for documents that already reference the older alternate filename. Keep it in
+lockstep with `modriss-lifecycle-manuscript.svg`; do not use the two files to
+present different lifecycle semantics.
 
 Suggested caption:
 
 > **Coordinated-process view of MODRISS.** Development and Delivery creates and
 > retires releases through sequential phases; Operations and Maintenance
 > sustains each live baseline using event-driven Kanban flow. DevOps practices
-> provide the cross-process interface.
+> provide the cross-process interface, while G8 evaluates evidence from both
+> processes without creating an activity-flow edge between them.
 
 ## Typesetting
 

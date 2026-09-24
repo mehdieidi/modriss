@@ -16,14 +16,19 @@ if (!/^<svg\b[^>]*\bxmlns=/i.test(svg)) {
 }
 if (!/^<svg\b[^>]*\bviewBox=/i.test(svg)) throw new Error('SVG has no viewBox');
 
-const fontImport = "<style>@import url('https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400;500;600&amp;family=Space+Grotesk:wght@400;500;600&amp;display=swap');</style>";
+const fontImport = "@import url('https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400;500;600&amp;family=Space+Grotesk:wght@400;500;600&amp;display=swap');";
+const documentStyles = [...html.slice(0, match.index).matchAll(/<style(?:\s[^>]*)?>([\s\S]*?)<\/style>/gi)]
+  .map(style => style[1].trim())
+  .filter(Boolean)
+  .join('\n');
+const embeddedStyle = `<style>${fontImport}${documentStyles ? `\n${documentStyles}` : ''}</style>`;
 if (/<defs>/i.test(svg)) {
-  svg = svg.replace(/<defs>/i, `<defs>\n    ${fontImport}`);
+  svg = svg.replace(/<defs>/i, `<defs>\n    ${embeddedStyle}`);
 } else {
   const descEnd = svg.indexOf('</desc>');
   if (descEnd < 0) throw new Error('SVG has no accessible description');
   const insertAt = descEnd + '</desc>'.length;
-  svg = `${svg.slice(0, insertAt)}\n  <defs>${fontImport}</defs>${svg.slice(insertAt)}`;
+  svg = `${svg.slice(0, insertAt)}\n  <defs>${embeddedStyle}</defs>${svg.slice(insertAt)}`;
 }
 
 svg = svg.replace(

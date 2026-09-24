@@ -4833,13 +4833,15 @@
       "coverageGroups": [],
       "steps": [
         "Confirm retirement exit criteria and records are complete.",
+        "Evaluate Development and Delivery evidence together with operational shutdown evidence at shared G8; do not model this synchronization as an activity-flow edge between the processes.",
         "Review product, architecture, operational, and process outcomes.",
         "Publish reusable patterns, risks, and process changes for future projects."
       ],
       "entryCriteria": [],
       "exitCriteria": ["Complete closure review evidence is recorded"],
       "validationRules": [
-        "Closure identifies retained evidence, unresolved obligations, and accountable custodians"
+        "Closure identifies retained evidence, unresolved obligations, and accountable custodians",
+        "G8 is accepted only when no live release remains"
       ],
       "progressEvidence": "Complete closure review decision, evidence links, owner, and status are recorded",
       "paletteFocus": [],
@@ -13086,7 +13088,7 @@
       "name": "Integrated Product Lifecycle: Development/Delivery + Operations/Maintenance",
       "sourceProcess": "end-to-end",
       "phaseCount": 3,
-      "workSequenceCount": 34,
+      "workSequenceCount": 32,
       "repeatableActivities": [
         {
           "id": "modriss.end-to-end.modeling.iteration",

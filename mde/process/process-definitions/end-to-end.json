@@ -1537,13 +1537,15 @@
         "coverageGroups": [],
         "steps": [
           "Confirm retirement exit criteria and records are complete.",
+          "Evaluate Development and Delivery evidence together with operational shutdown evidence at shared G8; do not model this synchronization as an activity-flow edge between the processes.",
           "Review product, architecture, operational, and process outcomes.",
           "Publish reusable patterns, risks, and process changes for future projects."
         ],
         "entryCriteria": [],
         "exitCriteria": ["Complete closure review evidence is recorded"],
         "validationRules": [
-          "Closure identifies retained evidence, unresolved obligations, and accountable custodians"
+          "Closure identifies retained evidence, unresolved obligations, and accountable custodians",
+          "G8 is accepted only when no live release remains"
         ],
         "progressEvidence": "Complete closure review decision, evidence links, owner, and status are recorded",
         "paletteFocus": [],
@@ -4122,24 +4124,6 @@
         "relation": "phase-order",
         "condition": "retirement-authorized-and-no-development-or-release-work-in-flight",
         "guidance": "Begin the sequential Retirement phase only after retirement is authorized and in-flight development/release work is resolved or explicitly transferred."
-      },
-      {
-        "id": "ws.retirement-operations.e2e.ops.e2e.ph2",
-        "predecessorRef": "modriss.operations-maintenance",
-        "successorRef": "e2e.ph2",
-        "linkKind": "startToStart",
-        "relation": "retirement-coordination",
-        "condition": "retirement-authorized",
-        "guidance": "Operations and Maintenance participates throughout migration and decommissioning; authorization starts retirement coordination but does not stop service work prematurely."
-      },
-      {
-        "id": "ws.retirement-close.e2e.ph2.e2e.ops",
-        "predecessorRef": "e2e.ph2",
-        "successorRef": "modriss.operations-maintenance",
-        "linkKind": "finishToFinish",
-        "relation": "operations-termination",
-        "condition": "G8-lifecycle-closed",
-        "guidance": "The Operations and Maintenance Process may finish only when retirement closure is accepted and no live release remains."
       }
     ],
     "reworkLoops": [
@@ -5745,7 +5729,8 @@
       ],
       "exitCriteria": [
         "Users, data, integrations, environments, and operational ownership are safely transitioned or closed",
-        "Required records and lessons are retained"
+        "Required records and lessons are retained",
+        "Shared G8 closure evidence is accepted and no live release remains"
       ],
       "inEngine": false,
       "stages": [
@@ -5979,7 +5964,7 @@
           "type": "Activity",
           "activityKind": "MODRISS::Stage",
           "name": "Closure & Organizational Learning",
-          "objective": "Close the lifecycle, terminate the Operations and Maintenance Process, and feed reusable learning into future method profiles and product planning.",
+          "objective": "Assemble Development and Delivery closure evidence, evaluate it with Operations and Maintenance evidence at shared G8, and feed reusable learning into future method profiles and product planning.",
           "roleUseRefs": ["ru.e2e.ph2.st3.process-reviewer"],
           "iterative": false,
           "iterationLoops": [],
@@ -5998,7 +5983,7 @@
                   "roleUseRef": "ru.e2e.ph2.st3.process-reviewer"
                 }
               ],
-              "selectedStepIndices": [0, 1, 2],
+              "selectedStepIndices": [0, 1, 2, 3],
               "inputWorkProductUseRefs": [
                 "wpu.e2e.ph2.st3.t1.input.e2e-artifact.retirement-record",
                 "wpu.e2e.ph2.st3.t1.input.e2e-artifact.operations-record",
@@ -7096,26 +7081,6 @@
       "relation": "release-cycle",
       "condition": "next-release-selected-and-retirement-not-authorized",
       "guidance": "Start the next planned release from roadmap demand or service work deliberately committed to planned delivery; Operations and Maintenance continues for all accepted live baselines."
-    },
-    {
-      "type": "WorkSequence",
-      "linkKind": "startToStart",
-      "id": "ws.retirement-operations.e2e.ops.e2e.ph2",
-      "predecessorRef": "modriss.operations-maintenance",
-      "successorRef": "e2e.ph2",
-      "relation": "retirement-coordination",
-      "condition": "retirement-authorized",
-      "guidance": "Operations and Maintenance participates throughout migration and decommissioning; authorization starts retirement coordination but does not stop service work prematurely."
-    },
-    {
-      "type": "WorkSequence",
-      "linkKind": "finishToFinish",
-      "id": "ws.retirement-close.e2e.ph2.e2e.ops",
-      "predecessorRef": "e2e.ph2",
-      "successorRef": "modriss.operations-maintenance",
-      "relation": "operations-termination",
-      "condition": "G8-lifecycle-closed",
-      "guidance": "The Operations and Maintenance Process may finish only when retirement closure is accepted and no live release remains."
     }
   ],
   "changeManagement": {

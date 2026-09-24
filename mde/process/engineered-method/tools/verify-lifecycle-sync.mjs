@@ -65,22 +65,6 @@ const requiredSequences = [
     relation: 'phase-order',
     condition: 'retirement-authorized-and-no-development-or-release-work-in-flight',
   },
-  {
-    id: 'ws.retirement-operations.e2e.ops.e2e.ph2',
-    predecessorRef: 'modriss.operations-maintenance',
-    successorRef: 'e2e.ph2',
-    linkKind: 'startToStart',
-    relation: 'retirement-coordination',
-    condition: 'retirement-authorized',
-  },
-  {
-    id: 'ws.retirement-close.e2e.ph2.e2e.ops',
-    predecessorRef: 'e2e.ph2',
-    successorRef: 'modriss.operations-maintenance',
-    linkKind: 'finishToFinish',
-    relation: 'operations-termination',
-    condition: 'G8-lifecycle-closed',
-  },
 ];
 
 for (const expected of requiredSequences) {
@@ -92,6 +76,15 @@ for (const expected of requiredSequences) {
     }
   }
   if (!actual.guidance) fail(`${expected.id} must carry transition guidance`);
+}
+
+for (const forbiddenId of [
+  'ws.retirement-operations.e2e.ops.e2e.ph2',
+  'ws.retirement-close.e2e.ph2.e2e.ops',
+]) {
+  if (sequences.some(sequence => sequence.id === forbiddenId)) {
+    fail(`${forbiddenId} must not exist: G8 is shared closure evidence, not an activity-flow edge between the processes`);
+  }
 }
 
 const releaseCycle = methodProcess.processEngine?.releaseCycle;
@@ -177,8 +170,9 @@ const operationsHtml = read('mde/process/engineered-method/diagrams/modriss-oper
 for (const [label, diagram] of [['primary publication diagram', lifecycleHtml], ['alternative publication diagram', alternateHtml]]) {
   requireText(diagram, 'TWO COORDINATED PROCESSES', label);
   requireText(diagram, 'NOT A PHASE', label);
-  requireText(diagram, 'DEVOPS COORDINATION INTERFACE', label);
-  requireText(diagram, 'BETWEEN THE PROCESSES', label);
+  requireText(diagram, 'DEVOPS INTERFACE', label);
+  requireText(diagram, 'G8 = SHARED CLOSURE CRITERIA', label);
+  requireText(diagram, 'NOT AN ACTIVITY FLOW BETWEEN THE PROCESSES', label);
 }
 for (const expected of ['WIP', 'SLE', 'Operations-only', 'planned release']) {
   requireText(operationsHtml, expected, 'operational-flow publication diagram');
@@ -189,6 +183,11 @@ const operationsSvg = read('mde/process/engineered-method/diagrams/modriss-opera
 requireText(lifecycleSvg, 'TWO COORDINATED PROCESSES', 'exported primary SVG');
 requireText(alternateSvg, 'NOT A PHASE', 'exported alternative SVG');
 requireText(operationsSvg, 'Operations-only', 'exported operational-flow SVG');
+for (const [label, diagram] of [['exported primary SVG', lifecycleSvg], ['exported alternative SVG', alternateSvg]]) {
+  requireText(diagram, '<style>', label);
+  requireText(diagram, '.lane {', label);
+  requireText(diagram, '.node {', label);
+}
 
 const processNarrative = read('mde/process/engineered-method/04-development-process.md');
 const thesisChapter = read('mde/process/engineered-method/10-thesis-process-chapter.md');

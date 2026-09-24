@@ -487,12 +487,13 @@ Complete closure review. The task is performed by `role.process-reviewer`. It co
 **Work.**
 
 - Confirm retirement exit criteria and records are complete.
+- Evaluate Development and Delivery evidence together with operational shutdown evidence at shared G8; do not model this synchronization as an activity-flow edge between the processes.
 - Review product, architecture, operational, and process outcomes.
 - Publish reusable patterns, risks, and process changes for future projects.
 
 **Exit.** Complete closure review evidence is recorded.
 
-**Checks.** Closure identifies retained evidence, unresolved obligations, and accountable custodians.
+**Checks.** Closure identifies retained evidence, unresolved obligations, and accountable custodians. G8 is accepted only when no live release remains.
 
 #### Assemble the release candidate (`task.e2e.rel.a1.t1`)
 

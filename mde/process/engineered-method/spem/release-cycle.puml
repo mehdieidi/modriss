@@ -20,8 +20,9 @@ else (no)
   :G7 handover to Operations and Maintenance;
 endif
 if (Retirement authorized?) then (yes)
-  :Exit Phase 1 and enter Phase 2 retirement while Operations continues\nuntil no live release remains;
-  :Close both processes at G8;
+  :Exit Phase 1 and enter Phase 2;
+  :Complete retirement work while Operations independently\nsustains and shuts down remaining live releases;
+  :Accept shared G8 closure evidence\nwhen no live release remains;
   stop
 else (no)
   :Select roadmap and operational evidence\nfor the next release hypothesis;

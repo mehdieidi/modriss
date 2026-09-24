@@ -103,10 +103,10 @@ An accepted increment is a candidate for later release assembly. The release dec
 Operational findings enter a change workflow. Product and requirement changes return to CIM. Service, contract, or architecture changes return to PIM. Provider and resource changes return to AWS PSM. Implementation, pipeline, and environment changes go to the artifact or release process; operational control and support changes go to their operations work products. The change then moves forward through the affected transformations and receives new evidence.
 
 <details>
-  <summary>View the alternative lifecycle map</summary>
+  <summary>Open the compatibility copy of the lifecycle map</summary>
   <figure class="doc-diagram">
-    <a class="doc-diagram__link" href="../../assets/diagrams/modriss-lifecycle-2.svg" aria-label="Open the full-size phase-oriented lifecycle diagram">
-      <img src="../../assets/diagrams/modriss-lifecycle-2.svg" alt="Alternative lifecycle map with the model-driven construction phase shown in greater detail." />
+    <a class="doc-diagram__link" href="../../assets/diagrams/modriss-lifecycle-2.svg" aria-label="Open the compatibility copy of the full-size lifecycle diagram">
+      <img src="../../assets/diagrams/modriss-lifecycle-2.svg" alt="Compatibility copy of the lifecycle map showing sequential Development and Delivery phases coordinated with ongoing Operations and Maintenance." />
     </a>
   </figure>
 </details>

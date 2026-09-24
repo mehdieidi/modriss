@@ -187,7 +187,7 @@ const END_TO_END_LIFECYCLE_ACTIVITIES_SOURCE = [
     objective: "Retire a product or service safely, preserve required knowledge and evidence, and close the lifecycle with explicit learning.",
     primaryRole: "service-owner",
     entryCriteria: ["A retirement decision is authorized", "Replacement, migration, or end-of-life obligations are known"],
-    exitCriteria: ["Users, data, integrations, environments, and operational ownership are safely transitioned or closed", "Required records and lessons are retained"],
+    exitCriteria: ["Users, data, integrations, environments, and operational ownership are safely transitioned or closed", "Required records and lessons are retained", "Shared G8 closure evidence is accepted and no live release remains"],
     inEngine: false,
     stages: [
       stage("e2e.ph2.st1", "Retirement Decision & Plan", "Define why, when, and how the service will be retired while operations continue safely.", "product-owner", [
@@ -197,8 +197,8 @@ const END_TO_END_LIFECYCLE_ACTIVITIES_SOURCE = [
         task("e2e.ph2.st2.t1", "Execute migration and data disposition", "cloud-platform-engineer", ["Execute migration, archival, retention, deletion, or export according to approved policy.", "Validate completeness, confidentiality, integrity, and recoverability where required.", "Record final data and integration evidence."], ["e2e-artifact.retirement-record"], { validationRules: ["No data or integration is silently abandoned"] }),
         task("e2e.ph2.st2.t2", "Decommission service and access", "service-owner", ["Continue required operational coverage during migration, then disable traffic, scheduled work, credentials, access paths, alerts, and environments in the approved order.", "Verify replacement ownership and customer communication.", "Retain required source, model, trace, release, incident, and decision records."], ["e2e-artifact.retirement-record"], { validationRules: ["Decommission evidence covers runtime, data, access, cost, and support surfaces"] }),
       ]),
-      stage("e2e.ph2.st3", "Closure & Organizational Learning", "Close the lifecycle, terminate the Operations and Maintenance Process, and feed reusable learning into future method profiles and product planning.", "process-reviewer", [
-        task("e2e.ph2.st3.t1", "Complete closure review", "process-reviewer", ["Confirm retirement exit criteria and records are complete.", "Review product, architecture, operational, and process outcomes.", "Publish reusable patterns, risks, and process changes for future projects."], ["e2e-artifact.retirement-record", "e2e-artifact.method-profile"], { validationRules: ["Closure identifies retained evidence, unresolved obligations, and accountable custodians"] }),
+      stage("e2e.ph2.st3", "Closure & Organizational Learning", "Assemble Development and Delivery closure evidence, evaluate it with Operations and Maintenance evidence at shared G8, and feed reusable learning into future method profiles and product planning.", "process-reviewer", [
+        task("e2e.ph2.st3.t1", "Complete closure review", "process-reviewer", ["Confirm retirement exit criteria and records are complete.", "Evaluate Development and Delivery evidence together with operational shutdown evidence at shared G8; do not model this synchronization as an activity-flow edge between the processes.", "Review product, architecture, operational, and process outcomes.", "Publish reusable patterns, risks, and process changes for future projects."], ["e2e-artifact.retirement-record", "e2e-artifact.method-profile"], { validationRules: ["Closure identifies retained evidence, unresolved obligations, and accountable custodians", "G8 is accepted only when no live release remains"] }),
       ]),
     ],
   },
