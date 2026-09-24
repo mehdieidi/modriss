@@ -42,7 +42,7 @@ more detail. Paths in this list are relative to the repository root:
 - Flyway migrations define the persisted PostgreSQL structure.
 - `docs/api/openapi/openapi.yaml` is the checked-in API contract.
 - `docs/diagrams/` contains architecture diagrams and the source for the modeling-path SVG.
-- `mde/process/engineered-method/diagrams/` contains the lifecycle and delivery-engine SVG sources.
+- `mde/process/method/diagrams/` contains the lifecycle and delivery-engine SVG sources.
 
 The modeling-path, lifecycle, and delivery-engine SVGs are copied into
 `docs/public-docs/docs/assets/diagrams/` for the public site. Refresh those copies when a source

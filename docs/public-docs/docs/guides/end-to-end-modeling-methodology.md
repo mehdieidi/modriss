@@ -2,7 +2,7 @@
 
 This guide describes the model-driven delivery part of the MODRISS development process. It follows one capability increment from scope definition through readiness review. The [full-lifecycle development process](full-lifecycle-method.md) also covers initiation, tailoring, release, operations, change management, and retirement.
 
-The maintained process definition is [`mde/process/process-definitions/end-to-end.json`](https://github.com/mehdieidi/modriss/blob/main/mde/process/process-definitions/end-to-end.json). It defines an eight-step engine for a capability slice. The same engine may run several times before the team assembles a release.
+The maintained process definition is [`mde/process/definitions/end-to-end.json`](https://github.com/mehdieidi/modriss/blob/main/mde/process/definitions/end-to-end.json). It defines an eight-step engine for a capability slice. The same engine may run several times before the team assembles a release.
 
 ## The increment engine
 

@@ -10,7 +10,7 @@ import { collectProcessTasks } from "./lib/process-walk.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, "../../..");
-const DEFS = path.join(ROOT, "mde/process/process-definitions");
+const DEFS = path.join(ROOT, "mde/process/definitions");
 const GUIDES = path.join(ROOT, "docs/public-docs/docs/guides");
 
 const GUIDE_MAP = {

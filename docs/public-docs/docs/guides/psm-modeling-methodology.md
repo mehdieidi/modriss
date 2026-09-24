@@ -51,7 +51,7 @@ flowchart TD
 
 ## Task Catalog
 
-Process `modriss.psm.modeling` · 6 stages · 28 TaskUses / TaskDefinitions · PSM metamodel coverage enforced in CI.
+Process `modriss.psm.modeling` · 6 phases · 28 TaskUses / TaskDefinitions · PSM metamodel coverage enforced in CI.
 
 ### Deployment & Slice Framing (`psm.ph1`)
 
@@ -59,11 +59,11 @@ Frame the current deployable slice and establish or refresh AWS account, stack, 
 
 **Runs:** in engine cycle · **Role:** Cloud Platform Engineer
 
-**Stage entry:**
+**Phase entry:**
 
 - PIM transform complete, prior PSM increment selected, or greenfield PSM
 
-**Stage exit:**
+**Phase exit:**
 
 - AWS root and stage strategy configured
 - Deployable-slice objective and deployment definition of done are agreed
@@ -312,11 +312,11 @@ Configure VPC networking and Cognito identity resources aligned to PIM auth mode
 
 **Runs:** in engine cycle · **Role:** Cloud Platform Engineer
 
-**Stage entry:**
+**Phase entry:**
 
 - Deployment & Slice Framing complete
 
-**Stage exit:**
+**Phase exit:**
 
 - Network posture defined for workloads
 - Identity resources match PIM auth model
@@ -443,11 +443,11 @@ Provision durable storage and messaging resources matching PIM data and event ch
 
 **Runs:** in engine cycle · **Role:** Cloud Platform Engineer
 
-**Stage entry:**
+**Phase entry:**
 
 - Network & Identity complete
 
-**Stage exit:**
+**Phase exit:**
 
 - Durable stores match PIM data model
 - Messaging matches PIM event channels
@@ -592,11 +592,11 @@ Configure EventBridge fabric and deploy Lambda compute matching PIM functions.
 
 **Runs:** in engine cycle · **Role:** Cloud Platform Engineer
 
-**Stage entry:**
+**Phase entry:**
 
 - Storage & Messaging complete for slice
 
-**Stage exit:**
+**Phase exit:**
 
 - Event fabric matches PIM integration
 - Compute matches PIM functions
@@ -759,11 +759,11 @@ Configure API Gateway exposure and Step Functions workflows with observability.
 
 **Runs:** in engine cycle · **Role:** Cloud Platform Engineer
 
-**Stage entry:**
+**Phase entry:**
 
 - Event Fabric & Compute complete for slice
 
-**Stage exit:**
+**Phase exit:**
 
 - API Gateway matches PIM APIs
 - Workflows and observability complete
@@ -965,11 +965,11 @@ Create integration relationship views, close traceability, and pass PSM EVL gate
 
 **Runs:** in engine cycle · **Role:** Process Reviewer
 
-**Stage entry:**
+**Phase entry:**
 
 - API & Orchestration complete for slice
 
-**Stage exit:**
+**Phase exit:**
 
 - PSM EVL passes
 - Readiness gate approved

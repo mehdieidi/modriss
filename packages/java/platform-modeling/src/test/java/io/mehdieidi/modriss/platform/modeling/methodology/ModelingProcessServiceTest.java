@@ -70,7 +70,7 @@ class ModelingProcessServiceTest {
     Map<String, Object> process = service.processDefinition("end-to-end");
     assertEquals("modriss.end-to-end.modeling", process.get("processId"));
     List<?> phases = list(process.get("phases"));
-    assertEquals(5, phases.size());
+    assertEquals(3, phases.size());
     @SuppressWarnings("unchecked")
     Map<String, Object> initiation = (Map<String, Object>) phases.get(0);
     assertEquals("e2e.ph0", initiation.get("id"));
@@ -79,8 +79,15 @@ class ModelingProcessServiceTest {
     assertEquals("e2e.ph1", increment.get("id"));
     assertTrue(list(increment.get("stages")).size() >= 8);
     @SuppressWarnings("unchecked")
-    Map<String, Object> retirement = (Map<String, Object>) phases.get(4);
-    assertEquals("e2e.ph4", retirement.get("id"));
+    Map<String, Object> retirement = (Map<String, Object>) phases.get(2);
+    assertEquals("e2e.ph2", retirement.get("id"));
+    assertTrue(
+        list(process.get("processComponents")).stream()
+            .map(value -> (Map<String, Object>) value)
+            .anyMatch(component -> "modriss.operations-maintenance".equals(component.get("id"))));
+    @SuppressWarnings("unchecked")
+    Map<String, Object> processEngine = (Map<String, Object>) process.get("processEngine");
+    assertNotNull(processEngine.get("serviceDeliveryFlow"));
     assertNotNull(process.get("milestones"));
     assertNotNull(process.get("processEngine"));
     assertNotNull(process.get("progressModel"));

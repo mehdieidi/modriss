@@ -1,6 +1,6 @@
 # Capability-Increment Process
 
-The full MDE lifecycle is `modriss.end-to-end.modeling` (`mde/process/process-definitions/end-to-end.json`). It has five SPEM phases: initiation/tailoring, iterative-incremental model-driven delivery, release/transition, operations/evolution, and retirement/closure. The delivery phase (`e2e.ph1`) contains **eight engine stages** that orchestrate child process engines, ETL transforms, artifact readiness, and cross-level rework loops.
+The full MDE lifecycle is `modriss.end-to-end.modeling` (`mde/process/definitions/end-to-end.json`). It has five SPEM phases: initiation/tailoring, iterative-incremental model-driven delivery, release/transition, operations/evolution, and retirement/closure. The delivery phase (`e2e.ph1`) contains **eight engine stages** that orchestrate child process engines, ETL transforms, artifact readiness, and cross-level rework loops.
 
 ## Pipeline Overview
 

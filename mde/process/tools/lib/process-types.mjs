@@ -59,6 +59,7 @@
  * @property {string} id
  * @property {string} name
  * @property {string} primaryRole - compact authoring alias compiled to RoleUse
+ * @property {string[]} [supportingRoles] - contributing/reviewing roles compiled to supporting ProcessPerformers
  * @property {string} [viewpoint]
  * @property {string[]} [artifactIds]
  * @property {string[]} [inputArtifactIds] - explicit input WorkProductDefinition IDs

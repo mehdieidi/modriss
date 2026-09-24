@@ -151,8 +151,8 @@
           <text class="head ink" x="14" y="50">Inception, Tailoring</text>
           <text class="head ink" x="14" y="67">and Organization</text>
           <line class="hair" x1="14" y1="80" x2="150" y2="80" />
-          <text class="body muted" x="14" y="101">Value · feasibility · profile</text>
-          <text class="body muted" x="14" y="118">teams · quality · ops baseline</text>
+          <text class="body muted" x="14" y="101">Value · alternatives · cost · risk</text>
+          <text class="body muted" x="14" y="118">profile · owners · ops baseline</text>
           <text class="small accent" x="14" y="140">G0 → G1</text>
         </g>
         <g transform="translate(414 150)">
@@ -185,9 +185,9 @@
           <text class="tag muted" x="14" y="25">PHASE 2 · ONCE AUTHORIZED</text>
           <text class="head ink" x="14" y="50">Retire, Migrate and Close</text>
           <line class="hair" x1="14" y1="64" x2="176" y2="64" />
-          <text class="body muted" x="14" y="86">migrate · decommission</text>
-          <text class="body muted" x="14" y="103">retain evidence · close duties</text>
-          <text class="body muted" x="14" y="120">contributes shared G8 evidence</text>
+          <text class="body muted" x="14" y="86">migrate · data/records disposition</text>
+          <text class="body muted" x="14" y="103">remove access · resources · cost</text>
+          <text class="body muted" x="14" y="120">contribute shared G8 evidence</text>
           <text class="small accent" x="14" y="140">G8 · CLOSED</text>
         </g>
         <path class="flow" d="M380 251H414" marker-end="url(#arrow)" />
@@ -212,17 +212,19 @@
             Requested → Ready → In Progress → Verify → Done
           </text>
           <text class="body muted" x="16" y="104">
-            Explicit WIP · service classes · SLE · item age · throughput · operations evidence
+            Explicit WIP · service classes · SLE · flow · SLO/security/cost evidence
           </text>
         </g>
         <rect x="192" y="396" width="618" height="46" rx="6" fill="#ebe8df" stroke="#ccd2cf" />
         <path class="feedback" d="M513 494V352" marker-end="url(#teal)" />
         <path class="sync" d="M711 352V494" marker-end="url(#red)" />
-        <text class="tag ink" x="208" y="414">
-          DEVOPS INTERFACE
-        </text>
+        <text class="tag ink" x="208" y="414">DEVOPS INTERFACE</text>
         <text class="small accent" x="382" y="427">TELEMETRY + CHANGE ↑</text>
         <text class="small coral" x="625" y="427">G7 RELEASE ↓</text>
-        <text class="small muted" x="42" y="700">SOLID ARROW = HANDOVER · DASHED ARROW = CONTROLLED FEEDBACK</text>
-        <text class="small muted" x="42" y="718">G8 = SHARED CLOSURE CRITERIA · NOT AN ACTIVITY FLOW BETWEEN THE PROCESSES</text>
+        <text class="small muted" x="42" y="700">
+          SOLID ARROW = HANDOVER · DASHED ARROW = CONTROLLED FEEDBACK
+        </text>
+        <text class="small muted" x="42" y="718">
+          G8 = SHARED CLOSURE CRITERIA · NOT AN ACTIVITY FLOW BETWEEN THE PROCESSES
+        </text>
       </svg>

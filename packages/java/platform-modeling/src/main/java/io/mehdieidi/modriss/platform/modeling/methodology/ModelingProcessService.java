@@ -15,9 +15,7 @@ import java.util.Set;
 import tools.jackson.core.type.TypeReference;
 import tools.jackson.databind.ObjectMapper;
 
-/**
- * Loads SPEM-aligned modeling process definitions from {@code mde/process/process-definitions/}.
- */
+/** Loads SPEM-aligned modeling process definitions from {@code mde/process/definitions/}. */
 public final class ModelingProcessService {
 
   private static final Set<String> LEVELS = Set.of("cim", "pim", "psm", "artifact", "end-to-end");
@@ -57,10 +55,7 @@ public final class ModelingProcessService {
    */
   public Map<String, Object> methodContentIndex() {
     Path file =
-        methodologyRoot()
-            .resolve("engineered-method")
-            .resolve("spem")
-            .resolve("method-content-index.json");
+        methodologyRoot().resolve("method").resolve("spem").resolve("method-content-index.json");
     return readJsonFile(file, "SPEM method-content index");
   }
 
@@ -123,7 +118,7 @@ public final class ModelingProcessService {
   }
 
   private Map<String, Object> readDefinition(String level) {
-    Path file = methodologyRoot().resolve("process-definitions").resolve(level + ".json");
+    Path file = methodologyRoot().resolve("definitions").resolve(level + ".json");
     return readJsonFile(file, "process definition for " + level);
   }
 

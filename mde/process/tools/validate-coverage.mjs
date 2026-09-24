@@ -6,7 +6,7 @@ import { parseEcore, allConcepts } from "./lib/ecore-parser.mjs";
 const ROOT = join(import.meta.dirname, "..");
 const METAMODEL_ROOT = join(ROOT, "..", "metamodels");
 const COV_DIR = join(ROOT, "coverage-matrix");
-const PROC_DIR = join(ROOT, "process-definitions");
+const PROC_DIR = join(ROOT, "definitions");
 
 let failed = false;
 
@@ -289,6 +289,7 @@ function validateProcess(process, fileName, metamodelClassifiers = null) {
           }
         }
         const performerRoleUseRefs = new Set(taskUse.performerRoleUseRefs || []);
+        let primaryPerformerCount = 0;
         for (const performer of taskUse.processPerformers || []) {
           if (performer.type !== "ProcessPerformer") {
             errors.push(`process performer ${performer.id} is not a ProcessPerformer`);
@@ -296,12 +297,16 @@ function validateProcess(process, fileName, metamodelClassifiers = null) {
           if (performer.taskUseRef !== taskUse.id) {
             errors.push(`process performer ${performer.id} references ${performer.taskUseRef}, expected ${taskUse.id}`);
           }
-          if (performer.kind !== "primary") {
+          if (!["primary", "supporting"].includes(performer.kind)) {
             errors.push(`process performer ${performer.id} has invalid kind ${performer.kind}`);
           }
+          if (performer.kind === "primary") primaryPerformerCount += 1;
           if (!performerRoleUseRefs.has(performer.roleUseRef)) {
             errors.push(`process performer ${performer.id} is not represented in performerRoleUseRefs`);
           }
+        }
+        if (primaryPerformerCount !== 1) {
+          errors.push(`task use ${taskUse.id} must have exactly one primary ProcessPerformer; found ${primaryPerformerCount}`);
         }
         for (const roleUseRef of performerRoleUseRefs) {
           if (!(taskUse.processPerformers || []).some((performer) => performer.roleUseRef === roleUseRef)) {

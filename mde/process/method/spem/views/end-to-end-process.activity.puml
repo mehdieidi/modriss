@@ -1,0 +1,41 @@
+@startuml
+title MODRISS End-to-End Process — Development/Delivery + Operations/Maintenance
+skinparam backgroundColor #F5F3ED
+|Development and Delivery|
+start
+:e2e.ph0 — Phase 0: Inception, Tailoring & Organization;
+:Assess serverless suitability, alternatives,\ncost range and material risks;
+:G0 pursue / explore / redirect / stop;
+:Tailor method, organize ownership and authorize G1;
+:e2e.ph1 — Phase 1: Active Product Construction & Evolution;
+repeat
+  :e2e.p0..p7 — Model-driven increment activities;
+  :Review the increment and adapt the way of working;
+  :e2e.rel.a1..a3 — Release and transition activities;
+repeat while (First release accepted at G7?) is (rework)
+:G7 hands the first accepted release to Operations and Maintenance;
+fork
+  while (Next release selected and retirement not authorized?) is (next release)
+    :Run the next model-driven increment and release activities;
+    :G7 updates the accepted live-release set;
+  endwhile (retirement authorized)
+  :e2e.ph2 — Phase 2: Retire, Migrate & Close;
+  :Verify data disposition, record custody,\naccess removal and cost cessation;
+  :Contribute Development and Delivery closure evidence to shared G8;
+fork again
+  |Operations and Maintenance|
+  :Start the ongoing process at first G7;
+  repeat
+    :e2e.ops.a1 — Operate and Observe;
+    :e2e.ops.a2 — Kanban Service-Delivery;
+    :e2e.ops.a3 — Incident, Problem and Risk Response;
+    :e2e.ops.a4 — Maintenance Change and Reconciliation;
+    :e2e.ops.a5 — Service and Process Improvement;
+    note right: The accepted baseline remains in operation\nwhile later releases are developed.
+  repeat while (Any live release remains?) is (yes)
+  :Contribute operational shutdown evidence to shared G8;
+end fork
+|Development and Delivery|
+:G8 accepts shared closure evidence\nwhen no live release remains;
+stop
+@enduml

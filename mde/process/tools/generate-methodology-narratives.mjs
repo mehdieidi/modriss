@@ -13,7 +13,7 @@ const NARRATIVES = path.join(ROOT, "apps/frontend/js/methodology-narratives.mjs"
 const LEVELS = ["cim", "pim", "psm"];
 
 function loadProcess(level) {
-  const p = path.join(ROOT, `mde/process/process-definitions/${level}.json`);
+  const p = path.join(ROOT, `mde/process/definitions/${level}.json`);
   return JSON.parse(fs.readFileSync(p, "utf8"));
 }
 

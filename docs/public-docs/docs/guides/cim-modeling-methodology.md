@@ -81,7 +81,7 @@ flowchart TD
 
 ## Task Catalog
 
-Process `modriss.cim.modeling` · 5 stages · 26 TaskUses / TaskDefinitions · CIM metamodel coverage enforced in CI.
+Process `modriss.cim.modeling` · 5 phases · 26 TaskUses / TaskDefinitions · CIM metamodel coverage enforced in CI.
 
 ### Increment Framing (`cim.ph1`)
 
@@ -89,11 +89,11 @@ Frame the current capability slice, establish or refresh the CIM program contain
 
 **Runs:** in engine cycle · **Role:** Business Modeler
 
-**Stage entry:**
+**Phase entry:**
 
 - MODRISS project created or prior CIM increment selected for evolution
 
-**Stage exit:**
+**Phase exit:**
 
 - CIMModel root exists
 - Capability-slice objective and definition of done are agreed
@@ -254,11 +254,11 @@ Map who participates in the domain, what the organization can do, and shared voc
 
 **Runs:** in engine cycle · **Role:** Business Modeler
 
-**Stage entry:**
+**Phase entry:**
 
 - Increment Framing complete
 
-**Stage exit:**
+**Phase exit:**
 
 - Actors, capabilities, and glossary cover the increment slice
 
@@ -398,11 +398,11 @@ Explore information, structure, and behavior using Twin Peaks, iterate until CQR
 
 **Runs:** in engine cycle · **Role:** Business Modeler
 
-**Stage entry:**
+**Phase entry:**
 
 - Context Discovery complete for slice
 
-**Stage exit:**
+**Phase exit:**
 
 - Commands, queries, and events cover primary use cases
 
@@ -640,11 +640,11 @@ Synthesize transactional boundaries, orchestration, and bounded contexts from ex
 
 **Runs:** in engine cycle · **Role:** Business Modeler
 
-**Stage entry:**
+**Phase entry:**
 
 - Domain Exploration coherent for slice
 
-**Stage exit:**
+**Phase exit:**
 
 - Bounded contexts assigned with memberships
 
@@ -795,11 +795,11 @@ Backfill requirements, record transformation contracts, close traceability and E
 
 **Runs:** in engine cycle · **Role:** Requirements Engineer
 
-**Stage entry:**
+**Phase entry:**
 
 - Domain Synthesis complete for slice
 
-**Stage exit:**
+**Phase exit:**
 
 - CIM EVL passes
 - Readiness gate approved

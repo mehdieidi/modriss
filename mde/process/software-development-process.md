@@ -25,7 +25,7 @@ coordinated structures:
    incident, risk, and improvement demand.
 
 The machine-readable definitions are in
-[`process-definitions/`](process-definitions/). This document is the normative
+[`definitions/`](definitions/). This document is the normative
 English explanation of how those definitions are used. The Persian lifecycle
 document remains available as a translation/reference, but the JSON process
 definitions and this document are the maintained implementation contract.
@@ -69,7 +69,7 @@ The normative process endpoint is therefore a SPEM-mapped MODRISS JSON DSL,
 not a native SPEM/XMI instance. Its `metamodelBindings` connect TaskDefinitions
 to CIM/PIM/PSM language classifiers for coverage and guidance; they are not
 SPEM WorkProductDefinitions. The exact mapping is documented in
-[`spem/method-content.md`](spem/method-content.md).
+[`method/spem/method-content.md`](method/spem/method-content.md).
 
 These references ground the structure; they do not prove that every selected
 task or metric is universally optimal. Each project must inspect and adapt the
@@ -153,7 +153,11 @@ releases. The cycle does not cover the full product lifecycle on its own.
 ### Phase 0. Inception, tailoring, and organization
 
 The product owner and sponsor define the outcome hypothesis, boundaries,
-constraints, and initial release hypothesis. The Method Engineer performs a
+constraints, and initial release hypothesis. Before provider commitment, the
+solution architect compares serverless, hybrid, and non-serverless alternatives
+and the FinOps/Cost Analyst establishes demand assumptions, forecast ranges,
+budget guardrails, anomaly thresholds, and a business unit-cost measure. G0
+records an authorized pursue, explore, redirect, or stop decision. The Method Engineer performs a
 situational assessment and publishes a method profile. The delivery lead
 defines team topology, model ownership, integration ownership, dependency
 boards, decision rights, escalation, and review cadence. Quality, security,
@@ -163,6 +167,7 @@ accumulates.
 Required outputs include:
 
 - product and system charter;
+- serverless-suitability record, cost model, risk register, and G0 decision;
 - situational method profile;
 - team topology and dependency map;
 - quality/security/operations baseline;
@@ -213,7 +218,10 @@ rollback, data recovery, operational readiness, and approvals. Promotion is
 progressive across environments with observable stop/rollback thresholds.
 
 Handover is complete only when the service owner accepts dashboards, alerts,
-runbooks, support ownership, recovery access, and post-deployment validation.
+runbooks, support ownership, recovery access, cost/anomaly views, and
+post-deployment validation. Each increment also reviews outcome, flow, rework,
+trace, cost, and method-friction evidence and produces an owned method
+improvement decision or a reasoned no-op.
 
 ## Operations and Maintenance Process
 
@@ -253,7 +261,8 @@ model or generator source.
 ### Phase 2. Retire, migrate, and close
 
 Retirement covers the product decision, user communication, replacement or
-migration, data retention/disposition, integration shutdown, access removal,
+migration, explicit reconciliation of every governed data store, backup,
+export, derived copy, legal hold, and record series, integration shutdown, access removal,
 infrastructure decommissioning, cost closure, evidence retention, and
 organizational learning. A lifecycle is not complete while data, integrations,
 credentials, support obligations, or legal records remain ownerless.
@@ -271,15 +280,17 @@ multiple people. Accountability must remain unambiguous.
 
 The integrated process assigns responsibilities to at least these groups:
 
-- product owner and domain experts for value and meaning;
+- sponsor, product owner, and domain experts for authority, value, and meaning;
 - requirements and business modelers for intent and acceptance;
 - solution architect for PIM and cross-level architectural decisions;
 - cloud platform engineer for AWS PSM and platform automation;
 - quality and security engineers for evidence and risk controls;
+- FinOps/Cost Analyst for forecast, allocation, guardrails, anomaly, and unit economics;
 - release engineer and service owner for promotion and operation;
 - delivery lead for flow, dependencies, coordination, and escalation;
 - process reviewer for gates and evidence;
 - method engineer for tailoring and method evolution.
+- Records/Data Steward for retention, disposition, migration evidence, and closure.
 
 For multiple teams, every model scope has one accountable owner and a named
 integration path. A shared dependency record contains owner, dependency type,
@@ -317,6 +328,7 @@ Core metrics are:
   evidence);
 - cross-team dependency age;
 - release frequency and escaped-defect rate.
+- gate-decision time, forecast variance, and unresolved closure-obligation count.
 
 Metrics are for inspection and process improvement, not individual performance
 ranking. Task completion never overrides a blocking finding, missing trace, or
@@ -388,4 +400,7 @@ contract but does not provide a project tracker by itself. Team coordination
 and release records still require integration with the project’s chosen work
 and source-control systems. Future work should add a first-class persisted
 process-run service, dependency-board UI, release ledger, and empirical studies
-of the development process across projects.
+of the development process across projects. The exhaustive fictional
+[ColdChain Sentinel enactment](method/13-hypothetical-enactment-and-process-validation.md)
+tests internal consistency and complete definition coverage, but does not
+replace those empirical studies.

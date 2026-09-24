@@ -6,7 +6,7 @@ import { collectProcessTasks } from "./lib/process-walk.mjs";
 
 const ROOT = join(import.meta.dirname, "..");
 const METAMODEL_ROOT = join(ROOT, "..", "metamodels");
-const PROC_DIR = join(ROOT, "process-definitions");
+const PROC_DIR = join(ROOT, "definitions");
 const OUT_DIR = join(ROOT, "coverage-matrix");
 
 function loadProcess(level) {

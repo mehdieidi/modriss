@@ -1,6 +1,6 @@
 # CIM Modeling Process
 
-Guided CIM modeling follows process `modriss.cim.modeling` (`mde/process/process-definitions/cim.json`). **Five sequential SPEM phases** each contain **stages** (with optional sub-stages) and **atomic tasks** (`cim.ph1`–`cim.ph5`). The **process engine** revolves through in-engine phases per capability slice; **Establishment** runs once before the first cycle.
+Guided CIM modeling follows process `modriss.cim.modeling` (`mde/process/definitions/cim.json`). **Five sequential SPEM phases** each contain **stages** (with optional sub-stages) and **atomic tasks** (`cim.ph1`–`cim.ph5`). The **process engine** revolves through in-engine phases per capability slice; **Establishment** runs once before the first cycle.
 
 ## Phase Flow
 

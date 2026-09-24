@@ -2,7 +2,7 @@
 
 The MODRISS methodology comprises a development process and a modeling framework. This guide documents the process component. It organizes work across CIM, PIM, and AWS PSM modeling, artifact production, release, operations, change, and retirement. The modeling framework defines the languages and technical facilities used by that work.
 
-The maintained process is described in [`mde/process/software-development-process.md`](https://github.com/mehdieidi/modriss/blob/main/mde/process/software-development-process.md). The machine-readable definitions are in [`mde/process/process-definitions/`](https://github.com/mehdieidi/modriss/tree/main/mde/process/process-definitions). Those sources define the roles, work products, dependencies, and conditions used by the process.
+The maintained process is described in [`mde/process/software-development-process.md`](https://github.com/mehdieidi/modriss/blob/main/mde/process/software-development-process.md). The machine-readable definitions are in [`mde/process/definitions/`](https://github.com/mehdieidi/modriss/tree/main/mde/process/definitions). Those sources define the roles, work products, dependencies, and conditions used by the process.
 
 ## Two coordinated lifecycle processes
 
@@ -18,11 +18,11 @@ Delivery has three one-time sequential phases. Operations and Maintenance is
 a distinct concurrent process: it starts at the
 first G7 handover, continues while any release is live, and ends at G8.
 
-| One-time phase                                   | Work and expected evidence                                                                                                                                                       |
-| ------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **0. Inception, tailoring, and organization**    | Agree on product outcomes, the first release and increment hypotheses, a method profile, team ownership, dependencies, and quality, security, and operations baselines.          |
-| **1. Active product construction and evolution** | Repeat model-driven increment, release qualification, progressive promotion, handover, and outcome-review activities while the product remains active.                           |
-| **2. Retire, migrate, and close**                | Authorize retirement, communicate with users, migrate or dispose of data, close integrations and access, decommission infrastructure, and retain required records and knowledge. |
+| One-time phase                                   | Work and expected evidence                                                                                                                                                                                  |
+| ------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **0. Inception, tailoring, and organization**    | Compare alternatives and serverless suitability; establish cost/risk assumptions and G0; agree outcomes, the first slice, a method profile, ownership, and quality/security/operations baselines before G1. |
+| **1. Active product construction and evolution** | Repeat model-driven increment, release qualification, progressive promotion, handover, and outcome-review activities while the product remains active.                                                      |
+| **2. Retire, migrate, and close**                | Authorize retirement, communicate with users, migrate or dispose of data, reconcile retained records, close integrations/access, decommission infrastructure, verify cost cessation, and retain knowledge.  |
 
 The continuous-delivery cycle repeats activities _inside Phase 1_; no phase
 repeats. Phase 2 begins only after an explicit retirement decision. Operations
@@ -92,6 +92,11 @@ Phase 1 contains a repeatable engine for one capability slice. The slice should 
 
 For each increment, the engine frames the scope and acceptance evidence, runs the CIM process, transforms CIM to PIM, refines PIM, transforms PIM to AWS PSM, refines PSM, generates an artifact baseline, and reviews readiness. After acceptance, the team can start another increment or leave the engine to assemble a release.
 
+Each accepted or reworked increment also reviews outcome, flow, rework, trace,
+cost, and method-friction evidence. The tailored profile receives an owned
+improvement decision or a reasoned no-op; this adaptation is an activity within
+Phase 1, not another lifecycle phase.
+
 The sequence provides a shared flow for people and models. It does not require every specialist to work in isolation. Teams can proceed in parallel when scope and dependencies allow it. They record ownership and revision decisions so downstream work does not silently rely on an unresolved upstream assumption.
 
 Feedback follows the earliest model that owns the change. A missing business concept returns from PIM work to CIM. An AWS constraint may require a PIM change. A generated artifact issue may require a PSM or generator correction. The team records the reason and affected revisions, then regenerates downstream outputs as needed.
@@ -143,3 +148,7 @@ These references provide a basis for the structure. They do not establish that o
 - [PMI Disciplined DevOps](https://www.pmi.org/disciplined-agile/process/disciplined-devops)
 - [Ahmad et al. (2018), _Kanban in software engineering_](https://doi.org/10.1016/j.jss.2017.11.045)
 - [ISO/IEC/IEEE 14764:2022 Software maintenance](https://www.iso.org/standard/80710.html)
+- [FinOps Framework](https://www.finops.org/framework/)
+- [FinOps planning and estimating](https://www.finops.org/framework/capabilities/planning-estimating/)
+- [AWS Serverless Lens: expenditure and usage awareness](https://docs.aws.amazon.com/wellarchitected/latest/serverless-applications-lens/expenditure-and-usage-awareness.html)
+- [NIST SP 800-88 Rev. 1 media sanitization](https://www.nist.gov/publications/nist-special-publication-800-88-revision-1-guidelines-media-sanitization)

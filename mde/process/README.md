@@ -1,11 +1,16 @@
-# MODRISS Modeling Process Definitions
+# MODRISS Process and Engineered Method
 
 The normative English full-lifecycle development process is defined in
 [`software-development-process.md`](software-development-process.md). It covers initiation,
 situational tailoring, team coordination, iterative-incremental CIM/PIM/PSM delivery, release,
-transition, operations, change propagation, and retirement. The Persian lifecycle translation is
-available in [`software-development-process-fa.md`](software-development-process-fa.md). The
-machine-readable definitions below specify the modeling processes and their reusable method content for use within that lifecycle.
+transition, operations, change propagation, and retirement. The machine-readable
+definitions below specify the modeling processes and their reusable method content
+for use within that lifecycle.
+
+The method package also contains an exhaustive fictional
+[ColdChain Sentinel enactment](method/13-hypothetical-enactment-and-process-validation.md)
+with generated task, role, work-product, and G0–G8 coverage ledgers. It is an
+analytical consistency test, not empirical validation.
 
 Canonical, machine-readable **iterative-incremental** process definitions for CIM, PIM,
 AWS PSM, generated-artifact deployment readiness, and the end-to-end pipeline. Each process
@@ -17,13 +22,15 @@ process-engine, progress, governance, and change-management extensions are label
 
 ## Layout
 
-| Path                   | Purpose                                                                                                                 |
-| ---------------------- | ----------------------------------------------------------------------------------------------------------------------- |
-| `spem/`                | SPEM 2.0 method content and UML activity diagrams                                                                       |
-| `process-definitions/` | JSON DSL: method content, Activities, TaskUses, WorkSequences, progress/governance contracts, and `processEngine`       |
-| `coverage-matrix/`     | Generated concept → task mappings (CI-validated)                                                                        |
-| `tools/lib/`           | SPEM specs, full-lifecycle orchestration, process engine, iteration loops, governance, artifact process, and guidelines |
-| `tools/`               | Build, coverage, validation, and UI metadata augmentation scripts                                                       |
+| Path                 | Meaning                                                                                                                |
+| -------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| `definitions/`       | Generated executable JSON definitions for the integrated, CIM, PIM, PSM, and artifact-readiness processes              |
+| `method/`            | Engineered-method research, reusable content library, SPEM package, process views, templates, evaluation, and diagrams |
+| `method/spem/`       | Consolidated formal SPEM representation and indexes                                                                    |
+| `method/spem/views/` | All PlantUML lifecycle and child-process views; there is no second SPEM location                                       |
+| `coverage-matrix/`   | Generated Ecore concept → task mappings                                                                                |
+| `tools/lib/`         | Authoritative process specifications, orchestration, governance, engines, and guidance                                 |
+| `tools/`             | Definition builders, coverage verification, guide generation, and frontend metadata generation                         |
 
 ## Maintenance
 
@@ -43,6 +50,14 @@ When metamodels change:
    ```
 
 3. Run `node mde/process/tools/validate-coverage.mjs` (also invoked by `scripts/verify.py`).
+
+To rebuild and verify the formal method package, run:
+
+```bash
+node mde/process/method/tools/build-method-package.mjs
+node mde/process/method/tools/verify-method-package.mjs
+node mde/process/method/tools/verify-lifecycle-sync.mjs
+```
 
 ## API
 

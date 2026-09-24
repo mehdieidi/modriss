@@ -52,7 +52,7 @@ flowchart TD
 
 ## Task Catalog
 
-Process `modriss.pim.modeling` · 6 stages · 32 TaskUses / TaskDefinitions · PIM metamodel coverage enforced in CI.
+Process `modriss.pim.modeling` · 6 phases · 32 TaskUses / TaskDefinitions · PIM metamodel coverage enforced in CI.
 
 ### Architecture & Slice Framing (`pim.ph1`)
 
@@ -60,11 +60,11 @@ Frame the current service slice, establish or refresh PIM posture, and align ser
 
 **Runs:** in engine cycle · **Role:** Solution Architect
 
-**Stage entry:**
+**Phase entry:**
 
 - CIM transform complete, prior PIM increment selected, or greenfield PIM
 
-**Stage exit:**
+**Phase exit:**
 
 - PIM root configured
 - Service-slice objective and architecture definition of done are agreed
@@ -241,11 +241,11 @@ Define API/event contracts and persistent data architecture for the increment sl
 
 **Runs:** in engine cycle · **Role:** Solution Architect
 
-**Stage entry:**
+**Phase entry:**
 
 - Architecture & Slice Framing complete
 
-**Stage exit:**
+**Phase exit:**
 
 - Contracts exist for APIs and events
 - Persistent stores cover domain data
@@ -379,11 +379,11 @@ Define compute units and expose them through a coherent API surface.
 
 **Runs:** in engine cycle · **Role:** Solution Architect
 
-**Stage entry:**
+**Phase entry:**
 
 - Contracts & Data complete for slice
 
-**Stage exit:**
+**Phase exit:**
 
 - Functions cover behavioral surface
 - Public API surface complete
@@ -496,11 +496,11 @@ Wire async integration topology and long-running workflow orchestration.
 
 **Runs:** in engine cycle · **Role:** Solution Architect
 
-**Stage entry:**
+**Phase entry:**
 
 - Compute & Exposure complete for slice
 
-**Stage exit:**
+**Phase exit:**
 
 - Async integration topology complete
 - Long-running processes orchestrated
@@ -647,11 +647,11 @@ Apply security, operational policies, and environment configuration across the s
 
 **Runs:** in engine cycle · **Role:** Solution Architect
 
-**Stage entry:**
+**Phase entry:**
 
 - Integration & Orchestration complete for slice
 
-**Stage exit:**
+**Phase exit:**
 
 - Auth model covers all public endpoints
 - Operational policies applied
@@ -973,11 +973,11 @@ Assess platform capability mapping, close traceability, and pass PIM EVL gate.
 
 **Runs:** in engine cycle · **Role:** Process Reviewer
 
-**Stage entry:**
+**Phase entry:**
 
 - Assurance & Configuration complete for slice
 
-**Stage exit:**
+**Phase exit:**
 
 - PIM EVL passes
 - Readiness gate approved

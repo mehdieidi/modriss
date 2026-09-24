@@ -8,6 +8,7 @@ import {
   END_TO_END_OPERATIONS_PROCESS,
   END_TO_END_PHASES,
   END_TO_END_ROLES,
+  END_TO_END_GATES,
 } from "./lib/spem-end-to-end.mjs";
 import {
   ROLES,
@@ -26,7 +27,7 @@ import { ARTIFACT_PROCESS_SPEC } from "./lib/spem-artifact.mjs";
 
 const ROOT = join(import.meta.dirname, "..");
 const METAMODEL_ROOT = join(ROOT, "..", "metamodels");
-const OUT_DIR = join(ROOT, "process-definitions");
+const OUT_DIR = join(ROOT, "definitions");
 
 const SPEM_REFERENCE = "https://www.omg.org/spec/SPEM/2.0/PDF/";
 
@@ -54,6 +55,8 @@ function workProductDefinitions(artifacts) {
     workProductKind: artifact.workProductKind || artifact.spemKind || "Artifact",
     name: artifact.name,
     description: artifact.description,
+    methodWorkProductId: artifact.methodWorkProductId,
+    methodWorkProductIds: artifact.methodWorkProductIds,
   }));
 }
 
@@ -101,7 +104,10 @@ function enrichTaskDefinition(
     name: task.name,
     purpose: task.purpose || task.name,
     viewpoint: task.viewpoint,
-    performerRoleRefs: [roleDefinitionRef(task.primaryRole)].filter(Boolean),
+    performerRoleRefs: [task.primaryRole, ...(task.supportingRoles || [])]
+      .map(roleDefinitionRef)
+      .filter(Boolean),
+    primaryPerformerRoleRef: roleDefinitionRef(task.primaryRole),
     inputWorkProductRefs,
     inputSource: "declared",
     outputWorkProductRefs,
@@ -157,7 +163,10 @@ function roleUseId(activityId, roleId) {
 
 function activityRoleUseRefs(activity, taskSpecs = []) {
   const roleIds = new Set(
-    [activity.primaryRole, ...taskSpecs.map((task) => task.primaryRole)].filter(Boolean),
+    [
+      activity.primaryRole,
+      ...taskSpecs.flatMap((task) => [task.primaryRole, ...(task.supportingRoles || [])]),
+    ].filter(Boolean),
   );
   return [...roleIds].map((roleId) => roleUseId(activity.id, roleId));
 }
@@ -188,9 +197,8 @@ function compileTaskUse(task, activity, workProductUses, inputWorkProductIdsByTa
     });
     return id;
   });
-  const performerRoleUseRefs = task.primaryRole
-    ? [roleUseId(activity.id, task.primaryRole)]
-    : [];
+  const performerRoles = [task.primaryRole, ...(task.supportingRoles || [])].filter(Boolean);
+  const performerRoleUseRefs = performerRoles.map(roleId => roleUseId(activity.id, roleId));
   const processParameters = [
     ...inputUseRefs.map((workProductUseRef) => ({
       id: processParameterId(task.id, workProductUseRef, "in"),
@@ -211,11 +219,11 @@ function compileTaskUse(task, activity, workProductUses, inputWorkProductIdsByTa
       workProductUseRef,
     })),
   ];
-  const processPerformers = performerRoleUseRefs.map((roleUseRef) => ({
+  const processPerformers = performerRoleUseRefs.map((roleUseRef, index) => ({
     id: processPerformerId(task.id, roleUseRef),
     type: "ProcessPerformer",
     taskUseRef: task.id,
-    kind: "primary",
+    kind: index === 0 ? "primary" : "supporting",
     roleUseRef,
   }));
 
@@ -247,7 +255,10 @@ function enrichStages(
 ) {
   return (stages || []).map((stage) => {
     const taskSpecs = stage.tasks || [];
-    for (const roleId of new Set([stage.primaryRole, ...taskSpecs.map((task) => task.primaryRole)].filter(Boolean))) {
+    for (const roleId of new Set([
+      stage.primaryRole,
+      ...taskSpecs.flatMap((task) => [task.primaryRole, ...(task.supportingRoles || [])]),
+    ].filter(Boolean))) {
       roleUses.push({
         id: roleUseId(stage.id, roleId),
         type: "RoleUse",
@@ -722,13 +733,7 @@ function buildEndToEnd() {
         ...(CHANGE_MANAGEMENT.psm?.workflows?.filter((w) => w.crossLevel) || []),
       ],
     },
-    milestones: [
-      { type: "Milestone", id: "e2e.m0.method-tailored", name: "Process tailoring and team topology approved", phaseId: "e2e.ph0", stageId: "e2e.ph0.st3" },
-      { type: "Milestone", id: "e2e.m1.increment-accepted", name: "Vertical increment accepted", phaseId: "e2e.ph1", stageId: "e2e.p7.artifact-completion" },
-      { type: "Milestone", id: "e2e.m2.release-promoted", name: "Release promoted and handed over", phaseId: "e2e.ph1", stageId: "e2e.rel.a2" },
-      { type: "Milestone", id: "e2e.m3.operational-learning", name: "Operational learning reviewed", processComponentId: "modriss.operations-maintenance", activityId: "e2e.ops.a5" },
-      { type: "Milestone", id: "e2e.m4.retired", name: "Lifecycle retired and closed", phaseId: "e2e.ph2", stageId: "e2e.ph2.st3" },
-    ],
+    milestones: END_TO_END_GATES,
   };
 }
 

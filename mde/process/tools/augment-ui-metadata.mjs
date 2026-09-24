@@ -24,7 +24,7 @@ for (const level of ["cim", "pim", "psm"]) {
     (matrix.entries || []).map((e) => [e.concept, e.taskIds || []]),
   );
   const process = JSON.parse(
-    readFileSync(join(ROOT, "process-definitions", `${level}.json`), "utf8"),
+    readFileSync(join(ROOT, "definitions", `${level}.json`), "utf8"),
   );
   const conceptToPhase = new Map();
   const conceptToStage = new Map();
