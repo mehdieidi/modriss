@@ -738,6 +738,7 @@ function renderDetail(host, node, process, level) {
         });
       } else {
         host.innerHTML = renderFullMethodSummary(process);
+        bindFullMethodSummary(host);
         host
           .querySelector('[data-action="browse-method-library"]')
           ?.addEventListener("click", () => {
@@ -914,74 +915,307 @@ function renderFullMethodSummary(process) {
   const guidance = guidanceForProcess(process);
   const library = state.guidedModeling?.methodLibrary;
   const releaseCycle = engine.releaseCycle;
-  const sections = [
-    `<span class="map-detail-kind">Full Process</span>`,
-    `<h3>From product intent through operation and retirement</h3>`,
-    `<p>Explore the lifecycle phases, delivery stages, and task definitions. Phase 1 contains the repeatable CIM → PIM → AWS PSM → artifact increment; the release cycle continues through operation until retirement is authorized.</p>`,
-    renderSectionTitle("Lifecycle cadence"),
-    `<p>${escapeHtml(releaseCycle?.guidance || engine.description || "")}</p>`,
-    `<p><strong>Increment outcome:</strong> ${escapeHtml(engine.deliverable?.description || "")}</p>`,
-    renderListSection("Lifecycle entry evidence", process.governance?.entryEvidence || []),
-    renderListSection("Lifecycle exit evidence", process.governance?.exitEvidence || []),
-    renderListSection("Process gate", [process.governance?.gate || ""]),
-    renderSectionTitle("Lifecycle decision gates (G0–G8)"),
-    `<ul>${LIFECYCLE_GATES.map(([id, name]) => `<li><strong>${id}</strong> · ${escapeHtml(name)}</li>`).join("")}</ul>`,
-    renderSectionTitle("Continuous disciplines"),
-    `<ul>${[
-      "Product and project management",
-      "Risk and opportunity management",
-      "Quality assurance",
-      "Security and privacy",
-      "Configuration, change, and traceability",
-      "FinOps and cost management",
-      "Documentation and knowledge retention",
-      "Measurement and method improvement",
-    ]
-      .map((discipline) => `<li>${escapeHtml(discipline)}</li>`)
-      .join("")}</ul>`,
-    renderSectionTitle("Milestones and release gates"),
-    `<ul>${milestones
-      .map((item) => {
-        const phase = process.phases?.find((candidate) => candidate.id === item.phaseId);
-        return `<li><strong>${escapeHtml(item.name)}</strong>${phase ? ` · ${escapeHtml(phase.name)}` : ""}</li>`;
-      })
-      .join("")}</ul>`,
-    renderSectionTitle("Roles"),
-    `<ul>${roles
-      .map(
-        (role) =>
-          `<li><strong>${escapeHtml(role.name)}</strong>: ${escapeHtml((role.responsibilities || []).join("; "))}</li>`,
-      )
-      .join("")}</ul>`,
-    renderSectionTitle("Lifecycle work products"),
-    `<ul>${products
-      .map(
-        (product) =>
-          `<li><strong>${escapeHtml(product.name)}</strong>: ${escapeHtml(product.description || "")}</li>`,
-      )
-      .join("")}</ul>`,
-    renderSectionTitle("Method guidance"),
-    `<ul>${guidance
-      .map((item) => `<li><strong>${escapeHtml(item.name)}</strong>: ${escapeHtml(item.text)}</li>`)
-      .join("")}</ul>`,
-    `<div class="method-library-summary">
+  const disciplines = [
+    "Product and project management",
+    "Risk and opportunity management",
+    "Quality assurance",
+    "Security and privacy",
+    "Configuration, change, and traceability",
+    "FinOps and cost management",
+    "Documentation and knowledge retention",
+    "Measurement and method improvement",
+  ];
+  const phases = process.phases || [];
+  const entryEvidence = process.governance?.entryEvidence || [];
+  const exitEvidence = process.governance?.exitEvidence || [];
+  const allTasks = process.methodContent?.taskDefinitions || [];
+  const stat = (value, label) =>
+    `<div class="process-stat"><strong>${value}</strong><span>${label}</span></div>`;
+  return `<div class="full-process-summary">
+    <div class="full-process-hero">
+      <span class="map-detail-kind">Full Process</span>
+      <h3>From product intent to lasting operation</h3>
+      <p>Explore the complete method without losing your place. Select a view, inspect a gate, or expand any card for its full definition.</p>
+      <div class="process-stat-grid">
+        ${stat(phases.length, "phases")}${stat(milestones.length, "gates")}${stat(roles.length, "roles")}${stat(products.length, "work products")}
+      </div>
+    </div>
+    <div class="process-view-tabs" role="tablist" aria-label="Full process views">
+      ${[
+        ["overview", "Overview"],
+        ["gates", "Gates"],
+        ["roles", "Roles"],
+        ["outputs", "Outputs"],
+        ["guidance", "Guidance"],
+      ]
+        .map(
+          ([id, label], index) =>
+            `<button type="button" role="tab" data-process-tab="${id}" aria-selected="${index === 0}" class="${index === 0 ? "is-active" : ""}">${label}</button>`,
+        )
+        .join("")}
+    </div>
+    <section class="process-view is-active" data-process-view="overview" role="tabpanel">
+      <div class="process-cadence" aria-label="Lifecycle cadence diagram">
+        <div class="process-cadence-node"><span>01</span><strong>Intent</strong><small>Enter with evidence</small></div>
+        <div class="process-cadence-arrow" aria-hidden="true">→</div>
+        <div class="process-cadence-node is-cycle"><span>∞</span><strong>CIM → PIM → AWS PSM → artifact</strong><small>Repeatable Phase 1 increment</small></div>
+        <div class="process-cadence-arrow" aria-hidden="true">→</div>
+        <div class="process-cadence-node"><span>03</span><strong>Operate</strong><small>Release to retirement</small></div>
+      </div>
+      <div class="process-callout"><span aria-hidden="true">↻</span><div><strong>Lifecycle cadence</strong><p>${escapeHtml(releaseCycle?.guidance || engine.description || "")}</p></div></div>
+      <div class="process-outcome"><span>Increment outcome</span><strong>${escapeHtml(engine.deliverable?.description || "")}</strong></div>
+      <div class="process-evidence-grid">
+        <div><h4><span aria-hidden="true">↓</span> Entry evidence</h4>${entryEvidence.map((item) => `<span>${escapeHtml(item)}</span>`).join("") || "<span>None specified</span>"}</div>
+        <div><h4><span aria-hidden="true">↑</span> Exit evidence</h4>${exitEvidence.map((item) => `<span>${escapeHtml(item)}</span>`).join("") || "<span>None specified</span>"}</div>
+      </div>
+      <div class="process-gate-banner"><span>Process gate</span><strong>${escapeHtml(process.governance?.gate || "Not specified")}</strong></div>
+      ${renderSectionTitle("Continuous disciplines")}
+      <div class="process-discipline-grid">${disciplines.map((item, index) => `<div><span>${index + 1}</span>${escapeHtml(item)}</div>`).join("")}</div>
+    </section>
+    <section class="process-view" data-process-view="gates" role="tabpanel" hidden>
+      <div class="process-view-intro"><strong>Decision path</strong><span>Select a gate to reveal its milestone and lifecycle phase.</span></div>
+      <div class="process-gate-rail">${LIFECYCLE_GATES.map(([id, name], index) => {
+        const milestone = milestones.find((item) => item.gateId === id || item.name === name);
+        const phase = process.phases?.find((candidate) => candidate.id === milestone?.phaseId);
+        return `<button type="button" class="process-gate-node${index === 0 ? " is-active" : ""}" data-gate-index="${index}" aria-pressed="${index === 0}"><span>${escapeHtml(id)}</span><strong>${escapeHtml(name)}</strong><small>${escapeHtml(phase?.name || "Lifecycle decision")}</small></button>`;
+      }).join("")}</div>
+      <div class="process-gate-detail process-explorer-detail" aria-live="polite"></div>
+    </section>
+    <section class="process-view" data-process-view="roles" role="tabpanel" hidden>
+      <div class="process-view-intro"><strong>Accountability map</strong><span>Select a role to see where it acts across the lifecycle.</span></div>
+      <div class="process-role-selector" role="listbox" aria-label="Process roles">${roles
+        .map((role, index) => {
+          const taskCount = allTasks.filter((task) =>
+            (task.performerRoleRefs || []).includes(role.id),
+          ).length;
+          const gateCount = milestones.filter((gate) =>
+            (gate.authorityRoleRefs || []).includes(role.id),
+          ).length;
+          return `<button type="button" role="option" class="process-role-option${index === 0 ? " is-active" : ""}" data-role-index="${index}" aria-selected="${index === 0}"><span>${String(index + 1).padStart(2, "0")}</span><strong>${escapeHtml(role.name)}</strong><small>${taskCount} tasks · ${gateCount} gates</small></button>`;
+        })
+        .join("")}</div>
+      <div class="process-role-detail" aria-live="polite">${roles[0] ? renderRoleExplorerDetail(roles[0], process) : ""}</div>
+    </section>
+    <section class="process-view" data-process-view="outputs" role="tabpanel" hidden>
+      <div class="process-view-intro"><strong>Lifecycle work products</strong><span>Select an output to trace who creates it, who uses it, and where.</span></div>
+      <div class="process-role-selector" role="listbox" aria-label="Lifecycle work products">${products
+        .map((product, index) => {
+          const producers = allTasks.filter((task) =>
+            (task.outputWorkProductRefs || []).includes(product.id),
+          ).length;
+          const consumers = allTasks.filter((task) =>
+            (task.inputWorkProductRefs || []).includes(product.id),
+          ).length;
+          return `<button type="button" role="option" class="process-role-option${index === 0 ? " is-active" : ""}" data-output-index="${index}" aria-selected="${index === 0}"><span>${String(index + 1).padStart(2, "0")}</span><strong>${escapeHtml(product.name)}</strong><small>${producers} producers · ${consumers} consumers</small></button>`;
+        })
+        .join("")}</div>
+      <div class="process-role-detail process-output-detail" aria-live="polite">${products[0] ? renderOutputExplorerDetail(products[0], process) : ""}</div>
+    </section>
+    <section class="process-view" data-process-view="guidance" role="tabpanel" hidden>
+      <div class="process-view-intro"><strong>Method guidance</strong><span>Select guidance to see its scope and full recommendation.</span></div>
+      <div class="process-role-selector" role="listbox" aria-label="Method guidance">${guidance.map((item, index) => `<button type="button" role="option" class="process-role-option${index === 0 ? " is-active" : ""}" data-guidance-index="${index}" aria-selected="${index === 0}"><span>${String(index + 1).padStart(2, "0")}</span><strong>${escapeHtml(item.name)}</strong><small>${escapeHtml(item.appliesTo || "Process-wide")}</small></button>`).join("")}</div>
+      <div class="process-role-detail process-guidance-detail" aria-live="polite">${guidance[0] ? renderGuidanceExplorerDetail(guidance[0], process) : ""}</div>
+      ${changeWorkflows.length ? `${renderSectionTitle("Change and feedback workflows")}<div class="process-workflows">${changeWorkflows.map((workflow) => `<details><summary><strong>${escapeHtml(workflow.name)}</strong><span>${escapeHtml(workflow.trigger)}</span></summary><ol>${(workflow.steps || []).map((step) => `<li>${escapeHtml(step)}</li>`).join("")}</ol></details>`).join("")}</div>` : ""}
+    </section>
+    <div class="method-library-summary">
       <strong>Complete process content library</strong>
       <p>${library ? `${library.roleDefinitions?.length || 0} roles · ${library.taskDefinitions?.length || 0} tasks · ${library.workProductDefinitions?.length || 0} work products · ${library.guidance?.length || 0} guidance items` : "Loading process content"}</p>
       <button type="button" class="btn btn-secondary btn-full" data-action="browse-method-library"${library ? "" : " disabled"}>Browse process content</button>
-    </div>`,
-  ];
-  if (changeWorkflows.length) {
-    sections.push(renderSectionTitle("Change and feedback workflows"));
-    sections.push(
-      `<ul>${changeWorkflows
-        .map(
-          (workflow) =>
-            `<li><strong>${escapeHtml(workflow.name)}</strong>: ${escapeHtml(workflow.trigger)}<ol>${(workflow.steps || []).map((step) => `<li>${escapeHtml(step)}</li>`).join("")}</ol></li>`,
-        )
-        .join("")}</ul>`,
+    </div>
+  </div>`;
+}
+
+function bindFullMethodSummary(host) {
+  const showGate = (index) => {
+    const [id, name] = LIFECYCLE_GATES[index] || LIFECYCLE_GATES[0];
+    const process = processForMap();
+    const milestone = (process?.milestones || []).find(
+      (item) => item.gateId === id || item.name === name,
     );
-  }
-  return sections.join("");
+    const detail = host.querySelector(".process-gate-detail");
+    host.querySelectorAll("[data-gate-index]").forEach((button) => {
+      const active = Number(button.dataset.gateIndex) === index;
+      button.classList.toggle("is-active", active);
+      button.setAttribute("aria-pressed", String(active));
+    });
+    if (detail)
+      detail.innerHTML = milestone
+        ? renderGateExplorerDetail(milestone, process)
+        : `<div class="process-role-accountability"><span>${escapeHtml(id)}</span><div><strong>${escapeHtml(name)}</strong><p>No milestone definition is available.</p></div></div>`;
+  };
+
+  host.querySelectorAll("[data-process-tab]").forEach((tab) =>
+    tab.addEventListener("click", () => {
+      const target = tab.dataset.processTab;
+      host.querySelectorAll("[data-process-tab]").forEach((item) => {
+        const active = item === tab;
+        item.classList.toggle("is-active", active);
+        item.setAttribute("aria-selected", String(active));
+      });
+      host.querySelectorAll("[data-process-view]").forEach((view) => {
+        const active = view.dataset.processView === target;
+        view.classList.toggle("is-active", active);
+        view.hidden = !active;
+      });
+    }),
+  );
+  host.querySelectorAll("[data-role-index]").forEach((option) =>
+    option.addEventListener("click", () => {
+      const index = Number(option.dataset.roleIndex);
+      const process = processForMap();
+      const role = process?.methodContent?.roleDefinitions?.[index];
+      if (!role) return;
+      host.querySelectorAll("[data-role-index]").forEach((item) => {
+        const active = item === option;
+        item.classList.toggle("is-active", active);
+        item.setAttribute("aria-selected", String(active));
+      });
+      const detail = host.querySelector(".process-role-detail");
+      if (detail) detail.innerHTML = renderRoleExplorerDetail(role, process);
+    }),
+  );
+  host.querySelectorAll("[data-output-index]").forEach((option) =>
+    option.addEventListener("click", () => {
+      const process = processForMap();
+      const product =
+        process?.methodContent?.workProductDefinitions?.[Number(option.dataset.outputIndex)];
+      if (!product) return;
+      selectExplorerOption(host, "data-output-index", option);
+      const detail = host.querySelector(".process-output-detail");
+      if (detail) detail.innerHTML = renderOutputExplorerDetail(product, process);
+    }),
+  );
+  host.querySelectorAll("[data-guidance-index]").forEach((option) =>
+    option.addEventListener("click", () => {
+      const process = processForMap();
+      const guidance = guidanceForProcess(process);
+      const item = guidance[Number(option.dataset.guidanceIndex)];
+      if (!item) return;
+      selectExplorerOption(host, "data-guidance-index", option);
+      const detail = host.querySelector(".process-guidance-detail");
+      if (detail) detail.innerHTML = renderGuidanceExplorerDetail(item, process);
+    }),
+  );
+  host
+    .querySelectorAll("[data-gate-index]")
+    .forEach((gate) =>
+      gate.addEventListener("click", () => showGate(Number(gate.dataset.gateIndex))),
+    );
+  showGate(0);
+}
+
+function selectExplorerOption(host, attribute, selected) {
+  host.querySelectorAll(`[${attribute}]`).forEach((item) => {
+    const active = item === selected;
+    item.classList.toggle("is-active", active);
+    item.setAttribute("aria-selected", String(active));
+  });
+}
+
+function phasesForTaskDefinitions(process, tasks) {
+  const taskDefinitionIds = new Set(tasks.map((task) => task.id));
+  return (process.phases || []).filter((phase) =>
+    (phase.stages || [])
+      .flatMap(leafStages)
+      .some((stage) =>
+        tasksForStage(process, stage).some((task) =>
+          taskDefinitionIds.has(task.taskDefinitionRef || task.id),
+        ),
+      ),
+  );
+}
+
+function renderExplorerChips(items, label) {
+  return items.length
+    ? items
+        .map((item) => `<span class="process-role-chip">${escapeHtml(label(item))}</span>`)
+        .join("")
+    : `<span class="process-role-empty">No direct assignments</span>`;
+}
+
+function renderGateExplorerDetail(gate, process) {
+  const phase = (process.phases || []).find((item) => item.id === gate.phaseId);
+  const roles = (process.methodContent?.roleDefinitions || []).filter((role) =>
+    (gate.authorityRoleRefs || []).includes(role.id),
+  );
+  const evidence = (process.methodContent?.workProductDefinitions || []).filter((product) =>
+    (gate.requiredEvidenceRefs || []).includes(product.id),
+  );
+  return `<div class="process-role-detail-header"><div><span>Decision gate</span><h4>${escapeHtml(gate.gateId || "Gate")} · ${escapeHtml(gate.name)}</h4></div><div class="process-role-metrics"><span><strong>${roles.length}</strong> authorities</span><span><strong>${evidence.length}</strong> evidence</span></div></div>
+    <div class="process-role-accountability"><span aria-hidden="true">✓</span><div><strong>Acceptance condition</strong><p>${escapeHtml(gate.acceptanceCondition || "No acceptance condition specified")}</p></div></div>
+    <div class="process-explorer-columns"><div><strong>Lifecycle position</strong><div>${renderExplorerChips(phase ? [phase] : [], (item) => item.name)}</div></div><div><strong>Decision authorities</strong><div>${renderExplorerChips(roles, (item) => item.name)}</div></div></div>
+    <div class="process-role-task-list"><strong>Required evidence</strong>${evidence.length ? `<ol>${evidence.map((item) => `<li><span>${escapeHtml(item.name)}</span><small>Required</small></li>`).join("")}</ol>` : `<span class="process-role-empty">No evidence specified</span>`}</div>`;
+}
+
+function renderOutputExplorerDetail(product, process) {
+  const tasks = process.methodContent?.taskDefinitions || [];
+  const producers = tasks.filter((task) => (task.outputWorkProductRefs || []).includes(product.id));
+  const consumers = tasks.filter((task) => (task.inputWorkProductRefs || []).includes(product.id));
+  const relatedTasks = [
+    ...new Map([...producers, ...consumers].map((task) => [task.id, task])).values(),
+  ];
+  const phases = phasesForTaskDefinitions(process, relatedTasks);
+  const roleIds = new Set(relatedTasks.flatMap((task) => task.performerRoleRefs || []));
+  const roles = (process.methodContent?.roleDefinitions || []).filter((role) =>
+    roleIds.has(role.id),
+  );
+  return `<div class="process-role-detail-header"><div><span>Work product</span><h4>${escapeHtml(product.name)}</h4></div><div class="process-role-metrics"><span><strong>${producers.length}</strong> producers</span><span><strong>${consumers.length}</strong> consumers</span></div></div>
+    <div class="process-role-accountability"><span aria-hidden="true">↗</span><div><strong>Purpose</strong><p>${escapeHtml(product.description || "No description provided")}</p></div></div>
+    <div class="process-explorer-columns"><div><strong>Lifecycle phases</strong><div>${renderExplorerChips(phases, (item) => item.name)}</div></div><div><strong>Responsible roles</strong><div>${renderExplorerChips(roles, (item) => item.name)}</div></div></div>
+    <div class="process-output-flow"><div><strong>Created by</strong>${renderExplorerChips(producers, (item) => item.name)}</div><span aria-hidden="true">→</span><div><strong>Used by</strong>${renderExplorerChips(consumers, (item) => item.name)}</div></div>`;
+}
+
+function renderGuidanceExplorerDetail(item, process) {
+  const appliesTo = item.appliesTo || "process";
+  const phase = (process.phases || []).find((candidate) => candidate.id === appliesTo);
+  const stage = (process.phases || [])
+    .flatMap((candidate) => candidate.stages || [])
+    .flatMap(leafStages)
+    .find((candidate) => candidate.id === appliesTo);
+  const task = (process.methodContent?.taskDefinitions || []).find(
+    (candidate) => candidate.id === appliesTo,
+  );
+  const scopeName =
+    phase?.name ||
+    stage?.name ||
+    task?.name ||
+    (appliesTo === "process" ? "Full process" : appliesTo);
+  return `<div class="process-role-detail-header"><div><span>Guidance item</span><h4>${escapeHtml(item.name)}</h4></div><div class="process-guidance-scope">${escapeHtml(scopeName)}</div></div>
+    <div class="process-role-accountability"><span aria-hidden="true">i</span><div><strong>Recommendation</strong><p>${escapeHtml(item.text || "No guidance text provided")}</p></div></div>
+    <div class="process-guidance-route"><span>Applies to</span><strong>${escapeHtml(scopeName)}</strong><small>${escapeHtml(appliesTo)}</small></div>`;
+}
+
+function renderRoleExplorerDetail(role, process) {
+  const allTasks = process.methodContent?.taskDefinitions || [];
+  const allProducts = process.methodContent?.workProductDefinitions || [];
+  const tasks = allTasks.filter((task) => (task.performerRoleRefs || []).includes(role.id));
+  const gates = (process.milestones || []).filter((gate) =>
+    (gate.authorityRoleRefs || []).includes(role.id),
+  );
+  const phases = phasesForTaskDefinitions(process, tasks);
+  const productIds = new Set(
+    tasks.flatMap((task) => [
+      ...(task.inputWorkProductRefs || []),
+      ...(task.outputWorkProductRefs || []),
+    ]),
+  );
+  const products = allProducts.filter((product) => productIds.has(product.id));
+  const empty = `<span class="process-role-empty">No direct assignments</span>`;
+  const chips = renderExplorerChips;
+
+  return `<div class="process-role-detail-header">
+    <div><span>Selected role</span><h4>${escapeHtml(role.name)}</h4></div>
+    <div class="process-role-metrics"><span><strong>${tasks.length}</strong> tasks</span><span><strong>${gates.length}</strong> gates</span><span><strong>${products.length}</strong> products</span></div>
+  </div>
+  <div class="process-role-accountability"><span aria-hidden="true">✓</span><div><strong>Key accountability</strong>${(role.responsibilities || []).map((item) => `<p>${escapeHtml(item)}</p>`).join("")}</div></div>
+  <div class="process-role-flow">
+    <div><strong>Acts in</strong><div>${chips(phases, (phase) => phase.name)}</div></div>
+    <span aria-hidden="true">→</span>
+    <div><strong>Decides at</strong><div>${chips(gates, (gate) => gate.gateId || gate.name)}</div></div>
+    <span aria-hidden="true">→</span>
+    <div><strong>Shapes</strong><div>${chips(products, (product) => product.name)}</div></div>
+  </div>
+  <div class="process-role-task-list"><strong>Assigned work</strong>${tasks.length ? `<ol>${tasks.map((task) => `<li><span>${escapeHtml(task.name)}</span>${task.primaryPerformerRoleRef === role.id ? "<small>Lead</small>" : "<small>Contributor</small>"}</li>`).join("")}</ol>` : empty}</div>`;
 }
 
 function renderSectionTitle(title) {

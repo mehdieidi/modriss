@@ -1,0 +1,194 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 760" role="img" aria-labelledby="modriss-academic-title modriss-academic-desc">
+  <title id="modriss-academic-title">MODRISS full-lifecycle model-driven DevOps process</title>
+  <desc id="modriss-academic-desc">An academic process diagram showing six lifecycle areas around coordinated development-delivery and operations-maintenance cycles, with evidence gates and continuous disciplines.</desc>
+  <defs>
+    <marker id="academic-arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0,8 3,0 6" fill="#111111"/>
+    </marker>
+    <style>
+      .serif { font-family: "Times New Roman", Times, serif; }
+      .phase-title { font: 700 18px "Times New Roman", Times, serif; fill: #111111; }
+      .hub-title { font: 700 14px "Times New Roman", Times, serif; fill: #111111; }
+      .hub-copy { font: 400 10px "Times New Roman", Times, serif; fill: #111111; }
+      .activity { font: 400 14px "Times New Roman", Times, serif; fill: #111111; }
+      .small { font: 400 12px "Times New Roman", Times, serif; fill: #111111; }
+      .gate { font: 700 11px "Times New Roman", Times, serif; fill: #111111; }
+      .cycle-label { font: 400 14px "Times New Roman", Times, serif; fill: #111111; }
+      rect[stroke="#111111"] { stroke-width: 1.35; }
+      path[stroke="#111111"], line[stroke="#111111"] { stroke-width: 1.4; }
+    </style>
+  </defs>
+
+  <rect width="1200" height="760" fill="#ffffff"/>
+
+  <!-- Figure title -->
+  <text x="600" y="29" class="serif" font-size="22" font-weight="700" text-anchor="middle">MODRISS Full-Lifecycle Model-Driven DevOps Process</text>
+  <line x1="42" y1="40" x2="1158" y2="40" stroke="#111111" stroke-width="1.2"/>
+
+  <!-- Connectors are drawn first -->
+  <!-- Phase progression -->
+  <path d="M220 574 V550 H140 V480" fill="none" stroke="#111111" stroke-width="1.2" marker-end="url(#academic-arrow)"/>
+  <path d="M140 228 V216 H236 V198" fill="none" stroke="#111111" stroke-width="1.2" marker-end="url(#academic-arrow)"/>
+  <path d="M548 414 V540 H788 V574" fill="none" stroke="#111111" stroke-width="1.2" marker-end="url(#academic-arrow)"/>
+  <path d="M974 574 V550 H1060 V480" fill="none" stroke="#111111" stroke-width="1.2" marker-end="url(#academic-arrow)"/>
+  <path d="M1088 630 H1184 V126 H1088" fill="none" stroke="#111111" stroke-width="1.2" marker-end="url(#academic-arrow)"/>
+  <rect x="1098" y="98" width="86" height="16" fill="#ffffff"/>
+  <text x="1141" y="109" class="small" text-anchor="middle">end active life</text>
+
+  <!-- Phase-to-cycle relationships -->
+  <path d="M274 338 H354" fill="none" stroke="#111111" stroke-width="1.1" marker-end="url(#academic-arrow)"/>
+  <path d="M450 198 V226" fill="none" stroke="#111111" stroke-width="1.1" marker-end="url(#academic-arrow)"/>
+  <path d="M926 338 H846" fill="none" stroke="#111111" stroke-width="1.1" marker-end="url(#academic-arrow)"/>
+  <path d="M1060 228 V198" fill="none" stroke="#111111" stroke-width="1.1" stroke-dasharray="5 4"/>
+  <rect x="930" y="202" width="108" height="16" fill="#ffffff"/>
+  <text x="984" y="213" class="small" text-anchor="middle">G8 synchronization</text>
+
+  <!-- Coordinated handover and feedback between cycles -->
+  <path d="M578 318 H622" fill="none" stroke="#111111" stroke-width="1.2" marker-end="url(#academic-arrow)"/>
+  <path d="M622 358 H578" fill="none" stroke="#111111" stroke-width="1.2" marker-end="url(#academic-arrow)"/>
+  <rect x="574" y="292" width="52" height="16" fill="#ffffff"/>
+  <text x="600" y="303" class="small" text-anchor="middle">release</text>
+  <rect x="568" y="370" width="64" height="16" fill="#ffffff"/>
+  <text x="600" y="381" class="small" text-anchor="middle">feedback</text>
+
+  <!-- Left cycle: Development and Delivery -->
+  <circle cx="466" cy="338" r="112" fill="#ffffff" stroke="#111111" stroke-width="1.4"/>
+  <circle cx="466" cy="338" r="54" fill="#ffffff" stroke="#111111" stroke-width="1.2"/>
+  <line x1="466" y1="226" x2="466" y2="284" stroke="#111111" stroke-width="1"/>
+  <line x1="354" y1="338" x2="412" y2="338" stroke="#111111" stroke-width="1"/>
+  <line x1="466" y1="392" x2="466" y2="450" stroke="#111111" stroke-width="1"/>
+  <line x1="520" y1="338" x2="578" y2="338" stroke="#111111" stroke-width="1"/>
+  <polygon points="430,228 446,234 433,244" fill="#111111"/>
+  <polygon points="574,300 568,316 558,304" fill="#111111"/>
+  <polygon points="502,448 486,442 499,432" fill="#111111"/>
+  <polygon points="358,376 364,360 374,372" fill="#111111"/>
+  <text x="466" y="324" class="hub-title" text-anchor="middle">Model-Driven</text>
+  <text x="466" y="341" class="hub-title" text-anchor="middle">Increment Cycle</text>
+  <text x="466" y="357" class="hub-copy" text-anchor="middle">CIM → PIM</text>
+  <text x="466" y="370" class="hub-copy" text-anchor="middle">PSM → M2T</text>
+  <text x="414" y="270" class="cycle-label" transform="rotate(-30 414 270)">Frame</text>
+  <text x="526" y="270" class="cycle-label" transform="rotate(30 526 270)">Model</text>
+  <text x="532" y="414" class="cycle-label" transform="rotate(-30 532 414)">Generate</text>
+  <text x="390" y="414" class="cycle-label" transform="rotate(30 390 414)">Verify</text>
+
+  <!-- Right cycle: Operations and Maintenance -->
+  <circle cx="734" cy="338" r="112" fill="#ffffff" stroke="#111111" stroke-width="1.4"/>
+  <circle cx="734" cy="338" r="54" fill="#ffffff" stroke="#111111" stroke-width="1.2"/>
+  <line x1="734" y1="226" x2="734" y2="284" stroke="#111111" stroke-width="1"/>
+  <line x1="622" y1="338" x2="680" y2="338" stroke="#111111" stroke-width="1"/>
+  <line x1="734" y1="392" x2="734" y2="450" stroke="#111111" stroke-width="1"/>
+  <line x1="788" y1="338" x2="846" y2="338" stroke="#111111" stroke-width="1"/>
+  <polygon points="698,228 714,234 701,244" fill="#111111"/>
+  <polygon points="842,300 836,316 826,304" fill="#111111"/>
+  <polygon points="770,448 754,442 767,432" fill="#111111"/>
+  <polygon points="626,376 632,360 642,372" fill="#111111"/>
+  <text x="734" y="324" class="hub-title" text-anchor="middle">Operations and</text>
+  <text x="734" y="341" class="hub-title" text-anchor="middle">Maintenance Cycle</text>
+  <text x="734" y="357" class="hub-copy" text-anchor="middle">Kanban service</text>
+  <text x="734" y="370" class="hub-copy" text-anchor="middle">delivery</text>
+  <text x="682" y="270" class="cycle-label" transform="rotate(-30 682 270)">Observe</text>
+  <text x="794" y="270" class="cycle-label" transform="rotate(30 794 270)">Triage</text>
+  <text x="800" y="414" class="cycle-label" transform="rotate(-30 800 414)">Maintain</text>
+  <text x="658" y="414" class="cycle-label" transform="rotate(30 658 414)">Improve</text>
+
+  <!-- Phase 1: Inception, tailoring and organization -->
+  <rect x="64" y="574" width="412" height="112" rx="12" fill="#ffffff" stroke="#111111" stroke-width="1.4"/>
+  <text x="270" y="596" class="phase-title" text-anchor="middle">Inception, Tailoring and Organization</text>
+  <text x="270" y="611" class="gate" text-anchor="middle">PHASE 0 · G0–G1</text>
+  <rect x="82" y="628" width="106" height="38" fill="#ffffff" stroke="#111111" stroke-width="1"/>
+  <text x="135" y="643" class="activity" text-anchor="middle">Product intent</text>
+  <text x="135" y="658" class="small" text-anchor="middle">and outcomes</text>
+  <line x1="188" y1="647" x2="216" y2="647" stroke="#111111" stroke-width="1" marker-end="url(#academic-arrow)"/>
+  <rect x="218" y="628" width="116" height="38" fill="#ffffff" stroke="#111111" stroke-width="1"/>
+  <text x="276" y="643" class="activity" text-anchor="middle">Feasibility, cost</text>
+  <text x="276" y="658" class="small" text-anchor="middle">and risk</text>
+  <line x1="334" y1="647" x2="362" y2="647" stroke="#111111" stroke-width="1" marker-end="url(#academic-arrow)"/>
+  <rect x="364" y="628" width="94" height="38" fill="#ffffff" stroke="#111111" stroke-width="1"/>
+  <text x="411" y="643" class="activity" text-anchor="middle">Method and</text>
+  <text x="411" y="658" class="small" text-anchor="middle">organization</text>
+
+  <!-- Phase 2: Model-driven construction -->
+  <rect x="28" y="228" width="246" height="252" rx="12" fill="#ffffff" stroke="#111111" stroke-width="1.4"/>
+  <text x="151" y="252" class="phase-title" text-anchor="middle">Model-Driven Construction</text>
+  <text x="151" y="270" class="gate" text-anchor="middle">PHASE 1 · REPEATING INCREMENTS</text>
+  <rect x="64" y="292" width="174" height="32" fill="#ffffff" stroke="#111111" stroke-width="1"/>
+  <text x="151" y="312" class="activity" text-anchor="middle">CIM modeling</text>
+  <line x1="151" y1="324" x2="151" y2="338" stroke="#111111" stroke-width="1" marker-end="url(#academic-arrow)"/>
+  <rect x="64" y="340" width="174" height="32" fill="#ffffff" stroke="#111111" stroke-width="1"/>
+  <text x="151" y="360" class="activity" text-anchor="middle">PIM refinement</text>
+  <line x1="151" y1="372" x2="151" y2="386" stroke="#111111" stroke-width="1" marker-end="url(#academic-arrow)"/>
+  <rect x="64" y="388" width="174" height="32" fill="#ffffff" stroke="#111111" stroke-width="1"/>
+  <text x="151" y="408" class="activity" text-anchor="middle">AWS PSM realization</text>
+  <line x1="151" y1="420" x2="151" y2="434" stroke="#111111" stroke-width="1" marker-end="url(#academic-arrow)"/>
+  <rect x="64" y="436" width="174" height="32" fill="#ffffff" stroke="#111111" stroke-width="1"/>
+  <text x="151" y="456" class="activity" text-anchor="middle">Artifact generation</text>
+
+  <!-- Phase 3: Verify and accept -->
+  <rect x="112" y="56" width="376" height="142" rx="12" fill="#ffffff" stroke="#111111" stroke-width="1.4"/>
+  <text x="300" y="80" class="phase-title" text-anchor="middle">Verify and Accept the Increment</text>
+  <text x="300" y="96" class="gate" text-anchor="middle">PHASE 1 · INCREMENT DECISIONS G2–G5</text>
+  <rect x="132" y="116" width="104" height="54" fill="#ffffff" stroke="#111111" stroke-width="1"/>
+  <text x="184" y="136" class="activity" text-anchor="middle">Conformance</text>
+  <text x="184" y="152" class="small" text-anchor="middle">and semantics</text>
+  <line x1="236" y1="143" x2="254" y2="143" stroke="#111111" stroke-width="1" marker-end="url(#academic-arrow)"/>
+  <rect x="256" y="116" width="100" height="54" fill="#ffffff" stroke="#111111" stroke-width="1"/>
+  <text x="306" y="136" class="activity" text-anchor="middle">Trace and</text>
+  <text x="306" y="152" class="small" text-anchor="middle">readiness</text>
+  <line x1="356" y1="143" x2="374" y2="143" stroke="#111111" stroke-width="1" marker-end="url(#academic-arrow)"/>
+  <rect x="376" y="116" width="92" height="54" fill="#ffffff" stroke="#111111" stroke-width="1"/>
+  <text x="422" y="136" class="activity" text-anchor="middle">Accept, defer</text>
+  <text x="422" y="152" class="small" text-anchor="middle">or rework</text>
+
+  <!-- Phase 4: Release and transition -->
+  <rect x="712" y="574" width="376" height="112" rx="12" fill="#ffffff" stroke="#111111" stroke-width="1.4"/>
+  <text x="900" y="596" class="phase-title" text-anchor="middle">Release and Transition</text>
+  <text x="900" y="611" class="gate" text-anchor="middle">PHASE 1 · RELEASE DECISIONS G6–G7</text>
+  <rect x="732" y="628" width="100" height="38" fill="#ffffff" stroke="#111111" stroke-width="1"/>
+  <text x="782" y="651" class="activity" text-anchor="middle">Assemble</text>
+  <line x1="832" y1="647" x2="858" y2="647" stroke="#111111" stroke-width="1" marker-end="url(#academic-arrow)"/>
+  <rect x="860" y="628" width="100" height="38" fill="#ffffff" stroke="#111111" stroke-width="1"/>
+  <text x="910" y="651" class="activity" text-anchor="middle">Authorize</text>
+  <line x1="960" y1="647" x2="986" y2="647" stroke="#111111" stroke-width="1" marker-end="url(#academic-arrow)"/>
+  <rect x="988" y="628" width="80" height="38" fill="#ffffff" stroke="#111111" stroke-width="1"/>
+  <text x="1028" y="643" class="activity" text-anchor="middle">Deploy and</text>
+  <text x="1028" y="658" class="small" text-anchor="middle">handover</text>
+
+  <!-- Phase 5: Operations and maintenance -->
+  <rect x="926" y="228" width="246" height="252" rx="12" fill="#ffffff" stroke="#111111" stroke-width="1.4"/>
+  <text x="1049" y="252" class="phase-title" text-anchor="middle">Operate and Maintain</text>
+  <text x="1049" y="270" class="gate" text-anchor="middle">CONCURRENT PROCESS · STARTS AT G7</text>
+  <rect x="962" y="298" width="174" height="40" fill="#ffffff" stroke="#111111" stroke-width="1"/>
+  <text x="1049" y="315" class="activity" text-anchor="middle">Observe outcomes, SLOs,</text>
+  <text x="1049" y="330" class="small" text-anchor="middle">cost and security</text>
+  <line x1="1049" y1="338" x2="1049" y2="354" stroke="#111111" stroke-width="1" marker-end="url(#academic-arrow)"/>
+  <rect x="962" y="356" width="174" height="40" fill="#ffffff" stroke="#111111" stroke-width="1"/>
+  <text x="1049" y="373" class="activity" text-anchor="middle">Triage and recover</text>
+  <text x="1049" y="388" class="small" text-anchor="middle">incidents and problems</text>
+  <line x1="1049" y1="396" x2="1049" y2="412" stroke="#111111" stroke-width="1" marker-end="url(#academic-arrow)"/>
+  <rect x="962" y="414" width="174" height="40" fill="#ffffff" stroke="#111111" stroke-width="1"/>
+  <text x="1049" y="431" class="activity" text-anchor="middle">Route maintenance and</text>
+  <text x="1049" y="446" class="small" text-anchor="middle">model changes</text>
+
+  <!-- Phase 6: Retirement and closure -->
+  <rect x="712" y="56" width="376" height="142" rx="12" fill="#ffffff" stroke="#111111" stroke-width="1.4"/>
+  <text x="900" y="80" class="phase-title" text-anchor="middle">Retire, Migrate and Close</text>
+  <text x="900" y="96" class="gate" text-anchor="middle">PHASE 2 · G8</text>
+  <rect x="732" y="116" width="102" height="54" fill="#ffffff" stroke="#111111" stroke-width="1"/>
+  <text x="783" y="136" class="activity" text-anchor="middle">Authorize</text>
+  <text x="783" y="152" class="small" text-anchor="middle">retirement</text>
+  <line x1="834" y1="143" x2="860" y2="143" stroke="#111111" stroke-width="1" marker-end="url(#academic-arrow)"/>
+  <rect x="862" y="116" width="102" height="54" fill="#ffffff" stroke="#111111" stroke-width="1"/>
+  <text x="913" y="136" class="activity" text-anchor="middle">Migrate and</text>
+  <text x="913" y="152" class="small" text-anchor="middle">decommission</text>
+  <line x1="964" y1="143" x2="990" y2="143" stroke="#111111" stroke-width="1" marker-end="url(#academic-arrow)"/>
+  <rect x="992" y="116" width="76" height="54" fill="#ffffff" stroke="#111111" stroke-width="1"/>
+  <text x="1030" y="136" class="activity" text-anchor="middle">Close and</text>
+  <text x="1030" y="152" class="small" text-anchor="middle">retain</text>
+
+  <!-- Continuous disciplines -->
+  <path d="M82 716 H1118 L1096 694 H104 V716 Z" fill="#ffffff" stroke="#111111" stroke-width="1.3"/>
+  <text x="600" y="710" class="phase-title" text-anchor="middle">Continuous disciplines across the lifecycle</text>
+  <text x="600" y="732" class="small" text-anchor="middle">Product and project management · Quality assurance · Security and privacy · Configuration, change and traceability</text>
+  <text x="600" y="749" class="small" text-anchor="middle">FinOps and cost management · Documentation and knowledge retention · Measurement and method improvement</text>
+</svg>

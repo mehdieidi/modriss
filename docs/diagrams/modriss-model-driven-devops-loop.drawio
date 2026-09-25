@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mxfile host="app.diagrams.net" modified="2026-09-25T00:00:00.000Z" agent="Codex" version="24.7.17" type="device">
+  <diagram id="modriss-devops-loop" name="MODRISS DevOps Lifecycle">
+    <mxGraphModel dx="1200" dy="760" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1200" pageHeight="760" math="0" shadow="0">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+
+        <!-- Title -->
+        <mxCell id="title" value="MODRISS Full-Lifecycle Model-Driven DevOps Process" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=0;fontFamily=Times New Roman;fontSize=22;fontStyle=1;fontColor=#111111;" vertex="1" parent="1">
+          <mxGeometry x="300" y="4" width="600" height="32" as="geometry"/>
+        </mxCell>
+        <mxCell id="title-rule" value="" style="shape=line;html=1;strokeColor=#111111;strokeWidth=1.4;" vertex="1" parent="1">
+          <mxGeometry x="42" y="39" width="1116" height="1" as="geometry"/>
+        </mxCell>
+
+        <!-- Outer lifecycle containers -->
+        <mxCell id="verify-box" value="" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#111111;strokeWidth=1.4;" vertex="1" parent="1">
+          <mxGeometry x="112" y="56" width="376" height="142" as="geometry"/>
+        </mxCell>
+        <mxCell id="retire-box" value="" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#111111;strokeWidth=1.4;" vertex="1" parent="1">
+          <mxGeometry x="712" y="56" width="376" height="142" as="geometry"/>
+        </mxCell>
+        <mxCell id="construction-box" value="" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#111111;strokeWidth=1.4;" vertex="1" parent="1">
+          <mxGeometry x="28" y="228" width="246" height="252" as="geometry"/>
+        </mxCell>
+        <mxCell id="operations-box" value="" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#111111;strokeWidth=1.4;" vertex="1" parent="1">
+          <mxGeometry x="926" y="228" width="246" height="252" as="geometry"/>
+        </mxCell>
+        <mxCell id="inception-box" value="" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#111111;strokeWidth=1.4;" vertex="1" parent="1">
+          <mxGeometry x="64" y="574" width="412" height="112" as="geometry"/>
+        </mxCell>
+        <mxCell id="release-box" value="" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#111111;strokeWidth=1.4;" vertex="1" parent="1">
+          <mxGeometry x="712" y="574" width="376" height="112" as="geometry"/>
+        </mxCell>
+
+        <!-- Phase headings -->
+        <mxCell id="verify-title" value="&lt;b&gt;Verify and Accept the Increment&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:11px&quot;&gt;&lt;b&gt;PHASE 1 · INCREMENT DECISIONS G2–G5&lt;/b&gt;&lt;/font&gt;" style="text;html=1;align=center;verticalAlign=middle;fontFamily=Times New Roman;fontSize=18;fontColor=#111111;whiteSpace=wrap;" vertex="1" parent="1"><mxGeometry x="124" y="64" width="352" height="40" as="geometry"/></mxCell>
+        <mxCell id="retire-title" value="&lt;b&gt;Retire, Migrate and Close&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:11px&quot;&gt;&lt;b&gt;PHASE 2 · G8&lt;/b&gt;&lt;/font&gt;" style="text;html=1;align=center;verticalAlign=middle;fontFamily=Times New Roman;fontSize=18;fontColor=#111111;whiteSpace=wrap;" vertex="1" parent="1"><mxGeometry x="724" y="64" width="352" height="40" as="geometry"/></mxCell>
+        <mxCell id="construction-title" value="&lt;b&gt;Model-Driven Construction&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:11px&quot;&gt;&lt;b&gt;PHASE 1 · REPEATING INCREMENTS&lt;/b&gt;&lt;/font&gt;" style="text;html=1;align=center;verticalAlign=middle;fontFamily=Times New Roman;fontSize=18;fontColor=#111111;whiteSpace=wrap;" vertex="1" parent="1"><mxGeometry x="38" y="236" width="226" height="40" as="geometry"/></mxCell>
+        <mxCell id="operations-title" value="&lt;b&gt;Operate and Maintain&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:11px&quot;&gt;&lt;b&gt;CONCURRENT PROCESS · STARTS AT G7&lt;/b&gt;&lt;/font&gt;" style="text;html=1;align=center;verticalAlign=middle;fontFamily=Times New Roman;fontSize=18;fontColor=#111111;whiteSpace=wrap;" vertex="1" parent="1"><mxGeometry x="936" y="236" width="226" height="40" as="geometry"/></mxCell>
+        <mxCell id="inception-title" value="&lt;b&gt;Inception, Tailoring and Organization&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:11px&quot;&gt;&lt;b&gt;PHASE 0 · G0–G1&lt;/b&gt;&lt;/font&gt;" style="text;html=1;align=center;verticalAlign=middle;fontFamily=Times New Roman;fontSize=18;fontColor=#111111;whiteSpace=wrap;" vertex="1" parent="1"><mxGeometry x="76" y="580" width="388" height="38" as="geometry"/></mxCell>
+        <mxCell id="release-title" value="&lt;b&gt;Release and Transition&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:11px&quot;&gt;&lt;b&gt;PHASE 1 · RELEASE DECISIONS G6–G7&lt;/b&gt;&lt;/font&gt;" style="text;html=1;align=center;verticalAlign=middle;fontFamily=Times New Roman;fontSize=18;fontColor=#111111;whiteSpace=wrap;" vertex="1" parent="1"><mxGeometry x="724" y="580" width="352" height="38" as="geometry"/></mxCell>
+
+        <!-- Reusable activity style instances: verify -->
+        <mxCell id="verify-conformance" value="Conformance&lt;br&gt;&lt;font style=&quot;font-size:12px&quot;&gt;and semantics&lt;/font&gt;" style="whiteSpace=wrap;html=1;align=center;verticalAlign=middle;fillColor=#ffffff;strokeColor=#111111;strokeWidth=1.2;fontFamily=Times New Roman;fontSize=14;" vertex="1" parent="1"><mxGeometry x="132" y="116" width="104" height="54" as="geometry"/></mxCell>
+        <mxCell id="verify-trace" value="Trace and&lt;br&gt;&lt;font style=&quot;font-size:12px&quot;&gt;readiness&lt;/font&gt;" style="whiteSpace=wrap;html=1;align=center;verticalAlign=middle;fillColor=#ffffff;strokeColor=#111111;strokeWidth=1.2;fontFamily=Times New Roman;fontSize=14;" vertex="1" parent="1"><mxGeometry x="256" y="116" width="100" height="54" as="geometry"/></mxCell>
+        <mxCell id="verify-decision" value="Accept, defer&lt;br&gt;&lt;font style=&quot;font-size:12px&quot;&gt;or rework&lt;/font&gt;" style="whiteSpace=wrap;html=1;align=center;verticalAlign=middle;fillColor=#ffffff;strokeColor=#111111;strokeWidth=1.2;fontFamily=Times New Roman;fontSize=14;" vertex="1" parent="1"><mxGeometry x="376" y="116" width="92" height="54" as="geometry"/></mxCell>
+
+        <!-- Retirement activities -->
+        <mxCell id="retire-authorize" value="Authorize&lt;br&gt;&lt;font style=&quot;font-size:12px&quot;&gt;retirement&lt;/font&gt;" style="whiteSpace=wrap;html=1;align=center;verticalAlign=middle;fillColor=#ffffff;strokeColor=#111111;strokeWidth=1.2;fontFamily=Times New Roman;fontSize=14;" vertex="1" parent="1"><mxGeometry x="732" y="116" width="102" height="54" as="geometry"/></mxCell>
+        <mxCell id="retire-migrate" value="Migrate and&lt;br&gt;&lt;font style=&quot;font-size:12px&quot;&gt;decommission&lt;/font&gt;" style="whiteSpace=wrap;html=1;align=center;verticalAlign=middle;fillColor=#ffffff;strokeColor=#111111;strokeWidth=1.2;fontFamily=Times New Roman;fontSize=14;" vertex="1" parent="1"><mxGeometry x="862" y="116" width="102" height="54" as="geometry"/></mxCell>
+        <mxCell id="retire-close" value="Close and&lt;br&gt;&lt;font style=&quot;font-size:12px&quot;&gt;retain&lt;/font&gt;" style="whiteSpace=wrap;html=1;align=center;verticalAlign=middle;fillColor=#ffffff;strokeColor=#111111;strokeWidth=1.2;fontFamily=Times New Roman;fontSize=14;" vertex="1" parent="1"><mxGeometry x="992" y="116" width="76" height="54" as="geometry"/></mxCell>
+
+        <!-- Construction activities -->
+        <mxCell id="cim" value="CIM modeling" style="whiteSpace=wrap;html=1;align=center;verticalAlign=middle;fillColor=#ffffff;strokeColor=#111111;strokeWidth=1.2;fontFamily=Times New Roman;fontSize=14;" vertex="1" parent="1"><mxGeometry x="64" y="292" width="174" height="32" as="geometry"/></mxCell>
+        <mxCell id="pim" value="PIM refinement" style="whiteSpace=wrap;html=1;align=center;verticalAlign=middle;fillColor=#ffffff;strokeColor=#111111;strokeWidth=1.2;fontFamily=Times New Roman;fontSize=14;" vertex="1" parent="1"><mxGeometry x="64" y="340" width="174" height="32" as="geometry"/></mxCell>
+        <mxCell id="psm" value="AWS PSM realization" style="whiteSpace=wrap;html=1;align=center;verticalAlign=middle;fillColor=#ffffff;strokeColor=#111111;strokeWidth=1.2;fontFamily=Times New Roman;fontSize=14;" vertex="1" parent="1"><mxGeometry x="64" y="388" width="174" height="32" as="geometry"/></mxCell>
+        <mxCell id="artifact" value="Artifact generation" style="whiteSpace=wrap;html=1;align=center;verticalAlign=middle;fillColor=#ffffff;strokeColor=#111111;strokeWidth=1.2;fontFamily=Times New Roman;fontSize=14;" vertex="1" parent="1"><mxGeometry x="64" y="436" width="174" height="32" as="geometry"/></mxCell>
+
+        <!-- Operations activities -->
+        <mxCell id="observe" value="Observe outcomes, SLOs,&lt;br&gt;&lt;font style=&quot;font-size:12px&quot;&gt;cost and security&lt;/font&gt;" style="whiteSpace=wrap;html=1;align=center;verticalAlign=middle;fillColor=#ffffff;strokeColor=#111111;strokeWidth=1.2;fontFamily=Times New Roman;fontSize=14;" vertex="1" parent="1"><mxGeometry x="962" y="298" width="174" height="40" as="geometry"/></mxCell>
+        <mxCell id="triage" value="Triage and recover&lt;br&gt;&lt;font style=&quot;font-size:12px&quot;&gt;incidents and problems&lt;/font&gt;" style="whiteSpace=wrap;html=1;align=center;verticalAlign=middle;fillColor=#ffffff;strokeColor=#111111;strokeWidth=1.2;fontFamily=Times New Roman;fontSize=14;" vertex="1" parent="1"><mxGeometry x="962" y="356" width="174" height="40" as="geometry"/></mxCell>
+        <mxCell id="route-change" value="Route maintenance and&lt;br&gt;&lt;font style=&quot;font-size:12px&quot;&gt;model changes&lt;/font&gt;" style="whiteSpace=wrap;html=1;align=center;verticalAlign=middle;fillColor=#ffffff;strokeColor=#111111;strokeWidth=1.2;fontFamily=Times New Roman;fontSize=14;" vertex="1" parent="1"><mxGeometry x="962" y="414" width="174" height="40" as="geometry"/></mxCell>
+
+        <!-- Inception activities -->
+        <mxCell id="product-intent" value="Product intent&lt;br&gt;&lt;font style=&quot;font-size:12px&quot;&gt;and outcomes&lt;/font&gt;" style="whiteSpace=wrap;html=1;align=center;verticalAlign=middle;fillColor=#ffffff;strokeColor=#111111;strokeWidth=1.2;fontFamily=Times New Roman;fontSize=14;" vertex="1" parent="1"><mxGeometry x="82" y="628" width="106" height="38" as="geometry"/></mxCell>
+        <mxCell id="feasibility" value="Feasibility, cost&lt;br&gt;&lt;font style=&quot;font-size:12px&quot;&gt;and risk&lt;/font&gt;" style="whiteSpace=wrap;html=1;align=center;verticalAlign=middle;fillColor=#ffffff;strokeColor=#111111;strokeWidth=1.2;fontFamily=Times New Roman;fontSize=14;" vertex="1" parent="1"><mxGeometry x="218" y="628" width="116" height="38" as="geometry"/></mxCell>
+        <mxCell id="method-org" value="Method and&lt;br&gt;&lt;font style=&quot;font-size:12px&quot;&gt;organization&lt;/font&gt;" style="whiteSpace=wrap;html=1;align=center;verticalAlign=middle;fillColor=#ffffff;strokeColor=#111111;strokeWidth=1.2;fontFamily=Times New Roman;fontSize=14;" vertex="1" parent="1"><mxGeometry x="364" y="628" width="94" height="38" as="geometry"/></mxCell>
+
+        <!-- Release activities -->
+        <mxCell id="assemble" value="Assemble" style="whiteSpace=wrap;html=1;align=center;verticalAlign=middle;fillColor=#ffffff;strokeColor=#111111;strokeWidth=1.2;fontFamily=Times New Roman;fontSize=14;" vertex="1" parent="1"><mxGeometry x="732" y="628" width="100" height="38" as="geometry"/></mxCell>
+        <mxCell id="authorize" value="Authorize" style="whiteSpace=wrap;html=1;align=center;verticalAlign=middle;fillColor=#ffffff;strokeColor=#111111;strokeWidth=1.2;fontFamily=Times New Roman;fontSize=14;" vertex="1" parent="1"><mxGeometry x="860" y="628" width="100" height="38" as="geometry"/></mxCell>
+        <mxCell id="deploy" value="Deploy and&lt;br&gt;&lt;font style=&quot;font-size:12px&quot;&gt;handover&lt;/font&gt;" style="whiteSpace=wrap;html=1;align=center;verticalAlign=middle;fillColor=#ffffff;strokeColor=#111111;strokeWidth=1.2;fontFamily=Times New Roman;fontSize=14;" vertex="1" parent="1"><mxGeometry x="988" y="628" width="80" height="38" as="geometry"/></mxCell>
+
+        <!-- Central coordinated cycles -->
+        <mxCell id="dev-cycle" value="" style="ellipse;whiteSpace=wrap;html=1;aspect=fixed;fillColor=#ffffff;strokeColor=#111111;strokeWidth=1.4;" vertex="1" parent="1"><mxGeometry x="354" y="226" width="224" height="224" as="geometry"/></mxCell>
+        <mxCell id="dev-hub" value="&lt;b&gt;Model-Driven&lt;br&gt;Increment Cycle&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:10px&quot;&gt;CIM → PIM&lt;br&gt;PSM → M2T&lt;/font&gt;" style="ellipse;whiteSpace=wrap;html=1;aspect=fixed;align=center;verticalAlign=middle;fillColor=#ffffff;strokeColor=#111111;strokeWidth=1.2;fontFamily=Times New Roman;fontSize=14;" vertex="1" parent="1"><mxGeometry x="412" y="284" width="108" height="108" as="geometry"/></mxCell>
+        <mxCell id="ops-cycle" value="" style="ellipse;whiteSpace=wrap;html=1;aspect=fixed;fillColor=#ffffff;strokeColor=#111111;strokeWidth=1.4;" vertex="1" parent="1"><mxGeometry x="622" y="226" width="224" height="224" as="geometry"/></mxCell>
+        <mxCell id="ops-hub" value="&lt;b&gt;Operations and&lt;br&gt;Maintenance Cycle&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:10px&quot;&gt;Kanban service&lt;br&gt;delivery&lt;/font&gt;" style="ellipse;whiteSpace=wrap;html=1;aspect=fixed;align=center;verticalAlign=middle;fillColor=#ffffff;strokeColor=#111111;strokeWidth=1.2;fontFamily=Times New Roman;fontSize=14;" vertex="1" parent="1"><mxGeometry x="680" y="284" width="108" height="108" as="geometry"/></mxCell>
+
+        <!-- Cycle separators and labels -->
+        <mxCell id="dev-v-top" value="" style="edgeStyle=none;html=1;endArrow=none;startArrow=none;strokeColor=#111111;strokeWidth=1.2;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="466" y="226" as="sourcePoint"/><mxPoint x="466" y="284" as="targetPoint"/></mxGeometry></mxCell>
+        <mxCell id="dev-h-left" value="" style="edgeStyle=none;html=1;endArrow=none;startArrow=none;strokeColor=#111111;strokeWidth=1.2;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="354" y="338" as="sourcePoint"/><mxPoint x="412" y="338" as="targetPoint"/></mxGeometry></mxCell>
+        <mxCell id="dev-v-bottom" value="" style="edgeStyle=none;html=1;endArrow=none;startArrow=none;strokeColor=#111111;strokeWidth=1.2;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="466" y="392" as="sourcePoint"/><mxPoint x="466" y="450" as="targetPoint"/></mxGeometry></mxCell>
+        <mxCell id="dev-h-right" value="" style="edgeStyle=none;html=1;endArrow=none;startArrow=none;strokeColor=#111111;strokeWidth=1.2;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="520" y="338" as="sourcePoint"/><mxPoint x="578" y="338" as="targetPoint"/></mxGeometry></mxCell>
+        <mxCell id="ops-v-top" value="" style="edgeStyle=none;html=1;endArrow=none;startArrow=none;strokeColor=#111111;strokeWidth=1.2;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="734" y="226" as="sourcePoint"/><mxPoint x="734" y="284" as="targetPoint"/></mxGeometry></mxCell>
+        <mxCell id="ops-h-left" value="" style="edgeStyle=none;html=1;endArrow=none;startArrow=none;strokeColor=#111111;strokeWidth=1.2;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="622" y="338" as="sourcePoint"/><mxPoint x="680" y="338" as="targetPoint"/></mxGeometry></mxCell>
+        <mxCell id="ops-v-bottom" value="" style="edgeStyle=none;html=1;endArrow=none;startArrow=none;strokeColor=#111111;strokeWidth=1.2;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="734" y="392" as="sourcePoint"/><mxPoint x="734" y="450" as="targetPoint"/></mxGeometry></mxCell>
+        <mxCell id="ops-h-right" value="" style="edgeStyle=none;html=1;endArrow=none;startArrow=none;strokeColor=#111111;strokeWidth=1.2;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="788" y="338" as="sourcePoint"/><mxPoint x="846" y="338" as="targetPoint"/></mxGeometry></mxCell>
+
+        <mxCell id="frame-label" value="Frame" style="text;html=1;align=center;verticalAlign=middle;rotation=-30;fontFamily=Times New Roman;fontSize=14;" vertex="1" parent="1"><mxGeometry x="392" y="246" width="58" height="20" as="geometry"/></mxCell>
+        <mxCell id="model-label" value="Model" style="text;html=1;align=center;verticalAlign=middle;rotation=30;fontFamily=Times New Roman;fontSize=14;" vertex="1" parent="1"><mxGeometry x="510" y="246" width="58" height="20" as="geometry"/></mxCell>
+        <mxCell id="verify-label" value="Verify" style="text;html=1;align=center;verticalAlign=middle;rotation=30;fontFamily=Times New Roman;fontSize=14;" vertex="1" parent="1"><mxGeometry x="368" y="404" width="58" height="20" as="geometry"/></mxCell>
+        <mxCell id="generate-label" value="Generate" style="text;html=1;align=center;verticalAlign=middle;rotation=-30;fontFamily=Times New Roman;fontSize=14;" vertex="1" parent="1"><mxGeometry x="510" y="404" width="68" height="20" as="geometry"/></mxCell>
+        <mxCell id="observe-label" value="Observe" style="text;html=1;align=center;verticalAlign=middle;rotation=-30;fontFamily=Times New Roman;fontSize=14;" vertex="1" parent="1"><mxGeometry x="660" y="246" width="58" height="20" as="geometry"/></mxCell>
+        <mxCell id="triage-label" value="Triage" style="text;html=1;align=center;verticalAlign=middle;rotation=30;fontFamily=Times New Roman;fontSize=14;" vertex="1" parent="1"><mxGeometry x="778" y="246" width="58" height="20" as="geometry"/></mxCell>
+        <mxCell id="improve-label" value="Improve" style="text;html=1;align=center;verticalAlign=middle;rotation=30;fontFamily=Times New Roman;fontSize=14;" vertex="1" parent="1"><mxGeometry x="636" y="404" width="62" height="20" as="geometry"/></mxCell>
+        <mxCell id="maintain-label" value="Maintain" style="text;html=1;align=center;verticalAlign=middle;rotation=-30;fontFamily=Times New Roman;fontSize=14;" vertex="1" parent="1"><mxGeometry x="778" y="404" width="68" height="20" as="geometry"/></mxCell>
+
+        <!-- Internal activity arrows -->
+        <mxCell id="e-v1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#111111;strokeWidth=1.2;" edge="1" parent="1" source="verify-conformance" target="verify-trace"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e-v2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#111111;strokeWidth=1.2;" edge="1" parent="1" source="verify-trace" target="verify-decision"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e-r1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#111111;strokeWidth=1.2;" edge="1" parent="1" source="retire-authorize" target="retire-migrate"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e-r2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#111111;strokeWidth=1.2;" edge="1" parent="1" source="retire-migrate" target="retire-close"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e-c1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#111111;strokeWidth=1.2;" edge="1" parent="1" source="cim" target="pim"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e-c2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#111111;strokeWidth=1.2;" edge="1" parent="1" source="pim" target="psm"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e-c3" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#111111;strokeWidth=1.2;" edge="1" parent="1" source="psm" target="artifact"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e-o1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#111111;strokeWidth=1.2;" edge="1" parent="1" source="observe" target="triage"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e-o2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#111111;strokeWidth=1.2;" edge="1" parent="1" source="triage" target="route-change"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e-i1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#111111;strokeWidth=1.2;" edge="1" parent="1" source="product-intent" target="feasibility"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e-i2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#111111;strokeWidth=1.2;" edge="1" parent="1" source="feasibility" target="method-org"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e-rel1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#111111;strokeWidth=1.2;" edge="1" parent="1" source="assemble" target="authorize"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e-rel2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#111111;strokeWidth=1.2;" edge="1" parent="1" source="authorize" target="deploy"><mxGeometry relative="1" as="geometry"/></mxCell>
+
+        <!-- Cross-cycle and phase flow arrows -->
+        <mxCell id="release-flow" value="release" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#111111;strokeWidth=1.3;fontFamily=Times New Roman;fontSize=12;labelBackgroundColor=#ffffff;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="578" y="318" as="sourcePoint"/><mxPoint x="622" y="318" as="targetPoint"/></mxGeometry></mxCell>
+        <mxCell id="feedback-flow" value="feedback" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#111111;strokeWidth=1.3;fontFamily=Times New Roman;fontSize=12;labelBackgroundColor=#ffffff;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="622" y="358" as="sourcePoint"/><mxPoint x="578" y="358" as="targetPoint"/></mxGeometry></mxCell>
+        <mxCell id="construction-cycle" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#111111;strokeWidth=1.3;" edge="1" parent="1" source="construction-box" target="dev-cycle"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="ops-cycle-link" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#111111;strokeWidth=1.3;" edge="1" parent="1" source="operations-box" target="ops-cycle"><mxGeometry relative="1" as="geometry"/></mxCell>
+
+        <mxCell id="phase-flow-1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#111111;strokeWidth=1.3;" edge="1" parent="1" source="inception-box" target="construction-box"><mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="220" y="550"/><mxPoint x="140" y="550"/></Array></mxGeometry></mxCell>
+        <mxCell id="phase-flow-2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#111111;strokeWidth=1.3;" edge="1" parent="1" source="construction-box" target="verify-box"><mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="140" y="216"/><mxPoint x="236" y="216"/></Array></mxGeometry></mxCell>
+        <mxCell id="phase-flow-3" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#111111;strokeWidth=1.3;" edge="1" parent="1" source="verify-box" target="dev-cycle"><mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="388" y="220"/><mxPoint x="428" y="220"/></Array></mxGeometry></mxCell>
+        <mxCell id="phase-flow-4" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#111111;strokeWidth=1.3;" edge="1" parent="1" source="dev-cycle" target="release-box"><mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="548" y="540"/><mxPoint x="788" y="540"/></Array></mxGeometry></mxCell>
+        <mxCell id="phase-flow-5" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#111111;strokeWidth=1.3;" edge="1" parent="1" source="release-box" target="operations-box"><mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="974" y="550"/><mxPoint x="1060" y="550"/></Array></mxGeometry></mxCell>
+        <mxCell id="phase-flow-6" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#111111;strokeWidth=1.3;" edge="1" parent="1" source="release-box" target="retire-box"><mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="1184" y="630"/><mxPoint x="1184" y="126"/></Array></mxGeometry></mxCell>
+        <mxCell id="retirement-transition-label" value="end active life" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontFamily=Times New Roman;fontSize=12;fontColor=#111111;" vertex="1" parent="1"><mxGeometry x="1098" y="96" width="86" height="18" as="geometry"/></mxCell>
+        <mxCell id="g8-synchronization" value="G8 synchronization" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=none;startArrow=none;dashed=1;dashPattern=5 4;strokeColor=#111111;strokeWidth=1.2;fontFamily=Times New Roman;fontSize=12;labelBackgroundColor=#ffffff;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="1060" y="228" as="sourcePoint"/><mxPoint x="1060" y="198" as="targetPoint"/></mxGeometry></mxCell>
+
+        <!-- Continuous disciplines -->
+        <mxCell id="disciplines-band" value="&lt;b&gt;Continuous disciplines across the lifecycle&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:12px&quot;&gt;Product and project management · Quality assurance · Security and privacy · Configuration, change and traceability&lt;br&gt;FinOps and cost management · Documentation and knowledge retention · Measurement and method improvement&lt;/font&gt;" style="shape=parallelogram;perimeter=parallelogramPerimeter;fixedSize=1;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;fillColor=#ffffff;strokeColor=#111111;strokeWidth=1.3;fontFamily=Times New Roman;fontSize=18;" vertex="1" parent="1">
+          <mxGeometry x="82" y="694" width="1036" height="58" as="geometry"/>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
