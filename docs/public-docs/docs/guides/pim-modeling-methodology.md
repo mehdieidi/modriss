@@ -1,5 +1,7 @@
 # PIM Modeling Process
 
+The complete PIM reference has separate pages for [activities](../process-reference/pim/activities.md), [tasks](../process-reference/pim/tasks.md), [roles](../process-reference/pim/roles.md), [work products](../process-reference/pim/work-products.md), [guidance](../process-reference/pim/guidance.md), and the [readiness gate](../process-reference/pim/gates.md).
+
 The Platform-Independent Model (PIM) describes a serverless architecture without selecting a cloud
 provider. The PIM process covers service boundaries, contracts, data, compute, integrations, and
 policies. Each model-driven increment invokes six ordered stages for new PIM work and for refinement

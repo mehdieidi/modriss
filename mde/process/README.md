@@ -46,6 +46,7 @@ When metamodels change:
    node mde/process/tools/generate-coverage-matrix.mjs
    node mde/process/tools/augment-ui-metadata.mjs
    node mde/process/tools/generate-methodology-guides.mjs
+   node mde/process/tools/generate-public-process-reference.mjs
    node mde/process/tools/generate-methodology-narratives.mjs
    ```
 

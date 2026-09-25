@@ -743,10 +743,19 @@ export function renderGuidedModelingPanel() {
 
   const hero = document.createElement("div");
   hero.className = "methodology-hero";
+  const processExplanation =
+    {
+      cim: "Frame and refine business, domain, behavior, governance, and transformation intent without platform detail.",
+      pim: "Turn accepted business intent into platform-independent services, contracts, data, integration, security, and operational architecture.",
+      psm: "Realize the accepted architecture as AWS-specific resources, policies, relationships, observability, and deployment intent.",
+      artifact:
+        "Inspect, harden, verify, and approve generated implementation and infrastructure for release and operational handover.",
+    }[state.activeType] ||
+    "Explore the accountable work, evidence, and review conditions for this process.";
   hero.innerHTML = `
     <div class="methodology-hero-text">
       <h2>${escapeHtml(processDisplayTitle(process))}</h2>
-      <p>Explore phases, stages, and tasks in this process.</p>
+      <p>${escapeHtml(processExplanation)}</p>
     </div>`;
   hero.appendChild(createMethodologyMapOpenButton());
   hero.appendChild(createFullMethodologyOpenButton());

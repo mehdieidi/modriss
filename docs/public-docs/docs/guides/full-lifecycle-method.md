@@ -4,6 +4,8 @@ The MODRISS methodology comprises a development process and a modeling framework
 
 The maintained process is described in [`mde/process/software-development-process.md`](https://github.com/mehdieidi/modriss/blob/main/mde/process/software-development-process.md). The machine-readable definitions are in [`mde/process/definitions/`](https://github.com/mehdieidi/modriss/tree/main/mde/process/definitions). Those sources define the roles, work products, dependencies, and conditions used by the process.
 
+For operational use, continue with the complete [Development and Delivery reference](../process-reference/development-delivery.md), the [Operations and Maintenance reference](../process-reference/operations-maintenance.md), and the [reusable method-content catalogs](../process-reference/index.md). These pages give detailed instructions, responsibilities, inputs, outputs, review conditions, guidance, and gates for every canonical process item.
+
 ## Two coordinated lifecycle processes
 
 <figure class="doc-diagram">

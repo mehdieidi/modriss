@@ -1,5 +1,7 @@
 # CIM Modeling Process
 
+The complete CIM reference has separate pages for [activities](../process-reference/cim/activities.md), [tasks](../process-reference/cim/tasks.md), [roles](../process-reference/cim/roles.md), [work products](../process-reference/cim/work-products.md), [guidance](../process-reference/cim/guidance.md), and the [readiness gate](../process-reference/cim/gates.md).
+
 The Computation-Independent Model (CIM) records business intent, domain structure, behavior, and
 governance before provider and implementation decisions are made. Each model-driven increment invokes
 five ordered stages; they are not product-lifecycle phases. Each stage contains substages in the

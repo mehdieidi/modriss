@@ -1,5 +1,7 @@
 # AWS PSM Modeling Process
 
+The complete AWS PSM reference has separate pages for [activities](../process-reference/psm/activities.md), [tasks](../process-reference/psm/tasks.md), [roles](../process-reference/psm/roles.md), [work products](../process-reference/psm/work-products.md), [guidance](../process-reference/psm/guidance.md), and the [readiness gate](../process-reference/psm/gates.md).
+
 The Platform-Specific Model (PSM) binds the PIM to AWS resources and deployment configuration. The
 language covers SAM stacks, IAM, Lambda, API Gateway, DynamoDB, messaging, EventBridge, Step
 Functions, and observability. Each model-driven increment invokes six ordered stages for new AWS PSM
