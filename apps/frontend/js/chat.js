@@ -524,9 +524,7 @@ function finalizeThinkingStream() {
   const durationSec = Math.max(1, Math.round((Date.now() - thinkingStartTime) / 1000));
   const minutes = Math.floor(durationSec / 60);
   const seconds = durationSec % 60;
-  const durationLabel = minutes
-    ? `${minutes}m${seconds ? ` ${seconds}s` : ""}`
-    : `${seconds}s`;
+  const durationLabel = minutes ? `${minutes}m${seconds ? ` ${seconds}s` : ""}` : `${seconds}s`;
   const msg = activeThinkingEl;
   msg.classList.remove("chat-thinking-live");
   msg.classList.add("chat-thinking-done");
