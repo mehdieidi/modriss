@@ -522,6 +522,11 @@ function finalizeThinkingStream() {
     return;
   }
   const durationSec = Math.max(1, Math.round((Date.now() - thinkingStartTime) / 1000));
+  const minutes = Math.floor(durationSec / 60);
+  const seconds = durationSec % 60;
+  const durationLabel = minutes
+    ? `${minutes}m${seconds ? ` ${seconds}s` : ""}`
+    : `${seconds}s`;
   const msg = activeThinkingEl;
   msg.classList.remove("chat-thinking-live");
   msg.classList.add("chat-thinking-done");
@@ -538,7 +543,7 @@ function finalizeThinkingStream() {
   bubble.replaceChildren();
   const summaryEl = document.createElement("div");
   summaryEl.className = "chat-thinking-summary";
-  summaryEl.textContent = `Worked for ${durationSec}s`;
+  summaryEl.textContent = `Worked for ${durationLabel}`;
   bubble.appendChild(summaryEl);
   activeThinkingEl = null;
   thinkingSteps = [];
