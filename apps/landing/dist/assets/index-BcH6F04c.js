@@ -12035,13 +12035,13 @@ function ie() {
                 className: `process-summary`,
                 children: [
                   (0, g.jsx)(`p`, {
+                    children: `Three one-time sequential Development and Delivery phases coexist with a distinct ongoing, event-driven Operations and Maintenance process. Phase 0 establishes value, alternatives, serverless suitability, cost/risk, authority, and tailoring. Release iterations repeat only inside Phase 1. DevOps interfaces carry G7 handover, CI/CD evidence, telemetry, maintenance change, and learning. Phase 2 and Operations have separate work flows; G8 closes only after live releases, data/records, access, resources, cost, and ownership obligations are resolved.`,
+                  }),
+                  (0, g.jsx)(`p`, {
                     children: `MODRISS is not a single pass. Its three lifecycle phases occur once and in sequence. Inside the active-product phase, repeated release iterations assemble one or more small vertical increments while the accepted baseline remains live.`,
                   }),
                   (0, g.jsx)(`p`, {
                     children: `The integrated lifecycle coordinates two processes: sequential, phase-based Development and Delivery, and ongoing, event-driven Operations and Maintenance. DevOps practices connect them through CI/CD, operational readiness, telemetry, change routing, and shared learning.`,
-                  }),
-                  (0, g.jsx)(`p`, {
-                    children: `An exhaustive hypothetical ColdChain Sentinel enactment covered all 139 executable tasks, 17 roles, 65 executable work products, and G0–G8. It corrected role binding, gate evidence, cost feedback, method adaptation, and retirement-data gaps; practical effectiveness still requires observed case studies.`,
                   }),
                   (0, g.jsxs)(`a`, {
                     className: `text-link`,
@@ -12057,7 +12057,7 @@ function ie() {
           }),
           (0, g.jsxs)(`figure`, {
             className: `process-figure`,
-            "aria-labelledby": `process-map-title process-map-caption`,
+            "aria-labelledby": `process-map-title`,
             children: [
               (0, g.jsxs)(`div`, {
                 className: `process-map-heading`,
@@ -12483,10 +12483,6 @@ function ie() {
                     children: `Management · risk · quality · security · change · traceability · FinOps · learning`,
                   }),
                 ],
-              }),
-              (0, g.jsx)(`figcaption`, {
-                id: `process-map-caption`,
-                children: `Three one-time sequential Development and Delivery phases coexist with a distinct ongoing, event-driven Operations and Maintenance process. Phase 0 establishes value, alternatives, serverless suitability, cost/risk, authority, and tailoring. Release iterations repeat only inside Phase 1. DevOps interfaces carry G7 handover, CI/CD evidence, telemetry, maintenance change, and learning. Phase 2 and Operations have separate work flows; G8 closes only after live releases, data/records, access, resources, cost, and ownership obligations are resolved.`,
               }),
             ],
           }),

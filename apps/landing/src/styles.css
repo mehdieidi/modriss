@@ -1212,7 +1212,7 @@ button {
 }
 .discipline-rail {
   margin-top: 12px;
-  padding: 14px 18px;
+  padding: 14px 34px;
   display: grid;
   grid-template-columns: auto 1fr;
   gap: 20px;
@@ -1220,6 +1220,14 @@ button {
   color: #c1cdd0;
   font-size: 9px;
   line-height: 1.55;
+  clip-path: polygon(
+    0 50%,
+    22px 0,
+    calc(100% - 22px) 0,
+    100% 50%,
+    calc(100% - 22px) 100%,
+    22px 100%
+  );
 }
 .discipline-rail b {
   color: var(--white);
@@ -1227,13 +1235,6 @@ button {
   letter-spacing: 0.06em;
   text-transform: uppercase;
 }
-.process-figure figcaption {
-  margin-top: 16px;
-  color: var(--muted);
-  font-size: 10px;
-  line-height: 1.55;
-}
-
 .prototype {
   padding: 116px max(32px, calc((100% - 1320px) / 2));
   background: var(--teal-dark);
