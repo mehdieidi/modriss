@@ -17,10 +17,12 @@ self-contained HTML sources:
 - `manuscript-notes.md` provides suggested captions, interpretation text, and
   typesetting guidance.
 
-The matching `.html` files are the editable sources of truth. Re-export them
-with `node ../tools/export-diagram-svg.mjs <source.html>` after changes. The
-exporter embeds the source CSS so each SVG renders correctly as a standalone
-asset rather than depending on the HTML page's styles.
+The lifecycle HTML, SVG, and editable draw.io files are generated together from
+`../tools/generate-lifecycle-diagram.py`. Run the script after lifecycle figure
+changes; it keeps the manuscript and compatibility names, source copies, and
+public-docs copies in sync. For other figures, the matching `.html` files remain
+the editable sources and can be re-exported with
+`node ../tools/export-diagram-svg.mjs <source.html>`.
 
 Visual generation is intentionally separated from the normative SPEM model in
 `../spem/`. The SVG is an explanatory view; the SPEM XML and process narrative
