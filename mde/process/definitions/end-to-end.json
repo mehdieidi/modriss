@@ -1515,7 +1515,8 @@
         "steps": [
           "Select accepted increments and compatible model/artifact revisions.",
           "Resolve cross-team dependency and compatibility checks.",
-          "Create the release record with exact inputs and promotion sequence."
+          "Create the release record with exact inputs and promotion sequence.",
+          "Reject stale candidate evidence, unresolved transformation conflicts and expired exceptions; reuse unaffected evidence only with impact-review approval."
         ],
         "entryCriteria": [],
         "exitCriteria": ["Assemble the release candidate evidence is recorded"],
@@ -1613,6 +1614,7 @@
         "coverageGroups": [],
         "steps": [
           "Inspect readiness assessments, validation results, security exceptions, rollback plan, operational runbooks, forecast/unit-cost evidence, budget guardrails, and approvals.",
+          "Before production exposure name the promotion operator, Service Owner and response coverage; define first-release stop, drain and external-effect reconciliation when no accepted baseline exists.",
           "Confirm open blockers are zero or explicitly accepted under the tailored method profile.",
           "Record the G6 decision and decision owners."
         ],
@@ -1753,7 +1755,7 @@
         "steps": [
           "Verify dashboards, alerts, runbooks, escalation paths, support ownership, cost/anomaly views, and recovery access.",
           "Confirm rollback and data-recovery actions are usable for the release.",
-          "Accept operational ownership or return the release to rework."
+          "Accept operational ownership or return the release to rework; until G7 the named promotion operator and Service Owner retain responsibility."
         ],
         "entryCriteria": [],
         "exitCriteria": ["Complete handover and rollback rehearsal evidence is recorded"],
@@ -2106,7 +2108,7 @@
         "coverageGroups": [],
         "steps": [
           "Continue required operational coverage during migration, then disable traffic, scheduled work, credentials, access paths, alerts, and environments in the approved order.",
-          "Verify replacement ownership, customer communication, billing cessation, and removal of residual chargeable resources.",
+          "Verify replacement ownership, customer communication, retired-service billing cessation, and removal or funded transfer of chargeable resources.",
           "Retain required source, model, trace, release, incident, and decision records."
         ],
         "entryCriteria": [],
@@ -2167,6 +2169,7 @@
         "steps": [
           "Reconcile every declared data class, store, backup, export, legal hold, record series, and derived copy with the approved disposition.",
           "Verify deletion, sanitization, transfer, retention ownership, and evidence custody with Security and Service Owners.",
+          "Record retained-archive inventory, receiving acceptance, custodian, controlled access, funded budget, expiry and deletion owner; retention may outlive service closure.",
           "Record unresolved obligations as blockers to G8 rather than closing them by exception without authority."
         ],
         "entryCriteria": [],
@@ -2296,7 +2299,7 @@
         "exitCriteria": ["Complete closure review evidence is recorded"],
         "validationRules": [
           "Closure identifies retained evidence, unresolved obligations, and accountable custodians",
-          "G8 is accepted only when no live release remains and cost, access, and data obligations are closed"
+          "G8 is accepted only when no live release remains and cost, access, and data obligations are discharged or transferred to accepted funded custody"
         ],
         "progressEvidence": "Complete closure review decision, evidence links, owner, and status are recorded",
         "paletteFocus": [],
@@ -2843,6 +2846,7 @@
         "steps": [
           "Classify the authoritative source as product/domain, architecture, platform, generator, artifact, or operations and confirm whether the item remains a bounded Kanban service item or is committed to a planned release.",
           "Use traces and dependency ownership to identify impacted downstream levels and teams.",
+          "Route persistent model-owned configuration, including modeled alarm thresholds, through affected MDE and release controls; operations-only work must not leave model/product drift.",
           "Send product-changing work to the Development and Delivery Process at the smallest affected phase or activity; after release, reconcile emergency downstream fixes into the authoritative source and close the service item only when evidence returns."
         ],
         "entryCriteria": [],
@@ -8364,7 +8368,7 @@
                   "roleUseRef": "ru.e2e.rel.a1.release-engineer"
                 }
               ],
-              "selectedStepIndices": [0, 1, 2],
+              "selectedStepIndices": [0, 1, 2, 3],
               "inputWorkProductUseRefs": [
                 "wpu.e2e.rel.a1.t1.input.e2e-artifact.increment-record",
                 "wpu.e2e.rel.a1.t1.input.e2e-artifact.product-charter",
@@ -8471,7 +8475,7 @@
                   "roleUseRef": "ru.e2e.rel.a1.finops-cost-analyst"
                 }
               ],
-              "selectedStepIndices": [0, 1, 2],
+              "selectedStepIndices": [0, 1, 2, 3],
               "inputWorkProductUseRefs": [
                 "wpu.e2e.rel.a1.t2.input.e2e-artifact.release-record",
                 "wpu.e2e.rel.a1.t2.input.e2e-artifact.increment-record",
@@ -9407,7 +9411,7 @@
                   "roleUseRef": "ru.e2e.ph2.st2.cloud-platform-engineer"
                 }
               ],
-              "selectedStepIndices": [0, 1, 2],
+              "selectedStepIndices": [0, 1, 2, 3],
               "inputWorkProductUseRefs": [
                 "wpu.e2e.ph2.st2.t3.input.e2e-artifact.retirement-record",
                 "wpu.e2e.ph2.st2.t3.input.e2e-artifact.operations-record",
@@ -10279,7 +10283,7 @@
                   "roleUseRef": "ru.e2e.ops.a4.delivery-lead"
                 }
               ],
-              "selectedStepIndices": [0, 1, 2],
+              "selectedStepIndices": [0, 1, 2, 3],
               "inputWorkProductUseRefs": [
                 "wpu.e2e.ops.a4.t1.input.e2e-artifact.operational-work-item",
                 "wpu.e2e.ops.a4.t1.input.e2e-artifact.service-flow-system",
@@ -11098,7 +11102,7 @@
         "e2e-artifact.cost-model",
         "e2e-artifact.risk-register"
       ],
-      "acceptanceCondition": "The exact immutable candidate and recovery, assurance, operational, and economic evidence are accepted."
+      "acceptanceCondition": "The exact immutable candidate and current recovery, assurance, operational, and economic evidence are accepted; promotion operator, Service Owner, response coverage and first-release recovery are assigned before exposure."
     },
     {
       "type": "Milestone",
@@ -11131,7 +11135,7 @@
         "e2e-artifact.cost-model",
         "e2e-artifact.improvement-record"
       ],
-      "acceptanceCondition": "No live release, unowned data/records obligation, active access path, residual chargeable resource, or unresolved closure blocker remains."
+      "acceptanceCondition": "No live release, unowned data/records obligation, retired-service access path, unassigned chargeable resource, or unresolved closure blocker remains; retained archives have accepted custody, controlled access, funded cost, expiry and deletion ownership."
     }
   ]
 }

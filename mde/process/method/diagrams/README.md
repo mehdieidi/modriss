@@ -33,3 +33,11 @@ Phase 2 starts only after explicit retirement authorization, and Operations
 and Maintenance continues until shared G8 closure evidence confirms that no
 live release remains. G8 is a joint criterion, not an activity-flow edge from
 either process to the other.
+
+## ReturnFlow evidence view
+
+`modriss-evidence-handoff.html` and its exported SVG explain gate evidence,
+rejection and rework using the existing warm-paper/teal visual style. The
+960×600 documentation figure omits per-gate checklists; these remain in the
+normative process and ReturnFlow report. Lifecycle HTML/SVG/drawio and release
+PlantUML now expose pre-G7 duty and funded post-retirement archive custody.

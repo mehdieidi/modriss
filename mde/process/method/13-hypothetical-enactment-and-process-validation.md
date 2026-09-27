@@ -1,16 +1,25 @@
 # Hypothetical Enactment and Analytical Process Validation
 
+## Audit correction — 2026-09-27
+
+The generated ledgers are definition-coverage inventories with scripted case
+notes. They do not prove task execution, reviewed artifacts, valid gate
+decisions or smooth handoffs. The subsequent
+[ReturnFlow audit](14-returnflow-enactment-audit.md) found additional handoff
+defects and supersedes the earlier soundness conclusion. All scenario events
+below are hypothetical, including the supposed tests, reviews and releases.
+
 ## Status and purpose
 
 This document reports a complete **analytical hypothetical enactment** of the
 MODRISS method. It is a design walkthrough and coverage test, not an empirical
-case study. It can establish internal consistency, role/product coverage, and
-the plausibility of the way of working. It cannot establish usability,
+case study. It checks definition coverage and motivates questions about consistency and
+plausibility; it does not establish these properties for executed artifacts. It cannot establish usability,
 efficiency, comparative advantage, or project outcomes; those claims require
 the multiple-case protocol in
 [`09-empirical-validation-protocol.md`](09-empirical-validation-protocol.md).
 
-The walkthrough exercised all five executable process components, every
+The generated inventory references all five executable process components, every
 TaskDefinition through a TaskUse, every RoleDefinition, every executable work
 product, the three one-time phases, the repeatable increment and release
 activities, the ongoing Operations and Maintenance process, all DevOps
@@ -33,11 +42,11 @@ The case deliberately includes uncertainty and change:
 - two planned increments and two releases;
 - one failed progressive promotion caused by duplicate alerts;
 - an expedite incident followed by authoritative-source reconciliation;
-- an operations-only alarm-threshold change;
+- an operations-only alarm-acknowledgement task;
 - a bounded PIM→PSM→artifact retry/idempotency correction;
 - a compliance-analytics feature committed to a planned release; and
-- retirement with migration, records retention, access removal, and residual
-  cost verification.
+- retirement with migration, records retention, access removal, and declared archive-cost transfer and residual
+  service-cost verification.
 
 Seventeen fictional assignees cover product, domain, method, delivery,
 modeling, architecture, platform, application, quality, security, FinOps,
@@ -117,7 +126,7 @@ Release 1. Operational demand is pulled through Requested → Ready → In
 Progress → Verify → Done with WIP 2 for standard work and one visible expedite
 slot. The case exercises all three dispositions:
 
-1. alarm-threshold tuning is completed operations-only with evidence;
+1. alarm acknowledgement and approved read-only diagnostics are completed operations-only with evidence;
 2. retry/idempotency correction follows the shortest safe PIM→PSM→artifact→
    release path; and
 3. analytics export is explicitly committed to the next planned release.
@@ -146,21 +155,21 @@ Kanban board and no activity-flow edge is required between the two processes.
 The team migrates required records, reconciles DynamoDB tables, S3 archives,
 backups, exports, log retention, derived copies, and legal holds, and assigns
 custody. It then disables traffic, schedules, credentials, alerts, and
-environments in the approved order and verifies billing cessation and removal
-of residual chargeable resources. G8 is a **shared closure condition**:
+environments in the approved order and verifies retired-service billing
+cessation, removing live resources or recording funded archive custody. G8 is a **shared closure condition**:
 Development and Delivery supplies retirement evidence and Operations supplies
 shutdown evidence. It is accepted only when no live release, unowned data or
-records obligation, access path, residual chargeable resource, or closure
+records obligation, retired-service access path, unassigned chargeable resource, or closure
 blocker remains.
 
-## Exhaustive coverage result
+## Definition-inventory coverage result
 
 | Coverage object                                                           |    Result | Reproducible evidence                                                                                  |
 | ------------------------------------------------------------------------- | --------: | ------------------------------------------------------------------------------------------------------ |
 | Executable tasks across end-to-end, CIM, PIM, PSM, and artifact processes | 139 / 139 | [`task-enactment-ledger.csv`](evaluation/coldchain-sentinel/task-enactment-ledger.csv)                 |
 | Defined roles with at least one primary or supporting task binding        |   17 / 17 | [`role-enactment-ledger.csv`](evaluation/coldchain-sentinel/role-enactment-ledger.csv)                 |
-| Executable work-product definitions instantiated and reviewed             |   65 / 65 | [`work-product-enactment-ledger.csv`](evaluation/coldchain-sentinel/work-product-enactment-ledger.csv) |
-| Gate decisions with authority, evidence, condition, and result            |     9 / 9 | [`gate-decision-ledger.csv`](evaluation/coldchain-sentinel/gate-decision-ledger.csv)                   |
+| Executable work-product definitions assigned planned instance labels      |   65 / 65 | [`work-product-enactment-ledger.csv`](evaluation/coldchain-sentinel/work-product-enactment-ledger.csv) |
+| Scripted gate rows with declared authority and evidence types             |     9 / 9 | [`gate-decision-ledger.csv`](evaluation/coldchain-sentinel/gate-decision-ledger.csv)                   |
 
 The generator and verifier are
 [`build-hypothetical-case.mjs`](tools/build-hypothetical-case.mjs) and
@@ -229,8 +238,8 @@ The external fragments are also traceable:
 
 ## Evaluation of the way of working
 
-The corrected process is **sound and internally coherent for this analytical
-case**:
+The scenario illustrates the following intended properties, which still need
+artifact-based enactment and independent review:
 
 - It starts with value, alternatives, feasibility, cost, risk, and authority;
   it does not assume serverless or AWS before G0.
@@ -264,7 +273,6 @@ release rework, operational cycle time/SLE attainment, expedite frequency,
 escaped defects, trace coverage, and closure-obligation count, while recording
 method-profile changes and negative cases.
 
-Consequently, the defensible conclusion is: the corrected process is complete
-enough to enact without an obvious unowned lifecycle gap and is logically
-consistent with its scientific sources; practical effectiveness remains an
-empirical research question.
+The defensible conclusion is limited to definition coverage and a scripted
+scenario. ReturnFlow subsequently exposed additional gaps. Neither inventory
+completeness nor this scenario demonstrates practical effectiveness.

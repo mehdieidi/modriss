@@ -1,5 +1,7 @@
 # Engineering the MODRISS Software Development Process
 
+> **2026-09-27 evaluation revision:** Read [ReturnFlow enactment and audit](14-returnflow-enactment-audit.md) and the revised [Eidi assessment](07-evaluation.md). ColdChain ledgers demonstrate definition coverage, not executed tasks or validated gates. ReturnFlow adds concrete handoff counterexamples and method revisions; practical effectiveness remains unobserved. The audited 78-criterion assessment supersedes earlier coverage ratings.
+
 ## Abstract
 
 The MODRISS methodology has two parts: a full-lifecycle software development
@@ -598,8 +600,9 @@ rollback window, and evidence-retention needs.
 Migration covers users, data, events, and integrations. Decommissioning stops
 traffic and schedules, revokes credentials, closes subscriptions and endpoints,
 removes queues, alarms, domains, and cloud resources in a controlled order, and
-verifies that billing has ceased. Required models, source, logs, decisions, and
-audit evidence are retained according to policy.
+verifies that retired-service billing has ceased. Required models, source,
+logs, decisions and audit evidence remain under accepted custody with controlled
+access, funded costs, retention expiry and deletion ownership.
 
 Gate G8 closes the lifecycle only when product, service, security/privacy, and
 records owners agree that no user, data set, integration, access path,
@@ -960,9 +963,11 @@ SPEM compilation were corrected accordingly. The complete case, defect log,
 sources, and claim boundary are reported in
 `13-hypothetical-enactment-and-process-validation.md`.
 
-This is evidence of internal consistency and logical enactability, not an
-observed practitioner case. It therefore informs, but does not answer, the
-empirical research questions below.
+These generated ledgers establish definition coverage and role/producer
+bindings, not executed tasks or valid gate evidence. The subsequent ReturnFlow
+audit (document 14) adds 30 explicit handoff steps, seven findings and negative
+record checks; it also corrects the Eidi criterion types and ratings. Both
+scenarios inform, but do not answer, the empirical research questions below.
 
 ## 12. Validity and limitations
 

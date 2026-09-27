@@ -35,7 +35,7 @@ Passing this gate means the named evidence has been reviewed for this decision. 
 
 <small>Milestone: `e2e.g8` · phase/activity `e2e.ph2`</small>
 
-No live release, unowned data/records obligation, active access path, residual chargeable resource, or unresolved closure blocker remains.
+No live release, unowned data/records obligation, retired-service access path, unassigned chargeable resource, or unresolved closure blocker remains; retained archives have accepted custody, controlled access, funded cost, expiry and deletion ownership.
 
 **Decision authorities**
 

@@ -3675,6 +3675,7 @@
       "steps": [
         "Classify the authoritative source as product/domain, architecture, platform, generator, artifact, or operations and confirm whether the item remains a bounded Kanban service item or is committed to a planned release.",
         "Use traces and dependency ownership to identify impacted downstream levels and teams.",
+        "Route persistent model-owned configuration, including modeled alarm thresholds, through affected MDE and release controls; operations-only work must not leave model/product drift.",
         "Send product-changing work to the Development and Delivery Process at the smallest affected phase or activity; after release, reconcile emergency downstream fixes into the authoritative source and close the service item only when evidence returns."
       ],
       "entryCriteria": [],
@@ -5416,7 +5417,7 @@
       "coverageGroups": [],
       "steps": [
         "Continue required operational coverage during migration, then disable traffic, scheduled work, credentials, access paths, alerts, and environments in the approved order.",
-        "Verify replacement ownership, customer communication, billing cessation, and removal of residual chargeable resources.",
+        "Verify replacement ownership, customer communication, retired-service billing cessation, and removal or funded transfer of chargeable resources.",
         "Retain required source, model, trace, release, incident, and decision records."
       ],
       "entryCriteria": [],
@@ -5479,6 +5480,7 @@
       "steps": [
         "Reconcile every declared data class, store, backup, export, legal hold, record series, and derived copy with the approved disposition.",
         "Verify deletion, sanitization, transfer, retention ownership, and evidence custody with Security and Service Owners.",
+        "Record retained-archive inventory, receiving acceptance, custodian, controlled access, funded budget, expiry and deletion owner; retention may outlive service closure.",
         "Record unresolved obligations as blockers to G8 rather than closing them by exception without authority."
       ],
       "entryCriteria": [],
@@ -5610,7 +5612,7 @@
       "exitCriteria": ["Complete closure review evidence is recorded"],
       "validationRules": [
         "Closure identifies retained evidence, unresolved obligations, and accountable custodians",
-        "G8 is accepted only when no live release remains and cost, access, and data obligations are closed"
+        "G8 is accepted only when no live release remains and cost, access, and data obligations are discharged or transferred to accepted funded custody"
       ],
       "progressEvidence": "Complete closure review decision, evidence links, owner, and status are recorded",
       "paletteFocus": [],
@@ -5669,7 +5671,8 @@
       "steps": [
         "Select accepted increments and compatible model/artifact revisions.",
         "Resolve cross-team dependency and compatibility checks.",
-        "Create the release record with exact inputs and promotion sequence."
+        "Create the release record with exact inputs and promotion sequence.",
+        "Reject stale candidate evidence, unresolved transformation conflicts and expired exceptions; reuse unaffected evidence only with impact-review approval."
       ],
       "entryCriteria": [],
       "exitCriteria": ["Assemble the release candidate evidence is recorded"],
@@ -5769,6 +5772,7 @@
       "coverageGroups": [],
       "steps": [
         "Inspect readiness assessments, validation results, security exceptions, rollback plan, operational runbooks, forecast/unit-cost evidence, budget guardrails, and approvals.",
+        "Before production exposure name the promotion operator, Service Owner and response coverage; define first-release stop, drain and external-effect reconciliation when no accepted baseline exists.",
         "Confirm open blockers are zero or explicitly accepted under the tailored method profile.",
         "Record the G6 decision and decision owners."
       ],
@@ -5913,7 +5917,7 @@
       "steps": [
         "Verify dashboards, alerts, runbooks, escalation paths, support ownership, cost/anomaly views, and recovery access.",
         "Confirm rollback and data-recovery actions are usable for the release.",
-        "Accept operational ownership or return the release to rework."
+        "Accept operational ownership or return the release to rework; until G7 the named promotion operator and Service Owner retain responsibility."
       ],
       "entryCriteria": [],
       "exitCriteria": ["Complete handover and rollback rehearsal evidence is recorded"],
@@ -13778,10 +13782,10 @@
       "type": "Guidance",
       "name": "MF-13 — Test in the large and release qualification",
       "guidanceKind": "Process Pattern",
-      "description": "Locally correct functions and templates may fail as an integrated serverless service. Result: System, acceptance, NFR, security, resilience, recovery, and operational evidence support a release decision.",
+      "description": "Locally correct functions and templates may fail as an integrated serverless service. Result: System, acceptance, NFR, security, resilience, recovery, and operational evidence support a release decision. Evidence is current for the candidate; changed inputs, unresolved conflicts and expired exceptions reopen affected acceptance.",
       "sourcePatternId": "MF-13",
       "initialContext": "A candidate baseline can be deployed to a representative non-production environment.",
-      "resultContext": "System, acceptance, NFR, security, resilience, recovery, and operational evidence support a release decision.",
+      "resultContext": "System, acceptance, NFR, security, resilience, recovery, and operational evidence support a release decision. Evidence is current for the candidate; changed inputs, unresolved conflicts and expired exceptions reopen affected acceptance.",
       "roles": ["R-02", "R-09", "R-10", "R-11", "R-12", "R-13", "R-14"],
       "workProducts": ["WP-20", "WP-21", "WP-22", "WP-23"],
       "selection": "required with risk-proportional test selection",
@@ -13795,10 +13799,10 @@
       "type": "Guidance",
       "name": "MF-14 — Progressive CI/CD and transition",
       "guidanceKind": "Process Pattern",
-      "description": "A technically valid candidate can still fail during promotion or handover. Result: The release is progressively promoted, observed, recorded, and accepted for operation.",
+      "description": "A technically valid candidate can still fail during promotion or handover. Result: The release is progressively promoted, observed, recorded, and accepted for operation. Promotion operator and Service Owner cover first exposure before G7; first-release recovery does not assume a previous accepted baseline.",
       "sourcePatternId": "MF-14",
       "initialContext": "An immutable qualified candidate and recovery plan exist.",
-      "resultContext": "The release is progressively promoted, observed, recorded, and accepted for operation.",
+      "resultContext": "The release is progressively promoted, observed, recorded, and accepted for operation. Promotion operator and Service Owner cover first exposure before G7; first-release recovery does not assume a previous accepted baseline.",
       "roles": ["R-02", "R-11", "R-13", "R-14", "R-15"],
       "workProducts": ["WP-21", "WP-22", "WP-23", "WP-24"],
       "selection": "required; deployment strategy varies",
@@ -13836,10 +13840,10 @@
       "type": "Guidance",
       "name": "MF-16 — Incident, problem, and controlled change propagation",
       "guidanceKind": "Process Pattern",
-      "description": "Emergency or evolutionary changes can diverge models, generators, code, and the running service. Result: Service is restored where necessary and change is routed to the earliest authoritative source and re-evidenced.",
+      "description": "Emergency or evolutionary changes can diverge models, generators, code, and the running service. Result: Service is restored where necessary and change is routed to the earliest authoritative source and re-evidenced. Persistent model-owned configuration follows the affected delivery path; emergency drift is removed or reconciled before closure.",
       "sourcePatternId": "MF-16",
       "initialContext": "An incident, finding, dependency, or requested change exists.",
-      "resultContext": "Service is restored where necessary and change is routed to the earliest authoritative source and re-evidenced.",
+      "resultContext": "Service is restored where necessary and change is routed to the earliest authoritative source and re-evidenced. Persistent model-owned configuration follows the affected delivery path; emergency drift is removed or reconciled before closure.",
       "roles": ["R-05", "R-06", "R-07", "R-08", "R-09", "R-11", "R-13", "R-14"],
       "workProducts": ["WP-26", "WP-27"],
       "selection": "required",
@@ -13853,10 +13857,10 @@
       "type": "Guidance",
       "name": "MF-17 — Retirement, migration, and closure",
       "guidanceKind": "Process Pattern",
-      "description": "A service can be switched off while data, consumers, access, resources, costs, or legal obligations remain. Result: Users, data, integrations, access, resources, cost, and evidence are migrated or closed and accepted.",
+      "description": "A service can be switched off while data, consumers, access, resources, costs, or legal obligations remain. Result: Users, data, integrations, access, resources, cost, and evidence are migrated or closed and accepted. Continuing archive obligations have verified receiving custody, controlled access, funded cost, expiry and deletion ownership.",
       "sourcePatternId": "MF-17",
       "initialContext": "A retirement/replacement trigger and accountable product/service owners exist.",
-      "resultContext": "Users, data, integrations, access, resources, cost, and evidence are migrated or closed and accepted.",
+      "resultContext": "Users, data, integrations, access, resources, cost, and evidence are migrated or closed and accepted. Continuing archive obligations have verified receiving custody, controlled access, funded cost, expiry and deletion ownership.",
       "roles": ["R-01", "R-02", "R-11", "R-13", "R-14", "R-16"],
       "workProducts": ["WP-28", "WP-29"],
       "selection": "required",
@@ -13926,10 +13930,10 @@
       "type": "Guidance",
       "name": "UF-01 — Integrated management, assurance, and evidence",
       "guidanceKind": "Continuous Practice Pattern",
-      "description": "Lifecycle tasks become disconnected without continuous planning, risk, quality, security, change, trace, and evidence management. Result: Decisions, dependencies, risks, findings, revisions, evidence, and improvement remain controlled throughout the run.",
+      "description": "Lifecycle tasks become disconnected without continuous planning, risk, quality, security, change, trace, and evidence management. Result: Decisions, dependencies, risks, findings, revisions, evidence, and improvement remain controlled throughout the run. Evidence distinguishes planned, simulated, repository-checked and observed results; definition coverage is not task execution.",
       "sourcePatternId": "UF-01",
       "initialContext": "An authorized product/process run exists.",
-      "resultContext": "Decisions, dependencies, risks, findings, revisions, evidence, and improvement remain controlled throughout the run.",
+      "resultContext": "Decisions, dependencies, risks, findings, revisions, evidence, and improvement remain controlled throughout the run. Evidence distinguishes planned, simulated, repository-checked and observed results; definition coverage is not task execution.",
       "roles": ["R-04", "R-05", "R-10", "R-11", "R-12", "R-14", "R-15"],
       "workProducts": [
         "WP-04",

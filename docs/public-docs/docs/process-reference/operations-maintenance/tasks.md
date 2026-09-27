@@ -278,7 +278,8 @@ The primary performer is **Delivery Lead**. The approved method profile may assi
 
 1. Classify the authoritative source as product/domain, architecture, platform, generator, artifact, or operations and confirm whether the item remains a bounded Kanban service item or is committed to a planned release.
 2. Use traces and dependency ownership to identify impacted downstream levels and teams.
-3. Send product-changing work to the Development and Delivery Process at the smallest affected phase or activity; after release, reconcile emergency downstream fixes into the authoritative source and close the service item only when evidence returns.
+3. Route persistent model-owned configuration, including modeled alarm thresholds, through affected MDE and release controls; operations-only work must not leave model/product drift.
+4. Send product-changing work to the Development and Delivery Process at the smallest affected phase or activity; after release, reconcile emergency downstream fixes into the authoritative source and close the service item only when evidence returns.
 
 **Outputs**
 

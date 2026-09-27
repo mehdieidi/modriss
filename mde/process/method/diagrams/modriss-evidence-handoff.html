@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>MODRISS evidence-bearing handoff</title>
+    <style>
+      body {
+        margin: 0;
+        padding: 24px;
+        background: #f5f3ed;
+        color: #102c3a;
+        font-family: "Space Grotesk", system-ui, sans-serif;
+      }
+      main {
+        max-width: 960px;
+        margin: auto;
+      }
+      svg {
+        width: 100%;
+        height: auto;
+        display: block;
+      }
+      .node {
+        fill: #fcfbf7;
+        stroke: #102c3a;
+      }
+      .label {
+        font:
+          600 14px "Space Grotesk",
+          system-ui,
+          sans-serif;
+        fill: #102c3a;
+      }
+      .detail {
+        font:
+          12px "Space Grotesk",
+          system-ui,
+          sans-serif;
+        fill: #617178;
+      }
+      .edge {
+        fill: none;
+        stroke: #617178;
+        stroke-width: 1.5;
+        marker-end: url(#rf-arrow);
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <svg
+        viewBox="0 0 960 600"
+        xmlns="http://www.w3.org/2000/svg"
+        role="img"
+        aria-labelledby="rf-handoff-title rf-handoff-desc"
+      >
+        <title id="rf-handoff-title">MODRISS evidence-bearing handoff</title>
+        <desc id="rf-handoff-desc">
+          A task produces scoped evidence for a named revision. The gate checks current evidence and
+          authority. Failure blocks the handoff and returns to the authoritative source. Acceptance
+          authorizes only the recorded scope. Changed inputs or expired exceptions require a new
+          review.
+        </desc>
+        <defs>
+          <marker id="rf-arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+            <path d="M0 0L8 3L0 6Z" fill="#617178" />
+          </marker>
+          <marker
+            id="rf-arrow-accent"
+            markerWidth="8"
+            markerHeight="6"
+            refX="7"
+            refY="3"
+            orient="auto"
+          >
+            <path d="M0 0L8 3L0 6Z" fill="#087b78" />
+          </marker>
+          <marker
+            id="rf-arrow-link"
+            markerWidth="8"
+            markerHeight="6"
+            refX="7"
+            refY="3"
+            orient="auto"
+          >
+            <path d="M0 0L8 3L0 6Z" fill="#075d5b" />
+          </marker>
+        </defs>
+        <rect width="960" height="600" fill="#f5f3ed" />
+        <text x="40" y="40" class="detail">RETURNFLOW AUDIT · PROCESS CONTROL DETAIL</text>
+        <text
+          x="40"
+          y="80"
+          style="
+            font:
+              28px Georgia,
+              serif;
+            fill: #102c3a;
+          "
+        >
+          A completed task is not an accepted handoff
+        </text>
+        <path class="edge" d="M256 188H320" />
+        <path class="edge" d="M416 228V268" />
+        <path class="edge" d="M512 332H636" />
+        <path class="edge" d="M416 396V444" />
+        <path
+          class="edge"
+          d="M320 476H288Q280 476 280 468V260Q280 252 272 252H168Q160 252 160 244V228"
+        />
+        <rect x="540" y="304" width="56" height="20" fill="#f5f3ed" />
+        <text x="568" y="318" class="detail" text-anchor="middle">ACCEPT</text>
+        <rect x="430" y="406" width="104" height="20" fill="#f5f3ed" />
+        <text x="434" y="420" class="detail">MISSING / STALE</text>
+        <rect x="300" y="248" width="88" height="16" fill="#f5f3ed" />
+        <text x="300" y="260" class="detail">NEW REVIEW</text>
+        <rect class="node" x="64" y="148" width="192" height="80" rx="6" />
+        <text x="80" y="178" class="label">Perform scoped task</text>
+        <text x="80" y="202" class="detail">Owner and input revision</text>
+        <rect class="node" x="320" y="148" width="192" height="80" rx="6" />
+        <text x="336" y="178" class="label">Record usable evidence</text>
+        <text x="336" y="202" class="detail">Result, scope and provenance</text>
+        <path
+          d="M416 268L512 332L416 396L320 332Z"
+          fill="#e1eeea"
+          stroke="#087b78"
+          stroke-width="2"
+        />
+        <text x="416" y="326" class="label" text-anchor="middle">Current evidence</text>
+        <text x="416" y="346" class="label" text-anchor="middle">and authority?</text>
+        <rect class="node" x="636" y="292" width="252" height="80" rx="6" />
+        <text x="652" y="322" class="label">Authorize the named scope</text>
+        <text x="652" y="346" class="detail">Record decision and next owner</text>
+        <rect class="node" x="320" y="444" width="264" height="64" rx="6" />
+        <text x="336" y="470" class="label">Block, resolve, or revise source</text>
+        <text x="336" y="492" class="detail">Rebuild affected evidence before review</text>
+        <text x="636" y="424" class="detail">G6: response owner before first traffic.</text>
+        <text x="636" y="448" class="detail">G8: accept funded custody of retained records.</text>
+        <line x1="40" y1="540" x2="920" y2="540" stroke="#ccd2cf" />
+        <text x="40" y="564" class="detail">
+          Changed inputs or expired exceptions reopen affected acceptance. A simulated record never
+          authorizes a real release.
+        </text>
+        <text x="40" y="586" class="detail">
+          Scope: process acceptance only. Assistant model edits remain structurally gated; explicit
+          EVL review is separate.
+        </text>
+      </svg>
+    </main>
+  </body>
+</html>

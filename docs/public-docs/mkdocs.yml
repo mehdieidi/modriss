@@ -52,6 +52,7 @@ nav:
           - Local development: getting-started/local-development.md
   - Development process:
       - Full-lifecycle development process: guides/full-lifecycle-method.md
+      - Enactment and critical evaluation: guides/process-evaluation.md
       - Capability-increment process: guides/end-to-end-modeling-methodology.md
       - CIM modeling process: guides/cim-modeling-methodology.md
       - PIM modeling process: guides/pim-modeling-methodology.md

@@ -1,0 +1,54 @@
+{
+  "date": "2026-09-27",
+  "evidenceKind": "repository-checked",
+  "baselineCommit": "1d066f44d7c4f7be32b960dbdf5800694639fcfb",
+  "boundary": "Research record and repository structural checks only; no application, EMF/ETL/EVL/EGX, cloud or practitioner execution.",
+  "commands": [
+    {
+      "command": ["node", "mde/process/method/tools/verify-method-package.mjs"],
+      "exitCode": 0,
+      "stdout": "{\n  \"status\": \"ok\",\n  \"uniqueXmiIds\": 3681,\n  \"roles\": 17,\n  \"tasks\": 139,\n  \"workProducts\": 96,\n  \"guidance\": 46,\n  \"processComponents\": 5,\n  \"processPatterns\": 20,\n  \"conceptualRoleMappings\": 16,\n  \"humanReadableCatalogElements\": 298,\n  \"academicallyDescribedFragments\": 20\n}\n",
+      "stderr": ""
+    },
+    {
+      "command": ["node", "mde/process/method/tools/verify-lifecycle-sync.mjs"],
+      "exitCode": 0,
+      "stdout": "{\n  \"status\": \"ok\",\n  \"checkedWorkSequences\": [\n    \"ws.release-rework.e2e.rel.a2.e2e.p0\",\n    \"ws.release-cycle.e2e.rel.a3.e2e.p0\",\n    \"ws.handover.e2e.rel.a2.e2e.ops\",\n    \"ws.ops-change.e2e.ops.e2e.p0\",\n    \"ws.retirement-development.e2e.ph1.e2e.ph2\"\n  ],\n  \"checkedGates\": [\n    \"G0\",\n    \"G1\",\n    \"G2\",\n    \"G3\",\n    \"G4\",\n    \"G5\",\n    \"G6\",\n    \"G7\",\n    \"G8\"\n  ],\n  \"checkedBoundRoles\": 16,\n  \"checkedPlantUmlViews\": 10,\n  \"checkedPublicationSourcesAndExports\": 6,\n  \"checkedNarratives\": 2\n}\n",
+      "stderr": ""
+    },
+    {
+      "command": ["node", "mde/process/method/tools/verify-hypothetical-case.mjs"],
+      "exitCode": 0,
+      "stdout": "{\n  \"status\": \"ok\",\n  \"tasks\": 139,\n  \"roles\": 17,\n  \"boundRoles\": 17,\n  \"workProducts\": 65,\n  \"gates\": 9\n}\n",
+      "stderr": ""
+    },
+    {
+      "command": ["node", "mde/process/method/tools/verify-enactment-evidence.mjs"],
+      "exitCode": 0,
+      "stdout": "{\n  \"caseId\": \"returnflow-analytical-2026-09-27\",\n  \"evidenceKind\": \"simulated\",\n  \"status\": \"record-consistent\",\n  \"errors\": [],\n  \"limitation\": \"Checks recorded contracts; does not execute the project or authorize real gates.\"\n}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "node",
+        "--test",
+        "mde/process/method/tools/verify-enactment-evidence.test.mjs",
+        "tests/frontend/methodology-process-utils.test.mjs"
+      ],
+      "exitCode": 0,
+      "stdout": "✔ explicit hypothetical handoff with accepted funded archive custody is consistent (3.0971ms)\n✔ fiction becomes empirical evidence (0.624ms)\n✔ old candidate report authorizes new code (0.3609ms)\n✔ gate has a reference but no artifact (0.3193ms)\n✔ report omits changed scope (0.3408ms)\n✔ risk exception expires before review (0.4682ms)\n✔ known blocker is ignored (0.4019ms)\n✔ first traffic has no service owner (0.418ms)\n✔ first release promises nonexistent rollback (0.4823ms)\n✔ small modeled alarm change is misrouted (0.4944ms)\n✔ temporary production drift closes unreconciled (0.3146ms)\n✔ G8 hides one live release (1.1768ms)\n✔ archive survives without funded ownership (0.2824ms)\n✔ Eidi assessment preserves all groups and Simple types (2.0444ms)\n✔ keeps loop and rework edges whose endpoints are visible (1.8737ms)\n✔ drops stale loop endpoints instead of passing undefined nodes to the router (0.2851ms)\nℹ tests 16\nℹ suites 0\nℹ pass 16\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 141.2083\n",
+      "stderr": ""
+    }
+  ],
+  "sha256": {
+    "mde/process/tools/lib/spem-end-to-end.mjs": "794487223ade24e73f6f74ef7e013bfe1e1d94f8401889d9705e1021a65c8c4c",
+    "mde/process/definitions/end-to-end.json": "5e6ef713dd047ce48c38831754c2032566714147128b4bb420a124d5f5a64790",
+    "mde/process/method/library/method-fragments.json": "e2cfbb9223a8cd649bbdc5846d0ab235bd9a1f975fae1ebff2f6f994f1883284",
+    "mde/process/method/14-returnflow-enactment-audit.md": "cdd2265d2c7168750694d6304d3b01b522938ad46e2536b51822fd94099f9f58",
+    "mde/process/method/07-evaluation.md": "d7d7f416507320a6f179b3b6b9630c6008a65e9fc8816da3ed1d6cb2a9ba08cd",
+    "mde/process/method/evaluation/returnflow/handoff-fixture.json": "a12e53331a9f0fae57862d377b5a7ac2ef96e452d3a109e982d5b5a45f3ba4e3",
+    "mde/process/method/evaluation/returnflow/eidi-assessment.json": "8a9da606963d36f7b8af6509292cf32691c27c800418991ea66a8939a0131322",
+    "mde/process/method/tools/verify-enactment-evidence.mjs": "3caecef4f5e0c0cc6d26867ff28139c455cea03319e8bd0e475cdbabd2f6c499",
+    "mde/process/method/tools/verify-enactment-evidence.test.mjs": "776800a839af65ea51e038bd796c2592230fb69260a726d3fa89ee919e0fd129"
+  }
+}

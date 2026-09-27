@@ -1,6 +1,6 @@
 {
   "caseId": "coldchain-sentinel-hypothetical-01",
-  "evidenceKind": "analytical hypothetical enactment; not empirical observation",
+  "evidenceKind": "generated coverage inventory with scripted scenarios; not execution evidence",
   "system": "ColdChain Sentinel — serverless cold-chain monitoring and excursion response",
   "lifecycle": [
     "Phase 0 once",
@@ -10,7 +10,7 @@
     "shared G8 closure"
   ],
   "operationalItems": [
-    "operations-only: tune an alarm threshold and retain evidence",
+    "operations-only: acknowledge an alarm and execute approved read-only diagnostics",
     "bounded MDE/release: correct retry/idempotency policy from PIM through release",
     "planned release: add compliance analytics export",
     "expedite incident: restore alert delivery, then reconcile the temporary change"
@@ -22,5 +22,5 @@
     "workProducts": 65,
     "gates": 9
   },
-  "conclusion": "The corrected process is internally coherent and enactable for this scenario. Remaining claims about efficiency, usability, and comparative effectiveness require empirical cases with practitioners."
+  "conclusion": "Definition coverage and role/producer bindings are checked. Input availability, work-product contents, gate validity and practical effectiveness are not established by this inventory."
 }

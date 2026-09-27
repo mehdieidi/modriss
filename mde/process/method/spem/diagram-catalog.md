@@ -65,7 +65,7 @@ SPEM representation.
 
 ## Synchronization rules
 
-- Change lifecycle behavior first in the process-definition JSON.
+- Change lifecycle behavior first in `mde/process/tools/lib/spem-end-to-end.mjs`, then rebuild the process-definition JSON.
 - Rebuild the method package so the method-content index, inventory, and SPEM
   XML are generated from the same sources.
 - Update the L0–L3 PlantUML view affected by the change.
@@ -78,3 +78,5 @@ SPEM representation.
 - Run `node ../tools/verify-method-package.mjs` and
   `node ../tools/verify-lifecycle-sync.mjs` before treating the artifacts as a
   synchronized baseline.
+
+The ReturnFlow evidence-handoff HTML/SVG in `../diagrams/` is a companion control view. G6 responsibility starts before production exposure; G8 separates live-service closure from funded retained-record custody.

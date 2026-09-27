@@ -1,0 +1,80 @@
+{
+  "caseId": "returnflow-analytical-2026-09-27",
+  "evidenceKind": "simulated",
+  "note": "Constructed research fixture. This is not an actual release approval or an executable model.",
+  "scope": ["RF-01", "RF-02", "RF-03", "RF-04", "RF-05", "RF-07"],
+  "revision": {
+    "method": "returnflow-audit-v1",
+    "cim": "conceptual-cim-v1",
+    "pim": "conceptual-pim-v2",
+    "psm": "conceptual-aws-psm-v2",
+    "transform": "scenario-profile-v1",
+    "generator": "scenario-egx-v1",
+    "code": "proposed-adapter-v1",
+    "configuration": "scenario-stage-v1",
+    "candidate": "c1"
+  },
+  "evidence": [
+    {
+      "id": "RF-REVIEW",
+      "path": "mde/process/method/14-returnflow-enactment-audit.md",
+      "kind": "simulated",
+      "scope": ["RF-01", "RF-02", "RF-03", "RF-04", "RF-05", "RF-07"],
+      "revision": {
+        "method": "returnflow-audit-v1",
+        "cim": "conceptual-cim-v1",
+        "pim": "conceptual-pim-v2",
+        "psm": "conceptual-aws-psm-v2",
+        "transform": "scenario-profile-v1",
+        "generator": "scenario-egx-v1",
+        "code": "proposed-adapter-v1",
+        "configuration": "scenario-stage-v1",
+        "candidate": "c1"
+      }
+    }
+  ],
+  "gate": {
+    "id": "G6",
+    "decision": "accept",
+    "authority": "Farah and Eli (fictional)",
+    "reviewDate": "2026-09-27",
+    "evidenceIds": ["RF-REVIEW"],
+    "openBlockers": [],
+    "exceptions": [],
+    "promotion": {
+      "operator": "Dev (fictional)",
+      "serviceOwner": "Farah (fictional)",
+      "responseCoverage": "Named operator and backup throughout exposure until G7",
+      "previousLiveCandidate": null,
+      "recovery": "Stop intake, quarantine pending work, reconcile provider outcomes; do not undo completed refunds"
+    }
+  },
+  "change": {
+    "id": "RF-CHANGE-01",
+    "authoritativeOwner": "PSM",
+    "disposition": "bounded-mde-release",
+    "emergencyDrift": false,
+    "reconciled": true,
+    "state": "closed"
+  },
+  "closure": {
+    "gate": "G8",
+    "decision": "accept",
+    "liveReleaseCount": 0,
+    "liveAccessPaths": 0,
+    "unassignedChargeableResources": 0,
+    "openObligations": [],
+    "retainedAssets": [
+      {
+        "id": "refund-evidence-archive",
+        "custodian": "Ari / receiving records service (fictional)",
+        "acceptance": "Scenario transfer RT-01 accepted",
+        "accessPolicy": "Records-only readers; retired application credentials revoked",
+        "fundedBudgetOwner": "Ari",
+        "expiryPolicy": "24 months per record; holds reviewed before deletion",
+        "deletionOwner": "Receiving records service",
+        "verification": "Scenario inventory and restore/access review RT-01"
+      }
+    ]
+  }
+}

@@ -14,6 +14,8 @@ repeat
   :Assemble immutable release candidate;
   :Review compatibility, security, quality, cost,\nrecovery and operational readiness at G6;
 repeat while (G6 rejected?) is (yes — correct authoritative source)
+:Assign promotion operator and Service Owner before exposure;
+:Confirm first-release stop/drain/reconcile recovery;
 :Promote progressively;
 if (Stop threshold breached?) then (yes)
   :Retain accepted baseline in operation and create corrective work;
@@ -23,7 +25,8 @@ endif
 if (Retirement authorized?) then (yes)
   :Exit Phase 1 and enter Phase 2;
   :Complete retirement work while Operations independently\nsustains and shuts down remaining live releases;
-  :Accept shared G8 closure evidence\nwhen no live release remains;
+  :Accept shared G8 closure evidence\nwhen no live release remains and retained records
+have accepted funded custody;
   stop
 else (no)
   :Select roadmap and operational evidence\nfor the next release hypothesis;

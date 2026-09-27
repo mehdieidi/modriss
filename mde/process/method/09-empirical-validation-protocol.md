@@ -204,3 +204,7 @@ Report separately:
 This prevents an implemented generator from being mistaken for a complete
 method and prevents a well-written process requirement from being mistaken for
 empirical evidence of benefit.
+
+## Mandatory negative-case supplement from ReturnFlow
+
+Include first-release failure without a previous baseline, provider success followed by client timeout, stale candidate evidence, expired exceptions, model-owned operational tuning, conflicting regeneration and records retained after retirement. Predeclare their expected decisions before execution. Record per-task occurrence inputs/outputs and actual report digests; generated definition inventories are planning instruments only. Preserve blocked and unexecuted steps. Measure evidence-entry effort and review queue delay to test whether the controls cost more than they save. See [14-returnflow-enactment-audit.md](14-returnflow-enactment-audit.md) for the analytical protocol; do not count its fictional participants or results as either empirical case.

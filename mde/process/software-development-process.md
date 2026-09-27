@@ -416,3 +416,16 @@ of the development process across projects. The exhaustive fictional
 [ColdChain Sentinel enactment](method/13-hypothetical-enactment-and-process-validation.md)
 tests internal consistency and complete definition coverage, but does not
 replace those empirical studies.
+
+## Enactment-derived handoff controls
+
+The ReturnFlow analytical audit clarifies that G6 assigns promotion and service
+response ownership before first production exposure, including first-release
+recovery without a previous baseline. Gate evidence must match current inputs;
+changed dependencies, conflicts and expired exceptions reopen affected review.
+Persistent model-owned configuration follows its MDE/release path. G8 allows
+retained archives only with verified receiving custody, access control, funded
+cost, expiry and deletion ownership. These are specified controls; practitioner
+effectiveness is not established by the hypothetical walkthrough.
+
+See [ReturnFlow audit](method/14-returnflow-enactment-audit.md).

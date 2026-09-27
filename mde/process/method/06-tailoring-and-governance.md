@@ -234,6 +234,19 @@ A gate records decision authority, date, exact revisions, criteria, evidence,
 findings/exceptions, and follow-up. A meeting or checkbox is not a gate without
 this record.
 
+The evidence validity contract in `04-development-process.md` applies to every
+profile. At G1 name review turnaround and escalation ownership; do not invent
+measured service expectations before data exists. Combining roles or reviews
+does not allow an author to self-approve where independence is required. A
+missing reviewer blocks that decision or requires an explicitly authorized
+substitute under the same independence rule.
+
+At G6 assign response coverage from first production exposure, including before
+G7 and when there is no previous live baseline. At G8 distinguish retired-service
+resources from retained records transferred to funded custody. Narrow change
+paths reuse unaffected evidence only after impact review; modeled configuration
+changes cannot be classified operations-only on size alone.
+
 ## Method governance
 
 The Method Engineer owns library coherence; content-area owners maintain

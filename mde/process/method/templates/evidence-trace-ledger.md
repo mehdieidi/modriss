@@ -1,5 +1,13 @@
 # Evidence and Trace Ledger
 
+Record each task occurrence separately. A definition ID or generated sentence
+does not prove execution. Evidence must state its kind (planned, simulated,
+repository-checked, empirically observed), artifact path, revision/digest, scope,
+producer/reviewer, outcome, relevant dependency revisions and reuse rationale.
+Changed dependencies, unresolved conflicts and expired exceptions reopen
+affected acceptance. Never reuse a passing result merely because its path is
+unchanged. Analytical case records cannot authorize production gates.
+
 Use one row per trace relation or controlled decision. The ledger can be
 implemented in a repository or tracker; this template defines the minimum
 information rather than requiring a spreadsheet.

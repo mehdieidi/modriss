@@ -255,3 +255,7 @@ This supports a rigorous design claim. It does not substitute for empirical
 validation. Case-study enactment, practitioner review, controlled comparison,
 and measurement of project outcomes remain necessary to establish practical
 effectiveness.
+
+## Construction iteration: ReturnFlow audit
+
+On 2026-09-27, the baseline at `1d066f44d7c4f7be32b960dbdf5800694639fcfb` was inspected using a six-person marketplace-returns scenario. The iteration followed situation → handoff counterexample → ER-01–07 → existing fragment adaptation → synchronized process source/views → record checks. [The case](14-returnflow-enactment-audit.md) records the rejected alternatives, evidence and claim limits. MF-03/UF-01 evidence practices, MF-10/13 revision controls, MF-13/14 promotion responsibility, MF-16 ownership-based routing and MF-17 custody closure are refined. No new phase or blanket gate is added. Verification of selected contracts does not demonstrate practitioner usability.

@@ -832,7 +832,8 @@
           <ownedTaskDefinitionParameter xmi:type="spem:Default_TaskDefinitionParameter" xmi:id="id_task.e2e.ops.a4.t1.out.e2e-artifact.operational-work-item" direction="out" optionality="mandatory" parameterType="id_e2e-artifact.operational-work-item"/>
           <step xmi:type="spem:Step" xmi:id="id_task.e2e.ops.a4.t1.step.1" sectionName="Step 1" sectionDescription="Classify the authoritative source as product/domain, architecture, platform, generator, artifact, or operations and confirm whether the item remains a bounded Kanban service item or is committed to a planned release."/>
           <step xmi:type="spem:Step" xmi:id="id_task.e2e.ops.a4.t1.step.2" sectionName="Step 2" sectionDescription="Use traces and dependency ownership to identify impacted downstream levels and teams."/>
-          <step xmi:type="spem:Step" xmi:id="id_task.e2e.ops.a4.t1.step.3" sectionName="Step 3" sectionDescription="Send product-changing work to the Development and Delivery Process at the smallest affected phase or activity; after release, reconcile emergency downstream fixes into the authoritative source and close the service item only when evidence returns."/>
+          <step xmi:type="spem:Step" xmi:id="id_task.e2e.ops.a4.t1.step.3" sectionName="Step 3" sectionDescription="Route persistent model-owned configuration, including modeled alarm thresholds, through affected MDE and release controls; operations-only work must not leave model/product drift."/>
+          <step xmi:type="spem:Step" xmi:id="id_task.e2e.ops.a4.t1.step.4" sectionName="Step 4" sectionDescription="Send product-changing work to the Development and Delivery Process at the smallest affected phase or activity; after release, reconcile emergency downstream fixes into the authoritative source and close the service item only when evidence returns."/>
           <modriss:sourceProcess>end-to-end</modriss:sourceProcess>
         </ownedMethodContentMember>
         <ownedMethodContentMember xmi:type="spem:TaskDefinition" xmi:id="id_task.e2e.ops.a5.t1" name="Inspect flow, quality, cost, and coordination metrics" modriss:sourceId="task.e2e.ops.a5.t1">
@@ -1236,7 +1237,7 @@
           <ownedTaskDefinitionParameter xmi:type="spem:Default_TaskDefinitionParameter" xmi:id="id_task.e2e.ph2.st2.t2.out.e2e-artifact.retirement-record" direction="out" optionality="mandatory" parameterType="id_e2e-artifact.retirement-record"/>
           <ownedTaskDefinitionParameter xmi:type="spem:Default_TaskDefinitionParameter" xmi:id="id_task.e2e.ph2.st2.t2.out.e2e-artifact.cost-model" direction="out" optionality="mandatory" parameterType="id_e2e-artifact.cost-model"/>
           <step xmi:type="spem:Step" xmi:id="id_task.e2e.ph2.st2.t2.step.1" sectionName="Step 1" sectionDescription="Continue required operational coverage during migration, then disable traffic, scheduled work, credentials, access paths, alerts, and environments in the approved order."/>
-          <step xmi:type="spem:Step" xmi:id="id_task.e2e.ph2.st2.t2.step.2" sectionName="Step 2" sectionDescription="Verify replacement ownership, customer communication, billing cessation, and removal of residual chargeable resources."/>
+          <step xmi:type="spem:Step" xmi:id="id_task.e2e.ph2.st2.t2.step.2" sectionName="Step 2" sectionDescription="Verify replacement ownership, customer communication, retired-service billing cessation, and removal or funded transfer of chargeable resources."/>
           <step xmi:type="spem:Step" xmi:id="id_task.e2e.ph2.st2.t2.step.3" sectionName="Step 3" sectionDescription="Retain required source, model, trace, release, incident, and decision records."/>
           <modriss:sourceProcess>end-to-end</modriss:sourceProcess>
         </ownedMethodContentMember>
@@ -1252,7 +1253,8 @@
           <ownedTaskDefinitionParameter xmi:type="spem:Default_TaskDefinitionParameter" xmi:id="id_task.e2e.ph2.st2.t3.out.e2e-artifact.retirement-record" direction="out" optionality="mandatory" parameterType="id_e2e-artifact.retirement-record"/>
           <step xmi:type="spem:Step" xmi:id="id_task.e2e.ph2.st2.t3.step.1" sectionName="Step 1" sectionDescription="Reconcile every declared data class, store, backup, export, legal hold, record series, and derived copy with the approved disposition."/>
           <step xmi:type="spem:Step" xmi:id="id_task.e2e.ph2.st2.t3.step.2" sectionName="Step 2" sectionDescription="Verify deletion, sanitization, transfer, retention ownership, and evidence custody with Security and Service Owners."/>
-          <step xmi:type="spem:Step" xmi:id="id_task.e2e.ph2.st2.t3.step.3" sectionName="Step 3" sectionDescription="Record unresolved obligations as blockers to G8 rather than closing them by exception without authority."/>
+          <step xmi:type="spem:Step" xmi:id="id_task.e2e.ph2.st2.t3.step.3" sectionName="Step 3" sectionDescription="Record retained-archive inventory, receiving acceptance, custodian, controlled access, funded budget, expiry and deletion owner; retention may outlive service closure."/>
+          <step xmi:type="spem:Step" xmi:id="id_task.e2e.ph2.st2.t3.step.4" sectionName="Step 4" sectionDescription="Record unresolved obligations as blockers to G8 rather than closing them by exception without authority."/>
           <modriss:sourceProcess>end-to-end</modriss:sourceProcess>
         </ownedMethodContentMember>
         <ownedMethodContentMember xmi:type="spem:TaskDefinition" xmi:id="id_task.e2e.ph2.st3.t1" name="Complete closure review" modriss:sourceId="task.e2e.ph2.st3.t1">
@@ -1293,6 +1295,7 @@
           <step xmi:type="spem:Step" xmi:id="id_task.e2e.rel.a1.t1.step.1" sectionName="Step 1" sectionDescription="Select accepted increments and compatible model/artifact revisions."/>
           <step xmi:type="spem:Step" xmi:id="id_task.e2e.rel.a1.t1.step.2" sectionName="Step 2" sectionDescription="Resolve cross-team dependency and compatibility checks."/>
           <step xmi:type="spem:Step" xmi:id="id_task.e2e.rel.a1.t1.step.3" sectionName="Step 3" sectionDescription="Create the release record with exact inputs and promotion sequence."/>
+          <step xmi:type="spem:Step" xmi:id="id_task.e2e.rel.a1.t1.step.4" sectionName="Step 4" sectionDescription="Reject stale candidate evidence, unresolved transformation conflicts and expired exceptions; reuse unaffected evidence only with impact-review approval."/>
           <modriss:sourceProcess>end-to-end</modriss:sourceProcess>
         </ownedMethodContentMember>
         <ownedMethodContentMember xmi:type="spem:TaskDefinition" xmi:id="id_task.e2e.rel.a1.t2" name="Review release evidence and go/no-go criteria" modriss:sourceId="task.e2e.rel.a1.t2">
@@ -1313,8 +1316,9 @@
           <ownedTaskDefinitionParameter xmi:type="spem:Default_TaskDefinitionParameter" xmi:id="id_task.e2e.rel.a1.t2.out.e2e-artifact.cost-model" direction="out" optionality="mandatory" parameterType="id_e2e-artifact.cost-model"/>
           <ownedTaskDefinitionParameter xmi:type="spem:Default_TaskDefinitionParameter" xmi:id="id_task.e2e.rel.a1.t2.out.e2e-artifact.risk-register" direction="out" optionality="mandatory" parameterType="id_e2e-artifact.risk-register"/>
           <step xmi:type="spem:Step" xmi:id="id_task.e2e.rel.a1.t2.step.1" sectionName="Step 1" sectionDescription="Inspect readiness assessments, validation results, security exceptions, rollback plan, operational runbooks, forecast/unit-cost evidence, budget guardrails, and approvals."/>
-          <step xmi:type="spem:Step" xmi:id="id_task.e2e.rel.a1.t2.step.2" sectionName="Step 2" sectionDescription="Confirm open blockers are zero or explicitly accepted under the tailored method profile."/>
-          <step xmi:type="spem:Step" xmi:id="id_task.e2e.rel.a1.t2.step.3" sectionName="Step 3" sectionDescription="Record the G6 decision and decision owners."/>
+          <step xmi:type="spem:Step" xmi:id="id_task.e2e.rel.a1.t2.step.2" sectionName="Step 2" sectionDescription="Before production exposure name the promotion operator, Service Owner and response coverage; define first-release stop, drain and external-effect reconciliation when no accepted baseline exists."/>
+          <step xmi:type="spem:Step" xmi:id="id_task.e2e.rel.a1.t2.step.3" sectionName="Step 3" sectionDescription="Confirm open blockers are zero or explicitly accepted under the tailored method profile."/>
+          <step xmi:type="spem:Step" xmi:id="id_task.e2e.rel.a1.t2.step.4" sectionName="Step 4" sectionDescription="Record the G6 decision and decision owners."/>
           <modriss:sourceProcess>end-to-end</modriss:sourceProcess>
         </ownedMethodContentMember>
         <ownedMethodContentMember xmi:type="spem:TaskDefinition" xmi:id="id_task.e2e.rel.a2.t1" name="Deploy and validate progressively" modriss:sourceId="task.e2e.rel.a2.t1">
@@ -1348,7 +1352,7 @@
           <ownedTaskDefinitionParameter xmi:type="spem:Default_TaskDefinitionParameter" xmi:id="id_task.e2e.rel.a2.t2.out.e2e-artifact.operations-record" direction="out" optionality="mandatory" parameterType="id_e2e-artifact.operations-record"/>
           <step xmi:type="spem:Step" xmi:id="id_task.e2e.rel.a2.t2.step.1" sectionName="Step 1" sectionDescription="Verify dashboards, alerts, runbooks, escalation paths, support ownership, cost/anomaly views, and recovery access."/>
           <step xmi:type="spem:Step" xmi:id="id_task.e2e.rel.a2.t2.step.2" sectionName="Step 2" sectionDescription="Confirm rollback and data-recovery actions are usable for the release."/>
-          <step xmi:type="spem:Step" xmi:id="id_task.e2e.rel.a2.t2.step.3" sectionName="Step 3" sectionDescription="Accept operational ownership or return the release to rework."/>
+          <step xmi:type="spem:Step" xmi:id="id_task.e2e.rel.a2.t2.step.3" sectionName="Step 3" sectionDescription="Accept operational ownership or return the release to rework; until G7 the named promotion operator and Service Owner retain responsibility."/>
           <modriss:sourceProcess>end-to-end</modriss:sourceProcess>
         </ownedMethodContentMember>
         <ownedMethodContentMember xmi:type="spem:TaskDefinition" xmi:id="id_task.e2e.rel.a3.t1" name="Review release outcome and update roadmap" modriss:sourceId="task.e2e.rel.a3.t1">
@@ -3462,10 +3466,10 @@
         </ownedMethodContentMember>
         <ownedMethodContentMember xmi:type="spem:Guidance" xmi:id="id_guidance.fragment.mf-13" name="MF-13 — Test in the large and release qualification" modriss:sourceId="guidance.fragment.mf-13">
           <modriss:guidanceKind>Process Pattern</modriss:guidanceKind>
-          <modriss:description>Locally correct functions and templates may fail as an integrated serverless service. Result: System, acceptance, NFR, security, resilience, recovery, and operational evidence support a release decision.</modriss:description>
+          <modriss:description>Locally correct functions and templates may fail as an integrated serverless service. Result: System, acceptance, NFR, security, resilience, recovery, and operational evidence support a release decision. Evidence is current for the candidate; changed inputs, unresolved conflicts and expired exceptions reopen affected acceptance.</modriss:description>
           <modriss:sourcePatternId>MF-13</modriss:sourcePatternId>
           <modriss:initialContext>A candidate baseline can be deployed to a representative non-production environment.</modriss:initialContext>
-          <modriss:resultContext>System, acceptance, NFR, security, resilience, recovery, and operational evidence support a release decision.</modriss:resultContext>
+          <modriss:resultContext>System, acceptance, NFR, security, resilience, recovery, and operational evidence support a release decision. Evidence is current for the candidate; changed inputs, unresolved conflicts and expired exceptions reopen affected acceptance.</modriss:resultContext>
           <modriss:selectionRule>required with risk-proportional test selection</modriss:selectionRule>
           <modriss:methodRoleRef>R-02</modriss:methodRoleRef>
           <modriss:methodRoleRef>R-09</modriss:methodRoleRef>
@@ -3487,10 +3491,10 @@
         </ownedMethodContentMember>
         <ownedMethodContentMember xmi:type="spem:Guidance" xmi:id="id_guidance.fragment.mf-14" name="MF-14 — Progressive CI/CD and transition" modriss:sourceId="guidance.fragment.mf-14">
           <modriss:guidanceKind>Process Pattern</modriss:guidanceKind>
-          <modriss:description>A technically valid candidate can still fail during promotion or handover. Result: The release is progressively promoted, observed, recorded, and accepted for operation.</modriss:description>
+          <modriss:description>A technically valid candidate can still fail during promotion or handover. Result: The release is progressively promoted, observed, recorded, and accepted for operation. Promotion operator and Service Owner cover first exposure before G7; first-release recovery does not assume a previous accepted baseline.</modriss:description>
           <modriss:sourcePatternId>MF-14</modriss:sourcePatternId>
           <modriss:initialContext>An immutable qualified candidate and recovery plan exist.</modriss:initialContext>
-          <modriss:resultContext>The release is progressively promoted, observed, recorded, and accepted for operation.</modriss:resultContext>
+          <modriss:resultContext>The release is progressively promoted, observed, recorded, and accepted for operation. Promotion operator and Service Owner cover first exposure before G7; first-release recovery does not assume a previous accepted baseline.</modriss:resultContext>
           <modriss:selectionRule>required; deployment strategy varies</modriss:selectionRule>
           <modriss:methodRoleRef>R-02</modriss:methodRoleRef>
           <modriss:methodRoleRef>R-11</modriss:methodRoleRef>
@@ -3536,10 +3540,10 @@
         </ownedMethodContentMember>
         <ownedMethodContentMember xmi:type="spem:Guidance" xmi:id="id_guidance.fragment.mf-16" name="MF-16 — Incident, problem, and controlled change propagation" modriss:sourceId="guidance.fragment.mf-16">
           <modriss:guidanceKind>Process Pattern</modriss:guidanceKind>
-          <modriss:description>Emergency or evolutionary changes can diverge models, generators, code, and the running service. Result: Service is restored where necessary and change is routed to the earliest authoritative source and re-evidenced.</modriss:description>
+          <modriss:description>Emergency or evolutionary changes can diverge models, generators, code, and the running service. Result: Service is restored where necessary and change is routed to the earliest authoritative source and re-evidenced. Persistent model-owned configuration follows the affected delivery path; emergency drift is removed or reconciled before closure.</modriss:description>
           <modriss:sourcePatternId>MF-16</modriss:sourcePatternId>
           <modriss:initialContext>An incident, finding, dependency, or requested change exists.</modriss:initialContext>
-          <modriss:resultContext>Service is restored where necessary and change is routed to the earliest authoritative source and re-evidenced.</modriss:resultContext>
+          <modriss:resultContext>Service is restored where necessary and change is routed to the earliest authoritative source and re-evidenced. Persistent model-owned configuration follows the affected delivery path; emergency drift is removed or reconciled before closure.</modriss:resultContext>
           <modriss:selectionRule>required</modriss:selectionRule>
           <modriss:methodRoleRef>R-05</modriss:methodRoleRef>
           <modriss:methodRoleRef>R-06</modriss:methodRoleRef>
@@ -3560,10 +3564,10 @@
         </ownedMethodContentMember>
         <ownedMethodContentMember xmi:type="spem:Guidance" xmi:id="id_guidance.fragment.mf-17" name="MF-17 — Retirement, migration, and closure" modriss:sourceId="guidance.fragment.mf-17">
           <modriss:guidanceKind>Process Pattern</modriss:guidanceKind>
-          <modriss:description>A service can be switched off while data, consumers, access, resources, costs, or legal obligations remain. Result: Users, data, integrations, access, resources, cost, and evidence are migrated or closed and accepted.</modriss:description>
+          <modriss:description>A service can be switched off while data, consumers, access, resources, costs, or legal obligations remain. Result: Users, data, integrations, access, resources, cost, and evidence are migrated or closed and accepted. Continuing archive obligations have verified receiving custody, controlled access, funded cost, expiry and deletion ownership.</modriss:description>
           <modriss:sourcePatternId>MF-17</modriss:sourcePatternId>
           <modriss:initialContext>A retirement/replacement trigger and accountable product/service owners exist.</modriss:initialContext>
-          <modriss:resultContext>Users, data, integrations, access, resources, cost, and evidence are migrated or closed and accepted.</modriss:resultContext>
+          <modriss:resultContext>Users, data, integrations, access, resources, cost, and evidence are migrated or closed and accepted. Continuing archive obligations have verified receiving custody, controlled access, funded cost, expiry and deletion ownership.</modriss:resultContext>
           <modriss:selectionRule>required</modriss:selectionRule>
           <modriss:methodRoleRef>R-01</modriss:methodRoleRef>
           <modriss:methodRoleRef>R-02</modriss:methodRoleRef>
@@ -3649,10 +3653,10 @@
         </ownedMethodContentMember>
         <ownedMethodContentMember xmi:type="spem:Guidance" xmi:id="id_guidance.fragment.uf-01" name="UF-01 — Integrated management, assurance, and evidence" modriss:sourceId="guidance.fragment.uf-01">
           <modriss:guidanceKind>Continuous Practice Pattern</modriss:guidanceKind>
-          <modriss:description>Lifecycle tasks become disconnected without continuous planning, risk, quality, security, change, trace, and evidence management. Result: Decisions, dependencies, risks, findings, revisions, evidence, and improvement remain controlled throughout the run.</modriss:description>
+          <modriss:description>Lifecycle tasks become disconnected without continuous planning, risk, quality, security, change, trace, and evidence management. Result: Decisions, dependencies, risks, findings, revisions, evidence, and improvement remain controlled throughout the run. Evidence distinguishes planned, simulated, repository-checked and observed results; definition coverage is not task execution.</modriss:description>
           <modriss:sourcePatternId>UF-01</modriss:sourcePatternId>
           <modriss:initialContext>An authorized product/process run exists.</modriss:initialContext>
-          <modriss:resultContext>Decisions, dependencies, risks, findings, revisions, evidence, and improvement remain controlled throughout the run.</modriss:resultContext>
+          <modriss:resultContext>Decisions, dependencies, risks, findings, revisions, evidence, and improvement remain controlled throughout the run. Evidence distinguishes planned, simulated, repository-checked and observed results; definition coverage is not task execution.</modriss:resultContext>
           <modriss:selectionRule>continuous and required; depth is tailored</modriss:selectionRule>
           <modriss:methodRoleRef>R-04</modriss:methodRoleRef>
           <modriss:methodRoleRef>R-05</modriss:methodRoleRef>
@@ -4699,7 +4703,7 @@
             <modriss:requiredEvidenceRef>artifact.security-record</modriss:requiredEvidenceRef>
             <modriss:requiredEvidenceRef>artifact.operations-pack</modriss:requiredEvidenceRef>
           </nestedBreakdownElement>
-          <nestedBreakdownElement xmi:type="spem:Milestone" xmi:id="id_e2e.g6" name="Release authorized, rejected, or exception accepted" modriss:sourceId="e2e.g6" modriss:gateId="G6" modriss:phaseRef="id_e2e.ph1" modriss:stageRef="id_e2e.rel.a1" modriss:acceptanceCondition="The exact immutable candidate and recovery, assurance, operational, and economic evidence are accepted.">
+          <nestedBreakdownElement xmi:type="spem:Milestone" xmi:id="id_e2e.g6" name="Release authorized, rejected, or exception accepted" modriss:sourceId="e2e.g6" modriss:gateId="G6" modriss:phaseRef="id_e2e.ph1" modriss:stageRef="id_e2e.rel.a1" modriss:acceptanceCondition="The exact immutable candidate and current recovery, assurance, operational, and economic evidence are accepted; promotion operator, Service Owner, response coverage and first-release recovery are assigned before exposure.">
             <modriss:authorityRoleRef>role.product-owner</modriss:authorityRoleRef>
             <modriss:authorityRoleRef>role.process-reviewer</modriss:authorityRoleRef>
             <modriss:authorityRoleRef>role.security-engineer</modriss:authorityRoleRef>
@@ -4714,7 +4718,7 @@
             <modriss:requiredEvidenceRef>e2e-artifact.release-record</modriss:requiredEvidenceRef>
             <modriss:requiredEvidenceRef>e2e-artifact.operations-record</modriss:requiredEvidenceRef>
           </nestedBreakdownElement>
-          <nestedBreakdownElement xmi:type="spem:Milestone" xmi:id="id_e2e.g8" name="Shared lifecycle closure accepted" modriss:sourceId="e2e.g8" modriss:gateId="G8" modriss:phaseRef="id_e2e.ph2" modriss:stageRef="id_e2e.ph2.st3" modriss:acceptanceCondition="No live release, unowned data/records obligation, active access path, residual chargeable resource, or unresolved closure blocker remains.">
+          <nestedBreakdownElement xmi:type="spem:Milestone" xmi:id="id_e2e.g8" name="Shared lifecycle closure accepted" modriss:sourceId="e2e.g8" modriss:gateId="G8" modriss:phaseRef="id_e2e.ph2" modriss:stageRef="id_e2e.ph2.st3" modriss:acceptanceCondition="No live release, unowned data/records obligation, retired-service access path, unassigned chargeable resource, or unresolved closure blocker remains; retained archives have accepted custody, controlled access, funded cost, expiry and deletion ownership.">
             <modriss:authorityRoleRef>role.sponsor</modriss:authorityRoleRef>
             <modriss:authorityRoleRef>role.product-owner</modriss:authorityRoleRef>
             <modriss:authorityRoleRef>role.service-owner</modriss:authorityRoleRef>

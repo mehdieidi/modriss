@@ -160,3 +160,7 @@ Tasks and roles may be combined or replaced, but a valid profile cannot remove:
 - reproducible generation and release identification;
 - rollback/recovery and operational ownership; or
 - data, integration, access, and evidence closure at retirement.
+
+## Requirements refinement from ReturnFlow (2026-09-27)
+
+ER-01 distinguishes evidence provenance from definition coverage; ER-02 preserves evaluation criterion types; ER-03 assigns response/recovery before first traffic; ER-04 permits accepted funded archive custody after service closure; ER-05 routes persistent changes by authoritative ownership; ER-06 invalidates affected acceptance on changed inputs/conflicts/expired exceptions; ER-07 bounds feature and effectiveness claims. These refine existing evidence, governance, maintenance and closure requirements rather than add lifecycle phases. Context, alternatives, fragment mapping and acceptance counterexamples are in [14, findings F01–F07](14-returnflow-enactment-audit.md). They are tested design hypotheses, not independently stabilized requirements.

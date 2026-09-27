@@ -926,6 +926,7 @@ The primary performer is **Release Engineer**. The approved method profile may a
 1. Select accepted increments and compatible model/artifact revisions.
 2. Resolve cross-team dependency and compatibility checks.
 3. Create the release record with exact inputs and promotion sequence.
+4. Reject stale candidate evidence, unresolved transformation conflicts and expired exceptions; reuse unaffected evidence only with impact-review approval.
 
 **Outputs**
 
@@ -969,8 +970,9 @@ The primary performer is **Process Reviewer**. The work normally involves Produc
 **How to perform the task**
 
 1. Inspect readiness assessments, validation results, security exceptions, rollback plan, operational runbooks, forecast/unit-cost evidence, budget guardrails, and approvals.
-2. Confirm open blockers are zero or explicitly accepted under the tailored method profile.
-3. Record the G6 decision and decision owners.
+2. Before production exposure name the promotion operator, Service Owner and response coverage; define first-release stop, drain and external-effect reconciliation when no accepted baseline exists.
+3. Confirm open blockers are zero or explicitly accepted under the tailored method profile.
+4. Record the G6 decision and decision owners.
 
 **Outputs**
 
@@ -1058,7 +1060,7 @@ The primary performer is **Service Owner**. The work normally involves Release E
 
 1. Verify dashboards, alerts, runbooks, escalation paths, support ownership, cost/anomaly views, and recovery access.
 2. Confirm rollback and data-recovery actions are usable for the release.
-3. Accept operational ownership or return the release to rework.
+3. Accept operational ownership or return the release to rework; until G7 the named promotion operator and Service Owner retain responsibility.
 
 **Outputs**
 
@@ -1241,7 +1243,7 @@ The primary performer is **Service Owner**. The work normally involves Cloud Pla
 **How to perform the task**
 
 1. Continue required operational coverage during migration, then disable traffic, scheduled work, credentials, access paths, alerts, and environments in the approved order.
-2. Verify replacement ownership, customer communication, billing cessation, and removal of residual chargeable resources.
+2. Verify replacement ownership, customer communication, retired-service billing cessation, and removal or funded transfer of chargeable resources.
 3. Retain required source, model, trace, release, incident, and decision records.
 
 **Outputs**
@@ -1285,7 +1287,8 @@ The primary performer is **Records and Data Steward**. The work normally involve
 
 1. Reconcile every declared data class, store, backup, export, legal hold, record series, and derived copy with the approved disposition.
 2. Verify deletion, sanitization, transfer, retention ownership, and evidence custody with Security and Service Owners.
-3. Record unresolved obligations as blockers to G8 rather than closing them by exception without authority.
+3. Record retained-archive inventory, receiving acceptance, custodian, controlled access, funded budget, expiry and deletion owner; retention may outlive service closure.
+4. Record unresolved obligations as blockers to G8 rather than closing them by exception without authority.
 
 **Outputs**
 
@@ -1354,7 +1357,7 @@ The primary performer is **Process Reviewer**. The work normally involves Sponso
 **Checks and evidence**
 
 - Closure identifies retained evidence, unresolved obligations, and accountable custodians
-- G8 is accepted only when no live release remains and cost, access, and data obligations are closed
+- G8 is accepted only when no live release remains and cost, access, and data obligations are discharged or transferred to accepted funded custody
 
 **Uses in this process**
 

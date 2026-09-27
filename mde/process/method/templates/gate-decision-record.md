@@ -1,13 +1,20 @@
 # Gate Decision Record
 
-| Field                             | Value                                      |
-| --------------------------------- | ------------------------------------------ |
-| Gate and process-run ID           |                                            |
-| Decision date                     |                                            |
-| Exact scope and revisions         |                                            |
-| Decision                          | Accept / Rework / Defer / Exception / Stop |
-| Decision authority                |                                            |
-| Independent reviewer, if required |                                            |
+| Field                                                           | Value                                                           |
+| --------------------------------------------------------------- | --------------------------------------------------------------- |
+| Gate and process-run ID                                         |                                                                 |
+| Decision date                                                   |                                                                 |
+| Exact scope and revisions                                       |                                                                 |
+| Decision                                                        | Accept / Rework / Defer / Exception / Stop                      |
+| Decision authority                                              |                                                                 |
+| Independent reviewer, if required                               |                                                                 |
+| Evidence kind                                                   | Planned / Simulated / Repository-checked / Empirically observed |
+| Relevant model/tool/code/configuration/candidate revision tuple |                                                                 |
+| Superseded decision and reason for reopening                    |                                                                 |
+| Reused evidence and impact-review approval                      |                                                                 |
+| Exception expiry and review owner                               |                                                                 |
+| G6 promotion operator, Service Owner and first-release recovery |                                                                 |
+| G8 custody transfers and receiving acceptance                   |                                                                 |
 
 ## Evidence considered
 

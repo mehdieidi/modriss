@@ -194,6 +194,7 @@ Assess and route a maintenance change. Its primary performer is `role.delivery-l
 
 - Classify the authoritative source as product/domain, architecture, platform, generator, artifact, or operations and confirm whether the item remains a bounded Kanban service item or is committed to a planned release.
 - Use traces and dependency ownership to identify impacted downstream levels and teams.
+- Route persistent model-owned configuration, including modeled alarm thresholds, through affected MDE and release controls; operations-only work must not leave model/product drift.
 - Send product-changing work to the Development and Delivery Process at the smallest affected phase or activity; after release, reconcile emergency downstream fixes into the authoritative source and close the service item only when evidence returns.
 
 **Exit.** Assess and route a maintenance change evidence is recorded.
@@ -529,7 +530,7 @@ Decommission service, access, and cost surfaces. Its primary performer is `role.
 **Work.**
 
 - Continue required operational coverage during migration, then disable traffic, scheduled work, credentials, access paths, alerts, and environments in the approved order.
-- Verify replacement ownership, customer communication, billing cessation, and removal of residual chargeable resources.
+- Verify replacement ownership, customer communication, retired-service billing cessation, and removal or funded transfer of chargeable resources.
 - Retain required source, model, trace, release, incident, and decision records.
 
 **Exit.** Decommission service, access, and cost surfaces evidence is recorded.
@@ -544,6 +545,7 @@ Verify records retention and data disposition. Its primary performer is `role.re
 
 - Reconcile every declared data class, store, backup, export, legal hold, record series, and derived copy with the approved disposition.
 - Verify deletion, sanitization, transfer, retention ownership, and evidence custody with Security and Service Owners.
+- Record retained-archive inventory, receiving acceptance, custodian, controlled access, funded budget, expiry and deletion owner; retention may outlive service closure.
 - Record unresolved obligations as blockers to G8 rather than closing them by exception without authority.
 
 **Exit.** Verify records retention and data disposition evidence is recorded.
@@ -563,7 +565,7 @@ Complete closure review. Its primary performer is `role.process-reviewer`; suppo
 
 **Exit.** Complete closure review evidence is recorded.
 
-**Checks.** Closure identifies retained evidence, unresolved obligations, and accountable custodians. G8 is accepted only when no live release remains and cost, access, and data obligations are closed.
+**Checks.** Closure identifies retained evidence, unresolved obligations, and accountable custodians. G8 is accepted only when no live release remains and cost, access, and data obligations are discharged or transferred to accepted funded custody.
 
 #### Assemble the release candidate (`task.e2e.rel.a1.t1`)
 
@@ -574,6 +576,7 @@ Assemble the release candidate. Its primary performer is `role.release-engineer`
 - Select accepted increments and compatible model/artifact revisions.
 - Resolve cross-team dependency and compatibility checks.
 - Create the release record with exact inputs and promotion sequence.
+- Reject stale candidate evidence, unresolved transformation conflicts and expired exceptions; reuse unaffected evidence only with impact-review approval.
 
 **Exit.** Assemble the release candidate evidence is recorded.
 
@@ -586,6 +589,7 @@ Review release evidence and go/no-go criteria. Its primary performer is `role.pr
 **Work.**
 
 - Inspect readiness assessments, validation results, security exceptions, rollback plan, operational runbooks, forecast/unit-cost evidence, budget guardrails, and approvals.
+- Before production exposure name the promotion operator, Service Owner and response coverage; define first-release stop, drain and external-effect reconciliation when no accepted baseline exists.
 - Confirm open blockers are zero or explicitly accepted under the tailored method profile.
 - Record the G6 decision and decision owners.
 
@@ -615,7 +619,7 @@ Complete handover and rollback rehearsal. Its primary performer is `role.service
 
 - Verify dashboards, alerts, runbooks, escalation paths, support ownership, cost/anomaly views, and recovery access.
 - Confirm rollback and data-recovery actions are usable for the release.
-- Accept operational ownership or return the release to rework.
+- Accept operational ownership or return the release to rework; until G7 the named promotion operator and Service Owner retain responsibility.
 
 **Exit.** Complete handover and rollback rehearsal evidence is recorded.
 
@@ -2800,13 +2804,13 @@ Guidance kind: Process Pattern. Pattern source: `MF-12`. Provenance: Engineered 
 
 ### MF-13 — Test in the large and release qualification (`guidance.fragment.mf-13`)
 
-Locally correct functions and templates may fail as an integrated serverless service. Result: System, acceptance, NFR, security, resilience, recovery, and operational evidence support a release decision.
+Locally correct functions and templates may fail as an integrated serverless service. Result: System, acceptance, NFR, security, resilience, recovery, and operational evidence support a release decision. Evidence is current for the candidate; changed inputs, unresolved conflicts and expired exceptions reopen affected acceptance.
 
 Guidance kind: Process Pattern. Pattern source: `MF-13`. Provenance: Engineered fragment catalog.
 
 ### MF-14 — Progressive CI/CD and transition (`guidance.fragment.mf-14`)
 
-A technically valid candidate can still fail during promotion or handover. Result: The release is progressively promoted, observed, recorded, and accepted for operation.
+A technically valid candidate can still fail during promotion or handover. Result: The release is progressively promoted, observed, recorded, and accepted for operation. Promotion operator and Service Owner cover first exposure before G7; first-release recovery does not assume a previous accepted baseline.
 
 Guidance kind: Process Pattern. Pattern source: `MF-14`. Provenance: Engineered fragment catalog.
 
@@ -2818,13 +2822,13 @@ Guidance kind: Process Pattern. Pattern source: `MF-15`. Provenance: Engineered 
 
 ### MF-16 — Incident, problem, and controlled change propagation (`guidance.fragment.mf-16`)
 
-Emergency or evolutionary changes can diverge models, generators, code, and the running service. Result: Service is restored where necessary and change is routed to the earliest authoritative source and re-evidenced.
+Emergency or evolutionary changes can diverge models, generators, code, and the running service. Result: Service is restored where necessary and change is routed to the earliest authoritative source and re-evidenced. Persistent model-owned configuration follows the affected delivery path; emergency drift is removed or reconciled before closure.
 
 Guidance kind: Process Pattern. Pattern source: `MF-16`. Provenance: Engineered fragment catalog.
 
 ### MF-17 — Retirement, migration, and closure (`guidance.fragment.mf-17`)
 
-A service can be switched off while data, consumers, access, resources, costs, or legal obligations remain. Result: Users, data, integrations, access, resources, cost, and evidence are migrated or closed and accepted.
+A service can be switched off while data, consumers, access, resources, costs, or legal obligations remain. Result: Users, data, integrations, access, resources, cost, and evidence are migrated or closed and accepted. Continuing archive obligations have verified receiving custody, controlled access, funded cost, expiry and deletion ownership.
 
 Guidance kind: Process Pattern. Pattern source: `MF-17`. Provenance: Engineered fragment catalog.
 
@@ -2842,7 +2846,7 @@ Guidance kind: Process Pattern. Pattern source: `MF-19`. Provenance: Engineered 
 
 ### UF-01 — Integrated management, assurance, and evidence (`guidance.fragment.uf-01`)
 
-Lifecycle tasks become disconnected without continuous planning, risk, quality, security, change, trace, and evidence management. Result: Decisions, dependencies, risks, findings, revisions, evidence, and improvement remain controlled throughout the run.
+Lifecycle tasks become disconnected without continuous planning, risk, quality, security, change, trace, and evidence management. Result: Decisions, dependencies, risks, findings, revisions, evidence, and improvement remain controlled throughout the run. Evidence distinguishes planned, simulated, repository-checked and observed results; definition coverage is not task execution.
 
 Guidance kind: Continuous Practice Pattern. Pattern source: `UF-01`. Provenance: Engineered fragment catalog.
 

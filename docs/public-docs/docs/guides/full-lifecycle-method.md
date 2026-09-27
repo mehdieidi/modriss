@@ -160,3 +160,16 @@ These references provide a basis for the structure. They do not establish that o
 - [FinOps planning and estimating](https://www.finops.org/framework/capabilities/planning-estimating/)
 - [AWS Serverless Lens: expenditure and usage awareness](https://docs.aws.amazon.com/wellarchitected/latest/serverless-applications-lens/expenditure-and-usage-awareness.html)
 - [NIST SP 800-88 Rev. 1 media sanitization](https://www.nist.gov/publications/nist-special-publication-800-88-revision-1-guidelines-media-sanitization)
+
+## Enactment-derived handoff controls
+
+The ReturnFlow analytical audit clarifies that G6 assigns promotion and service
+response ownership before first production exposure, including first-release
+recovery without a previous baseline. Gate evidence must match current inputs;
+changed dependencies, conflicts and expired exceptions reopen affected review.
+Persistent model-owned configuration follows its MDE/release path. G8 allows
+retained archives only with verified receiving custody, access control, funded
+cost, expiry and deletion ownership. These are specified controls; practitioner
+effectiveness is not established by the hypothetical walkthrough.
+
+See [Enactment and critical evaluation](process-evaluation.md).

@@ -62,7 +62,7 @@ fork again
 end fork
 
 |Development and Delivery|
-:G8 — accept shared closure evidence\nonly when no live release remains;
+:G8 — accept shared closure evidence\nonly when no live release remains\nand retained archives have accepted funded custody;
 stop
 
 legend bottom

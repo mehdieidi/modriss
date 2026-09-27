@@ -1,5 +1,7 @@
 # Engineering the MODRISS Development Process
 
+> **2026-09-27 evaluation revision:** Read [ReturnFlow enactment and audit](14-returnflow-enactment-audit.md) and the revised [Eidi assessment](07-evaluation.md). ColdChain ledgers demonstrate definition coverage, not executed tasks or validated gates. ReturnFlow adds concrete handoff counterexamples and method revisions; practical effectiveness remains unobserved. The audited 78-criterion assessment supersedes earlier coverage ratings.
+
 This directory contains the research and method-engineering materials for the
 MODRISS development process. It documents three related concerns:
 
@@ -41,7 +43,9 @@ larger, situational, iterative-incremental lifecycle.
 | [`10-thesis-process-chapter.md`](10-thesis-process-chapter.md)                                                           | Thesis-ready academic chapter integrating the method-engineering path, final process, method content, diagrams, evaluation, and references |
 | [`11-rationale-for-a-model-driven-serverless-methodology.md`](11-rationale-for-a-model-driven-serverless-methodology.md) | Thesis-ready justification for treating serverless as a distinct method-engineering situation and for adopting a model-driven response     |
 | [`12-method-library-and-fragment-report.md`](12-method-library-and-fragment-report.md)                                   | Academic account of the method library, reusable fragments, content families, assembly rules, governance, and claim boundary               |
-| [`13-hypothetical-enactment-and-process-validation.md`](13-hypothetical-enactment-and-process-validation.md)             | Exhaustive ColdChain Sentinel analytical enactment, defect log, corrections, coverage ledgers, evaluation, and claim boundary              |
+| [`13-hypothetical-enactment-and-process-validation.md`](13-hypothetical-enactment-and-process-validation.md)             | ColdChain scripted scenario and definition inventory, with corrected evidence boundary                                                     |
+| [`14-returnflow-enactment-audit.md`](14-returnflow-enactment-audit.md)                                                   | Thirty-step adversarial enactment, handoff defects, scholarly rationale, revisions, and future research                                    |
+| [`evaluation/returnflow/verification.md`](evaluation/returnflow/verification.md)                                         | Evidence index, raw repository checks, source hashes, simulated fixtures, and 78-criterion assessment                                      |
 | [`evaluation/coldchain-sentinel/`](evaluation/coldchain-sentinel/)                                                       | Generated task, role, work-product, and G0–G8 enactment ledgers                                                                            |
 | [`library/`](library/)                                                                                                   | Reusable method-content catalog and machine-readable repository                                                                            |
 | [`spem/`](spem/)                                                                                                         | SPEM 2.0 representation, conformance statement, generated indexes/XML, and the single synchronized PlantUML view hierarchy                 |

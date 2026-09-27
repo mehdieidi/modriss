@@ -41,7 +41,7 @@ const taskOverrides = {
   'task.e2e.rel.a2.t1': 'Release 1 used a weighted Lambda alias and stop thresholds. Release 2 paused at 10% after duplicate alerts, retained the accepted baseline, corrected the authoritative PIM retry/idempotency policy, and was requalified.',
   'task.e2e.ops.a2.t2': 'The board enforced WIP 2 for standard service work and one expedite item. The incident displaced one standard item, which remained visible and resumed after restoration.',
   'task.e2e.ops.a3.t1': 'An expedite incident restored alert delivery by disabling a faulty retry path; the temporary production change stayed open until model and generated-source reconciliation completed.',
-  'task.e2e.ops.a4.t1': 'Three dispositions were exercised: alarm-threshold tuning closed operations-only; retry/idempotency correction used a bounded PIM→PSM→artifact release path; analytics export was committed to the next planned release.',
+  'task.e2e.ops.a4.t1': 'Three dispositions were exercised: alarm acknowledgement and read-only diagnostics closed operations-only; a model-owned threshold change requires PSM and release controls; retry/idempotency correction used a bounded PIM→PSM→artifact release path; analytics export was committed to the next planned release.',
   'task.e2e.ph2.st2.t3': 'Reconciled DynamoDB tables, S3 archives, backups, exports, CloudWatch retention, and legal-hold records; verified deletion or transferred custody before G8.',
   'task.e2e.ph2.st3.t1': 'G8 accepted only after the final live alias was removed, API and credentials were disabled, retained data had named custody, residual spend reached the agreed threshold, and both processes supplied closure evidence.',
 };
@@ -69,7 +69,7 @@ function defaultTaskNote(processName, task) {
     psm: 'AWS deployment slice and its resource relationships',
     artifact: 'generated SAM/application baseline, completed logic, tests, pipeline, readiness, and handover',
   }[processName];
-  return `Performed “${task.name}” for the ${context}; reviewed the declared entry/exit and validation rules; recorded ${outputs}.`;
+  return `Planned “${task.name}” for the ${context}; inspect the declared entry/exit and validation rules and produce ${outputs}. Execution evidence is not supplied by this inventory.`;
 }
 
 const tasks = [];
@@ -87,9 +87,9 @@ for (const processName of processNames) {
       supportingRoles: supporting,
       inputRefs: task.inputWorkProductRefs ?? [],
       outputRefs: task.outputWorkProductRefs ?? [],
-      status: 'simulated-complete',
+      status: 'planned-task-use',
       caseEvidence: taskOverrides[task.id] ?? defaultTaskNote(processName, task),
-      assessment: taskOverrides[task.id] ? 'critical-path evidence retained' : 'useful and enactable; no unowned handoff observed',
+      assessment: taskOverrides[task.id] ? 'scripted scenario; not independently executed' : 'coverage planned; handoff not verified',
     });
   }
 }
@@ -135,7 +135,7 @@ const gates = (definitions['end-to-end'].milestones ?? []).map(gate => ({
   evidence: gate.requiredEvidenceRefs ?? [],
   condition: gate.acceptanceCondition,
   decision: gateDecisions[gate.gateId] ?? 'Simulated decision recorded.',
-  status: 'simulated-accepted',
+  status: 'scripted-decision-not-approval',
 }));
 
 fs.mkdirSync(outRoot, { recursive: true });
@@ -148,7 +148,7 @@ const roleRows = [...roleMap.values()].sort((a, b) => a.id.localeCompare(b.id)).
 fs.writeFileSync(path.join(outRoot, 'role-enactment-ledger.csv'), `${[roleHeader, ...roleRows].map(row => row.map(csv).join(',')).join('\n')}\n`);
 
 const wpHeader = ['work_product_id', 'name', 'method_work_product_ids', 'source_processes', 'producer_tasks', 'consumer_tasks', 'hypothetical_instance', 'status'];
-const wpRows = [...workProductMap.values()].sort((a, b) => a.id.localeCompare(b.id)).map(wp => [wp.id, wp.name, wp.methodWorkProductIds ?? wp.methodWorkProductId ?? [], [...wp.processes].sort(), [...wp.producers].sort(), [...wp.consumers].sort(), `CS-${wp.id.replace(/[^A-Za-z0-9]+/g, '-').toUpperCase()}-V1`, 'simulated-produced-and-reviewed']);
+const wpRows = [...workProductMap.values()].sort((a, b) => a.id.localeCompare(b.id)).map(wp => [wp.id, wp.name, wp.methodWorkProductIds ?? wp.methodWorkProductId ?? [], [...wp.processes].sort(), [...wp.producers].sort(), [...wp.consumers].sort(), `CS-${wp.id.replace(/[^A-Za-z0-9]+/g, '-').toUpperCase()}-V1`, 'planned-work-product']);
 fs.writeFileSync(path.join(outRoot, 'work-product-enactment-ledger.csv'), `${[wpHeader, ...wpRows].map(row => row.map(csv).join(',')).join('\n')}\n`);
 
 const gateHeader = ['gate_id', 'name', 'authority_roles', 'required_evidence', 'acceptance_condition', 'decision', 'status'];
@@ -157,11 +157,11 @@ fs.writeFileSync(path.join(outRoot, 'gate-decision-ledger.csv'), `${[gateHeader,
 
 const summary = {
   caseId: 'coldchain-sentinel-hypothetical-01',
-  evidenceKind: 'analytical hypothetical enactment; not empirical observation',
+  evidenceKind: 'generated coverage inventory with scripted scenarios; not execution evidence',
   system: 'ColdChain Sentinel — serverless cold-chain monitoring and excursion response',
   lifecycle: ['Phase 0 once', 'Phase 1 with two increments and two releases', 'Operations from first G7 through Phase 2', 'Phase 2 once', 'shared G8 closure'],
   operationalItems: [
-    'operations-only: tune an alarm threshold and retain evidence',
+    'operations-only: acknowledge an alarm and execute approved read-only diagnostics',
     'bounded MDE/release: correct retry/idempotency policy from PIM through release',
     'planned release: add compliance analytics export',
     'expedite incident: restore alert delivery, then reconcile the temporary change',
@@ -173,7 +173,7 @@ const summary = {
     workProducts: workProductMap.size,
     gates: gates.length,
   },
-  conclusion: 'The corrected process is internally coherent and enactable for this scenario. Remaining claims about efficiency, usability, and comparative effectiveness require empirical cases with practitioners.',
+  conclusion: 'Definition coverage and role/producer bindings are checked. Input availability, work-product contents, gate validity and practical effectiveness are not established by this inventory.',
 };
 fs.writeFileSync(path.join(outRoot, 'coverage-summary.json'), `${JSON.stringify(summary, null, 2)}\n`);
 console.log(JSON.stringify(summary, null, 2));

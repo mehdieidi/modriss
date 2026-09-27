@@ -308,6 +308,15 @@ Gate G6 — **Release authorized / rejected / exception accepted**. Approval
 identifies the exact candidate and evidence; task completion alone cannot
 override a blocker.
 
+Before any production exposure, G6 names the promotion operator and accountable
+Service Owner, monitoring/abort thresholds, recovery authority and response
+coverage. These duties apply during R3 even before the first G7. For a first
+release, recovery may mean stopping intake, draining or quarantining work and
+reconciling external effects: there is no earlier accepted release to restore.
+For later releases identify the exact compatible baseline. Code rollback does
+not reverse data migrations, messages or external business effects; those need
+explicit reconciliation or roll-forward procedures.
+
 #### R3. Promote progressively
 
 Promote through environments using the selected strategy: canary, weighted
@@ -456,6 +465,12 @@ serverless workloads
 ([AWS Well-Architected operational excellence](https://docs.aws.amazon.com/wellarchitected/2024-06-27/framework/oe-design-principles.html);
 [Serverless Lens deployment approaches](https://docs.aws.amazon.com/wellarchitected/latest/serverless-applications-lens/deployment-approaches.html)).
 
+Classify disposition by authoritative ownership, not change size. An alarm
+threshold owned by PSM requires a PSM/configuration change and affected release
+controls. An approved read-only diagnostic or alert acknowledgement may finish
+operations-only. Persistent emergency drift cannot be closed merely by creating
+a future backlog item: remove it or reconcile and verify the accepted source.
+
 ### Activity O5 — Improve service and process
 
 Compare actual outcomes, SLOs, cost, risks, estimates, and process measures with
@@ -496,8 +511,15 @@ when G8 confirms that no live release or operational obligation remains.
 
 Gate G8 — **Lifecycle closed**. Product, Service, Security/Privacy, and Records
 owners accept closure; both coordinated processes are complete. No live
-release, unowned data/records obligation, access path, residual chargeable
-resource, or closure blocker remains.
+release, unowned data/records obligation, retired-service access path,
+unassigned chargeable resource, or closure blocker remains.
+
+Here access and chargeable resources mean those remaining in the retired live
+service. Retained archives may continue under an accepted custody transfer:
+inventory, receiving owner, purpose, access controls, funded cost responsibility,
+retention/hold expiry, deletion owner, verification and receiving acceptance
+must be recorded. An unowned or unfunded archive blocks G8. Closure transfers
+continuing obligations; it does not falsely declare that retention has ended.
 
 ## Process-run state model
 
@@ -515,3 +537,24 @@ Every increment, release, major change, and retirement run records:
 Progress percentage is informative only. A single blocking finding, missing
 trace, failed control, or unowned decision prevents gate acceptance regardless
 of task completion.
+
+## Evidence validity and handoff contract
+
+Each task occurrence records actual input and output references, scope, owner,
+revision and result; an inventory of TaskDefinitions is not an enactment log.
+Distinguish planned, simulated, repository-checked and empirically observed
+evidence. A report must identify the method/profile, source model, transformation,
+target model, generator, custom code, configuration and candidate revisions
+relevant to its claim. Absent evidence is blocked or not executed, never passed.
+
+On a changed dependency, unresolved transformation conflict, failed check or
+expired exception, reopen affected downstream acceptance. Evidence may be reused
+only with recorded impact analysis, unchanged relevant inputs, reviewer and
+rationale. Review queues have a named reviewer, expected response and escalation
+owner in the profile. Meetings may be combined; gate decisions remain separate.
+The platform does not yet enforce this complete contract; use versioned records.
+
+These controls govern process acceptance. Assistant-generated model actions,
+patches, proposals, checkpoints and output are gated only by structural
+Ecore/EMF conformance via `ModelService.validateStructural(...)`. EVL belongs
+only to explicit user/model validation outside assistant apply/repair/commit.
