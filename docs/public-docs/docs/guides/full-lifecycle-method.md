@@ -70,6 +70,12 @@ An item has three legitimate destinations:
    code, and release activities; or
 3. be explicitly committed to a planned release backlog.
 
+Done closes an individual operational item after its outcome and evidence have
+been verified; it does not end the Operations and Maintenance process. Changes
+requiring delivery return through the affected activities and release controls,
+then rejoin operations at G7 handover. The service continues through retirement
+until shared G8 closure is accepted and no live release remains.
+
 Emergency restoration may use the expedite policy, but temporary downstream
 changes remain open until permanent correction or reconciliation with the
 authoritative model, generator, code, configuration, or runbook source.

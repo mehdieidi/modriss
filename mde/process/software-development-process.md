@@ -239,6 +239,18 @@ Guide's core practices and Disciplined Agile's contextual use of flow and
 value-stream optimization. DevOps practices supply its integration points with
 Development and Delivery without merging the two control systems.
 
+The [DevOps loop overview](../../docs/diagrams/modriss-model-driven-devops-loop.svg)
+and its [editable drawio source](../../docs/diagrams/modriss-model-driven-devops-loop.drawio)
+show two outgoing operational-item dispositions: operations-only/runbook work
+reaches Done after its outcome and evidence are verified; work requiring delivery
+returns through the shortest affected delivery path or an explicit commitment to
+a planned release. These are item dispositions, not termination of the ongoing
+Operations and Maintenance Process. Delivered changes return through release
+qualification and G7 handover; the service continues until shared G8 closure
+with no live release remaining. The double-headed disciplines band denotes
+continuous responsibilities across the entire lifecycle, not another work queue
+or a process transition.
+
 Maintenance purpose—corrective, preventive, adaptive, additive, or
 perfective—emergency-temporary status, and the expedite, fixed-date, standard,
 or risk-reduction class of service are separate decisions. Each operational item either completes through

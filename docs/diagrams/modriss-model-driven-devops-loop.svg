@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 760" role="img" aria-labelledby="modriss-academic-title modriss-academic-desc">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 850" role="img" aria-labelledby="modriss-academic-title modriss-academic-desc">
   <title id="modriss-academic-title">MODRISS full-lifecycle model-driven DevOps process</title>
-  <desc id="modriss-academic-desc">An academic process diagram showing six lifecycle areas around coordinated development-delivery and operations-maintenance cycles, with evidence gates and continuous disciplines.</desc>
+  <desc id="modriss-academic-desc">Development and delivery hands releases to ongoing operations at G7; operational work closes with evidence or returns through affected delivery activities or a planned release, while both processes share G8 closure and continuous lifecycle disciplines.</desc>
   <defs>
     <marker id="academic-arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
       <polygon points="0 0,8 3,0 6" fill="#111111"/>
@@ -20,7 +20,7 @@
     </style>
   </defs>
 
-  <rect width="1200" height="760" fill="#ffffff"/>
+  <rect width="1200" height="850" fill="#ffffff"/>
 
   <!-- Figure title -->
   <text x="600" y="29" class="serif" font-size="22" font-weight="700" text-anchor="middle">MODRISS Full-Lifecycle Model-Driven DevOps Process</text>
@@ -30,7 +30,9 @@
   <!-- Phase progression -->
   <path d="M220 574 V550 H140 V480" fill="none" stroke="#111111" stroke-width="1.2" marker-end="url(#academic-arrow)"/>
   <path d="M140 228 V216 H236 V198" fill="none" stroke="#111111" stroke-width="1.2" marker-end="url(#academic-arrow)"/>
-  <path d="M548 414 V540 H788 V574" fill="none" stroke="#111111" stroke-width="1.2" marker-end="url(#academic-arrow)"/>
+  <path id="accepted-increment-flow" d="M410 435 V532 Q410 540 418 540 H780 Q788 540 788 548 V573" fill="none" stroke="#111111" stroke-width="1.2" marker-end="url(#academic-arrow)"/>
+  <rect x="510" y="518" width="170" height="16" fill="#ffffff"/>
+  <text x="595" y="529" class="small" text-anchor="middle">accepted increment → release</text>
   <path d="M974 574 V550 H1060 V480" fill="none" stroke="#111111" stroke-width="1.2" marker-end="url(#academic-arrow)"/>
   <path d="M1088 630 H1184 V126 H1088" fill="none" stroke="#111111" stroke-width="1.2" marker-end="url(#academic-arrow)"/>
   <rect x="1098" y="98" width="86" height="16" fill="#ffffff"/>
@@ -44,13 +46,22 @@
   <rect x="930" y="202" width="108" height="16" fill="#ffffff"/>
   <text x="984" y="213" class="small" text-anchor="middle">G8 synchronization</text>
 
-  <!-- Coordinated handover and feedback between cycles -->
-  <path d="M578 318 H622" fill="none" stroke="#111111" stroke-width="1.2" marker-end="url(#academic-arrow)"/>
-  <path d="M622 358 H578" fill="none" stroke="#111111" stroke-width="1.2" marker-end="url(#academic-arrow)"/>
-  <rect x="574" y="292" width="52" height="16" fill="#ffffff"/>
-  <text x="600" y="303" class="small" text-anchor="middle">release</text>
-  <rect x="568" y="370" width="64" height="16" fill="#ffffff"/>
-  <text x="600" y="381" class="small" text-anchor="middle">feedback</text>
+  <!-- Operational item dispositions; closing one item does not end the service -->
+  <path id="operations-done-flow" d="M734 226 V222 Q734 214 726 214 H608 Q600 214 600 206 V193" fill="none" stroke="#111111" marker-end="url(#academic-arrow)"/>
+  <path id="feedback-flow" d="M734 450 V486 Q734 494 726 494 H474 Q466 494 466 486 V452" fill="none" stroke="#111111" marker-end="url(#academic-arrow)"/>
+  <rect x="478" y="456" width="244" height="30" fill="#ffffff"/>
+  <text x="600" y="468" class="small" text-anchor="middle">Change → shortest affected delivery path</text>
+  <text x="600" y="483" class="small" text-anchor="middle">or explicit commitment to a planned release</text>
+  <rect x="514" y="88" width="172" height="104" rx="8" fill="#ffffff" stroke="#111111"/>
+  <text x="600" y="108" class="hub-title" text-anchor="middle">Operational item Done</text>
+  <text x="600" y="129" class="small" text-anchor="middle">Operations-only / runbook work</text>
+  <text x="600" y="147" class="small" text-anchor="middle">Verified outcome and evidence</text>
+  <text x="600" y="182" class="small" text-anchor="middle">Item closed; service continues</text>
+  <rect x="934" y="518" width="114" height="16" fill="#ffffff"/>
+  <text x="991" y="530" class="small" text-anchor="middle">G7 release handover</text>
+  <text x="594" y="615" class="small" text-anchor="middle">Operations continues through retirement.</text>
+  <text x="594" y="633" class="small" text-anchor="middle">Shared G8 closes both processes</text>
+  <text x="594" y="651" class="small" text-anchor="middle">only when no live release remains.</text>
 
   <!-- Left cycle: Development and Delivery -->
   <circle cx="466" cy="338" r="112" fill="#ffffff" stroke="#111111" stroke-width="1.4"/>
@@ -84,7 +95,7 @@
   <polygon points="770,448 754,442 767,432" fill="#111111"/>
   <polygon points="626,376 632,360 642,372" fill="#111111"/>
   <text x="734" y="324" class="hub-title" text-anchor="middle">Operations and</text>
-  <text x="734" y="341" class="hub-title" text-anchor="middle">Maintenance Cycle</text>
+  <text x="734" y="341" class="hub-title" style="font-size:12px" text-anchor="middle">Maintenance Cycle</text>
   <text x="734" y="357" class="hub-copy" text-anchor="middle">Kanban service</text>
   <text x="734" y="370" class="hub-copy" text-anchor="middle">delivery</text>
   <text x="682" y="270" class="cycle-label" transform="rotate(-30 682 270)">Observe</text>
@@ -187,8 +198,8 @@
   <text x="1030" y="152" class="small" text-anchor="middle">retain</text>
 
   <!-- Continuous disciplines -->
-  <path d="M82 716 H1118 L1096 694 H104 V716 Z" fill="#ffffff" stroke="#111111" stroke-width="1.3"/>
-  <text x="600" y="710" class="phase-title" text-anchor="middle">Continuous disciplines across the lifecycle</text>
-  <text x="600" y="732" class="small" text-anchor="middle">Product and project management · Quality assurance · Security and privacy · Configuration, change and traceability</text>
-  <text x="600" y="749" class="small" text-anchor="middle">FinOps and cost management · Documentation and knowledge retention · Measurement and method improvement</text>
+  <path id="disciplines-band" d="M64 772 L126 710 V738 H1074 V710 L1136 772 L1074 834 V806 H126 V834 Z" fill="#ffffff" stroke="#111111" stroke-width="1.3"/>
+  <text x="600" y="758" class="phase-title" text-anchor="middle">Continuous disciplines across the lifecycle</text>
+  <text x="600" y="779" class="small" text-anchor="middle">Product and project management · Quality assurance · Security and privacy · Configuration, change and traceability</text>
+  <text x="600" y="798" class="small" text-anchor="middle">FinOps and cost management · Documentation and knowledge retention · Measurement and method improvement</text>
 </svg>
