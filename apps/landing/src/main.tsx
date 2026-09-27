@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { createRoot } from 'react-dom/client'
+import { AssistantDiagram } from './AssistantDiagram'
 import workspaceScreenshot from './assets/modriss-workspace.png'
 import modrissFavicon from './assets/modriss-favicon.svg'
 import modrissLogoBlack from './assets/modriss-logo.svg'
@@ -340,6 +341,7 @@ function App() {
         </article>
 
         <div className="discipline-rail"><b>Continuous disciplines</b><span>Management · risk · quality · security · change · traceability · FinOps · learning</span></div>
+        <figcaption><span>Figure 1.</span> The MODRISS development process, connecting Development &amp; Delivery with Operations &amp; Maintenance across the product lifecycle.</figcaption>
       </figure>
     </section>
 
@@ -353,22 +355,20 @@ function App() {
       </div>
       <figure className="workspace-shot">
         <img src={workspaceScreenshot} alt="MODRISS browser-based CIM modeling workbench with a visual process model, modeling palette, lifecycle actions, and conversational assistant." />
-        <figcaption><span>Figure 1.</span> The MODRISS modeling workbench, showing the CIM editor and the LLM-based modeling assistant.</figcaption>
+        <figcaption><span>Figure 2.</span> The MODRISS modeling workbench, showing the CIM editor and the LLM-based modeling assistant.</figcaption>
       </figure>
     </section>
 
-    <section className="assistant-section">
+    <section className="assistant-section" id="assistant" aria-labelledby="assistant-title">
       <div className="assistant-title">
         <div className="assistant-mark"><Icon name="spark" size={28} /></div>
-        <div><div className="section-label"><span>07</span> LLM-supported modeling</div><h2>A conversational LLM-based assistant grounded in the modeling languages</h2></div>
+        <div><div className="section-label"><span>07</span> LLM-supported modeling</div><h2 id="assistant-title">A conversational LLM-based assistant grounded in the modeling languages</h2></div>
       </div>
       <div className="assistant-grid">
-        <div className="prose"><p>The assistant supports modeling activity through natural-language interaction. It can use the current model and uploaded source material to create, inspect, explain, or modify CIM and PIM models. The live Ecore metamodel provides its modeling vocabulary and structural contract.</p><p>The assistant is part of the research framework, rather than an independent code generator. Its operations are recorded as durable turns, and changes can use checkpoints, confirmation, cancellation, and undo.</p></div>
-        {/* <aside>
-          <h3>Validation boundary</h3>
-          <p>Assistant-generated output is gated by structural Ecore/EMF conformance. EVL semantic validation is kept outside assistant apply, repair, and commit paths, and is performed only through explicit model-validation workflows. PSM chatbot sessions are currently outside the implemented scope.</p>
-        </aside> */}
+        <div className="prose"><p>The assistant supports modeling activity through natural-language interaction. It can use the current model and uploaded source material to create, inspect, explain, or modify CIM and PIM models. The live Ecore metamodel provides its modeling vocabulary and structural contract.</p></div>
+        <div className="prose"><p>Requests run as durable turns. The LLM selects a permitted strategy and proposes model content or tool actions; the backend stages and checks mutations before committing a model checkpoint.</p><a className="text-link" href={`${docsUrl.replace(/\/$/, '')}/guides/ai-assistant/`}>Examine the assistant design <Icon name="arrow" size={15} /></a></div>
       </div>
+      <AssistantDiagram />
     </section>
 
     <section className="publication" id="publication">
