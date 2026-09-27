@@ -55,7 +55,8 @@ The diagrams were derived from:
 
 `35-llm-modeling-assistant.svg` reproduces the desktop diagram from landing-page
 Figure 3 at 1280 × 712. It contains its colors, styling, accessible description,
-and embedded Space Grotesk font, with no network dependencies. The surrounding
+and embedded Space Grotesk font, with no network dependencies. Serif labels use
+the landing page's Georgia / Times New Roman system-font stack. The surrounding
 website heading and figure caption are not part of the exported diagram.
 
 `35-llm-modeling-assistant.drawio` contains nine editable component groups and
@@ -63,18 +64,16 @@ twelve attached connectors. Labels, basic shapes, and connections are native
 draw.io elements; icon paths use editable vector stencils, not embedded images.
 Ungroup a component to edit its individual elements. Draw.io supports editing
 custom vector geometry through [Edit Shape](https://www.drawio.com/docs/tutorials/custom-shapes/).
-For matching typography in draw.io, install the bundled font at
+The exports use the landing page's serif headings, pale teal panels, squared
+frames, and copper flow arrows. For matching typography in draw.io, install the bundled font at
 `apps/landing/src/assets/fonts/SpaceGrotesk-VariableFont_wght.ttf`; otherwise the
 editor may substitute its available font.
 
 The source of truth is `apps/landing/src/AssistantDiagram.tsx` and the landing
-stylesheet. To regenerate both exports, start the landing Vite server and run:
-
-```powershell
-node scripts/export-assistant-diagram.mjs http://127.0.0.1:5178
-```
-
-The exporter uses the landing application's existing Playwright dependency.
+stylesheet. When refreshing exports, render the desktop variant, resolve its
+computed styles into the standalone SVG, and synchronize the draw.io shapes,
+labels, group bounds, and connector attachment points. Retain its editable
+components rather than inserting the SVG as a single image.
 Implementation references and abstraction choices are recorded in
 [the figure's source mapping](../internal/ai/landing-assistant-diagram.md).
 

@@ -32,7 +32,7 @@ function Workbench({ x, y, compact }: { x: number; y: number; compact: boolean }
   return <g transform={`translate(${x} ${y})`}>
     <text className="ad-label" x={compact ? 72 : 92} y="-20">Modeler + chatbot</text>
     <g transform={compact ? 'scale(.7826 .8125)' : undefined}>
-      <rect className="ad-window" width="184" height="128" rx="8" />
+      <rect className="ad-window" width="184" height="128" rx="2" />
       <path className="ad-window-rule" d="M0 24 H184 M108 24 V128" />
       <g className="ad-window-dots"><circle cx="14" cy="12" r="2" /><circle cx="23" cy="12" r="2" /><circle cx="32" cy="12" r="2" /></g>
       <g transform="translate(51 76) scale(.9)"><ModelGlyph /></g>
@@ -47,8 +47,8 @@ function Workbench({ x, y, compact }: { x: number; y: number; compact: boolean }
 
 function Router({ x, y }: { x: number; y: number }) {
   return <g transform={`translate(${x} ${y})`}>
-    <circle className="ad-router-ring" r="60" />
-    <circle className="ad-router" r="52" />
+    <rect className="ad-router-ring" x="-60" y="-60" width="120" height="120" />
+    <rect className="ad-router" x="-52" y="-52" width="104" height="104" />
     <g className="ad-router-symbol"><path d="M-16-17 H16 M0-17 V-29" /><circle cx="-16" cy="-17" r="3" /><circle cx="16" cy="-17" r="3" /><circle cy="-29" r="3" /></g>
     <text className="ad-router-text" y="18">LLM</text>
   </g>
@@ -57,7 +57,7 @@ function Router({ x, y }: { x: number; y: number }) {
 function Route({ kind, x, y }: { kind: RouteKind; x: number; y: number }) {
   const label = { generate: 'Generate', edit: 'Edit', explain: 'Explain' }[kind]
   return <g transform={`translate(${x} ${y})`}>
-    <circle className="ad-route-disc" r="34" />
+    <rect className="ad-route-disc" x="-34" y="-34" width="68" height="68" />
     {kind === 'generate' && <g transform="scale(.66)"><ModelGlyph added /></g>}
     {kind === 'edit' && <g className="ad-glyph">
       <rect x="-18" y="-16" width="25" height="28" rx="3" />
@@ -75,7 +75,7 @@ function Draft({ x, y, compact }: { x: number; y: number; compact: boolean }) {
   const height = compact ? 184 : 224
   return <g transform={`translate(${x} ${y})`}>
     <text className="ad-label" x={width / 2} y="-20">Private draft</text>
-    <rect className="ad-draft" width={width} height={height} rx="8" />
+    <rect className="ad-draft" width={width} height={height} />
     <g transform={`translate(${width / 2} ${compact ? 60 : 88}) scale(${compact ? 1.1 : 1.35})`}><ModelGlyph added /></g>
     <g className="ad-glyph ad-draft-extension" transform={`translate(${width / 2} ${compact ? 60 : 88}) scale(${compact ? 1.1 : 1.35})`}>
       <path d="M-24-2 V48 H24 V26" /><rect x="-34" y="38" width="20" height="20" rx="3" />
@@ -96,8 +96,8 @@ function Gate({ x, y, compact }: { x: number; y: number; compact: boolean }) {
 
 function Checkpoint({ x, y }: { x: number; y: number }) {
   return <g transform={`translate(${x} ${y})`}>
-    <rect className="ad-saved-back" x="-47" y="-40" width="88" height="72" rx="5" />
-    <rect className="ad-saved" x="-40" y="-32" width="88" height="72" rx="5" />
+    <rect className="ad-saved-back" x="-47" y="-40" width="88" height="72" />
+    <rect className="ad-saved" x="-40" y="-32" width="88" height="72" />
     <g transform="translate(4 3) scale(.75)"><ModelGlyph added /></g>
     <circle className="ad-saved-badge" cx="44" cy="-28" r="13" />
     <path className="ad-saved-check" d="m38-28 4 4 8-9" />
@@ -112,11 +112,11 @@ function Architecture({ compact = false }: { compact?: boolean }) {
     <title id={`${id}-title`}>The MODRISS conversational modeling loop</title>
     <desc id={`${id}-desc`}>Model and conversation context, live Ecore contracts, and optional sources inform LLM strategy selection within a durable backend turn. Generate and edit routes compile changes into a private draft. Structural Ecore/EMF conformance and a revision check precede an atomic checkpoint and model update. Rejected drafts can return for bounded repair. Explanation is read-only and returns a reply. EVL semantic validation is outside this loop.</desc>
     <defs>
-      <marker id={`${id}-arrow`} markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><path d="M0 0 8 3 0 6Z" fill="var(--muted)" /></marker>
+      <marker id={`${id}-arrow`} markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><path d="M0 0 8 3 0 6Z" fill="var(--copper)" /></marker>
       <marker id={`${id}-accent`} markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><path d="M0 0 8 3 0 6Z" fill="var(--teal-dark)" /></marker>
       <marker id={`${id}-link`} markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><path d="M0 0 8 3 0 6Z" fill="var(--ink-soft)" /></marker>
     </defs>
-    {!compact && <><rect className="ad-turn-boundary" x="264" y="168" width="984" height="480" rx="8" /><text className="ad-eyebrow" x="284" y="194">DURABLE TURN</text></>}
+    {!compact && <><rect className="ad-turn-boundary" x="264" y="168" width="984" height="480" /><text className="ad-eyebrow" x="284" y="194">DURABLE TURN</text></>}
     {compact && <text className="ad-eyebrow" x="24" y="18">MODEL · METAMODEL · SOURCES</text>}
     <g className="ad-flows" markerEnd={`url(#${id}-arrow)`}>
       {compact ? <>
@@ -129,8 +129,8 @@ function Architecture({ compact = false }: { compact?: boolean }) {
         <path d="M234 424 H252 Q260 424 260 432 V560" />
         <path d="M180 744 V784" />
         <path className="ad-approved-flow" markerEnd={`url(#${id}-accent)`} d="M180 880 V936" />
-        <path className="ad-repair-flow" d="M144 832 H32 Q24 832 24 824 V656 Q24 648 32 648 H60" />
-        <path className="ad-return-flow" d="M224 984 H352 Q360 984 360 992 V1072 Q360 1080 352 1080 H16 Q8 1080 8 1072 V276 Q8 268 16 268 H24" />
+        <path className="ad-repair-flow" markerEnd={`url(#${id}-link)`} d="M144 832 H32 Q24 832 24 824 V656 Q24 648 32 648 H60" />
+        <path className="ad-return-flow" markerEnd={`url(#${id}-link)`} d="M224 984 H352 Q360 984 360 992 V1072 Q360 1080 352 1080 H16 Q8 1080 8 1072 V276 Q8 268 16 268 H24" />
       </> : <>
         <path d="M392 152 V276" />
         <path d="M224 336 H332" />
@@ -141,9 +141,9 @@ function Architecture({ compact = false }: { compact?: boolean }) {
         <path d="M654 376 H776" />
         <path d="M968 328 H996" />
         <path className="ad-approved-flow" markerEnd={`url(#${id}-accent)`} d="M1068 328 H1129" />
-        <path className="ad-repair-flow" d="M1032 376 V464 Q1032 472 1024 472 H880 Q872 472 872 464 V432" />
-        <path className="ad-return-flow" d="M586 552 H184 Q176 552 176 544 V400" />
-        <path className="ad-return-flow" d="M1224 344 H1252 Q1260 344 1260 352 V656 Q1260 664 1252 664 H104 Q96 664 96 656 V400" />
+        <path className="ad-repair-flow" markerEnd={`url(#${id}-link)`} d="M1032 376 V464 Q1032 472 1024 472 H880 Q872 472 872 464 V432" />
+        <path className="ad-return-flow" markerEnd={`url(#${id}-link)`} d="M586 552 H184 Q176 552 176 544 V400" />
+        <path className="ad-return-flow" markerEnd={`url(#${id}-link)`} d="M1224 344 H1252 Q1260 344 1260 352 V656 Q1260 664 1252 664 H104 Q96 664 96 656 V400" />
       </>}
     </g>
     {compact ? <>

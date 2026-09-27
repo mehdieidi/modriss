@@ -1324,22 +1324,25 @@ button {
   border-bottom: 1px solid var(--line);
 }
 .assistant-map-heading span {
-  color: var(--teal-dark);
-  font-size: 10px;
+  color: var(--copper);
+  font-size: 9px;
   font-weight: 700;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
 }
 .assistant-map-heading h3 {
-  margin: 10px 0 0;
-  font: 400 30px var(--serif);
+  margin: 8px 0 0;
+  font: 400 29px var(--serif);
 }
 .assistant-scope-tag {
   padding-bottom: 3px;
   color: var(--muted);
-  font-size: 12px;
+  font-size: 11px;
 }
 .assistant-diagram {
+  --ad-panel: #eef5f2;
+  --ad-border: #91bbb5;
+  --ad-rule: #bad2ce;
   display: block;
   width: 100%;
   height: auto;
@@ -1352,8 +1355,9 @@ button {
 }
 .assistant-diagram .ad-label {
   fill: var(--ink);
-  font-size: 18px;
-  font-weight: 600;
+  font-family: var(--serif);
+  font-size: 22px;
+  font-weight: 400;
 }
 .assistant-diagram .ad-small {
   fill: var(--ink-soft);
@@ -1361,18 +1365,18 @@ button {
 }
 .assistant-diagram .ad-eyebrow {
   text-anchor: start;
-  fill: var(--muted);
+  fill: var(--teal-dark);
   font-size: 10px;
+  font-weight: 600;
   letter-spacing: 0.1em;
 }
 .ad-turn-boundary {
-  fill: var(--paper);
-  fill-opacity: 0.6;
-  stroke: var(--line);
+  fill: var(--ad-panel);
+  stroke: var(--ad-border);
 }
 .ad-flows {
   fill: none;
-  stroke: var(--muted);
+  stroke: var(--copper);
   stroke-width: 1.5;
   stroke-linejoin: round;
 }
@@ -1381,10 +1385,11 @@ button {
   stroke-width: 2;
 }
 .ad-return-flow {
+  stroke: var(--ink-soft);
   stroke-dasharray: 6 5;
 }
 .ad-repair-flow {
-  stroke: var(--muted);
+  stroke: var(--ink-soft);
 }
 .ad-edge-label {
   fill: var(--ink-soft);
@@ -1418,15 +1423,15 @@ button {
 }
 .ad-context-bracket {
   fill: none;
-  stroke: var(--line);
+  stroke: var(--ad-rule);
   stroke-width: 1.5;
 }
 .ad-window,
 .ad-saved,
 .ad-saved-back {
   fill: var(--white);
-  stroke: var(--ink-soft);
-  stroke-width: 1.5;
+  stroke: var(--ad-border);
+  stroke-width: 1;
 }
 .ad-window-rule,
 .ad-draft-rule {
@@ -1448,32 +1453,32 @@ button {
   stroke-width: 1;
 }
 .ad-router {
-  fill: var(--ink);
+  fill: var(--teal-pale);
 }
 .ad-router-ring {
-  fill: none;
-  stroke: var(--ink);
-  stroke-opacity: 0.2;
+  fill: var(--white);
+  stroke: var(--ad-border);
 }
 .ad-router-symbol {
-  fill: var(--ink);
-  stroke: var(--teal-pale);
+  fill: var(--teal-pale);
+  stroke: var(--teal-dark);
   stroke-width: 1.5;
 }
 .ad-router-text {
-  fill: var(--white);
-  font-size: 26px;
-  font-weight: 500;
-  letter-spacing: 0.04em;
+  fill: var(--ink);
+  font-family: var(--serif);
+  font-size: 29px;
+  font-weight: 400;
+  letter-spacing: 0.02em;
 }
 .ad-route-disc {
   fill: var(--white);
-  stroke: var(--line);
+  stroke: var(--ad-rule);
 }
 .ad-draft {
   fill: var(--white);
-  stroke: var(--muted);
-  stroke-width: 1.5;
+  stroke: var(--ad-border);
+  stroke-width: 1;
   stroke-dasharray: 6 5;
 }
 .ad-draft-extension {
@@ -1546,7 +1551,7 @@ button {
     margin: 28px auto 0;
   }
   .assistant-diagram-mobile .ad-label {
-    font-size: 19px;
+    font-size: 23px;
   }
   .assistant-diagram-mobile .ad-small {
     font-size: 16px;
