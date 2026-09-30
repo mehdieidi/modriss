@@ -150,6 +150,7 @@ let chatActivityHistory = [];
 let activeThinkingEl = null;
 let thinkingSteps = [];
 let thinkingStartTime = 0;
+let thinkingTimerInterval = null;
 let thinkingProgress = null;
 let activeTurnCanceling = false;
 let activeTurnId = null;
@@ -421,6 +422,35 @@ function stripLegacyThinkingCancelButtons() {
   el.chatMessages?.querySelectorAll(".chat-thinking-cancel").forEach((node) => node.remove());
 }
 
+function formatLiveElapsedTime(totalSeconds) {
+  const seconds = Math.max(0, Math.floor(totalSeconds));
+  const minutes = Math.floor(seconds / 60);
+  const remainingSeconds = seconds % 60;
+  return minutes
+    ? `${minutes}m ${String(remainingSeconds).padStart(2, "0")}s`
+    : `${remainingSeconds}s`;
+}
+
+function updateThinkingElapsedTime() {
+  const elapsed = Math.max(0, (Date.now() - thinkingStartTime) / 1000);
+  const timer = activeThinkingEl?.querySelector(".chat-thinking-elapsed");
+  if (!timer) return;
+  timer.textContent = formatLiveElapsedTime(elapsed);
+  const seconds = Math.floor(elapsed);
+  const minutes = Math.floor(seconds / 60);
+  const remainingSeconds = seconds % 60;
+  const minuteLabel = `${minutes} minute${minutes === 1 ? "" : "s"}`;
+  const secondLabel = `${remainingSeconds} second${remainingSeconds === 1 ? "" : "s"}`;
+  timer.setAttribute("aria-label", `${minutes ? `${minuteLabel} and ` : ""}${secondLabel} elapsed`);
+}
+
+function stopThinkingElapsedTimer() {
+  if (thinkingTimerInterval !== null) {
+    clearInterval(thinkingTimerInterval);
+    thinkingTimerInterval = null;
+  }
+}
+
 function ensureThinkingStream(initialMessage = null, stage = "PLANNING", anchorMessage = null) {
   stripLegacyThinkingCancelButtons();
   // A background thread hydration or DOM refresh can remove the old element. Never keep a
@@ -439,6 +469,11 @@ function ensureThinkingStream(initialMessage = null, stage = "PLANNING", anchorM
     header.className = "chat-thinking-header";
     header.innerHTML =
       '<span class="chat-thinking-spinner" aria-hidden="true"></span><span class="chat-thinking-title">Working on your request</span>';
+    const elapsed = document.createElement("span");
+    elapsed.className = "chat-thinking-elapsed";
+    elapsed.setAttribute("role", "timer");
+    elapsed.textContent = "0s";
+    header.appendChild(elapsed);
     bubble.appendChild(header);
 
     const status = document.createElement("div");
@@ -468,7 +503,13 @@ function ensureThinkingStream(initialMessage = null, stage = "PLANNING", anchorM
     activeThinkingEl = msg;
     thinkingSteps = [];
     thinkingProgress = null;
-    thinkingStartTime = Date.now();
+    if (!thinkingStartTime) {
+      thinkingStartTime = Date.now();
+    }
+    updateThinkingElapsedTime();
+    if (thinkingTimerInterval === null) {
+      thinkingTimerInterval = setInterval(updateThinkingElapsedTime, 1000);
+    }
   }
   if (initialMessage) {
     pushThinkingStep(initialMessage, stage);
@@ -522,6 +563,8 @@ function finalizeThinkingStream() {
     return;
   }
   const durationSec = Math.max(1, Math.round((Date.now() - thinkingStartTime) / 1000));
+  stopThinkingElapsedTimer();
+  thinkingStartTime = 0;
   const minutes = Math.floor(durationSec / 60);
   const seconds = durationSec % 60;
   const durationLabel = minutes ? `${minutes}m${seconds ? ` ${seconds}s` : ""}` : `${seconds}s`;
@@ -552,9 +595,11 @@ function finalizeThinkingStream() {
 }
 
 function clearThinkingStream() {
+  stopThinkingElapsedTimer();
   activeThinkingEl?.remove();
   activeThinkingEl = null;
   thinkingSteps = [];
+  thinkingStartTime = 0;
   chatActivityHistory = [];
   thinkingProgress = null;
   activeTurnCanceling = false;
