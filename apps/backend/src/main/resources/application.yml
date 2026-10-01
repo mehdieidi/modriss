@@ -172,6 +172,8 @@ management:
         include: health,info,prometheus
   endpoint:
     health:
+      show-details: never
+      show-components: never
       probes:
         enabled: true
     prometheus:

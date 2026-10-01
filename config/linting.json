@@ -51,7 +51,7 @@
     },
     "docker": {
       "description": "Dockerfiles with Hadolint.",
-      "command": ["docker", "run", "--rm", "-i", "hadolint/hadolint:latest", "hadolint", "-"],
+      "command": ["docker", "run", "--rm", "-i", "hadolint/hadolint:v2.12.0", "hadolint", "-"],
       "dockerfiles": ["deploy/Dockerfile"]
     }
   }

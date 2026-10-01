@@ -1,18 +1,26 @@
-.git
-.agents
-.codex
-.idea
-.vscode
+# Only backend reactor/build inputs belong in this context.
+**
+!pom.xml
+!apps/
+!apps/backend/
+!apps/backend/**
+!packages/
+!packages/java/
+!packages/java/**
+!tools/
+!tools/*/
+!tools/*/pom.xml
+!config/
+!config/**
+!mde/
+!mde/**
+!deploy/
+!deploy/Dockerfile
 
 **/target
-node_modules
 **/node_modules
-logs
-storage
+**/.git
 mde/notation/backup
-
-apps/frontend
-apps/landing
-
-README.md
-docs
+# Never send real environment files to BuildKit, including nested module files.
+**/.env
+**/.env.*

@@ -16,8 +16,16 @@
 }
 
 (backend_routes) {
-	@backend path /api/* /actuator/* /v3/api-docs* /swagger-ui* /swagger-ui.html
-	reverse_proxy @backend backend:8080
+	# Deny internal endpoints before any application/static fallback.
+	@internal {
+		path /actuator /actuator/* /v3/api-docs* /swagger-ui*
+		not path /actuator/health/readiness
+	}
+	respond @internal 404
+	@backend path /api/* /actuator/health/readiness
+	handle @backend {
+		reverse_proxy backend:8080
+	}
 }
 
 (access_logs) {
@@ -77,5 +85,8 @@ docs.modriss.site {
 api.modriss.site {
 	import security_headers
 	import access_logs
-	reverse_proxy backend:8080
+	import backend_routes
+	handle {
+		respond 404
+	}
 }

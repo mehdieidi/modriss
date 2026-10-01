@@ -9,3 +9,19 @@ logging:
     level: "%5p [${spring.application.name:},%X{traceId:-},%X{spanId:-}]"
   level:
     io.mehdieidi.modriss: INFO
+
+# Prometheus remains available only over the private Docker network.
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,prometheus
+  endpoint:
+    health:
+      show-details: never
+      show-components: never
+springdoc:
+  api-docs:
+    enabled: false
+  swagger-ui:
+    enabled: false

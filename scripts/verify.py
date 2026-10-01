@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import os
+import shlex
 import subprocess
 import sys
 from pathlib import Path
@@ -53,12 +54,14 @@ def main() -> int:
 
     run([python_executable(), "scripts/check-flyway-migration-versions.py", "--changed-only"])
 
+    run([python_executable(), "-m", "unittest", "discover", "-s", "scripts/tests"])
+
     run(["node", "mde/process/tools/validate-coverage.mjs"])
 
     if not args.skip_tests:
         test_cmd = [maven(), "test"]
         if args.maven_args.strip():
-            test_cmd.extend(args.maven_args.split())
+            test_cmd.extend(shlex.split(args.maven_args))
         run(test_cmd)
 
     print("verify: all requested checks passed", flush=True)

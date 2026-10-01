@@ -1,0 +1,26 @@
+name: Deployment configuration
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  deployment-guards:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Regression tests, Compose overlays, and secret context canaries
+        env:
+          RUN_DOCKER_TESTS: "1"
+        run: python -m unittest discover -s scripts/tests -v
+      - name: Validate production Caddy configuration
+        run: >-
+          docker run --rm -v "$PWD/infra/caddy:/etc/caddy:ro"
+          caddy:2.8-alpine caddy validate --config /etc/caddy/Caddyfile.prod --adapter caddyfile

@@ -1,6 +1,7 @@
 FROM squidfunk/mkdocs-material:9.6.14 AS build
 WORKDIR /docs
-COPY . .
+COPY mkdocs.yml ./
+COPY docs docs
 RUN mkdocs build --strict
 
 FROM nginx:1.27-alpine

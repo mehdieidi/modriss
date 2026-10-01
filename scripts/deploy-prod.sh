@@ -47,12 +47,10 @@ fi
 echo "Building and starting the production stack..."
 docker compose "${compose_args[@]}" up -d --build --remove-orphans
 
-# The editor is a static Python server. Its startup command copies the bind-mounted
-# checkout into /srv, so an ordinary `up` does not refresh an already-running
-# frontend container after git pull. Recreate it explicitly, together with the
-# docs site and Caddy so the published content and edge routes are refreshed.
-echo "Refreshing the static editor frontend, public docs, and production edge configuration..."
-docker compose "${compose_args[@]}" up -d --no-deps --force-recreate frontend docs caddy
+# Caddy's bind-mounted configuration needs a restart after git pull. Static sites
+# now use immutable images and Compose recreates them when their images change.
+echo "Refreshing the production edge configuration..."
+docker compose "${compose_args[@]}" up -d --no-deps --force-recreate caddy
 
 echo "Production services:"
 docker compose "${compose_args[@]}" ps
@@ -79,6 +77,18 @@ check_url "https://docs.modriss.site"
 check_url "https://editor.modriss.site"
 check_url "https://admin.modriss.site"
 check_url "https://api.modriss.site/actuator/health/readiness"
+
+echo "Checking internal endpoints are blocked at the production edge..."
+for host in modriss.site editor.modriss.site admin.modriss.site api.modriss.site; do
+  for path in /actuator /actuator/health /actuator/info /actuator/prometheus /swagger-ui.html /v3/api-docs; do
+    status=$(curl --silent --show-error --max-time 15 --output /dev/null \
+      --write-out '%{http_code}' "https://$host$path")
+    if [ "$status" != 404 ]; then
+      echo "Production endpoint policy check failed: https://$host$path returned $status; expected 404." >&2
+      exit 1
+    fi
+  done
+done
 
 echo "Checking editor cache policy..."
 editor_headers=$(curl --fail --silent --show-error --location --max-time 15 \

@@ -21,6 +21,11 @@ services:
   backend:
     environment:
       MODRISS_DB_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set in production .env}
+      MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE: health,prometheus
+      MANAGEMENT_ENDPOINT_HEALTH_SHOW_DETAILS: never
+      MANAGEMENT_ENDPOINT_HEALTH_SHOW_COMPONENTS: never
+      SPRINGDOC_API_DOCS_ENABLED: "false"
+      SPRINGDOC_SWAGGER_UI_ENABLED: "false"
       SPRING_PROFILES_ACTIVE: ${MODRISS_PROD_SPRING_PROFILE:-prod}
       MODRISS_ALLOWED_ORIGINS: ${MODRISS_ALLOWED_ORIGINS:-https://modriss.site,https://editor.modriss.site,https://admin.modriss.site,https://api.modriss.site}
 

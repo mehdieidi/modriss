@@ -73,7 +73,7 @@ final class EpsilonEgxGeneratorTest {
   private static final String LOCALSTACK_IMAGE = "localstack/localstack:3.8.1";
 
   /** LocalStack image that activates Pro features when LOCALSTACK_AUTH_TOKEN is available. */
-  private static final String LOCALSTACK_PRO_IMAGE = "localstack/localstack:latest";
+  private static final String LOCALSTACK_PRO_IMAGE = "localstack/localstack:3.8.1";
 
   /** Pinned Floci image for reproducible generated integration-test execution. */
   private static final String FLOCI_IMAGE = "floci/floci:2.0.1";

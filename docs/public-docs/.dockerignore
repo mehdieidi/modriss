@@ -1,8 +1,8 @@
-node_modules
-dist
-*.png
-
 .env
 .env.*
 **/.env
 **/.env.*
+.git
+site
+__pycache__
+.venv

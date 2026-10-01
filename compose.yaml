@@ -1,4 +1,5 @@
 # Convenience entry point: local development is the default.
 include:
-  - deploy/compose.base.yaml
-  - deploy/compose.dev.yaml
+  - path:
+      - deploy/compose.base.yaml
+      - deploy/compose.dev.yaml
