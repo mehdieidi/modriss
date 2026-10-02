@@ -52,8 +52,8 @@ whole design, comprising the development process and modeling framework.
 evidence. Reusable SPEM method content supplies definitions used by activities
 within the process part.
 
-The MODRISS modeling framework is already substantial. It defines three
-abstraction levels—CIM, PIM, and AWS PSM—and provides dedicated DSMLs for them.
+The MODRISS modeling framework defines three abstraction levels: CIM, PIM, and
+AWS PSM. Each level has a dedicated DSML.
 Their abstract syntax is expressed in Ecore, their semantic constraints are
 written in EVL, the CIM-to-PIM and PIM-to-PSM refinements are implemented in
 ETL, and the PSM is used by EGX/EGL generators to produce deployable and
@@ -237,8 +237,8 @@ management.
 
 ### 3.3 Inspect the MODRISS baseline
 
-The repository was treated as evidence, not merely as an implementation to be
-documented after the process had been designed. The inspection covered the CIM,
+We inspected the repository before designing the process and used it as evidence
+about the existing system. The review covered the CIM,
 PIM, PSM, and shared metamodels; EVL validation suites; ETL transformations;
 trace, readiness, identity, and reconciliation behavior; EGL/EGX templates;
 coverage matrices; existing modeling guides; and the five executable process
@@ -270,8 +270,8 @@ The stabilized set contains 61 requirements in six families.
 | Management and scale          | `MR-MG-*`  |     8 | Planning, capacity, risk, quality, security, configuration, evidence, teams, measurement, and learning           |
 | Process quality               | `MR-Q-*`   |     8 | Understandability, configurability, practicality, scalability, visibility, and preserved controls                |
 
-Each requirement has a support level—MUST, SHOULD, or MAY—and a verification
-statement. This is significant: a requirement such as provider selection is
+Each requirement has a support level (MUST, SHOULD, or MAY) and a verification
+statement. A requirement such as provider selection is
 not satisfied because the chapter mentions provider selection. It is satisfied
 only when the process assigns a task and accountable role, produces a decision
 record, places that record before provider-specific design, and makes it
@@ -416,7 +416,7 @@ the apparently linear phase layout compatible with continuous product
 evolution without pretending that incidents can be
 pre-scheduled.
 
-### 5.1 Phase 0 — Inception, Tailoring, and Organization
+### 5.1 Phase 0: Inception, Tailoring, and Organization
 
 Phase 0 begins with the product or service problem, not with a preferred cloud
 service. The Product Owner, Sponsor, Domain Expert, Solution Architect, and
@@ -445,7 +445,7 @@ for the first increment. The principal outputs are the product/system charter,
 serverless suitability record, cost model and budget guardrails, risk register,
 situational method profile, team topology, and initial roadmap.
 
-### 5.2 Phase 1 — Iterative-Incremental Model-Driven Delivery
+### 5.2 Phase 1: Iterative-Incremental Model-Driven Delivery
 
 Phase 1 is the technical engine within the development process, but it does not operate as “finish
 the complete CIM, then the complete PIM, then the complete PSM.” Each iteration
@@ -540,10 +540,10 @@ and maintenance but also cautions that evidence is contextual. The Method Profil
 defines capacity allocation between planned delivery and operational demand.
 
 Maintenance purpose, emergency status, and service class are independent.
-Purpose records why work exists—corrective, preventive, adaptive, additive, or
+Purpose records why work exists: corrective, preventive, adaptive, additive, or
 perfective. Emergency status identifies an unscheduled temporary restoration
 modification pending permanent correction, following SWEBOK v4.0a (IEEE
-Computer Society, 2024). Class records how work flows—expedite, fixed-date,
+Computer Society, 2024). Class records how work flows: expedite, fixed-date,
 standard, or risk-reduction. Unknown future demand
 is not scheduled. Actual demand is triaged when it arrives and either finishes
 as operations-only work, uses the shortest safe model-driven/release path, or
@@ -590,7 +590,7 @@ capacity allocation against the original hypotheses. Metrics improve the
 system and never rank individuals. Reusable models, transformations, tests,
 templates, runbooks, and reusable method content are generalized only after review.
 
-### 5.5 Phase 2 — Retire, Migrate, and Close
+### 5.5 Phase 2: Retire, Migrate, and Close
 
 Retirement is treated as a controlled release. The team identifies the reason,
 successor, users and consumers, legal and contractual obligations, data
@@ -821,12 +821,12 @@ with the control it preserves.
 
 Four reference profiles give teams a starting point.
 
-| Profile                           | Intended situation                                                   | Characteristic treatment                                                                                                                        |
-| --------------------------------- | -------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
-| A — Exploration                   | High uncertainty before production commitment                        | Short experiments, thin CIM/PIM slices, explicit suitability/cost/cold-start/integration hypotheses; prototype PSMs may be disposable           |
-| B — Standard product delivery     | Ordinary business application with one or a few teams                | Full lifecycle, peer review, automated CI and tests, progressive promotion, service ownership, SLO/cost signals, lightweight complete records   |
-| C — Multi-team product/platform   | Several independently planning stream teams with platform enablement | Bounded model ownership, integration owners, compatibility policy, dependency board, release coordination, communities of practice              |
-| D — Regulated or high-criticality | Strong assurance, privacy, audit, or criticality needs               | Independent review, segregation, stronger trace/change control, retention, supplier evidence, recovery rehearsal, explicit deviation acceptance |
+| Profile                          | Intended situation                                                   | Characteristic treatment                                                                                                                        |
+| -------------------------------- | -------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| A: Exploration                   | High uncertainty before production commitment                        | Short experiments, thin CIM/PIM slices, explicit suitability/cost/cold-start/integration hypotheses; prototype PSMs may be disposable           |
+| B: Standard product delivery     | Ordinary business application with one or a few teams                | Full lifecycle, peer review, automated CI and tests, progressive promotion, service ownership, SLO/cost signals, lightweight complete records   |
+| C: Multi-team product/platform   | Several independently planning stream teams with platform enablement | Bounded model ownership, integration owners, compatibility policy, dependency board, release coordination, communities of practice              |
+| D: Regulated or high-criticality | Strong assurance, privacy, audit, or criticality needs               | Independent review, segregation, stronger trace/change control, retention, supplier evidence, recovery rehearsal, explicit deviation acceptance |
 
 Conditional packages strengthen the base for multi-team scale, sensitive data,
 high availability or disaster recovery, portability or multi-cloud intent,
@@ -1053,7 +1053,7 @@ Amazon Web Services (AWS) (2024). _AWS Well-Architected Framework: Serverless
 Applications Lens_. <https://docs.aws.amazon.com/wellarchitected/latest/serverless-applications-lens/welcome.html>.
 
 Deljouyi (n.d.). “Proposed Process for Developing REST-Based Web Services.”
-Thesis process chapter supplied as _Deljouyi — Process_, pp. 97–110. [In
+Thesis process chapter supplied as _Deljouyi: Process_, pp. 97–110. [In
 Persian].
 
 Eidi, M., and Ramsin, R. (2026). “Model-Driven Approaches for Serverless
@@ -1096,11 +1096,11 @@ Information Technology Service Management with DevOps: An Incident Management
 Case Study.” _Software: Practice and Experience_, 52(1), 322–339.
 <https://doi.org/10.1002/spe.3096>.
 
-ISO/IEC/IEEE (2026). _ISO/IEC/IEEE 12207:2026 Systems and Software Engineering
-— Software Life Cycle Processes_. <https://www.iso.org/standard/90219.html>.
+ISO/IEC/IEEE (2026). _ISO/IEC/IEEE 12207:2026 Systems and Software Engineering:
+Software Life Cycle Processes_. <https://www.iso.org/standard/90219.html>.
 
-ISO/IEC/IEEE (2022). _ISO/IEC/IEEE 14764:2022 Software Engineering — Software
-Life Cycle Processes — Maintenance_.
+ISO/IEC/IEEE (2022). _ISO/IEC/IEEE 14764:2022 Software Engineering: Software
+Life Cycle Processes: Maintenance_.
 <https://www.iso.org/standard/80710.html>.
 
 Object Management Group (OMG) (2008). _Software & Systems Process Engineering

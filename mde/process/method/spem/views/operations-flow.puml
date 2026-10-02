@@ -1,5 +1,5 @@
 @startuml
-title MODRISS Operations and Maintenance — Ongoing Kanban Service-Delivery Process
+title MODRISS Operations and Maintenance: Ongoing Kanban Service-Delivery Process
 skinparam backgroundColor #F5F3ED
 skinparam shadowing false
 start

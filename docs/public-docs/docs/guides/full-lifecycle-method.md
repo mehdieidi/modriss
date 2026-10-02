@@ -42,9 +42,9 @@ where transition becomes a delivery activity rather than a recurring phase
 ([IBM](https://www.ibm.com/docs/en/rational-clearquest/10.0.8?topic=settings-project-planning);
 [PMI](https://www.pmi.org/disciplined-agile/lifecycle)). ISO/IEC/IEEE 12207 also distinguishes development, operation,
 maintenance, and disposal processes and permits concurrent application. DevOps
-supplies the coordination interface—shared ownership, CI/CD, operational
-readiness, telemetry, change routing, and learning—without collapsing the two
-control systems into one phase.
+connects the two control systems through shared ownership, CI/CD, operational
+readiness, telemetry, change routing, and learning. The teams keep their own
+work controls instead of treating both systems as one phase.
 
 ## Two connected ways of controlling work
 
@@ -57,9 +57,9 @@ expectations; replenishment and review cadences; and flow measures. The
 [Kanban Guide](https://kanbanguides.org/the-kanban-guide/)
 provides the minimum pull-system semantics used here.
 
-Every operational item records its maintenance purpose—corrective, preventive,
-adaptive, additive, or perfective—any emergency-temporary restoration status,
-and its separate class of service—expedite, fixed-date, standard, or
+Every operational item records its maintenance purpose (corrective, preventive,
+adaptive, additive, or perfective), whether an emergency restoration is still
+temporary, and its class of service (expedite, fixed-date, standard, or
 risk-reduction. This follows
 the maintenance distinctions in [SWEBOK v4.0a](https://ieeecs-media.computer.org/media/education/swebok/swebok-v4.pdf).
 

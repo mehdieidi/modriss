@@ -25,7 +25,7 @@ const fragmentsModel = readJson(fragmentsFile);
 const fragmentGuidance = fragmentsModel.fragments.map(fragment => ({
   id: `guidance.fragment.${fragment.id.toLowerCase()}`,
   type: 'Guidance',
-  name: `${fragment.id} — ${fragment.name}`,
+  name: `${fragment.id}: ${fragment.name}`,
   guidanceKind: fragment.kind === 'continuous' ? 'Continuous Practice Pattern' : 'Process Pattern',
   description: `${fragment.problem} Result: ${fragment.resultContext}`,
   sourcePatternId: fragment.id,

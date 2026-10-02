@@ -16,7 +16,7 @@ of the MODRISS methodology; the modeling framework is specified separately.
 
 ## Situation
 
-Record evidence—not only a low/medium/high label—for product criticality,
+For product criticality, record evidence rather than relying only on a low/medium/high label.
 uncertainty, architectural novelty, team scale/distribution, compliance/privacy,
 provider maturity, release frequency, operational ownership, data sensitivity,
 external dependencies, portability, lifetime, cost exposure, and migration or

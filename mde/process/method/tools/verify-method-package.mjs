@@ -65,7 +65,7 @@ if (coreWorkProducts.length !== 31 || new Set(methodIds).size !== 31) {
 }
 if ((fragments.fragments ?? []).length !== 20) fail('Expected 19 lifecycle/integration fragments and one continuous fragment');
 for (const fragment of fragments.fragments ?? []) {
-  if (!libraryReport.includes(`#### ${fragment.id} —`)) {
+  if (!libraryReport.includes(`#### ${fragment.id} : `)) {
     fail(`Academic method-library report is missing fragment ${fragment.id}`);
   }
 }

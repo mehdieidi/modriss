@@ -1,5 +1,5 @@
 @startuml
-title MODRISS Integrated Product Lifecycle — Two Coordinated Processes
+title MODRISS Integrated Product Lifecycle: Two Coordinated Processes
 skinparam backgroundColor #F5F3ED
 skinparam shadowing false
 skinparam activity {
@@ -12,7 +12,7 @@ skinparam activity {
 
 |Development and Delivery|
 start
-:Phase 0 — Inception, Tailoring & Organization\n«Activity, Phase; occurs once»;
+:Phase 0: Inception, Tailoring & Organization\n«Activity, Phase; occurs once»;
 :Assess alternatives, serverless suitability,\ncost range and material risks at G0;
 :Tailor method, establish ownership and authorize G1;
 if (G0/G1 authorized?) then (yes)
@@ -20,7 +20,7 @@ else (redirect / stop)
   stop
 endif
 
-:Phase 1 — Active Product Construction & Evolution\n«Activity, Phase; occurs once»;
+:Phase 1: Active Product Construction & Evolution\n«Activity, Phase; occurs once»;
 repeat
   repeat
     :Model-driven increment iteration\nvertical slice; G2–G5\n«Activity, Iteration»;
@@ -40,7 +40,7 @@ fork
     :Run another model-driven increment and release iteration;
     :G7 updates the accepted live-release set;
   endwhile (retirement authorized)
-  :Phase 2 — Retire, Migrate & Close\n«Activity, Phase; occurs once»;
+  :Phase 2: Retire, Migrate & Close\n«Activity, Phase; occurs once»;
   :Verify data disposition, record custody,\naccess removal and cost cessation;
   :Contribute Development and Delivery closure evidence to shared G8;
 fork again
@@ -62,7 +62,7 @@ fork again
 end fork
 
 |Development and Delivery|
-:G8 — accept shared closure evidence\nonly when no live release remains\nand retained archives have accepted funded custody;
+:G8: accept shared closure evidence\nonly when no live release remains\nand retained archives have accepted funded custody;
 stop
 
 legend bottom

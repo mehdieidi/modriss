@@ -119,8 +119,8 @@ transformation changes.
   operations pack.
 - An **artifact** is an external or generated deliverable such as source code,
   infrastructure templates, tests, runbooks, or deployment configuration.
-- A **gate** is an evidence-based decision. It is not merely the completion of
-  the tasks that precede it.
+- A **gate** records whether the required evidence supports a decision.
+  Completing the preceding tasks does not, on its own, satisfy the gate.
 - A **method profile** records process tailoring: selected, combined, or
   omitted activities, roles, evidence, thresholds, and rationale.
 - A **phase** is a bounded sequential period in Development and Delivery ending
@@ -251,8 +251,8 @@ with no live release remaining. The double-headed disciplines band denotes
 continuous responsibilities across the entire lifecycle, not another work queue
 or a process transition.
 
-Maintenance purpose—corrective, preventive, adaptive, additive, or
-perfective—emergency-temporary status, and the expedite, fixed-date, standard,
+Maintenance purpose (corrective, preventive, adaptive, additive, or
+perfective), emergency-temporary status, and the expedite, fixed-date, standard,
 or risk-reduction class of service are separate decisions. Each operational item either completes through
 an approved runbook, follows the shortest safe MDE/release path, or is
 explicitly committed to a planned release. Incidents produce recovery evidence

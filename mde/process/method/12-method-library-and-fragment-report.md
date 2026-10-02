@@ -111,7 +111,7 @@ group of tasks. Each fragment records:
 - a result context that can be examined after enactment;
 - the roles that perform, contribute to, or accept the work;
 - the work products consumed or produced;
-- its granularity—stage, phase, process component, or continuous practice;
+- its granularity: stage, phase, process component, or continuous practice;
 - a selection rule stating whether it is required or conditional;
 - its literature and repository provenance; and
 - the method requirements for which it supplies realization evidence.
@@ -128,7 +128,7 @@ makes the fragment chain defensible.
 
 ### 5.1 Initiation, selection, and organization
 
-#### MF-01 — Opportunity and feasibility
+#### MF-01: Opportunity and feasibility
 
 MF-01 prevents a technical solution from being selected before the underlying
 value, boundary, constraints, and alternatives are understood. It begins when
@@ -140,7 +140,7 @@ System Charter, Feasibility and Serverless Suitability Record, and Risk and
 Opportunity Register. The fragment is required because a model-driven process
 still needs a justified reason to build the system.
 
-#### MF-02 — Serverless suitability, cost, risk, and provider decision
+#### MF-02: Serverless suitability, cost, risk, and provider decision
 
 MF-02 addresses premature commitment to serverless computing or to a specific
 cloud provider. Once the intended outcomes and candidate workload are known,
@@ -152,7 +152,7 @@ evidence is insufficient. This fragment is mandatory before provider-specific
 design, but it does not force a serverless outcome: hybrid or non-serverless
 realization remains a legitimate conclusion.
 
-#### MF-03 — Situational method tailoring
+#### MF-03: Situational method tailoring
 
 MF-03 turns project conditions into a versioned method configuration. Its
 starting context is a situation whose product, risk, organization, platform,
@@ -163,7 +163,7 @@ triggers. The result is a Situational Method Profile supported by team and plan
 information. This fragment is always used; what changes is the selected
 configuration, not whether tailoring is made explicit.
 
-#### MF-04 — Product, release, and increment framing
+#### MF-04: Product, release, and increment framing
 
 MF-04 keeps modeling tied to an outcome. It begins with an authorized product
 and method profile and identifies a bounded vertical slice, its users or
@@ -176,7 +176,7 @@ model-driven engineering engine.
 
 ### 5.2 Model-driven discovery, transformation, and realization
 
-#### MF-05 — Event-driven domain discovery and CIM modeling
+#### MF-05: Event-driven domain discovery and CIM modeling
 
 MF-05 captures business intent before software or provider structure is
 allowed to dominate the design. Starting from a ready increment and available
@@ -187,7 +187,7 @@ Its result is an accepted computation-independent account of the selected
 slice. The implemented CIM process component supplies the detailed tasks and
 metamodel bindings.
 
-#### MF-06 — CIM assurance and readiness
+#### MF-06: CIM assurance and readiness
 
 MF-06 prevents an incomplete CIM from transmitting false certainty to later
 levels. A candidate revision is reviewed for structural conformance,
@@ -199,7 +199,7 @@ implied by structural conformance: assistant apply, repair, and commit paths
 use only `ModelService.validateStructural(...)`; EVL semantic validation is a
 separate explicit user/model validation workflow.
 
-#### MF-07 — CIM-to-PIM transformation and reconciliation
+#### MF-07: CIM-to-PIM transformation and reconciliation
 
 MF-07 governs automation across the first abstraction boundary. It runs the
 versioned ETL transformation into a generated target and reconciles that result
@@ -209,7 +209,7 @@ assumptions, conflicts, placeholders, and manual decisions. The result is a
 traceable architectural draft, not an automatically accepted design. The
 fragment is selected whenever the MODRISS CIM-to-PIM transformation is used.
 
-#### MF-08 — Platform-independent serverless architecture
+#### MF-08: Platform-independent serverless architecture
 
 MF-08 develops the PIM as an explicit serverless architecture without binding
 it to AWS resources. The Solution Architect leads decisions about service
@@ -220,7 +220,7 @@ and service roles contribute the evidence needed to judge those decisions. The
 result is an accepted provider-independent architecture and associated
 decision, threat, failure, privacy, cost, and readiness records.
 
-#### MF-09 — PIM-to-PSM transformation and reconciliation
+#### MF-09: PIM-to-PSM transformation and reconciliation
 
 MF-09 controls provider mapping. It begins only when the PIM is accepted and a
 supported provider profile has been selected. The versioned PIM-to-PSM
@@ -230,7 +230,7 @@ defaults, trace links, conflicts, and unsupported capabilities. The result is
 a reconciled PSM draft with visible mapping gaps rather than a silent claim
 that platform realization is complete.
 
-#### MF-10 — AWS PSM refinement and assurance
+#### MF-10: AWS PSM refinement and assurance
 
 MF-10 completes the provider-specific design. It covers account and stage
 structure, naming, stacks, parameters, IAM, keys, secrets, networking, compute,
@@ -241,7 +241,7 @@ participation. The accepted result is an exact AWS PSM revision ready for
 reproducible generation, accompanied by a readiness record rather than an
 informal approval.
 
-#### MF-11 — Reproducible model-to-text generation
+#### MF-11: Reproducible model-to-text generation
 
 MF-11 treats code generation as a controlled engineering operation. It records
 the accepted PSM revision, transformation and template versions,
@@ -251,7 +251,7 @@ state `generated-draft`; generation does not establish correctness or release
 readiness. Platform and release roles can therefore reproduce the baseline and
 explain why a particular artifact exists.
 
-#### MF-12 — Artifact completion and test in the small
+#### MF-12: Artifact completion and test in the small
 
 MF-12 closes the gap between generated scaffolding and working software.
 Application, quality, and security roles complete business logic, adapters,
@@ -261,7 +261,7 @@ Structural gaps are returned to the PSM or generator instead of being hidden in
 repeated downstream patches. The result is a source-and-test baseline with
 component-level verification evidence.
 
-#### MF-13 — Test in the large and release qualification
+#### MF-13: Test in the large and release qualification
 
 MF-13 addresses failures that appear only when functions, managed services,
 permissions, events, data, and operational controls interact. A candidate is
@@ -274,18 +274,19 @@ whether an immutable release candidate can be proposed.
 
 ### 5.3 Release, operation, change, and closure
 
-#### MF-14 — Progressive CI/CD and transition
+#### MF-14: Progressive CI/CD and transition
 
 MF-14 recognizes that a technically qualified candidate can still fail during
 promotion or handover. It combines immutable candidate control, a release and
 recovery plan, progressive promotion, stop and rollback thresholds,
 observation, communication, and operational acceptance. The deployment
-strategy is situational—canary, weighted alias, blue/green, feature control, or
-a governed direct promotion—but the need for an exact candidate and explicit
-decision is not. If promotion fails, the last accepted baseline remains in
-operation and corrective work returns to Phase 1.
+strategy depends on the situation. Teams may use a canary, weighted alias,
+blue/green, feature control, or direct promotion under governance. In every
+case, they need an exact candidate and an explicit decision. If promotion fails,
+the last accepted baseline remains in operation and corrective work returns to
+Phase 1.
 
-#### MF-15 — Operate, observe, control cost, and learn
+#### MF-15: Operate, observe, control cost, and learn
 
 MF-15 gives the deployed service an owned life after release. Product,
 security, FinOps, and service roles monitor outcomes, SLOs, capacity,
@@ -295,7 +296,7 @@ the release hypothesis and converted into prioritized change. This fragment is
 continuous across the active life of the product; G7 starts an operating
 baseline rather than ending development.
 
-#### MF-16 — Incident, problem, and controlled change propagation
+#### MF-16: Incident, problem, and controlled change propagation
 
 MF-16 prevents urgent or evolutionary change from separating the running
 system from its authoritative sources. It permits immediate restoration work
@@ -306,7 +307,7 @@ generation, implementation, release-control, and process-design issues return to
 respective sources. The corrected change is then propagated forward and
 re-evidenced.
 
-#### MF-17 — Retirement, migration, and closure
+#### MF-17: Retirement, migration, and closure
 
 MF-17 treats retirement as an engineered transition rather than a switch-off
 event. Sponsor, product, security, release, service, and data-steward roles
@@ -316,7 +317,7 @@ evidence retention. Migration and decommissioning are verified before closure
 is accepted. The fragment is required at the end of the product lifecycle,
 although it may be rehearsed rather than enacted during a short research case.
 
-#### MF-18 — Kanban service-delivery and maintenance system
+#### MF-18: Kanban service-delivery and maintenance system
 
 MF-18 prevents service demand from being hidden inside a planned release
 backlog or from destroying every release commitment. It defines a visible
@@ -337,7 +338,7 @@ Kanban-board design, and end-to-end value-stream optimization, and Ahmad et al.
 maintenance. These sources justify the fragment as a tailored Kanban service
 system rather than a novel parallel process.
 
-#### MF-19 — DevOps cross-process coordination
+#### MF-19: DevOps cross-process coordination
 
 MF-19 connects rather than conflates Development and Delivery with Operations
 and Maintenance. It defines G7 handover, shared CI/CD and release evidence,
@@ -351,7 +352,7 @@ ownerless.
 
 ### 5.4 Continuous fragment
 
-#### UF-01 — Integrated management, assurance, and evidence
+#### UF-01: Integrated management, assurance, and evidence
 
 UF-01 spans the lifecycle instead of occupying a late phase. It integrates
 product and delivery management, risk and opportunity management, quality
@@ -416,8 +417,8 @@ visible during consolidation.
 
 Each TaskDefinition states its purpose, performer roles, declared input and
 output work products, ordered steps, entry and exit criteria, validation or
-review checks, and—in the modeling components—metamodel coverage. The 139 tasks
-are intentionally finer-grained than the 20 fragments. A fragment expresses a
+review checks. Tasks in the modeling components also specify metamodel coverage.
+The 139 tasks are intentionally finer-grained than the 20 fragments. A fragment expresses a
 reusable solution to a process problem; a task describes the work required to
 realize part of that solution.
 
@@ -453,9 +454,9 @@ The 31 lifecycle products fall into three families:
 | Models, transformations, decisions, and generated baseline            | WP-08–WP-18 | preserve accepted CIM/PIM/PSM revisions, transformation provenance, architectural and assurance evidence, and reproducible generation                               |
 | Implementation, verification, release, operation, change, and closure | WP-19–WP-31 | control software and tests, exact candidates, promotion and recovery, operational evidence, incidents, changes, retirement, improvement, and Kanban service flow    |
 
-A work product is not simply a file. Its definition establishes meaning; its
-process use identifies the activity and task context; its revision and state
-identify the exact evidence considered by a gate. Editing an accepted product
+A work product definition establishes its meaning. Its process use identifies
+the activity and task context, while its revision and state identify the exact
+evidence considered by a gate. Editing an accepted product
 creates a new draft revision rather than silently changing the earlier
 decision.
 
@@ -511,7 +512,7 @@ tasks into the parent process. The artifact-readiness component begins with a
 generated project baseline and covers controlled refinement, delivery
 configuration, verification, release planning, recovery, and operational
 handover. These component boundaries correspond to stable input and result
-ports; they are not merely diagram subdivisions.
+ports in the process.
 
 ### 7.2 Method configurations
 
@@ -642,11 +643,11 @@ Information Technology Service Management with DevOps: An Incident Management
 Case Study.” _Software: Practice and Experience_, 52(1), 322–339.
 <https://doi.org/10.1002/spe.3096>.
 
-ISO/IEC/IEEE (2026). _ISO/IEC/IEEE 12207:2026 Systems and Software Engineering
-— Software Life Cycle Processes_. <https://www.iso.org/standard/90219.html>.
+ISO/IEC/IEEE (2026). _ISO/IEC/IEEE 12207:2026 Systems and Software Engineering:
+Software Life Cycle Processes_. <https://www.iso.org/standard/90219.html>.
 
-ISO/IEC/IEEE (2022). _ISO/IEC/IEEE 14764:2022 Software Engineering — Software
-Life Cycle Processes — Maintenance_.
+ISO/IEC/IEEE (2022). _ISO/IEC/IEEE 14764:2022 Software Engineering: Software
+Life Cycle Processes: Maintenance_.
 <https://www.iso.org/standard/80710.html>.
 
 Object Management Group (OMG) (2008). _Software & Systems Process Engineering

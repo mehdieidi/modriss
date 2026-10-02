@@ -21,7 +21,7 @@ used after enactment to return successful fragments to the method library.
 
 ## Top-down Hybrid Methodology Design iterations
 
-### Iteration 0 — establish requirements and evaluation controls
+### Iteration 0: establish requirements and evaluation controls
 
 The Eidi criteria and Ramsin–Paige process requirements were adopted as seed
 criteria. Repository analysis added explicit requirements for transformation
@@ -31,7 +31,7 @@ release reproducibility, operational feedback, and retirement.
 Result: the requirements and situational-factor catalog in
 `02-method-requirements.md`.
 
-### Iteration 1 — instantiate the lifecycle architecture
+### Iteration 1: instantiate the lifecycle architecture
 
 SPEM was selected for method representation. The initial single sequence was
 rejected because an operational service has no fixed phase duration or one-time
@@ -69,7 +69,7 @@ Disciplined DevOps' end-to-end integration of development, IT operations,
 support, release management, security, and data management
 ([PMI, _Disciplined DevOps_](https://www.pmi.org/disciplined-agile/process/disciplined-devops)).
 
-### Iteration 2 — create the artifact chain
+### Iteration 2: create the artifact chain
 
 The artifact-oriented policy connected:
 
@@ -81,7 +81,7 @@ Every transition received a task, accountable role, input/output relation,
 trace expectation, and review outcome. This reduces gaps between business,
 modeling, implementation, and operational work in the process.
 
-### Iteration 3 — assemble the implemented modeling fragments
+### Iteration 3: assemble the implemented modeling fragments
 
 The existing CIM, PIM, and PSM processes were selected because they are bound
 to the actual Ecore classifiers and validated by coverage tools. Their internal
@@ -102,7 +102,7 @@ declared ports:
 | PSM→artifact generation | accepted PSM, generator/template version                            | reproducible generated baseline and manifest                  |
 | Artifact readiness      | generated baseline, manual-action report                            | verified release-candidate input or rework decision           |
 
-### Iteration 4 — integrate serverless-specific fragments
+### Iteration 4: integrate serverless-specific fragments
 
 Criteria that MDASP and the mini processes did not cover sufficiently were
 added explicitly: serverless suitability, cost and risk analysis, provider
@@ -116,7 +116,7 @@ begin at CIM; provider-independent architecture belongs at PIM; provider
 resources belong at PSM; realized tests, pipelines, and runbooks belong to the
 artifact/release process; actual SLO and cost evidence belongs to operations.
 
-### Iteration 5 — add continuous disciplines and scale
+### Iteration 5: add continuous disciplines and scale
 
 Project/delivery management, risk, quality, security/privacy, configuration and
 change, traceability, knowledge/reuse, measurement, and supplier management
@@ -125,7 +125,7 @@ coordination was designed around bounded ownership, published contracts,
 integration ownership, dependency records, and release coordination rather
 than one shared model edited without boundaries.
 
-### Iteration 6 — configure and test in the large
+### Iteration 6: configure and test in the large
 
 Situational factors were turned into configuration rules and four reference
 profiles. The assembled method was evaluated against the full Eidi criterion
@@ -135,7 +135,7 @@ full round-trip transformation, quantitative cost estimation, automated
 cold-start testing, native vendor-tool SPEM interchange, and empirical method
 validation remain open or partial.
 
-### Iteration 7 — engineer planned delivery and Kanban service coexistence
+### Iteration 7: engineer planned delivery and Kanban service coexistence
 
 The lifecycle was stress-tested against an operating service: planned product
 work can be forecast at release and increment horizons, whereas incidents,
@@ -166,7 +166,7 @@ controls selection; WIP controls govern started work; and feedback cadences
 adapt the Definition of Workflow. Disciplined Agile justifies choosing a flow
 way of working for service demand while retaining iterative planned releases.
 
-### Iteration 8 — enact the complete method analytically and reconcile executable content
+### Iteration 8: enact the complete method analytically and reconcile executable content
 
 The ColdChain Sentinel hypothetical case traversed every executable task, role,
 work product, and gate. Exact-set ledgers exposed gaps that prose review had

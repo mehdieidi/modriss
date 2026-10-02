@@ -13,7 +13,7 @@ repeat
   :Review increment evidence and adapt\nthe tailored way of working;
   :Assemble immutable release candidate;
   :Review compatibility, security, quality, cost,\nrecovery and operational readiness at G6;
-repeat while (G6 rejected?) is (yes — correct authoritative source)
+repeat while (G6 rejected?) is (yes: correct authoritative source)
 :Assign promotion operator and Service Owner before exposure;
 :Confirm first-release stop/drain/reconcile recovery;
 :Promote progressively;

@@ -117,7 +117,7 @@ function renderMethodContentItem(library, category, item) {
         "Repeatable activities",
         item.repeatableActivities?.map(
           (activity) =>
-            `${activity.name}${activity.repeatCondition ? ` — ${activity.repeatCondition}` : ""}`,
+            `${activity.name}${activity.repeatCondition ? `: ${activity.repeatCondition}` : ""}`,
         ),
       ),
     );

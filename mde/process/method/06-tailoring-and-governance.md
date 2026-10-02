@@ -21,7 +21,7 @@ change.
 
 ## Reference configurations
 
-### Profile A — Exploration
+### Profile A: Exploration
 
 Use for high-uncertainty discovery before a production commitment.
 
@@ -35,7 +35,7 @@ Use for high-uncertainty discovery before a production commitment.
 Required evidence is concise, but risks, assumptions, data handling, and
 experiment results remain recorded.
 
-### Profile B — Standard product delivery (default)
+### Profile B: Standard product delivery (default)
 
 Use for ordinary business applications with one or a few teams.
 
@@ -46,7 +46,7 @@ Use for ordinary business applications with one or a few teams.
 - explicit service ownership, SLOs, cost signals, and rollback;
 - lightweight but complete decision, risk, and trace records.
 
-### Profile C — Multi-team product/platform
+### Profile C: Multi-team product/platform
 
 Adds to Profile B:
 
@@ -57,7 +57,7 @@ Adds to Profile B:
   consumer-driven contract evidence;
 - communities of practice and method-library contribution workflow.
 
-### Profile D — Regulated or high-criticality
+### Profile D: Regulated or high-criticality
 
 Adds to B or C:
 
@@ -223,11 +223,11 @@ ownership and versioning.
 
 Each gate has four possible outcomes:
 
-- **accept** — criteria satisfied for the named revision and scope;
-- **accept with time-bounded exception** — authorized owner accepts residual
+- **accept**: criteria satisfied for the named revision and scope;
+- **accept with time-bounded exception**: authorized owner accepts residual
   risk with actions, expiry, and monitoring;
-- **rework** — return to the earliest affected authoritative source; or
-- **defer/stop** — remove from current scope or end the endeavor with recorded
+- **rework**: return to the earliest affected authoritative source; or
+- **defer/stop**: remove from current scope or end the endeavor with recorded
   consequences.
 
 A gate records decision authority, date, exact revisions, criteria, evidence,

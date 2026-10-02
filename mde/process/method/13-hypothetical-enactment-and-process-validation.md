@@ -1,6 +1,6 @@
 # Hypothetical Enactment and Analytical Process Validation
 
-## Audit correction — 2026-09-27
+## Audit correction: 2026-09-27
 
 The generated ledgers are definition-coverage inventories with scripted case
 notes. They do not prove task execution, reviewed artifacts, valid gate
@@ -56,7 +56,7 @@ responsibilities remain distinct.
 
 ## Enactment path
 
-### Phase 0 — one-time inception, tailoring, and organization
+### Phase 0: one-time inception, tailoring, and organization
 
 The Sponsor and Product Owner first frame the outcome: detect excursions fast
 enough to protect medicine while producing auditable evidence at an acceptable
@@ -80,7 +80,7 @@ This ordering proved important: tailoring before feasibility would optimize a
 method for an initiative that might properly stop, while provider commitment
 before the suitability decision would make the PIM boundary fictitious.
 
-### Phase 1 — active product construction and evolution
+### Phase 1: active product construction and evolution
 
 #### Increment 1 and gates G2–G5
 
@@ -144,7 +144,7 @@ correction, repeats affected assurance work, and re-enters G6. The corrected
 candidate is promoted and handed over at G7. Thus rejection loops over release
 and affected increment activities, never over a lifecycle phase.
 
-### Phase 2 — one-time retirement, migration, and closure
+### Phase 2: one-time retirement, migration, and closure
 
 After an authorized product decision, Phase 2 plans replacement, stakeholder
 communication, compatibility, data disposition, rollback, records, security,
@@ -249,9 +249,9 @@ artifact-based enactment and independent review:
   pull control system.
 - It retains an accepted live baseline when a candidate fails and routes
   correction to the earliest authoritative source.
-- It connects Dev and Ops through evidence-bearing interfaces—G7 handover,
-  CI/CD, telemetry, product-change routing, reconciliation, learning, and
-  shared G8—without collapsing their work-control mechanisms.
+- It connects Dev and Ops through G7 handover, CI/CD, telemetry, product-change
+  routing, reconciliation, learning, and shared G8 evidence. Each group keeps
+  its own work-control mechanisms.
 - It closes deliberately across runtime, data, records, access, cost, support,
   and knowledge rather than ending at the last deployment.
 

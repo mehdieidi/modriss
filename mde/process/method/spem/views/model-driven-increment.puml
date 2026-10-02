@@ -1,5 +1,5 @@
 @startuml
-title MODRISS Model-Driven Increment — Detailed Phase 1 View
+title MODRISS Model-Driven Increment: Detailed Phase 1 View
 
 skinparam backgroundColor white
 skinparam shadowing false

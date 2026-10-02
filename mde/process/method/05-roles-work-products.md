@@ -47,8 +47,9 @@ Records/Data Steward.
 ### One cross-functional team
 
 A small team owns a bounded product/service area from CIM through operations.
-Roles are combined—for example, Solution Architect with Software Engineer, or
-Release Engineer with Platform Engineer—but Product Owner, technical/service
+Roles can be combined. For example, one person may serve as both Solution
+Architect and Software Engineer, or as both Release Engineer and Platform
+Engineer. The Product Owner and technical/service
 ownership, security/quality responsibility, and acceptance authority remain
 visible.
 

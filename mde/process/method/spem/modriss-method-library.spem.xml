@@ -3193,7 +3193,7 @@
           <modriss:guidanceKind>Guideline</modriss:guidanceKind>
           <modriss:sourceProcess>end-to-end</modriss:sourceProcess>
         </ownedMethodContentMember>
-        <ownedMethodContentMember xmi:type="spem:Guidance" xmi:id="id_guidance.fragment.mf-01" name="MF-01 — Opportunity and feasibility" modriss:sourceId="guidance.fragment.mf-01">
+        <ownedMethodContentMember xmi:type="spem:Guidance" xmi:id="id_guidance.fragment.mf-01" name="MF-01: Opportunity and feasibility" modriss:sourceId="guidance.fragment.mf-01">
           <modriss:guidanceKind>Process Pattern</modriss:guidanceKind>
           <modriss:description>A project can commit to a solution before value, feasibility, constraints, and alternatives are understood. Result: The endeavor is pursued, explored, redirected, or stopped with explicit evidence.</modriss:description>
           <modriss:sourcePatternId>MF-01</modriss:sourcePatternId>
@@ -3215,7 +3215,7 @@
           <modriss:patternSource>Ramsin-Paige PR2/PR8</modriss:patternSource>
           <modriss:sourceProcess>engineered-fragments</modriss:sourceProcess>
         </ownedMethodContentMember>
-        <ownedMethodContentMember xmi:type="spem:Guidance" xmi:id="id_guidance.fragment.mf-02" name="MF-02 — Serverless suitability, cost, risk, and provider decision" modriss:sourceId="guidance.fragment.mf-02">
+        <ownedMethodContentMember xmi:type="spem:Guidance" xmi:id="id_guidance.fragment.mf-02" name="MF-02: Serverless suitability, cost, risk, and provider decision" modriss:sourceId="guidance.fragment.mf-02">
           <modriss:guidanceKind>Process Pattern</modriss:guidanceKind>
           <modriss:description>Serverless and provider commitments can be made without workload, cost, risk, or exit analysis. Result: A serverless/hybrid/non-serverless and provider decision or bounded experiment is authorized.</modriss:description>
           <modriss:sourcePatternId>MF-02</modriss:sourcePatternId>
@@ -3242,7 +3242,7 @@
           <modriss:patternSource>Eidi serverless exploration criteria</modriss:patternSource>
           <modriss:sourceProcess>engineered-fragments</modriss:sourceProcess>
         </ownedMethodContentMember>
-        <ownedMethodContentMember xmi:type="spem:Guidance" xmi:id="id_guidance.fragment.mf-03" name="MF-03 — Situational method tailoring" modriss:sourceId="guidance.fragment.mf-03">
+        <ownedMethodContentMember xmi:type="spem:Guidance" xmi:id="id_guidance.fragment.mf-03" name="MF-03: Situational method tailoring" modriss:sourceId="guidance.fragment.mf-03">
           <modriss:guidanceKind>Process Pattern</modriss:guidanceKind>
           <modriss:description>One fixed process either overburdens a project or omits necessary controls. Result: A versioned method profile selects content, evidence depth, roles, and review triggers.</modriss:description>
           <modriss:sourcePatternId>MF-03</modriss:sourcePatternId>
@@ -3268,7 +3268,7 @@
           <modriss:patternSource>SMEP Configuration workflow</modriss:patternSource>
           <modriss:sourceProcess>engineered-fragments</modriss:sourceProcess>
         </ownedMethodContentMember>
-        <ownedMethodContentMember xmi:type="spem:Guidance" xmi:id="id_guidance.fragment.mf-04" name="MF-04 — Product, release, and increment framing" modriss:sourceId="guidance.fragment.mf-04">
+        <ownedMethodContentMember xmi:type="spem:Guidance" xmi:id="id_guidance.fragment.mf-04" name="MF-04: Product, release, and increment framing" modriss:sourceId="guidance.fragment.mf-04">
           <modriss:guidanceKind>Process Pattern</modriss:guidanceKind>
           <modriss:description>Modeling can become an end in itself without a bounded outcome and acceptance evidence. Result: A valuable vertical slice is ready with owners, risks, dependencies, and evidence.</modriss:description>
           <modriss:sourcePatternId>MF-04</modriss:sourcePatternId>
@@ -3294,7 +3294,7 @@
           <modriss:patternSource>PMI Disciplined Agile continuous-delivery product lifecycle</modriss:patternSource>
           <modriss:sourceProcess>engineered-fragments</modriss:sourceProcess>
         </ownedMethodContentMember>
-        <ownedMethodContentMember xmi:type="spem:Guidance" xmi:id="id_guidance.fragment.mf-05" name="MF-05 — Event-driven domain discovery and CIM modeling" modriss:sourceId="guidance.fragment.mf-05">
+        <ownedMethodContentMember xmi:type="spem:Guidance" xmi:id="id_guidance.fragment.mf-05" name="MF-05: Event-driven domain discovery and CIM modeling" modriss:sourceId="guidance.fragment.mf-05">
           <modriss:guidanceKind>Process Pattern</modriss:guidanceKind>
           <modriss:description>Business meaning can be lost if software/provider structure is chosen before domain and requirement understanding. Result: An accepted computation-independent model expresses intent, behavior, policy, and governance.</modriss:description>
           <modriss:sourcePatternId>MF-05</modriss:sourcePatternId>
@@ -3313,7 +3313,7 @@
           <modriss:patternSource>mde/process/definitions/cim.json</modriss:patternSource>
           <modriss:sourceProcess>engineered-fragments</modriss:sourceProcess>
         </ownedMethodContentMember>
-        <ownedMethodContentMember xmi:type="spem:Guidance" xmi:id="id_guidance.fragment.mf-06" name="MF-06 — CIM assurance and readiness" modriss:sourceId="guidance.fragment.mf-06">
+        <ownedMethodContentMember xmi:type="spem:Guidance" xmi:id="id_guidance.fragment.mf-06" name="MF-06: CIM assurance and readiness" modriss:sourceId="guidance.fragment.mf-06">
           <modriss:guidanceKind>Process Pattern</modriss:guidanceKind>
           <modriss:description>An incomplete or inconsistent CIM can propagate false certainty downstream. Result: The revision is accepted, reworked, or deferred with trace and findings.</modriss:description>
           <modriss:sourcePatternId>MF-06</modriss:sourcePatternId>
@@ -3333,7 +3333,7 @@
           <modriss:patternSource>MODRISS CIM EVL/readiness</modriss:patternSource>
           <modriss:sourceProcess>engineered-fragments</modriss:sourceProcess>
         </ownedMethodContentMember>
-        <ownedMethodContentMember xmi:type="spem:Guidance" xmi:id="id_guidance.fragment.mf-07" name="MF-07 — CIM to PIM transformation and reconciliation" modriss:sourceId="guidance.fragment.mf-07">
+        <ownedMethodContentMember xmi:type="spem:Guidance" xmi:id="id_guidance.fragment.mf-07" name="MF-07: CIM to PIM transformation and reconciliation" modriss:sourceId="guidance.fragment.mf-07">
           <modriss:guidanceKind>Process Pattern</modriss:guidanceKind>
           <modriss:description>Automated refinement can overwrite human decisions or hide unresolved mappings. Result: A traceable PIM draft is merged or conflicts/manual decisions are explicit.</modriss:description>
           <modriss:sourcePatternId>MF-07</modriss:sourcePatternId>
@@ -3355,7 +3355,7 @@
           <modriss:patternSource>MODRISS CIM-to-PIM ETL</modriss:patternSource>
           <modriss:sourceProcess>engineered-fragments</modriss:sourceProcess>
         </ownedMethodContentMember>
-        <ownedMethodContentMember xmi:type="spem:Guidance" xmi:id="id_guidance.fragment.mf-08" name="MF-08 — Platform-independent serverless architecture" modriss:sourceId="guidance.fragment.mf-08">
+        <ownedMethodContentMember xmi:type="spem:Guidance" xmi:id="id_guidance.fragment.mf-08" name="MF-08: Platform-independent serverless architecture" modriss:sourceId="guidance.fragment.mf-08">
           <modriss:guidanceKind>Process Pattern</modriss:guidanceKind>
           <modriss:description>Serverless architecture needs explicit provider-independent services, contracts, state, integration, workflow, security, and operability. Result: An accepted provider-independent architecture is ready for capability mapping.</modriss:description>
           <modriss:sourcePatternId>MF-08</modriss:sourcePatternId>
@@ -3383,7 +3383,7 @@
           <modriss:patternSource>mde/process/definitions/pim.json</modriss:patternSource>
           <modriss:sourceProcess>engineered-fragments</modriss:sourceProcess>
         </ownedMethodContentMember>
-        <ownedMethodContentMember xmi:type="spem:Guidance" xmi:id="id_guidance.fragment.mf-09" name="MF-09 — PIM to PSM transformation and reconciliation" modriss:sourceId="guidance.fragment.mf-09">
+        <ownedMethodContentMember xmi:type="spem:Guidance" xmi:id="id_guidance.fragment.mf-09" name="MF-09: PIM to PSM transformation and reconciliation" modriss:sourceId="guidance.fragment.mf-09">
           <modriss:guidanceKind>Process Pattern</modriss:guidanceKind>
           <modriss:description>Provider mapping can silently introduce unsafe defaults or lose refinements. Result: A traceable PSM draft is merged and mapping gaps/conflicts are explicit.</modriss:description>
           <modriss:sourcePatternId>MF-09</modriss:sourcePatternId>
@@ -3405,7 +3405,7 @@
           <modriss:patternSource>MODRISS PIM-to-AWS-PSM ETL</modriss:patternSource>
           <modriss:sourceProcess>engineered-fragments</modriss:sourceProcess>
         </ownedMethodContentMember>
-        <ownedMethodContentMember xmi:type="spem:Guidance" xmi:id="id_guidance.fragment.mf-10" name="MF-10 — AWS PSM refinement and assurance" modriss:sourceId="guidance.fragment.mf-10">
+        <ownedMethodContentMember xmi:type="spem:Guidance" xmi:id="id_guidance.fragment.mf-10" name="MF-10: AWS PSM refinement and assurance" modriss:sourceId="guidance.fragment.mf-10">
           <modriss:guidanceKind>Process Pattern</modriss:guidanceKind>
           <modriss:description>Generated provider resources require explicit security, networking, quota, observability, recovery, cost, and deployment decisions. Result: An accepted AWS PSM is ready for reproducible generation.</modriss:description>
           <modriss:sourcePatternId>MF-10</modriss:sourcePatternId>
@@ -3427,7 +3427,7 @@
           <modriss:patternSource>mde/process/definitions/psm.json</modriss:patternSource>
           <modriss:sourceProcess>engineered-fragments</modriss:sourceProcess>
         </ownedMethodContentMember>
-        <ownedMethodContentMember xmi:type="spem:Guidance" xmi:id="id_guidance.fragment.mf-11" name="MF-11 — Reproducible model-to-text generation" modriss:sourceId="guidance.fragment.mf-11">
+        <ownedMethodContentMember xmi:type="spem:Guidance" xmi:id="id_guidance.fragment.mf-11" name="MF-11: Reproducible model-to-text generation" modriss:sourceId="guidance.fragment.mf-11">
           <modriss:guidanceKind>Process Pattern</modriss:guidanceKind>
           <modriss:description>Generated output cannot be trusted or reproduced without exact source, template, configuration, and manifest provenance. Result: A generated-draft baseline and traceable manifest exist.</modriss:description>
           <modriss:sourcePatternId>MF-11</modriss:sourcePatternId>
@@ -3444,7 +3444,7 @@
           <modriss:patternSource>MODRISS EGX/EGL generator</modriss:patternSource>
           <modriss:sourceProcess>engineered-fragments</modriss:sourceProcess>
         </ownedMethodContentMember>
-        <ownedMethodContentMember xmi:type="spem:Guidance" xmi:id="id_guidance.fragment.mf-12" name="MF-12 — Artifact completion and test in the small" modriss:sourceId="guidance.fragment.mf-12">
+        <ownedMethodContentMember xmi:type="spem:Guidance" xmi:id="id_guidance.fragment.mf-12" name="MF-12: Artifact completion and test in the small" modriss:sourceId="guidance.fragment.mf-12">
           <modriss:guidanceKind>Process Pattern</modriss:guidanceKind>
           <modriss:description>Generated scaffolds can be mistaken for complete, correct software. Result: Business logic and extensions are complete and component evidence is available.</modriss:description>
           <modriss:sourcePatternId>MF-12</modriss:sourcePatternId>
@@ -3464,7 +3464,7 @@
           <modriss:patternSource>mde/process/definitions/artifact.json</modriss:patternSource>
           <modriss:sourceProcess>engineered-fragments</modriss:sourceProcess>
         </ownedMethodContentMember>
-        <ownedMethodContentMember xmi:type="spem:Guidance" xmi:id="id_guidance.fragment.mf-13" name="MF-13 — Test in the large and release qualification" modriss:sourceId="guidance.fragment.mf-13">
+        <ownedMethodContentMember xmi:type="spem:Guidance" xmi:id="id_guidance.fragment.mf-13" name="MF-13: Test in the large and release qualification" modriss:sourceId="guidance.fragment.mf-13">
           <modriss:guidanceKind>Process Pattern</modriss:guidanceKind>
           <modriss:description>Locally correct functions and templates may fail as an integrated serverless service. Result: System, acceptance, NFR, security, resilience, recovery, and operational evidence support a release decision. Evidence is current for the candidate; changed inputs, unresolved conflicts and expired exceptions reopen affected acceptance.</modriss:description>
           <modriss:sourcePatternId>MF-13</modriss:sourcePatternId>
@@ -3489,7 +3489,7 @@
           <modriss:patternSource>Eidi serverless testing criteria</modriss:patternSource>
           <modriss:sourceProcess>engineered-fragments</modriss:sourceProcess>
         </ownedMethodContentMember>
-        <ownedMethodContentMember xmi:type="spem:Guidance" xmi:id="id_guidance.fragment.mf-14" name="MF-14 — Progressive CI/CD and transition" modriss:sourceId="guidance.fragment.mf-14">
+        <ownedMethodContentMember xmi:type="spem:Guidance" xmi:id="id_guidance.fragment.mf-14" name="MF-14: Progressive CI/CD and transition" modriss:sourceId="guidance.fragment.mf-14">
           <modriss:guidanceKind>Process Pattern</modriss:guidanceKind>
           <modriss:description>A technically valid candidate can still fail during promotion or handover. Result: The release is progressively promoted, observed, recorded, and accepted for operation. Promotion operator and Service Owner cover first exposure before G7; first-release recovery does not assume a previous accepted baseline.</modriss:description>
           <modriss:sourcePatternId>MF-14</modriss:sourcePatternId>
@@ -3516,7 +3516,7 @@
           <modriss:patternSource>AWS Serverless Lens deployment approaches</modriss:patternSource>
           <modriss:sourceProcess>engineered-fragments</modriss:sourceProcess>
         </ownedMethodContentMember>
-        <ownedMethodContentMember xmi:type="spem:Guidance" xmi:id="id_guidance.fragment.mf-15" name="MF-15 — Operate, observe, control cost, and learn" modriss:sourceId="guidance.fragment.mf-15">
+        <ownedMethodContentMember xmi:type="spem:Guidance" xmi:id="id_guidance.fragment.mf-15" name="MF-15: Operate, observe, control cost, and learn" modriss:sourceId="guidance.fragment.mf-15">
           <modriss:guidanceKind>Process Pattern</modriss:guidanceKind>
           <modriss:description>A deployed serverless service needs operational ownership and feedback to remain valuable, reliable, secure, and economical. Result: Service/product outcomes, SLOs, risk, security, and cost are controlled and feed prioritized change.</modriss:description>
           <modriss:sourcePatternId>MF-15</modriss:sourcePatternId>
@@ -3538,7 +3538,7 @@
           <modriss:patternSource>Eidi observability/feedback criteria</modriss:patternSource>
           <modriss:sourceProcess>engineered-fragments</modriss:sourceProcess>
         </ownedMethodContentMember>
-        <ownedMethodContentMember xmi:type="spem:Guidance" xmi:id="id_guidance.fragment.mf-16" name="MF-16 — Incident, problem, and controlled change propagation" modriss:sourceId="guidance.fragment.mf-16">
+        <ownedMethodContentMember xmi:type="spem:Guidance" xmi:id="id_guidance.fragment.mf-16" name="MF-16: Incident, problem, and controlled change propagation" modriss:sourceId="guidance.fragment.mf-16">
           <modriss:guidanceKind>Process Pattern</modriss:guidanceKind>
           <modriss:description>Emergency or evolutionary changes can diverge models, generators, code, and the running service. Result: Service is restored where necessary and change is routed to the earliest authoritative source and re-evidenced. Persistent model-owned configuration follows the affected delivery path; emergency drift is removed or reconciled before closure.</modriss:description>
           <modriss:sourcePatternId>MF-16</modriss:sourcePatternId>
@@ -3562,7 +3562,7 @@
           <modriss:patternSource>MDASP Source/Target Synchronization</modriss:patternSource>
           <modriss:sourceProcess>engineered-fragments</modriss:sourceProcess>
         </ownedMethodContentMember>
-        <ownedMethodContentMember xmi:type="spem:Guidance" xmi:id="id_guidance.fragment.mf-17" name="MF-17 — Retirement, migration, and closure" modriss:sourceId="guidance.fragment.mf-17">
+        <ownedMethodContentMember xmi:type="spem:Guidance" xmi:id="id_guidance.fragment.mf-17" name="MF-17: Retirement, migration, and closure" modriss:sourceId="guidance.fragment.mf-17">
           <modriss:guidanceKind>Process Pattern</modriss:guidanceKind>
           <modriss:description>A service can be switched off while data, consumers, access, resources, costs, or legal obligations remain. Result: Users, data, integrations, access, resources, cost, and evidence are migrated or closed and accepted. Continuing archive obligations have verified receiving custody, controlled access, funded cost, expiry and deletion ownership.</modriss:description>
           <modriss:sourcePatternId>MF-17</modriss:sourcePatternId>
@@ -3584,7 +3584,7 @@
           <modriss:patternSource>Ramsin-Paige lifecycle coverage</modriss:patternSource>
           <modriss:sourceProcess>engineered-fragments</modriss:sourceProcess>
         </ownedMethodContentMember>
-        <ownedMethodContentMember xmi:type="spem:Guidance" xmi:id="id_guidance.fragment.mf-18" name="MF-18 — Kanban service-delivery and maintenance system" modriss:sourceId="guidance.fragment.mf-18">
+        <ownedMethodContentMember xmi:type="spem:Guidance" xmi:id="id_guidance.fragment.mf-18" name="MF-18: Kanban service-delivery and maintenance system" modriss:sourceId="guidance.fragment.mf-18">
           <modriss:guidanceKind>Process Pattern</modriss:guidanceKind>
           <modriss:description>Production, maintenance, and improvement demand competes with planned delivery, while invisible queues or emergency speed can bypass model, trace, and release controls and create permanent divergence. Result: Service demand is visualized on a Kanban board, made ready and pulled within WIP controls, resolved or routed, measured, and reconciled with authoritative sources and release evidence.</modriss:description>
           <modriss:sourcePatternId>MF-18</modriss:sourcePatternId>
@@ -3614,7 +3614,7 @@
           <modriss:patternSource>AWS Serverless Lens operational excellence</modriss:patternSource>
           <modriss:sourceProcess>engineered-fragments</modriss:sourceProcess>
         </ownedMethodContentMember>
-        <ownedMethodContentMember xmi:type="spem:Guidance" xmi:id="id_guidance.fragment.mf-19" name="MF-19 — DevOps cross-process coordination" modriss:sourceId="guidance.fragment.mf-19">
+        <ownedMethodContentMember xmi:type="spem:Guidance" xmi:id="id_guidance.fragment.mf-19" name="MF-19: DevOps cross-process coordination" modriss:sourceId="guidance.fragment.mf-19">
           <modriss:guidanceKind>Process Pattern</modriss:guidanceKind>
           <modriss:description>Development and operations can optimize locally while release readiness, production feedback, change ownership, and retirement obligations fall between processes. Result: G7 handover, CI/CD evidence, telemetry, incident and maintenance change routing, learning, and G8 closure synchronize the two processes without merging their control systems.</modriss:description>
           <modriss:sourcePatternId>MF-19</modriss:sourcePatternId>
@@ -3651,7 +3651,7 @@
           <modriss:patternSource>Faustino et al. 2022 DevOps and IT service-management evidence</modriss:patternSource>
           <modriss:sourceProcess>engineered-fragments</modriss:sourceProcess>
         </ownedMethodContentMember>
-        <ownedMethodContentMember xmi:type="spem:Guidance" xmi:id="id_guidance.fragment.uf-01" name="UF-01 — Integrated management, assurance, and evidence" modriss:sourceId="guidance.fragment.uf-01">
+        <ownedMethodContentMember xmi:type="spem:Guidance" xmi:id="id_guidance.fragment.uf-01" name="UF-01: Integrated management, assurance, and evidence" modriss:sourceId="guidance.fragment.uf-01">
           <modriss:guidanceKind>Continuous Practice Pattern</modriss:guidanceKind>
           <modriss:description>Lifecycle tasks become disconnected without continuous planning, risk, quality, security, change, trace, and evidence management. Result: Decisions, dependencies, risks, findings, revisions, evidence, and improvement remain controlled throughout the run. Evidence distinguishes planned, simulated, repository-checked and observed results; definition coverage is not task execution.</modriss:description>
           <modriss:sourcePatternId>UF-01</modriss:sourcePatternId>
@@ -4607,7 +4607,7 @@
             </nestedBreakdownElement>
           </nestedBreakdownElement>
           <nestedBreakdownElement xmi:type="spem:Activity" xmi:id="id_modriss.end-to-end.modeling.iteration" name="End-to-End MDE Engine" modriss:sourceId="modriss.end-to-end.modeling.iteration" modriss:kind="Iteration" modriss:isRepeatable="true" modriss:activityRefs="id_e2e.p0.increment-planning id_e2e.p1.cim-modeling id_e2e.p2.cim-to-pim id_e2e.p3.pim-refinement id_e2e.p4.pim-to-psm id_e2e.p5.psm-refinement id_e2e.p6.m2t-generation id_e2e.p7.artifact-completion"/>
-          <nestedBreakdownElement xmi:type="spem:Activity" xmi:id="id_modriss.end-to-end.release-cycle" name="Continuous Delivery Release Cycle" modriss:sourceId="modriss.end-to-end.release-cycle" modriss:kind="Iteration" modriss:isRepeatable="true" modriss:activityRefs="id_e2e.p0.increment-planning id_e2e.p1.cim-modeling id_e2e.p2.cim-to-pim id_e2e.p3.pim-refinement id_e2e.p4.pim-to-psm id_e2e.p5.psm-refinement id_e2e.p6.m2t-generation id_e2e.p7.artifact-completion id_e2e.rel.a1 id_e2e.rel.a2 id_e2e.rel.a3" modriss:repeatCondition="next-release-selected-and-retirement-not-authorized" modriss:exitCondition="retirement-authorized" modriss:guidance="Repeat delivery Activities—not Phases—for each selected release inside the single Active Product Construction and Evolution Phase. Operations and Maintenance independently sustains accepted live baselines."/>
+          <nestedBreakdownElement xmi:type="spem:Activity" xmi:id="id_modriss.end-to-end.release-cycle" name="Continuous Delivery Release Cycle" modriss:sourceId="modriss.end-to-end.release-cycle" modriss:kind="Iteration" modriss:isRepeatable="true" modriss:activityRefs="id_e2e.p0.increment-planning id_e2e.p1.cim-modeling id_e2e.p2.cim-to-pim id_e2e.p3.pim-refinement id_e2e.p4.pim-to-psm id_e2e.p5.psm-refinement id_e2e.p6.m2t-generation id_e2e.p7.artifact-completion id_e2e.rel.a1 id_e2e.rel.a2 id_e2e.rel.a3" modriss:repeatCondition="next-release-selected-and-retirement-not-authorized" modriss:exitCondition="retirement-authorized" modriss:guidance="Repeat delivery activities for each selected release within the single Active Product Construction and Evolution Phase. Do not repeat the phase. Operations and Maintenance continues to support accepted live baselines independently."/>
           <nestedBreakdownElement xmi:type="spem:Activity" xmi:id="id_modriss.end-to-end.service-delivery-flow" name="Continuous Kanban Service-Delivery and Maintenance System" modriss:sourceId="modriss.end-to-end.service-delivery-flow" modriss:kind="KanbanFlow" modriss:isRepeatable="true" modriss:isOngoing="true" modriss:isEventDriven="true" modriss:processComponentRef="id_modriss.operations-maintenance" modriss:activityRefs="id_e2e.ops.a1 id_e2e.ops.a2 id_e2e.ops.a3 id_e2e.ops.a4 id_e2e.ops.a5" modriss:repeatCondition="at-least-one-live-release-and-G8-not-accepted" modriss:exitCondition="G8-lifecycle-closed-and-no-live-release-remains" modriss:flowControl="pull-with-explicit-WIP-limits-and-service-level-expectations" modriss:guidance="Production, maintenance, and improvement demand is visualized on the service Kanban board, made ready through explicit policies, and pulled only within WIP controls. Operations-only work may complete in this system; bounded product changes use the shortest safe MDE path and applicable release controls; broader changes are deliberately committed to a planned release."/>
           <nestedBreakdownElement xmi:type="spem:WorkSequence" xmi:id="id_ws.e2e.ph0.e2e.ph1" predecessor="id_e2e.ph0" successor="id_e2e.ph1" linkKind="finishToStart" modriss:relation="phase-order" modriss:condition="G1-method-and-first-increment-authorized" modriss:guidance="Begin planned delivery only after the method profile, ownership, controls, and first increment hypothesis are accepted."/>
           <nestedBreakdownElement xmi:type="spem:WorkSequence" xmi:id="id_ws.retirement-development.e2e.ph1.e2e.ph2" predecessor="id_e2e.ph1" successor="id_e2e.ph2" linkKind="finishToStart" modriss:relation="phase-order" modriss:condition="retirement-authorized-and-no-development-or-release-work-in-flight" modriss:guidance="Begin the sequential Retirement phase only after retirement is authorized and in-flight development/release work is resolved or explicitly transferred."/>

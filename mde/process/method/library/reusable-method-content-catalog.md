@@ -2730,121 +2730,121 @@ Deliver one capability slice through CIM → PIM → PSM → artifact readiness 
 
 Guidance kind: Practice guidance. Applies to `process`. Provenance: End-to-end lifecycle.
 
-### MF-01 — Opportunity and feasibility (`guidance.fragment.mf-01`)
+### MF-01: Opportunity and feasibility (`guidance.fragment.mf-01`)
 
 A project can commit to a solution before value, feasibility, constraints, and alternatives are understood. Result: The endeavor is pursued, explored, redirected, or stopped with explicit evidence.
 
 Guidance kind: Process Pattern. Pattern source: `MF-01`. Provenance: Engineered fragment catalog.
 
-### MF-02 — Serverless suitability, cost, risk, and provider decision (`guidance.fragment.mf-02`)
+### MF-02: Serverless suitability, cost, risk, and provider decision (`guidance.fragment.mf-02`)
 
 Serverless and provider commitments can be made without workload, cost, risk, or exit analysis. Result: A serverless/hybrid/non-serverless and provider decision or bounded experiment is authorized.
 
 Guidance kind: Process Pattern. Pattern source: `MF-02`. Provenance: Engineered fragment catalog.
 
-### MF-03 — Situational method tailoring (`guidance.fragment.mf-03`)
+### MF-03: Situational method tailoring (`guidance.fragment.mf-03`)
 
 One fixed process either overburdens a project or omits necessary controls. Result: A versioned method profile selects content, evidence depth, roles, and review triggers.
 
 Guidance kind: Process Pattern. Pattern source: `MF-03`. Provenance: Engineered fragment catalog.
 
-### MF-04 — Product, release, and increment framing (`guidance.fragment.mf-04`)
+### MF-04: Product, release, and increment framing (`guidance.fragment.mf-04`)
 
 Modeling can become an end in itself without a bounded outcome and acceptance evidence. Result: A valuable vertical slice is ready with owners, risks, dependencies, and evidence.
 
 Guidance kind: Process Pattern. Pattern source: `MF-04`. Provenance: Engineered fragment catalog.
 
-### MF-05 — Event-driven domain discovery and CIM modeling (`guidance.fragment.mf-05`)
+### MF-05: Event-driven domain discovery and CIM modeling (`guidance.fragment.mf-05`)
 
 Business meaning can be lost if software/provider structure is chosen before domain and requirement understanding. Result: An accepted computation-independent model expresses intent, behavior, policy, and governance.
 
 Guidance kind: Process Pattern. Pattern source: `MF-05`. Provenance: Engineered fragment catalog.
 
-### MF-06 — CIM assurance and readiness (`guidance.fragment.mf-06`)
+### MF-06: CIM assurance and readiness (`guidance.fragment.mf-06`)
 
 An incomplete or inconsistent CIM can propagate false certainty downstream. Result: The revision is accepted, reworked, or deferred with trace and findings.
 
 Guidance kind: Process Pattern. Pattern source: `MF-06`. Provenance: Engineered fragment catalog.
 
-### MF-07 — CIM to PIM transformation and reconciliation (`guidance.fragment.mf-07`)
+### MF-07: CIM to PIM transformation and reconciliation (`guidance.fragment.mf-07`)
 
 Automated refinement can overwrite human decisions or hide unresolved mappings. Result: A traceable PIM draft is merged or conflicts/manual decisions are explicit.
 
 Guidance kind: Process Pattern. Pattern source: `MF-07`. Provenance: Engineered fragment catalog.
 
-### MF-08 — Platform-independent serverless architecture (`guidance.fragment.mf-08`)
+### MF-08: Platform-independent serverless architecture (`guidance.fragment.mf-08`)
 
 Serverless architecture needs explicit provider-independent services, contracts, state, integration, workflow, security, and operability. Result: An accepted provider-independent architecture is ready for capability mapping.
 
 Guidance kind: Process Pattern. Pattern source: `MF-08`. Provenance: Engineered fragment catalog.
 
-### MF-09 — PIM to PSM transformation and reconciliation (`guidance.fragment.mf-09`)
+### MF-09: PIM to PSM transformation and reconciliation (`guidance.fragment.mf-09`)
 
 Provider mapping can silently introduce unsafe defaults or lose refinements. Result: A traceable PSM draft is merged and mapping gaps/conflicts are explicit.
 
 Guidance kind: Process Pattern. Pattern source: `MF-09`. Provenance: Engineered fragment catalog.
 
-### MF-10 — AWS PSM refinement and assurance (`guidance.fragment.mf-10`)
+### MF-10: AWS PSM refinement and assurance (`guidance.fragment.mf-10`)
 
 Generated provider resources require explicit security, networking, quota, observability, recovery, cost, and deployment decisions. Result: An accepted AWS PSM is ready for reproducible generation.
 
 Guidance kind: Process Pattern. Pattern source: `MF-10`. Provenance: Engineered fragment catalog.
 
-### MF-11 — Reproducible model-to-text generation (`guidance.fragment.mf-11`)
+### MF-11: Reproducible model-to-text generation (`guidance.fragment.mf-11`)
 
 Generated output cannot be trusted or reproduced without exact source, template, configuration, and manifest provenance. Result: A generated-draft baseline and traceable manifest exist.
 
 Guidance kind: Process Pattern. Pattern source: `MF-11`. Provenance: Engineered fragment catalog.
 
-### MF-12 — Artifact completion and test in the small (`guidance.fragment.mf-12`)
+### MF-12: Artifact completion and test in the small (`guidance.fragment.mf-12`)
 
 Generated scaffolds can be mistaken for complete, correct software. Result: Business logic and extensions are complete and component evidence is available.
 
 Guidance kind: Process Pattern. Pattern source: `MF-12`. Provenance: Engineered fragment catalog.
 
-### MF-13 — Test in the large and release qualification (`guidance.fragment.mf-13`)
+### MF-13: Test in the large and release qualification (`guidance.fragment.mf-13`)
 
 Locally correct functions and templates may fail as an integrated serverless service. Result: System, acceptance, NFR, security, resilience, recovery, and operational evidence support a release decision. Evidence is current for the candidate; changed inputs, unresolved conflicts and expired exceptions reopen affected acceptance.
 
 Guidance kind: Process Pattern. Pattern source: `MF-13`. Provenance: Engineered fragment catalog.
 
-### MF-14 — Progressive CI/CD and transition (`guidance.fragment.mf-14`)
+### MF-14: Progressive CI/CD and transition (`guidance.fragment.mf-14`)
 
 A technically valid candidate can still fail during promotion or handover. Result: The release is progressively promoted, observed, recorded, and accepted for operation. Promotion operator and Service Owner cover first exposure before G7; first-release recovery does not assume a previous accepted baseline.
 
 Guidance kind: Process Pattern. Pattern source: `MF-14`. Provenance: Engineered fragment catalog.
 
-### MF-15 — Operate, observe, control cost, and learn (`guidance.fragment.mf-15`)
+### MF-15: Operate, observe, control cost, and learn (`guidance.fragment.mf-15`)
 
 A deployed serverless service needs operational ownership and feedback to remain valuable, reliable, secure, and economical. Result: Service/product outcomes, SLOs, risk, security, and cost are controlled and feed prioritized change.
 
 Guidance kind: Process Pattern. Pattern source: `MF-15`. Provenance: Engineered fragment catalog.
 
-### MF-16 — Incident, problem, and controlled change propagation (`guidance.fragment.mf-16`)
+### MF-16: Incident, problem, and controlled change propagation (`guidance.fragment.mf-16`)
 
 Emergency or evolutionary changes can diverge models, generators, code, and the running service. Result: Service is restored where necessary and change is routed to the earliest authoritative source and re-evidenced. Persistent model-owned configuration follows the affected delivery path; emergency drift is removed or reconciled before closure.
 
 Guidance kind: Process Pattern. Pattern source: `MF-16`. Provenance: Engineered fragment catalog.
 
-### MF-17 — Retirement, migration, and closure (`guidance.fragment.mf-17`)
+### MF-17: Retirement, migration, and closure (`guidance.fragment.mf-17`)
 
 A service can be switched off while data, consumers, access, resources, costs, or legal obligations remain. Result: Users, data, integrations, access, resources, cost, and evidence are migrated or closed and accepted. Continuing archive obligations have verified receiving custody, controlled access, funded cost, expiry and deletion ownership.
 
 Guidance kind: Process Pattern. Pattern source: `MF-17`. Provenance: Engineered fragment catalog.
 
-### MF-18 — Kanban service-delivery and maintenance system (`guidance.fragment.mf-18`)
+### MF-18: Kanban service-delivery and maintenance system (`guidance.fragment.mf-18`)
 
 Production, maintenance, and improvement demand competes with planned delivery, while invisible queues or emergency speed can bypass model, trace, and release controls and create permanent divergence. Result: Service demand is visualized on a Kanban board, made ready and pulled within WIP controls, resolved or routed, measured, and reconciled with authoritative sources and release evidence.
 
 Guidance kind: Process Pattern. Pattern source: `MF-18`. Provenance: Engineered fragment catalog.
 
-### MF-19 — DevOps cross-process coordination (`guidance.fragment.mf-19`)
+### MF-19: DevOps cross-process coordination (`guidance.fragment.mf-19`)
 
 Development and operations can optimize locally while release readiness, production feedback, change ownership, and retirement obligations fall between processes. Result: G7 handover, CI/CD evidence, telemetry, incident and maintenance change routing, learning, and G8 closure synchronize the two processes without merging their control systems.
 
 Guidance kind: Process Pattern. Pattern source: `MF-19`. Provenance: Engineered fragment catalog.
 
-### UF-01 — Integrated management, assurance, and evidence (`guidance.fragment.uf-01`)
+### UF-01: Integrated management, assurance, and evidence (`guidance.fragment.uf-01`)
 
 Lifecycle tasks become disconnected without continuous planning, risk, quality, security, change, trace, and evidence management. Result: Decisions, dependencies, risks, findings, revisions, evidence, and improvement remain controlled throughout the run. Evidence distinguishes planned, simulated, repository-checked and observed results; definition coverage is not task execution.
 

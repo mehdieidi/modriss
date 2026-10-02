@@ -239,7 +239,7 @@ for (const [label, diagram] of [['exported primary SVG', lifecycleSvg], ['export
 const processNarrative = read('mde/process/method/04-development-process.md');
 const thesisChapter = read('mde/process/method/10-thesis-process-chapter.md');
 requireText(processNarrative, '## Normative process vocabulary', 'development-process narrative');
-requireText(processNarrative, 'Operations and Maintenance Process — ongoing and event-driven', 'development-process narrative');
+requireText(processNarrative, 'Operations and Maintenance Process: ongoing and event-driven', 'development-process narrative');
 requireText(thesisChapter, 'two coordinated processes', 'thesis chapter');
 
 const xml = read('mde/process/method/spem/modriss-method-library.spem.xml');

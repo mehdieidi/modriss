@@ -13555,7 +13555,7 @@
     {
       "id": "guidance.fragment.mf-01",
       "type": "Guidance",
-      "name": "MF-01 — Opportunity and feasibility",
+      "name": "MF-01: Opportunity and feasibility",
       "guidanceKind": "Process Pattern",
       "description": "A project can commit to a solution before value, feasibility, constraints, and alternatives are understood. Result: The endeavor is pursued, explored, redirected, or stopped with explicit evidence.",
       "sourcePatternId": "MF-01",
@@ -13572,7 +13572,7 @@
     {
       "id": "guidance.fragment.mf-02",
       "type": "Guidance",
-      "name": "MF-02 — Serverless suitability, cost, risk, and provider decision",
+      "name": "MF-02: Serverless suitability, cost, risk, and provider decision",
       "guidanceKind": "Process Pattern",
       "description": "Serverless and provider commitments can be made without workload, cost, risk, or exit analysis. Result: A serverless/hybrid/non-serverless and provider decision or bounded experiment is authorized.",
       "sourcePatternId": "MF-02",
@@ -13589,7 +13589,7 @@
     {
       "id": "guidance.fragment.mf-03",
       "type": "Guidance",
-      "name": "MF-03 — Situational method tailoring",
+      "name": "MF-03: Situational method tailoring",
       "guidanceKind": "Process Pattern",
       "description": "One fixed process either overburdens a project or omits necessary controls. Result: A versioned method profile selects content, evidence depth, roles, and review triggers.",
       "sourcePatternId": "MF-03",
@@ -13610,7 +13610,7 @@
     {
       "id": "guidance.fragment.mf-04",
       "type": "Guidance",
-      "name": "MF-04 — Product, release, and increment framing",
+      "name": "MF-04: Product, release, and increment framing",
       "guidanceKind": "Process Pattern",
       "description": "Modeling can become an end in itself without a bounded outcome and acceptance evidence. Result: A valuable vertical slice is ready with owners, risks, dependencies, and evidence.",
       "sourcePatternId": "MF-04",
@@ -13632,7 +13632,7 @@
     {
       "id": "guidance.fragment.mf-05",
       "type": "Guidance",
-      "name": "MF-05 — Event-driven domain discovery and CIM modeling",
+      "name": "MF-05: Event-driven domain discovery and CIM modeling",
       "guidanceKind": "Process Pattern",
       "description": "Business meaning can be lost if software/provider structure is chosen before domain and requirement understanding. Result: An accepted computation-independent model expresses intent, behavior, policy, and governance.",
       "sourcePatternId": "MF-05",
@@ -13649,7 +13649,7 @@
     {
       "id": "guidance.fragment.mf-06",
       "type": "Guidance",
-      "name": "MF-06 — CIM assurance and readiness",
+      "name": "MF-06: CIM assurance and readiness",
       "guidanceKind": "Process Pattern",
       "description": "An incomplete or inconsistent CIM can propagate false certainty downstream. Result: The revision is accepted, reworked, or deferred with trace and findings.",
       "sourcePatternId": "MF-06",
@@ -13666,7 +13666,7 @@
     {
       "id": "guidance.fragment.mf-07",
       "type": "Guidance",
-      "name": "MF-07 — CIM to PIM transformation and reconciliation",
+      "name": "MF-07: CIM to PIM transformation and reconciliation",
       "guidanceKind": "Process Pattern",
       "description": "Automated refinement can overwrite human decisions or hide unresolved mappings. Result: A traceable PIM draft is merged or conflicts/manual decisions are explicit.",
       "sourcePatternId": "MF-07",
@@ -13687,7 +13687,7 @@
     {
       "id": "guidance.fragment.mf-08",
       "type": "Guidance",
-      "name": "MF-08 — Platform-independent serverless architecture",
+      "name": "MF-08: Platform-independent serverless architecture",
       "guidanceKind": "Process Pattern",
       "description": "Serverless architecture needs explicit provider-independent services, contracts, state, integration, workflow, security, and operability. Result: An accepted provider-independent architecture is ready for capability mapping.",
       "sourcePatternId": "MF-08",
@@ -13712,7 +13712,7 @@
     {
       "id": "guidance.fragment.mf-09",
       "type": "Guidance",
-      "name": "MF-09 — PIM to PSM transformation and reconciliation",
+      "name": "MF-09: PIM to PSM transformation and reconciliation",
       "guidanceKind": "Process Pattern",
       "description": "Provider mapping can silently introduce unsafe defaults or lose refinements. Result: A traceable PSM draft is merged and mapping gaps/conflicts are explicit.",
       "sourcePatternId": "MF-09",
@@ -13729,7 +13729,7 @@
     {
       "id": "guidance.fragment.mf-10",
       "type": "Guidance",
-      "name": "MF-10 — AWS PSM refinement and assurance",
+      "name": "MF-10: AWS PSM refinement and assurance",
       "guidanceKind": "Process Pattern",
       "description": "Generated provider resources require explicit security, networking, quota, observability, recovery, cost, and deployment decisions. Result: An accepted AWS PSM is ready for reproducible generation.",
       "sourcePatternId": "MF-10",
@@ -13746,7 +13746,7 @@
     {
       "id": "guidance.fragment.mf-11",
       "type": "Guidance",
-      "name": "MF-11 — Reproducible model-to-text generation",
+      "name": "MF-11: Reproducible model-to-text generation",
       "guidanceKind": "Process Pattern",
       "description": "Generated output cannot be trusted or reproduced without exact source, template, configuration, and manifest provenance. Result: A generated-draft baseline and traceable manifest exist.",
       "sourcePatternId": "MF-11",
@@ -13763,7 +13763,7 @@
     {
       "id": "guidance.fragment.mf-12",
       "type": "Guidance",
-      "name": "MF-12 — Artifact completion and test in the small",
+      "name": "MF-12: Artifact completion and test in the small",
       "guidanceKind": "Process Pattern",
       "description": "Generated scaffolds can be mistaken for complete, correct software. Result: Business logic and extensions are complete and component evidence is available.",
       "sourcePatternId": "MF-12",
@@ -13780,7 +13780,7 @@
     {
       "id": "guidance.fragment.mf-13",
       "type": "Guidance",
-      "name": "MF-13 — Test in the large and release qualification",
+      "name": "MF-13: Test in the large and release qualification",
       "guidanceKind": "Process Pattern",
       "description": "Locally correct functions and templates may fail as an integrated serverless service. Result: System, acceptance, NFR, security, resilience, recovery, and operational evidence support a release decision. Evidence is current for the candidate; changed inputs, unresolved conflicts and expired exceptions reopen affected acceptance.",
       "sourcePatternId": "MF-13",
@@ -13797,7 +13797,7 @@
     {
       "id": "guidance.fragment.mf-14",
       "type": "Guidance",
-      "name": "MF-14 — Progressive CI/CD and transition",
+      "name": "MF-14: Progressive CI/CD and transition",
       "guidanceKind": "Process Pattern",
       "description": "A technically valid candidate can still fail during promotion or handover. Result: The release is progressively promoted, observed, recorded, and accepted for operation. Promotion operator and Service Owner cover first exposure before G7; first-release recovery does not assume a previous accepted baseline.",
       "sourcePatternId": "MF-14",
@@ -13821,7 +13821,7 @@
     {
       "id": "guidance.fragment.mf-15",
       "type": "Guidance",
-      "name": "MF-15 — Operate, observe, control cost, and learn",
+      "name": "MF-15: Operate, observe, control cost, and learn",
       "guidanceKind": "Process Pattern",
       "description": "A deployed serverless service needs operational ownership and feedback to remain valuable, reliable, secure, and economical. Result: Service/product outcomes, SLOs, risk, security, and cost are controlled and feed prioritized change.",
       "sourcePatternId": "MF-15",
@@ -13838,7 +13838,7 @@
     {
       "id": "guidance.fragment.mf-16",
       "type": "Guidance",
-      "name": "MF-16 — Incident, problem, and controlled change propagation",
+      "name": "MF-16: Incident, problem, and controlled change propagation",
       "guidanceKind": "Process Pattern",
       "description": "Emergency or evolutionary changes can diverge models, generators, code, and the running service. Result: Service is restored where necessary and change is routed to the earliest authoritative source and re-evidenced. Persistent model-owned configuration follows the affected delivery path; emergency drift is removed or reconciled before closure.",
       "sourcePatternId": "MF-16",
@@ -13855,7 +13855,7 @@
     {
       "id": "guidance.fragment.mf-17",
       "type": "Guidance",
-      "name": "MF-17 — Retirement, migration, and closure",
+      "name": "MF-17: Retirement, migration, and closure",
       "guidanceKind": "Process Pattern",
       "description": "A service can be switched off while data, consumers, access, resources, costs, or legal obligations remain. Result: Users, data, integrations, access, resources, cost, and evidence are migrated or closed and accepted. Continuing archive obligations have verified receiving custody, controlled access, funded cost, expiry and deletion ownership.",
       "sourcePatternId": "MF-17",
@@ -13872,7 +13872,7 @@
     {
       "id": "guidance.fragment.mf-18",
       "type": "Guidance",
-      "name": "MF-18 — Kanban service-delivery and maintenance system",
+      "name": "MF-18: Kanban service-delivery and maintenance system",
       "guidanceKind": "Process Pattern",
       "description": "Production, maintenance, and improvement demand competes with planned delivery, while invisible queues or emergency speed can bypass model, trace, and release controls and create permanent divergence. Result: Service demand is visualized on a Kanban board, made ready and pulled within WIP controls, resolved or routed, measured, and reconciled with authoritative sources and release evidence.",
       "sourcePatternId": "MF-18",
@@ -13895,7 +13895,7 @@
     {
       "id": "guidance.fragment.mf-19",
       "type": "Guidance",
-      "name": "MF-19 — DevOps cross-process coordination",
+      "name": "MF-19: DevOps cross-process coordination",
       "guidanceKind": "Process Pattern",
       "description": "Development and operations can optimize locally while release readiness, production feedback, change ownership, and retirement obligations fall between processes. Result: G7 handover, CI/CD evidence, telemetry, incident and maintenance change routing, learning, and G8 closure synchronize the two processes without merging their control systems.",
       "sourcePatternId": "MF-19",
@@ -13928,7 +13928,7 @@
     {
       "id": "guidance.fragment.uf-01",
       "type": "Guidance",
-      "name": "UF-01 — Integrated management, assurance, and evidence",
+      "name": "UF-01: Integrated management, assurance, and evidence",
       "guidanceKind": "Continuous Practice Pattern",
       "description": "Lifecycle tasks become disconnected without continuous planning, risk, quality, security, change, trace, and evidence management. Result: Decisions, dependencies, risks, findings, revisions, evidence, and improvement remain controlled throughout the run. Evidence distinguishes planned, simulated, repository-checked and observed results; definition coverage is not task execution.",
       "sourcePatternId": "UF-01",
@@ -14107,7 +14107,7 @@
           ],
           "repeatCondition": "next-release-selected-and-retirement-not-authorized",
           "exitCondition": "retirement-authorized",
-          "guidance": "Repeat delivery Activities—not Phases—for each selected release inside the single Active Product Construction and Evolution Phase. Operations and Maintenance independently sustains accepted live baselines."
+          "guidance": "Repeat delivery activities for each selected release within the single Active Product Construction and Evolution Phase. Do not repeat the phase. Operations and Maintenance continues to support accepted live baselines independently."
         },
         {
           "id": "modriss.end-to-end.service-delivery-flow",

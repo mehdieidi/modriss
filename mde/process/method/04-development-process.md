@@ -93,7 +93,7 @@ crosses a stop threshold, the team retains the last accepted operating
 baseline and returns corrective work to the applicable Phase 1 activity before
 requalification.
 
-## Phase 0 — Inception, Tailoring, and Organization
+## Phase 0: Inception, Tailoring, and Organization
 
 ### 0.1 Frame the opportunity and product system
 
@@ -119,11 +119,11 @@ Outputs: feasibility study, serverless suitability record, initial cost model,
 risk register, provider/target decision or decision plan, and approved
 experiments.
 
-Gate G0 — **Pursue / explore / redirect / stop**. The Sponsor and Product Owner
+Gate G0: **Pursue / explore / redirect / stop**. The Sponsor and Product Owner
 accept the value case; Architecture, Security, and Service Owners accept that
 risks are understood enough for the next commitment; FinOps confirms that the
 cost range, demand assumptions, unit measure, budget boundary, and review
-triggers are explicit. The decision and its conditions are recorded—silence or
+triggers are explicit. The decision and its conditions are recorded: silence or
 task completion is not authorization.
 
 ### 0.3 Engineer the situational method
@@ -154,11 +154,11 @@ evidence, threat/privacy approach, environment and secret strategy, SLO/SLI
 intent, observability, backup/recovery, CI/CD controls, artifact provenance,
 and definitions of Ready and Done.
 
-Gate G1 — **Process and organization ready**. The first increment has a bounded
+Gate G1: **Process and organization ready**. The first increment has a bounded
 outcome, owners, dependencies, risk treatment, evidence expectations, and a
 valid method profile.
 
-## Phase 1 — Active Product Construction and Evolution
+## Phase 1: Active Product Construction and Evolution
 
 This phase occurs once and spans the active life of the product. It contains a
 repeatable Development and Delivery activity cycle; it does not contain a
@@ -194,7 +194,7 @@ semantic model validation, and readiness assessment. In assistant workflows,
 only structural Ecore/EMF conformance gates assistant-generated changes;
 semantic EVL validation is a separate explicit user/model validation workflow.
 
-Gate G2 — **CIM accepted for this slice**. Stakeholder meaning, requirements,
+Gate G2: **CIM accepted for this slice**. Stakeholder meaning, requirements,
 acceptance, domain behavior, trace, and open decisions are adequate to design a
 solution.
 
@@ -222,7 +222,7 @@ choreography, state, consistency, retries/idempotency, failure isolation,
 multi-tenancy, cold starts, cost, and lock-in. Threat, failure-mode, and cost
 reviews are part of architecture, not postponed until PSM.
 
-Gate G3 — **PIM accepted and platform-mappable**. Contracts, failure behavior,
+Gate G3: **PIM accepted and platform-mappable**. Contracts, failure behavior,
 security, data, SLOs, traceability, and provider capability needs are explicit;
 open mapping gaps are owned.
 
@@ -242,7 +242,7 @@ Step Functions, logging, metrics, alarms, dashboards, and integration views.
 Review quotas, concurrency, reserved/provisioned capacity, encryption,
 retention, deletion policy, recovery, regional behavior, and cost controls.
 
-Gate G4 — **PSM accepted for generation**. The exact PSM revision passes
+Gate G4: **PSM accepted for generation**. The exact PSM revision passes
 structural conformance and the explicit model-validation workflow required by
 the profile; traces and blocking manual decisions are closed or accepted by an
 authorized owner.
@@ -271,7 +271,7 @@ recovery, security, compatibility, usability/accessibility, and operational
 tests selected by risk. Validate dashboards, alerts, tracing, runbooks, and cost
 signals during testing.
 
-Gate G5 — **Increment accepted / rework / defer**. The Product Owner accepts
+Gate G5: **Increment accepted / rework / defer**. The Product Owner accepts
 value and behavior; Quality and Security accept required evidence or approved
 exceptions; the Service Owner accepts operability; unresolved structural
 changes are routed back to the authoritative model/generator source.
@@ -304,7 +304,7 @@ cost forecast, support readiness, observability, SLOs, capacity, backup,
 restore, rollback/roll-forward, data recovery, incident communications, and
 approvals.
 
-Gate G6 — **Release authorized / rejected / exception accepted**. Approval
+Gate G6: **Release authorized / rejected / exception accepted**. Approval
 identifies the exact candidate and evidence; task completion alone cannot
 override a blocker.
 
@@ -331,7 +331,7 @@ ownership, access, recovery procedures, known errors, risk acceptances, and
 post-deployment checks. The Product Owner schedules outcome review against the
 release hypothesis.
 
-Gate G7 — **Release transitioned**. Deployment is not complete until the
+Gate G7: **Release transitioned**. Deployment is not complete until the
 running service and its support obligations have owners and evidence.
 
 G7 establishes a new operating baseline; it does not terminate development.
@@ -340,14 +340,14 @@ risks, cost evidence, and user feedback are assessed for a subsequent release.
 That release receives a new hypothesis, increment set, immutable candidate,
 G6 decision, and G7 transition record.
 
-## Operations and Maintenance Process — ongoing and event-driven
+## Operations and Maintenance Process: ongoing and event-driven
 
 This is a continuing Kanban service-delivery system, not a phase, pre-planned
 iteration, or independently invented lifecycle. In SPEM terms it is an
 ongoing (`isOngoing=true`) and event-driven (`isEventDriven=true`) Process. It applies
-the Kanban Guide's minimum definition of workflow—work-item
+the Kanban Guide's minimum definition of workflow: work-item
 definition, start/finish states, WIP control, explicit policies, and a service
-level expectation—and actively manages WIP, item age, blockers, cycle time,
+level expectation. The team also manages WIP, item age, blockers, cycle time,
 and throughput [Kanban Guide 2025](https://kanbanguides.org/the-kanban-guide/).
 Disciplined Agile supports the contextual choice of flow for service work while
 planned releases retain an iterative lifecycle, and it emphasizes visibility
@@ -383,7 +383,7 @@ policy and remains visible on the board. MODRISS therefore acknowledges
 uncertainty without making the team permanently idle or allowing every request
 to become an emergency.
 
-### Activity O1 — Operate and observe
+### Activity O1: Operate and observe
 
 Operate against SLOs and product outcomes. Monitor latency, availability,
 errors, throttling, concurrency, retries, dead letters, workflow failures,
@@ -393,7 +393,7 @@ certificate/key rotation, dependency update, and continuity work. Each
 actionable signal becomes WP-30, a Service Work Item, with its origin,
 evidence, affected service, owner, and age.
 
-### Activity O2 — Manage the Kanban service-delivery board
+### Activity O2: Manage the Kanban service-delivery board
 
 Classify each work item on three independent axes. Maintenance purpose
 describes _why_ the system changes: corrective, preventive, adaptive, additive,
@@ -430,7 +430,7 @@ At replenishment, the team chooses one of three dispositions:
 3. move a broader or deferrable change into a planned release backlog with an
    explicit commitment decision.
 
-### Activity O3 — Respond to incidents and problems
+### Activity O3: Respond to incidents and problems
 
 Restore service first under the incident process, preserve an evidence
 timeline, communicate, and track temporary changes. Emergency work uses the
@@ -441,7 +441,7 @@ changes. A temporary operational modification remains open until it is removed
 or reconciled by permanent corrective work. Blameless learning does not remove
 accountable follow-through.
 
-### Activity O4 — Route maintenance change and reconcile
+### Activity O4: Route maintenance change and reconcile
 
 Route changes to the earliest authoritative source:
 
@@ -471,7 +471,7 @@ controls. An approved read-only diagnostic or alert acknowledgement may finish
 operations-only. Persistent emergency drift cannot be closed merely by creating
 a future backlog item: remove it or reconcile and verify the accepted source.
 
-### Activity O5 — Improve service and process
+### Activity O5: Improve service and process
 
 Compare actual outcomes, SLOs, cost, risks, estimates, and process measures with
 hypotheses. Review WIP, throughput, work-item age, cycle time, SLE attainment,
@@ -482,7 +482,7 @@ patterns, transformations, tests,
 runbooks, and method fragments only after review. Update training and the
 method library through versioned change.
 
-## Phase 2 — Retire, Migrate, and Close
+## Phase 2: Retire, Migrate, and Close
 
 ### 2.1 Decide and plan retirement
 
@@ -509,7 +509,7 @@ During Phase 2, Operations and Maintenance continues to protect the live
 baseline, support migration, and handle emerging demand. It terminates only
 when G8 confirms that no live release or operational obligation remains.
 
-Gate G8 — **Lifecycle closed**. Product, Service, Security/Privacy, and Records
+Gate G8: **Lifecycle closed**. Product, Service, Security/Privacy, and Records
 owners accept closure; both coordinated processes are complete. No live
 release, unowned data/records obligation, retired-service access path,
 unassigned chargeable resource, or closure blocker remains.

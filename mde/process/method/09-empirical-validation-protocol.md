@@ -28,7 +28,7 @@ evaluate configurability and analytic generalization.
 | EV-RQ2 | Does the process maintain usable traceability and consistency from requirements/CIM through PIM, PSM, generated artifacts, release evidence, and operational change? |
 | EV-RQ3 | Which activities create useful decisions or defect prevention, and which create avoidable burden or duplication?                                                     |
 | EV-RQ4 | Does situational tailoring preserve required control objectives while reducing unnecessary work for the case?                                                        |
-| EV-RQ5 | How do serverless-specific concerns—cost, events, state, failure, security, cold starts, observability, and provider lock-in—affect decisions and outcomes?          |
+| EV-RQ5 | How do serverless-specific concerns: cost, events, state, failure, security, cold starts, observability, and provider lock-in: affect decisions and outcomes?        |
 | EV-RQ6 | Can the process coordinate ownership and dependencies when more than one team or a platform team is involved?                                                        |
 
 ## Propositions and rival explanations
@@ -55,10 +55,10 @@ confirmed. Negative and contradictory evidence must be retained.
 Use purposive maximum-variation sampling rather than selecting only the easiest
 demonstration. At minimum:
 
-- **Case A—standard product delivery:** one cross-functional team, moderate
+- **Case A: standard product delivery:** one cross-functional team, moderate
   novelty, one AWS region, ordinary business criticality, and at least one API,
   event flow, workflow, and persistent store;
-- **Case B—contrasting situation:** either multiple teams, higher assurance or
+- **Case B: contrasting situation:** either multiple teams, higher assurance or
   compliance, legacy/external integration, high burst/concurrency, strict
   latency/cost constraints, or a portability requirement.
 

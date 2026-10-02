@@ -254,8 +254,8 @@ implicit property of the JSON DSL.
 ## Research references
 
 - Object Management Group, [Software & Systems Process Engineering Metamodel (SPEM), Version 2.0](https://www.omg.org/spec/SPEM/2.0/PDF/), 2008.
-- ISO/IEC/IEEE, [12207:2026 — Software life cycle processes](https://www.iso.org/standard/90219.html). It provides a common life-cycle framework but does not prescribe one methodology or life-cycle model.
-- ISO/IEC/IEEE, [15288:2023 — System life cycle processes](https://www.iso.org/standard/81702.html). It supports concurrent, iterative, and recursive application of life-cycle processes without prescribing a specific method.
+- ISO/IEC/IEEE, [12207:2026: Software life cycle processes](https://www.iso.org/standard/90219.html). It provides a common life-cycle framework but does not prescribe one methodology or life-cycle model.
+- ISO/IEC/IEEE, [15288:2023: System life cycle processes](https://www.iso.org/standard/81702.html). It supports concurrent, iterative, and recursive application of life-cycle processes without prescribing a specific method.
 - Brinkkemper, S., [“Method engineering: Engineering of information systems development methods and tools”](<https://doi.org/10.1016/S0950-5849(95)01059-9>), _Information and Software Technology_, 1996.
 - Brinkkemper, S., Saeki, M., & Harmsen, F., [“Assembly techniques for method engineering”](https://doi.org/10.1016/S0306437999000162), _Information Systems_, 2001.
 - [Agile Manifesto principles](https://agilemanifesto.org/principles), used here for empirical iteration and adaptation rather than as a replacement for assurance or lifecycle responsibilities.

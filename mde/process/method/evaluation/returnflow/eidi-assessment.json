@@ -808,7 +808,7 @@
     },
     {
       "group": 2,
-      "criterion": "Observability—Distributed Tracing",
+      "criterion": "Observability: Distributed Tracing",
       "type": "Scale",
       "design": "A",
       "realization": "B",
@@ -819,7 +819,7 @@
     },
     {
       "group": 2,
-      "criterion": "Observability—Logging",
+      "criterion": "Observability: Logging",
       "type": "Scale",
       "design": "A",
       "realization": "B",

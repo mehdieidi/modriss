@@ -12,23 +12,23 @@ const definitions = Object.fromEntries(processNames.map(name => [
 ]));
 
 const people = {
-  'role.sponsor': 'Nadia Rahimi — executive sponsor',
-  'role.product-owner': 'Leila Farzan — product owner',
-  'role.domain-expert': 'Omid Shariati — cold-chain specialist',
-  'role.method-engineer': 'Sara Vahidi — method engineer',
-  'role.delivery-lead': 'Arman Nouri — delivery lead',
-  'role.requirements-engineer': 'Mina Karimi — requirements engineer',
-  'role.business-modeler': 'Mina Karimi — business modeler',
-  'role.solution-architect': 'Reza Tavakoli — solution architect',
-  'role.cloud-platform-engineer': 'Parisa Azadi — cloud platform engineer',
-  'role.application-engineer': 'Kian Mehr — software engineer',
-  'role.quality-engineer': 'Yasaman Daryaei — quality engineer',
-  'role.security-engineer': 'Navid Etemadi — security and privacy engineer',
-  'role.finops-cost-analyst': 'Shirin Mehrabi — FinOps analyst',
-  'role.release-engineer': 'Pouya Jalali — release engineer',
-  'role.service-owner': 'Hoda Moradi — service owner/SRE',
-  'role.process-reviewer': 'Ali Zand — assurance reviewer',
-  'role.records-data-steward': 'Maryam Sadeghi — records and data steward',
+  'role.sponsor': 'Nadia Rahimi: executive sponsor',
+  'role.product-owner': 'Leila Farzan: product owner',
+  'role.domain-expert': 'Omid Shariati: cold-chain specialist',
+  'role.method-engineer': 'Sara Vahidi: method engineer',
+  'role.delivery-lead': 'Arman Nouri: delivery lead',
+  'role.requirements-engineer': 'Mina Karimi: requirements engineer',
+  'role.business-modeler': 'Mina Karimi: business modeler',
+  'role.solution-architect': 'Reza Tavakoli: solution architect',
+  'role.cloud-platform-engineer': 'Parisa Azadi: cloud platform engineer',
+  'role.application-engineer': 'Kian Mehr: software engineer',
+  'role.quality-engineer': 'Yasaman Daryaei: quality engineer',
+  'role.security-engineer': 'Navid Etemadi: security and privacy engineer',
+  'role.finops-cost-analyst': 'Shirin Mehrabi: FinOps analyst',
+  'role.release-engineer': 'Pouya Jalali: release engineer',
+  'role.service-owner': 'Hoda Moradi: service owner/SRE',
+  'role.process-reviewer': 'Ali Zand: assurance reviewer',
+  'role.records-data-steward': 'Maryam Sadeghi: records and data steward',
 };
 
 const taskOverrides = {
@@ -53,11 +53,11 @@ function csv(value) {
 
 function occurrence(processName, taskId) {
   if (processName !== 'end-to-end') return processName === 'artifact' ? 'Increment 1 and Release 1; repeated selectively for Release 2' : 'Increment 1; affected tasks repeated for Increment 2';
-  if (taskId.includes('.ph0.')) return 'Phase 0 — once';
-  if (taskId.includes('.ops.')) return 'Operations window — repeated by event and cadence';
-  if (taskId.includes('.ph2.')) return 'Phase 2 — once';
+  if (taskId.includes('.ph0.')) return 'Phase 0: once';
+  if (taskId.includes('.ops.')) return 'Operations window: repeated by event and cadence';
+  if (taskId.includes('.ph2.')) return 'Phase 2: once';
   if (taskId.includes('.rel.')) return 'Release 1 and Release 2';
-  return 'Phase 1 — Increment 1; affected path repeated in Increment 2';
+  return 'Phase 1: Increment 1; affected path repeated in Increment 2';
 }
 
 function defaultTaskNote(processName, task) {
@@ -158,7 +158,7 @@ fs.writeFileSync(path.join(outRoot, 'gate-decision-ledger.csv'), `${[gateHeader,
 const summary = {
   caseId: 'coldchain-sentinel-hypothetical-01',
   evidenceKind: 'generated coverage inventory with scripted scenarios; not execution evidence',
-  system: 'ColdChain Sentinel — serverless cold-chain monitoring and excursion response',
+  system: 'ColdChain Sentinel: serverless cold-chain monitoring and excursion response',
   lifecycle: ['Phase 0 once', 'Phase 1 with two increments and two releases', 'Operations from first G7 through Phase 2', 'Phase 2 once', 'shared G8 closure'],
   operationalItems: [
     'operations-only: acknowledge an alarm and execute approved read-only diagnostics',

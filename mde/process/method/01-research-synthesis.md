@@ -30,11 +30,8 @@ serverless suitability, cost, and risk analysis; provider selection; project
 management and risk management; requirements traceability; deployment
 strategies; cold-start treatment; and feedback from operations.
 
-This paper is used in two ways:
-
-- its criteria become the seed and final evaluation framework for MODRISS; and
-- its observed gaps become explicit methodology requirements, not merely items
-  to discuss after the process has been designed.
+We use the paper's criteria to shape and evaluate MODRISS. We also turn the
+gaps we found into methodology requirements before designing the process.
 
 ### Ramsin and Paige (2010): iterative criteria-based requirements engineering
 
@@ -53,10 +50,9 @@ Four meta-criteria control the evaluation set:
 3. comprehensive enough to cover significant features; and
 4. balanced across technical, managerial, and usage concerns.
 
-The paper's final requirements also establish important qualities for the
-resulting methodology, including a clear account of its development process,
-full-lifecycle and umbrella coverage, seamless transitions, a requirements
-basis, testable and
+The paper also lists qualities for the resulting methodology: a clear account
+of how it was developed, coverage across the full lifecycle, clear handoffs
+between activities, a requirements basis, testable and
 tangible artifacts; active user involvement; practicality; manageable
 complexity; configurability and scalability; consistent modeling; and explicit
 inconsistency management.
@@ -69,13 +65,13 @@ patterns and relates each pattern to a problem, initial context, result context,
 roles, and work products. SMEP separates method initiation, iterative method
 construction, and method deployment.
 
-The source identifies four reusable infrastructure types—base methodology,
-metamodel, method chunk, and configuration package—and six construction
-policies: assembly, abstraction, instantiation, configuration, artifact-oriented
-construction, and integration. It also defines selection, adaptation, merging,
+The source identifies four reusable infrastructure types: base methodology,
+metamodel, method chunk, and configuration package. It also describes six
+construction policies: assembly, abstraction, instantiation, configuration,
+artifact-oriented construction, and integration. The source defines selection, adaptation, merging,
 refinement, generalization, testing-in-the-large, deployment, and
-non-functional method tactics. This gives MODRISS a defensible vocabulary for
-explaining not just the final result, but how the result was engineered.
+non-functional method tactics. These terms help MODRISS describe both its
+construction decisions and the method that resulted from them.
 
 ### Asadi, Esfahani, and Ramsin (2010): MDA process patterns
 

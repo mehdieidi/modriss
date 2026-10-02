@@ -1,7 +1,7 @@
 {
   "caseId": "coldchain-sentinel-hypothetical-01",
   "evidenceKind": "generated coverage inventory with scripted scenarios; not execution evidence",
-  "system": "ColdChain Sentinel — serverless cold-chain monitoring and excursion response",
+  "system": "ColdChain Sentinel: serverless cold-chain monitoring and excursion response",
   "lifecycle": [
     "Phase 0 once",
     "Phase 1 with two increments and two releases",

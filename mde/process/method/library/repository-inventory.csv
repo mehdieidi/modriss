@@ -312,23 +312,23 @@ engineered-core,WorkProductDefinition,wp.retirement-closure-record,"Retirement, 
 engineered-core,WorkProductDefinition,wp.retrospective-improvement-record,Retrospective and Improvement Record,mde/process/method/library/core-method-content.json
 engineered-core,WorkProductDefinition,wp.operational-work-item,Service Work Item,mde/process/method/library/core-method-content.json
 engineered-core,WorkProductDefinition,wp.operations-flow-policy-board,Kanban Service-Delivery Policy and Board,mde/process/method/library/core-method-content.json
-engineered-fragments,Guidance,guidance.fragment.mf-01,MF-01 — Opportunity and feasibility,mde/process/method/library/method-fragments.json
-engineered-fragments,Guidance,guidance.fragment.mf-02,"MF-02 — Serverless suitability, cost, risk, and provider decision",mde/process/method/library/method-fragments.json
-engineered-fragments,Guidance,guidance.fragment.mf-03,MF-03 — Situational method tailoring,mde/process/method/library/method-fragments.json
-engineered-fragments,Guidance,guidance.fragment.mf-04,"MF-04 — Product, release, and increment framing",mde/process/method/library/method-fragments.json
-engineered-fragments,Guidance,guidance.fragment.mf-05,MF-05 — Event-driven domain discovery and CIM modeling,mde/process/method/library/method-fragments.json
-engineered-fragments,Guidance,guidance.fragment.mf-06,MF-06 — CIM assurance and readiness,mde/process/method/library/method-fragments.json
-engineered-fragments,Guidance,guidance.fragment.mf-07,MF-07 — CIM to PIM transformation and reconciliation,mde/process/method/library/method-fragments.json
-engineered-fragments,Guidance,guidance.fragment.mf-08,MF-08 — Platform-independent serverless architecture,mde/process/method/library/method-fragments.json
-engineered-fragments,Guidance,guidance.fragment.mf-09,MF-09 — PIM to PSM transformation and reconciliation,mde/process/method/library/method-fragments.json
-engineered-fragments,Guidance,guidance.fragment.mf-10,MF-10 — AWS PSM refinement and assurance,mde/process/method/library/method-fragments.json
-engineered-fragments,Guidance,guidance.fragment.mf-11,MF-11 — Reproducible model-to-text generation,mde/process/method/library/method-fragments.json
-engineered-fragments,Guidance,guidance.fragment.mf-12,MF-12 — Artifact completion and test in the small,mde/process/method/library/method-fragments.json
-engineered-fragments,Guidance,guidance.fragment.mf-13,MF-13 — Test in the large and release qualification,mde/process/method/library/method-fragments.json
-engineered-fragments,Guidance,guidance.fragment.mf-14,MF-14 — Progressive CI/CD and transition,mde/process/method/library/method-fragments.json
-engineered-fragments,Guidance,guidance.fragment.mf-15,"MF-15 — Operate, observe, control cost, and learn",mde/process/method/library/method-fragments.json
-engineered-fragments,Guidance,guidance.fragment.mf-16,"MF-16 — Incident, problem, and controlled change propagation",mde/process/method/library/method-fragments.json
-engineered-fragments,Guidance,guidance.fragment.mf-17,"MF-17 — Retirement, migration, and closure",mde/process/method/library/method-fragments.json
-engineered-fragments,Guidance,guidance.fragment.mf-18,MF-18 — Kanban service-delivery and maintenance system,mde/process/method/library/method-fragments.json
-engineered-fragments,Guidance,guidance.fragment.mf-19,MF-19 — DevOps cross-process coordination,mde/process/method/library/method-fragments.json
-engineered-fragments,Guidance,guidance.fragment.uf-01,"UF-01 — Integrated management, assurance, and evidence",mde/process/method/library/method-fragments.json
+engineered-fragments,Guidance,guidance.fragment.mf-01,MF-01: Opportunity and feasibility,mde/process/method/library/method-fragments.json
+engineered-fragments,Guidance,guidance.fragment.mf-02,"MF-02: Serverless suitability, cost, risk, and provider decision",mde/process/method/library/method-fragments.json
+engineered-fragments,Guidance,guidance.fragment.mf-03,MF-03: Situational method tailoring,mde/process/method/library/method-fragments.json
+engineered-fragments,Guidance,guidance.fragment.mf-04,"MF-04: Product, release, and increment framing",mde/process/method/library/method-fragments.json
+engineered-fragments,Guidance,guidance.fragment.mf-05,MF-05: Event-driven domain discovery and CIM modeling,mde/process/method/library/method-fragments.json
+engineered-fragments,Guidance,guidance.fragment.mf-06,MF-06: CIM assurance and readiness,mde/process/method/library/method-fragments.json
+engineered-fragments,Guidance,guidance.fragment.mf-07,MF-07: CIM to PIM transformation and reconciliation,mde/process/method/library/method-fragments.json
+engineered-fragments,Guidance,guidance.fragment.mf-08,MF-08: Platform-independent serverless architecture,mde/process/method/library/method-fragments.json
+engineered-fragments,Guidance,guidance.fragment.mf-09,MF-09: PIM to PSM transformation and reconciliation,mde/process/method/library/method-fragments.json
+engineered-fragments,Guidance,guidance.fragment.mf-10,MF-10: AWS PSM refinement and assurance,mde/process/method/library/method-fragments.json
+engineered-fragments,Guidance,guidance.fragment.mf-11,MF-11: Reproducible model-to-text generation,mde/process/method/library/method-fragments.json
+engineered-fragments,Guidance,guidance.fragment.mf-12,MF-12: Artifact completion and test in the small,mde/process/method/library/method-fragments.json
+engineered-fragments,Guidance,guidance.fragment.mf-13,MF-13: Test in the large and release qualification,mde/process/method/library/method-fragments.json
+engineered-fragments,Guidance,guidance.fragment.mf-14,MF-14: Progressive CI/CD and transition,mde/process/method/library/method-fragments.json
+engineered-fragments,Guidance,guidance.fragment.mf-15,"MF-15: Operate, observe, control cost, and learn",mde/process/method/library/method-fragments.json
+engineered-fragments,Guidance,guidance.fragment.mf-16,"MF-16: Incident, problem, and controlled change propagation",mde/process/method/library/method-fragments.json
+engineered-fragments,Guidance,guidance.fragment.mf-17,"MF-17: Retirement, migration, and closure",mde/process/method/library/method-fragments.json
+engineered-fragments,Guidance,guidance.fragment.mf-18,MF-18: Kanban service-delivery and maintenance system,mde/process/method/library/method-fragments.json
+engineered-fragments,Guidance,guidance.fragment.mf-19,MF-19: DevOps cross-process coordination,mde/process/method/library/method-fragments.json
+engineered-fragments,Guidance,guidance.fragment.uf-01,"UF-01: Integrated management, assurance, and evidence",mde/process/method/library/method-fragments.json

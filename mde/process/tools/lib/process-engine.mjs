@@ -284,7 +284,7 @@ export const PROCESS_ENGINES = {
       ],
       repeatCondition: "next-release-selected-and-retirement-not-authorized",
       exitCondition: "retirement-authorized",
-      guidance: "Repeat delivery Activities—not Phases—for each selected release inside the single Active Product Construction and Evolution Phase. Operations and Maintenance independently sustains accepted live baselines.",
+      guidance: "Repeat delivery activities for each selected release within the single Active Product Construction and Evolution Phase. Do not repeat the phase. Operations and Maintenance continues to support accepted live baselines independently.",
     },
     serviceDeliveryFlow: {
       id: "modriss.end-to-end.service-delivery-flow",
