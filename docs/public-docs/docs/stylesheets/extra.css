@@ -116,6 +116,16 @@ button {
   line-height: 1.78;
 }
 
+.md-typeset p,
+.md-typeset li,
+.md-typeset dd,
+.md-typeset td:not(:has(code)),
+.md-typeset figcaption,
+.md-typeset .doc-path-card span {
+  text-align: justify !important;
+  text-justify: inter-word;
+}
+
 .md-typeset h1,
 .md-typeset h2,
 .md-typeset h3,

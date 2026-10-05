@@ -12,7 +12,7 @@ Source: `mde/metamodels/shared/kernel.emf`.
 
 Structural multiplicity and semantic expectation are separate concerns. For example, `ModelElement.name` is optional in Ecore, although CIM EVL requires it and PIM EVL recommends a portable form. The tables state Ecore multiplicity first, then explain stronger behavior imposed by transformations or EVL.
 
-EVL belongs to explicit user or model validation workflows. Assistant-generated actions, patches, proposals, checkpoints, and model outputs are gated only by structural Ecore/EMF conformance through `ModelService.validateStructural(...)`. Assistant apply, repair, and commit paths do not run EVL or stored semantic validation.
+EVL belongs to explicit user or model validation workflows.
 
 ## Kernel at a glance
 
