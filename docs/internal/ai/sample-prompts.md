@@ -149,9 +149,9 @@ elements.
 ## AWS Platform-Specific Architecture
 
 These are platform modeling or transformation prompts for non-chatbot workflows. The current AI
-chatbot rejects PSM sessions and must not be used to create or edit AWS PSM models.
+chatbot rejects PSM sessions and must not be used to create or edit PSM models.
 
-- Create an AWS PSM for this serverless PIM.
+- Create a PSM for this serverless PIM.
 - Map the selected API to Amazon API Gateway and AWS Lambda.
 - Map the selected queue to Amazon SQS and configure a dead-letter queue.
 - Map the selected event channel to Amazon EventBridge.
@@ -163,7 +163,7 @@ chatbot rejects PSM sessions and must not be used to create or edit AWS PSM mode
 - Add AWS Secrets Manager resources for external provider credentials.
 - Configure production retention and deletion protection policies.
 - Add concurrency, timeout, retry, and failure-handling configuration.
-- Review this AWS PSM and add missing production-readiness resources.
+- Review this PSM and add missing production-readiness resources.
 - Fix the PSM so it can generate valid deployment artifacts.
 
 ## Validation and Quality
@@ -212,12 +212,12 @@ actions. The chatbot may explain or prepare a CIM/PIM, but PIM-to-PSM transforma
 artifact generation use their dedicated APIs/services.
 
 - Transform this CIM into a PIM.
-- Transform this PIM into an AWS PSM.
+- Transform this PIM into a PSM.
 - Explain how the selected CIM elements map into the PIM.
 - Explain how the selected PIM elements map into AWS resources.
 - Prepare this model for transformation and fix blocking issues.
-- Prepare this AWS PSM for artifact generation.
-- Generate deployment artifacts from the current AWS PSM.
+- Prepare this PSM for artifact generation.
+- Generate deployment artifacts from the current PSM.
 - Explain which generated artifacts correspond to the selected model element.
 - Review transformation traceability and identify missing mappings.
 - Update the model so generated contracts include all required schemas.

@@ -64,7 +64,7 @@ java -jar tools/mde-evl-cli/target/mde-evl-cli-0.0.1-SNAPSHOT.jar pim `
 The refined PIM reports **0 mandatory and 0 optional violations**. Generate the draft PSM with:
 
 ```powershell
-java -jar tools/mde-etl-cli/target/mde-etl-cli-0.0.1-SNAPSHOT.jar pim-to-awspsm `
+java -jar tools/mde-etl-cli/target/mde-etl-cli-0.0.1-SNAPSHOT.jar pim-to-psm `
   --repo-root . `
   --source-model mde/samples/smart-makerspace-operations/smart-makerspace.refined.pim.xmi `
   --target-model mde/samples/smart-makerspace-operations/smart-makerspace.draft.awspsm.xmi `

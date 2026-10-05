@@ -17,7 +17,7 @@ pre {
 
   // A single shared root and emit context keep paths, diagnostics, and trace rows consistent.
   if (AWSPSM!AwsPsmModel.all.size() <> 1) {
-    throw "AWS PSM artifact generation requires exactly one AWSPSM!AwsPsmModel root; found " + AWSPSM!AwsPsmModel.all.size().asString() + ".";
+    throw "PSM artifact generation requires exactly one AWSPSM!AwsPsmModel root; found " + AWSPSM!AwsPsmModel.all.size().asString() + ".";
   }
 
   cachedAwsRoot = AWSPSM!AwsPsmModel.all.first();
@@ -1016,5 +1016,5 @@ rule ArtifactTraceJson {
 
 /** Records or verifies results after execution. */
 post {
-  ("AWS PSM artifact generation planned " + emitCtx().get("traceRows").size().asString() + " artifacts and " + emitCtx().get("manualIssueList").size().asString() + " manual issues.").println();
+  ("PSM artifact generation planned " + emitCtx().get("traceRows").size().asString() + " artifacts and " + emitCtx().get("manualIssueList").size().asString() + " manual issues.").println();
 }

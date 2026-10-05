@@ -229,7 +229,7 @@
       "type": "Simple",
       "design": "Yes",
       "realization": "Yes",
-      "reason": "Yes: 04 and the metamodel directories separate CIM business intent, PIM architecture and AWS PSM realization. ReturnFlow review sheets preserve these boundaries.",
+      "reason": "Yes: 04 and the metamodel directories separate CIM business intent, PIM architecture and PSM realization. ReturnFlow review sheets preserve these boundaries.",
       "empiricalEffectiveness": "not evaluated",
       "id": "M01",
       "source": "Table 2, p.563"
@@ -262,7 +262,7 @@
       "type": "Scale",
       "design": "A",
       "realization": "A",
-      "reason": "Implemented AWS PSM DSML and 28-task process component.",
+      "reason": "Implemented PSM DSML and 28-task process component.",
       "empiricalEffectiveness": "not evaluated",
       "id": "M04",
       "source": "Table 2, p.563"
@@ -295,7 +295,7 @@
       "type": "Scale",
       "design": "A",
       "realization": "B",
-      "reason": "Modular PIM→AWS PSM ETL with explicit mapping/manual decisions. This is partial support; specification/scaffolding does not establish end-to-end case execution.",
+      "reason": "Modular PIM→PSM ETL with explicit mapping/manual decisions. This is partial support; specification/scaffolding does not establish end-to-end case execution.",
       "empiricalEffectiveness": "not evaluated",
       "id": "M07",
       "source": "Table 2, p.563"
@@ -416,7 +416,7 @@
       "type": "Scale",
       "design": "A",
       "realization": "B",
-      "reason": "Supported forward chain spans CIM→PIM→AWS PSM→artifacts. This is partial support; specification/scaffolding does not establish end-to-end case execution.",
+      "reason": "Supported forward chain spans CIM→PIM→PSM→artifacts. This is partial support; specification/scaffolding does not establish end-to-end case execution.",
       "empiricalEffectiveness": "not evaluated",
       "id": "M18",
       "source": "Table 2, p.563"
@@ -658,7 +658,7 @@
       "type": "Scale",
       "design": "B",
       "realization": "C",
-      "reason": "CIM/PIM abstraction is a foundation, not multi-cloud architecture support. Only AWS PSM exists; no cross-provider deployment/model coordination is demonstrated. B design; C realized multi-cloud support.",
+      "reason": "CIM/PIM abstraction is a foundation, not multi-cloud architecture support. Only PSM exists; no cross-provider deployment/model coordination is demonstrated. B design; C realized multi-cloud support.",
       "empiricalEffectiveness": "not evaluated",
       "id": "S16",
       "source": "Table 3, p.564; observability split as Table 6, p.566"
@@ -746,7 +746,7 @@
       "type": "Scale",
       "design": "A",
       "realization": "A",
-      "reason": "SAM/CloudFormation and supporting configuration are generated from AWS PSM.",
+      "reason": "SAM/CloudFormation and supporting configuration are generated from PSM.",
       "empiricalEffectiveness": "not evaluated",
       "id": "S24",
       "source": "Table 3, p.564; observability split as Table 6, p.566"

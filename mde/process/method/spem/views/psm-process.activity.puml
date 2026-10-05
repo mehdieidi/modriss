@@ -1,5 +1,5 @@
 @startuml psm-process
-title AWS PSM Modeling Process, SPEM-mapped Iteration (6 Phases per Deployable Slice)
+title PSM Modeling Process, SPEM-mapped Iteration (6 Phases per Deployable Slice)
 start
 repeat
   partition "Stage 1, Deployment & Slice Framing (engine)" {

@@ -92,15 +92,15 @@ generation.
 The assembly boundary treats each child process as a process component with
 declared ports:
 
-| Component               | Input ports                                                         | Output ports                                                  |
-| ----------------------- | ------------------------------------------------------------------- | ------------------------------------------------------------- |
-| CIM modeling            | accepted increment hypothesis, domain sources, situational controls | accepted CIM revision, trace/readiness evidence               |
-| CIM→PIM transformation  | accepted CIM, transformation profile, prior baseline                | generated PIM draft, trace, assumptions, conflicts/report     |
-| PIM refinement          | generated PIM draft, requirements/CIM trace                         | accepted PIM revision and platform-readiness evidence         |
-| PIM→PSM transformation  | accepted PIM, provider profile, prior baseline                      | generated AWS PSM draft, trace, assumptions, conflicts/report |
-| PSM refinement          | generated PSM draft, PIM trace, AWS constraints                     | accepted AWS PSM revision and generation-readiness evidence   |
-| PSM→artifact generation | accepted PSM, generator/template version                            | reproducible generated baseline and manifest                  |
-| Artifact readiness      | generated baseline, manual-action report                            | verified release-candidate input or rework decision           |
+| Component               | Input ports                                                         | Output ports                                              |
+| ----------------------- | ------------------------------------------------------------------- | --------------------------------------------------------- |
+| CIM modeling            | accepted increment hypothesis, domain sources, situational controls | accepted CIM revision, trace/readiness evidence           |
+| CIM→PIM transformation  | accepted CIM, transformation profile, prior baseline                | generated PIM draft, trace, assumptions, conflicts/report |
+| PIM refinement          | generated PIM draft, requirements/CIM trace                         | accepted PIM revision and platform-readiness evidence     |
+| PIM→PSM transformation  | accepted PIM, provider profile, prior baseline                      | generated PSM draft, trace, assumptions, conflicts/report |
+| PSM refinement          | generated PSM draft, PIM trace, AWS constraints                     | accepted PSM revision and generation-readiness evidence   |
+| PSM→artifact generation | accepted PSM, generator/template version                            | reproducible generated baseline and manifest              |
+| Artifact readiness      | generated baseline, manual-action report                            | verified release-candidate input or rework decision       |
 
 ### Iteration 4: integrate serverless-specific fragments
 
@@ -199,7 +199,7 @@ machine-readable catalog is in `library/method-fragments.json`.
 | MF-07 | CIM→PIM transformation and reconciliation                 | MDASP Transformation and synchronization; implemented ETL merge    | Conditional on MODRISS transformation |
 | MF-08 | Platform-independent serverless architecture              | MDASP Define PIM; implemented PIM process                          | Required                              |
 | MF-09 | PIM→PSM transformation and reconciliation                 | MDASP Transformation; implemented ETL merge                        | Required for a supported PSM          |
-| MF-10 | AWS PSM refinement and assurance                          | Implemented PSM process, readiness, and trace                      | Required for the AWS profile          |
+| MF-10 | PSM refinement and assurance                              | Implemented PSM process, readiness, and trace                      | Required for the AWS profile          |
 | MF-11 | Reproducible model-to-text generation                     | Implemented EGX/EGL                                                | Required                              |
 | MF-12 | Artifact completion and test in the small                 | MDASP Coding/Testing; artifact-readiness process                   | Required                              |
 | MF-13 | Test in the large and release qualification               | MDASP Test in the Large; Eidi testing criteria                     | Required                              |

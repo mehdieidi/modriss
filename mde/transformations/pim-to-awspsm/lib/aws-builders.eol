@@ -841,11 +841,11 @@ operation generateReadinessChecks() {
     return;
   }
   check("AWS_PSM_RESOURCES_GENERATED", cachedAwsGeneratedResources.notEmpty(),
-    "AWS PSM generation produced deployable resources.",
+    "PSM generation produced deployable resources.",
     KERNEL!Severity#INFO, Sequence{awsRoot()},
     "Review the generated stacks and resources before deployment.");
   check("AWS_PSM_MANUAL_DECISIONS_RECORDED", r.manualDecisions.notEmpty(),
-    "AWS PSM generation recorded deployment/design decisions for review.",
+    "PSM generation recorded deployment/design decisions for review.",
     KERNEL!Severity#INFO, Sequence{awsRoot()},
     "Resolve blocking manual decisions before production deployment.");
   r.transformationReady = r.findings.none(f | f.blocking and f.findingType = KERNEL!FindingType#VALIDATION_ERROR);

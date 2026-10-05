@@ -8,7 +8,7 @@ The maintained process definition is [`mde/process/definitions/end-to-end.json`]
 
 <figure class="doc-diagram">
   <a class="doc-diagram__link" href="../../assets/diagrams/modriss-model-driven-engine.svg" aria-label="Open the full-size capability-increment process diagram">
-    <img src="../../assets/diagrams/modriss-model-driven-engine.svg" alt="Eight steps from increment framing through CIM, PIM, AWS PSM, generation, readiness review, and an accept, defer, or rework decision." />
+    <img src="../../assets/diagrams/modriss-model-driven-engine.svg" alt="Eight steps from increment framing through CIM, PIM, PSM, generation, readiness review, and an accept, defer, or rework decision." />
   </a>
   <figcaption>The repeatable engine for a single capability increment.</figcaption>
 </figure>
@@ -19,12 +19,12 @@ The maintained process definition is [`mde/process/definitions/end-to-end.json`]
 | 2. CIM engine               | Model business intent, domain structure, behavior, processes, policies, and readiness.                | Reviewed CIM revision                    |
 | 3. CIM to PIM               | Transform the accepted CIM and examine generated elements, traces, assumptions, and manual decisions. | PIM draft with trace links and decisions |
 | 4. PIM engine               | Refine service boundaries, contracts, data, compute, integrations, security, and platform readiness.  | Reviewed PIM revision                    |
-| 5. PIM to AWS PSM           | Transform the PIM and review AWS mappings, relationships, and unresolved platform assumptions.        | AWS PSM draft                            |
-| 6. PSM engine               | Refine AWS resources, policies, deployment structure, and integration views.                          | Reviewed AWS PSM revision                |
+| 5. PIM to PSM               | Transform the PIM and review AWS mappings, relationships, and unresolved platform assumptions.        | PSM draft                                |
+| 6. PSM engine               | Refine AWS resources, policies, deployment structure, and integration views.                          | Reviewed PSM revision                    |
 | 7. M2T generation           | Generate a reproducible AWS project from the reviewed PSM.                                            | Generated artifact baseline              |
 | 8. Readiness and acceptance | Review the models, generated files, verification evidence, findings, and open decisions.              | Accept, defer, or rework decision        |
 
-The level-specific guides describe the [CIM process](cim-modeling-methodology.md), [PIM process](pim-modeling-methodology.md), and [AWS PSM process](psm-modeling-methodology.md). The [transformation reference](../transformations/index.md) and [generation reference](../generation/index.md) describe the corresponding modeling-framework components.
+The level-specific guides describe the [CIM process](cim-modeling-methodology.md), [PIM process](pim-modeling-methodology.md), and [PSM process](psm-modeling-methodology.md). The [transformation reference](../transformations/index.md) and [generation reference](../generation/index.md) describe the corresponding modeling-framework components.
 
 ## Review and feedback
 
@@ -36,7 +36,7 @@ The engine loops after an accepted increment when more capability slices are nee
 
 ## Roles and coordination
 
-Roles identify responsibilities. They do not require a separate person for every responsibility. The Product Owner sets outcomes and scope. Business Modelers, Requirements Engineers, and Domain Experts establish and review business intent. The Solution Architect leads PIM decisions, while the Cloud Platform Engineer leads AWS PSM, generation, and platform automation. Quality and Security Engineers shape verification and risk evidence. The Release Engineer and Service Owner handle promotion and operations. The Delivery Lead coordinates dependencies and flow; the Process Reviewer reviews evidence and gates; the Method Engineer tailors the process.
+Roles identify responsibilities. They do not require a separate person for every responsibility. The Product Owner sets outcomes and scope. Business Modelers, Requirements Engineers, and Domain Experts establish and review business intent. The Solution Architect leads PIM decisions, while the Cloud Platform Engineer leads PSM, generation, and platform automation. Quality and Security Engineers shape verification and risk evidence. The Release Engineer and Service Owner handle promotion and operations. The Delivery Lead coordinates dependencies and flow; the Process Reviewer reviews evidence and gates; the Method Engineer tailors the process.
 
 For each increment, record the responsible teams, model and artifact revisions, transformation profiles and reports, trace coverage, assumptions, manual decisions, findings, dependencies, and acceptance decision. Teams may work concurrently when ownership and interfaces are clear. A downstream step must not treat an unresolved assumption as approved simply because a transformation produced a target model.
 

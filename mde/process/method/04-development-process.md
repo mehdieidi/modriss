@@ -233,7 +233,7 @@ perform the same baseline/working/new-generated reconciliation. Inspect every
 generated provider resource, IAM implication, network assumption, workflow
 mapping, unsupported capability, and manual decision.
 
-#### 1.6 Refine the AWS PSM
+#### 1.6 Refine the PSM
 
 For the current profile, refine account/stage and naming strategy, stacks and
 parameters, IAM/KMS/secrets/SSM, VPC/endpoints/security groups, identity,

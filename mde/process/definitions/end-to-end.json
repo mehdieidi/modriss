@@ -74,7 +74,7 @@
         "id": "role.cloud-platform-engineer",
         "type": "RoleDefinition",
         "name": "Cloud Platform Engineer",
-        "responsibilities": ["Leads AWS PSM, generation, environments, and platform automation"]
+        "responsibilities": ["Leads PSM, generation, environments, and platform automation"]
       },
       {
         "id": "role.quality-engineer",
@@ -1223,7 +1223,7 @@
         ],
         "coverageGroups": [],
         "steps": [
-          "Execute the AWS PSM process for the transformed slice.",
+          "Execute the PSM process for the transformed slice.",
           "Review resource relationships, IAM, networking, data, eventing, APIs, workflows, observability, quotas, allocation tags, and operational views.",
           "Record accepted PSM revision and unresolved deployment risks."
         ],
@@ -7762,7 +7762,7 @@
           "id": "e2e.p4.pim-to-psm",
           "type": "Activity",
           "activityKind": "MODRISS::Stage",
-          "name": "PIM → AWS PSM Transformation",
+          "name": "PIM → PSM Transformation",
           "objective": "Map accepted platform-independent architecture to AWS-specific deployment intent.",
           "roleUseRefs": ["ru.e2e.p4.pim-to-psm.cloud-platform-engineer"],
           "iterative": false,

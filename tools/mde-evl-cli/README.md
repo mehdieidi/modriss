@@ -9,7 +9,7 @@ console output, exit codes, and JSON reports.
 - `run` - generic EVL runner for one read-only file-backed EMF model.
 - `cim` - repository CIM semantic validation profile.
 - `pim` - repository PIM semantic validation profile.
-- `psm` - repository AWS PSM semantic validation profile.
+- `psm` - repository PSM semantic validation profile.
 
 ## Exit Codes
 

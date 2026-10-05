@@ -1,4 +1,4 @@
-# PIM to AWS PSM ETL
+# PIM to PSM ETL
 
 Entry point:
 
@@ -74,11 +74,11 @@ remain consistent.
 
 # Iterative synchronization
 
-Normal platform execution generates into an empty temporary AWS PSM resource; preloaded-target
+Normal platform execution generates into an empty temporary PSM resource; preloaded-target
 helpers are not used for preservation. IDs are SHA-256-derived in the `pim-to-awspsm` namespace
 from immutable PIM IDs and distinct target roles such as Lambda, IAM role, and log configuration.
 
-The raw ETL result (`NewGenerated`) is merged into the user-refined AWS PSM (`Working`) against the
+The raw ETL result (`NewGenerated`) is merged into the user-refined PSM (`Working`) against the
 previous raw ETL result (`Base`). Safe incoming changes and additions are applied, user additions
 and independent refinements remain, and delete/change or change/change cases become resumable
 conflicts. Pending sessions fingerprint the Working revision so stale decisions cannot be applied.

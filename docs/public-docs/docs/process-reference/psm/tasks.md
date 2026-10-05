@@ -1,6 +1,6 @@
-# AWS PSM modeling: tasks
+# PSM modeling: tasks
 
-This page documents the **SPEM TaskDefinition and TaskUse** elements used by the AWS PSM modeling process. It is generated from the canonical executable definition, so the names and identifiers match the API and process interface. The explanation adds practical teaching around the normative data.
+This page documents the **SPEM TaskDefinition and TaskUse** elements used by the PSM modeling process. It is generated from the canonical executable definition, so the names and identifiers match the API and process interface. The explanation adds practical teaching around the normative data.
 
 A TaskDefinition describes reusable work. A TaskUse places that definition inside an activity and binds it to process performers and work-product uses. The same responsibility may appear in another process context with different inputs, outputs, or selected steps.
 
@@ -9,7 +9,7 @@ A TaskDefinition describes reusable work. A TaskUse places that definition insid
 | Task                                                     | Primary role            | Inputs | Outputs | Task uses |
 | -------------------------------------------------------- | ----------------------- | -----: | ------: | --------: |
 | Plan deployable slice                                    | Cloud Platform Engineer |      0 |       1 |         1 |
-| Create AWS PSM model root                                | Cloud Platform Engineer |      1 |       1 |         1 |
+| Create PSM model root                                    | Cloud Platform Engineer |      1 |       1 |         1 |
 | Define stage and naming policies                         | Cloud Platform Engineer |      2 |       1 |         1 |
 | Establish shared model contract and evidence conventions | Method Engineer         |      2 |       1 |         1 |
 | Create SAM stack and globals                             | Cloud Platform Engineer |      2 |       1 |         1 |
@@ -79,11 +79,11 @@ The primary performer is **Cloud Platform Engineer**. The approved method profil
 
 - `psm.ph1.st0.t1` in **Deployable Slice Planning**
 
-## Create AWS PSM model root
+## Create PSM model root
 
 <small>Task definition: `task.psm.ph1.st1.t1`</small>
 
-Create AWS PSM model root This task should be performed in the context of the current increment or operational item. Its result is reviewed through the stated exit criteria and validation rules, rather than accepted because an activity was marked complete.
+Create PSM model root This task should be performed in the context of the current increment or operational item. Its result is reviewed through the stated exit criteria and validation rules, rather than accepted because an activity was marked complete.
 
 **Accountability and collaboration**
 
@@ -144,7 +144,7 @@ The primary performer is **Cloud Platform Engineer**. The approved method profil
 
 **Ready to start when**
 
-- AWS PSM root exists
+- PSM root exists
 
 **Complete when**
 
@@ -185,7 +185,7 @@ The primary performer is **Method Engineer**. The approved method profile may as
 
 **Ready to start when**
 
-- AWS PSM root exists
+- PSM root exists
 
 **Complete when**
 

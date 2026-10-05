@@ -16,9 +16,9 @@ CIM: domain intent and business semantics
         │  CIM-to-PIM ETL, with trace links and manual decisions
         ▼
 PIM: platform-independent serverless architecture
-        │  PIM-to-AWS-PSM ETL
+        │  PIM-to-PSM ETL
         ▼
-AWS PSM: provider-specific resources and configuration
+PSM: provider-specific resources and configuration
         │  EGX/EGL model-to-text generation
         ▼
 reviewable implementation artefacts

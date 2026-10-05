@@ -51,7 +51,7 @@ The methodology has two connected parts:
   processes, policies, governance, and requirements without a software or cloud commitment.
 - **PIM, Platform-Independent Model**: serverless services, functions, contracts, data, events,
   workflows, integrations, security, policies, and deployment concerns.
-- **AWS PSM, Platform-Specific Model**: AWS resources and configuration for compute, APIs,
+- **PSM, Platform-Specific Model**: AWS resources and configuration for compute, APIs,
   storage, messaging, identity, networking, and observability.
 
 Transformations support systematic refinement. Generated models and artifacts remain subject to
@@ -85,7 +85,7 @@ From the repository root:
 
 For a first workflow, register a user, create a project, and open the CIM workspace. Create a
 model or import [`mde/samples/cim.xmi`](mde/samples/cim.xmi), validate it, then generate and review
-the PIM and AWS PSM models. From AWS PSM, select **Generate Artifacts** and inspect or download the
+the PIM and PSM models. From PSM, select **Generate Artifacts** and inspect or download the
 generated project. The [climate-relief sample](mde/samples/climate-relief-grants/) offers a broader
 end-to-end case study.
 

@@ -138,7 +138,7 @@ The scheduling, guard, target path, merge policy, and artifact record are define
 
 ## `TestFixturesReadme`
 
-**Source context:** ``, `shared AWS PSM generation context` 
+**Source context:** ``, `shared PSM generation context` 
 **Template:**`tests/fixtures-readme.egl` 
 **Target path expression:**`"tests/fixtures/README.md"` 
 **EGX source:**`mde/generation/awspsm-to-artifacts/awspsm2artifacts.egx:474`
@@ -179,7 +179,7 @@ The scheduling, guard, target path, merge policy, and artifact record are define
 
 ## `ContractTests`
 
-**Source context:** ``, `shared AWS PSM generation context` 
+**Source context:** ``, `shared PSM generation context` 
 **Template:**`tests/contract-test.egl` 
 **Target path expression:**`"tests/contract/generated_contracts_test." + emitCtx().testExtension()` 
 **EGX source:**`mde/generation/awspsm-to-artifacts/awspsm2artifacts.egx:585`
@@ -218,7 +218,7 @@ The scheduling, guard, target path, merge policy, and artifact record are define
 
 ## `EventTests`
 
-**Source context:** ``, `shared AWS PSM generation context` 
+**Source context:** ``, `shared PSM generation context` 
 **Template:**`tests/event-test.egl` 
 **Target path expression:**`"tests/events/generated_events_test." + emitCtx().testExtension()` 
 **EGX source:**`mde/generation/awspsm-to-artifacts/awspsm2artifacts.egx:597`
@@ -257,7 +257,7 @@ The scheduling, guard, target path, merge policy, and artifact record are define
 
 ## `SecurityTests`
 
-**Source context:** ``, `shared AWS PSM generation context` 
+**Source context:** ``, `shared PSM generation context` 
 **Template:**`tests/security-test.egl` 
 **Target path expression:**`"tests/e2e/security_generated_test." + emitCtx().testExtension()` 
 **EGX source:**`mde/generation/awspsm-to-artifacts/awspsm2artifacts.egx:609`
@@ -296,7 +296,7 @@ The scheduling, guard, target path, merge policy, and artifact record are define
 
 ## `E2eTests`
 
-**Source context:** ``, `shared AWS PSM generation context` 
+**Source context:** ``, `shared PSM generation context` 
 **Template:**`tests/e2e-test.egl` 
 **Target path expression:**`"tests/e2e/generated_flows_test." + emitCtx().testExtension()` 
 **EGX source:**`mde/generation/awspsm-to-artifacts/awspsm2artifacts.egx:621`

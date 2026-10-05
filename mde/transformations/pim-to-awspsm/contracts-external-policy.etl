@@ -75,7 +75,7 @@ rule ExternalAdapter2PsmMetadata
     manualDecision("EXTERNAL_ADAPTER_ENDPOINT_REQUIRED",
       "Model ExternalAdapter.endpoint for " + a.name + ".",
       KERNEL!Severity#ERROR, isProductionRoot(), Sequence{a, n},
-      "Create an ExternalEndpoint and set ExternalAdapter.endpoint before AWS PSM generation.");
+      "Create an ExternalEndpoint and set ExternalAdapter.endpoint before PSM generation.");
   }
   if (ep.isDefined() and isTrue(ep.credentialsRequired) and a.credentials.isEmpty()) {
     manualDecision("EXTERNAL_ADAPTER_CREDENTIALS_REQUIRED",

@@ -51,7 +51,7 @@ Impact analysis routes are implemented under `/api/impact/**`. Planned admin wor
 
 # Model synchronization API
 
-`CIM -> PIM` and `PIM -> AWS PSM` jobs expose a synchronization object in the job's
+`CIM -> PIM` and `PIM -> PSM` jobs expose a synchronization object in the job's
 `validationResult` field. Its status is `APPLIED`, `CONFLICTS`, or `BOOTSTRAP_REQUIRED`, with merge
 counts and transport-safe conflict details. When status is `CONFLICTS`, use:
 

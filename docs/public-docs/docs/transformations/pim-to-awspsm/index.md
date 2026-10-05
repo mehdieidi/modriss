@@ -1,6 +1,6 @@
-# PIM → AWS PSM transformation rules
+# PIM → PSM transformation rules
 
-PIM→AWS PSM refinement is the provider-binding bridge from portable architecture to deployable AWS design.
+PIM→PSM refinement is the provider-binding bridge from portable architecture to deployable AWS design.
 
 Follow the concern pages below. Each page documents every ETL rule in its source module, including guards, target types, secondary objects, trace identifiers, manual decisions, and repair guidance.
 

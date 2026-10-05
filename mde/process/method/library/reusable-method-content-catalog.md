@@ -24,15 +24,15 @@ Conceptual role mapping: `R-06`. Provenance: End-to-end lifecycle, CIM modeling 
 
 ### Cloud Platform Engineer (`role.cloud-platform-engineer`)
 
-Leads AWS PSM, generation, environments, and platform automation.
+Leads PSM, generation, environments, and platform automation.
 
-Conceptual role mapping: `R-08`. Provenance: End-to-end lifecycle, PIM modeling component, AWS PSM modeling component, Artifact-readiness component.
+Conceptual role mapping: `R-08`. Provenance: End-to-end lifecycle, PIM modeling component, PSM modeling component, Artifact-readiness component.
 
 ### Delivery Lead (`role.delivery-lead`)
 
 Maintains the integrated process run, dependency board, risks, cadence, and impediment escalation.
 
-Conceptual role mapping: `R-05`. Provenance: End-to-end lifecycle, CIM modeling component, PIM modeling component, AWS PSM modeling component.
+Conceptual role mapping: `R-05`. Provenance: End-to-end lifecycle, CIM modeling component, PIM modeling component, PSM modeling component.
 
 ### Domain Expert (`role.domain-expert`)
 
@@ -50,25 +50,25 @@ Conceptual role mapping: `R-12`. Provenance: End-to-end lifecycle, Engineered co
 
 Tailors the development process and maintains its alignment with the modeling framework as metamodels change.
 
-Conceptual role mapping: `R-04`. Provenance: End-to-end lifecycle, CIM modeling component, PIM modeling component, AWS PSM modeling component.
+Conceptual role mapping: `R-04`. Provenance: End-to-end lifecycle, CIM modeling component, PIM modeling component, PSM modeling component.
 
 ### Process Reviewer (`role.process-reviewer`)
 
 Reviews gates, evidence, decisions, and process improvement.
 
-Conceptual role mapping: `R-15`. Provenance: End-to-end lifecycle, CIM modeling component, PIM modeling component, AWS PSM modeling component.
+Conceptual role mapping: `R-15`. Provenance: End-to-end lifecycle, CIM modeling component, PIM modeling component, PSM modeling component.
 
 ### Product Owner (`role.product-owner`)
 
 Owns product outcomes, priority, release scope, and acceptance decisions.
 
-Conceptual role mapping: `R-02`. Provenance: End-to-end lifecycle, CIM modeling component, PIM modeling component, AWS PSM modeling component.
+Conceptual role mapping: `R-02`. Provenance: End-to-end lifecycle, CIM modeling component, PIM modeling component, PSM modeling component.
 
 ### Quality Engineer (`role.quality-engineer`)
 
 Owns verification strategy, evidence quality, and quality risks.
 
-Conceptual role mapping: `R-10`. Provenance: End-to-end lifecycle, PIM modeling component, AWS PSM modeling component, Artifact-readiness component.
+Conceptual role mapping: `R-10`. Provenance: End-to-end lifecycle, PIM modeling component, PSM modeling component, Artifact-readiness component.
 
 ### Records and Data Steward (`role.records-data-steward`)
 
@@ -80,7 +80,7 @@ Conceptual role mapping: `R-16`. Provenance: End-to-end lifecycle, Engineered co
 
 Owns release candidates, promotion, rollback, and deployment records.
 
-Conceptual role mapping: `R-13`. Provenance: End-to-end lifecycle, AWS PSM modeling component, Artifact-readiness component.
+Conceptual role mapping: `R-13`. Provenance: End-to-end lifecycle, PSM modeling component, Artifact-readiness component.
 
 ### Requirements Engineer (`role.requirements-engineer`)
 
@@ -92,19 +92,19 @@ Conceptual role mapping: `R-06`. Provenance: End-to-end lifecycle, CIM modeling 
 
 Owns security, privacy, threat, and exception evidence.
 
-Conceptual role mapping: `R-11`. Provenance: End-to-end lifecycle, CIM modeling component, PIM modeling component, AWS PSM modeling component, Artifact-readiness component.
+Conceptual role mapping: `R-11`. Provenance: End-to-end lifecycle, CIM modeling component, PIM modeling component, PSM modeling component, Artifact-readiness component.
 
 ### Service Owner (`role.service-owner`)
 
 Accepts operational readiness, SLOs, support ownership, and service outcomes.
 
-Conceptual role mapping: `R-14`. Provenance: End-to-end lifecycle, AWS PSM modeling component, Artifact-readiness component.
+Conceptual role mapping: `R-14`. Provenance: End-to-end lifecycle, PSM modeling component, Artifact-readiness component.
 
 ### Solution Architect (`role.solution-architect`)
 
 Leads PIM architecture, contracts, integration, and cross-level decisions.
 
-Conceptual role mapping: `R-07`. Provenance: End-to-end lifecycle, PIM modeling component, AWS PSM modeling component.
+Conceptual role mapping: `R-07`. Provenance: End-to-end lifecycle, PIM modeling component, PSM modeling component.
 
 ### Sponsor (`role.sponsor`)
 
@@ -291,7 +291,7 @@ Run the PSM increment. Its primary performer is `role.cloud-platform-engineer`; 
 
 **Work.**
 
-- Execute the AWS PSM process for the transformed slice.
+- Execute the PSM process for the transformed slice.
 - Review resource relationships, IAM, networking, data, eventing, APIs, workflows, observability, quotas, allocation tags, and operational views.
 - Record accepted PSM revision and unresolved deployment risks.
 
@@ -1532,7 +1532,7 @@ Review and adapt PIM increment. Its primary performer is `role.process-reviewer`
 
 Indicative duration: 45m.
 
-### AWS PSM modeling component (28 tasks)
+### PSM modeling component (28 tasks)
 
 #### Plan deployable slice (`task.psm.ph1.st0.t1`)
 
@@ -1550,9 +1550,9 @@ Plan deployable slice. Its primary performer is `role.cloud-platform-engineer`. 
 
 Indicative duration: 30m.
 
-#### Create AWS PSM model root (`task.psm.ph1.st1.t1`)
+#### Create PSM model root (`task.psm.ph1.st1.t1`)
 
-Create AWS PSM model root. Its primary performer is `role.cloud-platform-engineer`. It consumes `psm-artifact.increment-plan` and produces or updates `psm-artifact.deployment-strategy`.
+Create PSM model root. Its primary performer is `role.cloud-platform-engineer`. It consumes `psm-artifact.increment-plan` and produces or updates `psm-artifact.deployment-strategy`.
 
 **Entry.** Deployable-slice scope agreed.
 
@@ -1569,7 +1569,7 @@ Indicative duration: 20m.
 
 Define stage and naming policies. Its primary performer is `role.cloud-platform-engineer`. It consumes `psm-artifact.deployment-strategy`, `psm-artifact.increment-plan` and produces or updates `psm-artifact.deployment-strategy`.
 
-**Entry.** AWS PSM root exists.
+**Entry.** PSM root exists.
 
 **Work.**
 
@@ -1584,7 +1584,7 @@ Indicative duration: 30m.
 
 Establish shared model contract and evidence conventions. Its primary performer is `role.method-engineer`. It consumes `psm-artifact.deployment-strategy`, `psm-artifact.increment-plan` and produces or updates `psm-artifact.deployment-strategy`.
 
-**Entry.** AWS PSM root exists.
+**Entry.** PSM root exists.
 
 **Work.**
 
@@ -2460,65 +2460,65 @@ Workflows, human tasks, escalation. Kind: Artifact. Provenance: PIM modeling com
 
 ### API Gateway Layer (`psm-artifact.api-layer`)
 
-HTTP/REST/WebSocket APIs. Kind: Artifact. Provenance: AWS PSM modeling component.
+HTTP/REST/WebSocket APIs. Kind: Artifact. Provenance: PSM modeling component.
 
 ### Lambda Compute Layer (`psm-artifact.compute-layer`)
 
-Functions, mappings, permissions. Kind: Artifact. Provenance: AWS PSM modeling component.
+Functions, mappings, permissions. Kind: Artifact. Provenance: PSM modeling component.
 
 ### Deployment Readiness Record (`psm-artifact.deployment-readiness`)
 
-Trace and readiness closure. Kind: Artifact. Provenance: AWS PSM modeling component.
+Trace and readiness closure. Kind: Artifact. Provenance: PSM modeling component.
 
 ### Deployment Strategy (`psm-artifact.deployment-strategy`)
 
-Account, region, naming, tagging policies. Kind: Artifact. Provenance: AWS PSM modeling component.
+Account, region, naming, tagging policies. Kind: Artifact. Provenance: PSM modeling component.
 
 ### Event Fabric (`psm-artifact.event-fabric`)
 
-EventBridge buses, rules, pipes. Kind: Artifact. Provenance: AWS PSM modeling component.
+EventBridge buses, rules, pipes. Kind: Artifact. Provenance: PSM modeling component.
 
 ### PSM Increment Plan (`psm-artifact.increment-plan`)
 
-Selected deployable slice, AWS assumptions, and deployment definition of done. Kind: Artifact. Provenance: AWS PSM modeling component.
+Selected deployable slice, AWS assumptions, and deployment definition of done. Kind: Artifact. Provenance: PSM modeling component.
 
 ### PSM Increment Review Record (`psm-artifact.increment-review`)
 
-Deployment review outcomes, accepted AWS slice, and improvement actions. Kind: Artifact. Provenance: AWS PSM modeling component.
+Deployment review outcomes, accepted AWS slice, and improvement actions. Kind: Artifact. Provenance: PSM modeling component.
 
 ### Integration View Catalog (`psm-artifact.integration-views`)
 
-Cross-resource relationship views. Kind: Artifact. Provenance: AWS PSM modeling component.
+Cross-resource relationship views. Kind: Artifact. Provenance: PSM modeling component.
 
 ### Messaging Layer (`psm-artifact.messaging-layer`)
 
-SQS and SNS resources. Kind: Artifact. Provenance: AWS PSM modeling component.
+SQS and SNS resources. Kind: Artifact. Provenance: PSM modeling component.
 
 ### Network & Identity (`psm-artifact.network-identity`)
 
-VPC, Cognito resources. Kind: Artifact. Provenance: AWS PSM modeling component.
+VPC, Cognito resources. Kind: Artifact. Provenance: PSM modeling component.
 
 ### Security Baseline (`psm-artifact.security-baseline`)
 
-IAM, KMS, secrets, SSM. Kind: Artifact. Provenance: AWS PSM modeling component.
+IAM, KMS, secrets, SSM. Kind: Artifact. Provenance: PSM modeling component.
 
 ### SAM Stack Scaffold (`psm-artifact.stack-scaffold`)
 
-Stacks, globals, CFN parameters. Kind: Artifact. Provenance: AWS PSM modeling component.
+Stacks, globals, CFN parameters. Kind: Artifact. Provenance: PSM modeling component.
 
 ### Durable Storage Layer (`psm-artifact.storage-layer`)
 
-DynamoDB and S3 resources. Kind: Artifact. Provenance: AWS PSM modeling component.
+DynamoDB and S3 resources. Kind: Artifact. Provenance: PSM modeling component.
 
 ### Workflow & Observability (`psm-artifact.workflow-observability`)
 
-Step Functions and CloudWatch. Kind: Artifact. Provenance: AWS PSM modeling component.
+Step Functions and CloudWatch. Kind: Artifact. Provenance: PSM modeling component.
 
 ### Architecture Decision Record Set (`wp.architecture-decisions`)
 
 Decision context, alternatives, decision, consequences, evidence, and review triggers. Kind: Artifact. Provenance: Engineered core content.
 
-### AWS PSM Revision (`wp.aws-psm-revision`)
+### PSM Revision (`wp.aws-psm-revision`)
 
 Provider resources, configuration, relationships, IAM, networking, observability, and deployment intent. Kind: Model. Provenance: Engineered core content.
 
@@ -2784,9 +2784,9 @@ Provider mapping can silently introduce unsafe defaults or lose refinements. Res
 
 Guidance kind: Process Pattern. Pattern source: `MF-09`. Provenance: Engineered fragment catalog.
 
-### MF-10: AWS PSM refinement and assurance (`guidance.fragment.mf-10`)
+### MF-10: PSM refinement and assurance (`guidance.fragment.mf-10`)
 
-Generated provider resources require explicit security, networking, quota, observability, recovery, cost, and deployment decisions. Result: An accepted AWS PSM is ready for reproducible generation.
+Generated provider resources require explicit security, networking, quota, observability, recovery, cost, and deployment decisions. Result: An accepted PSM is ready for reproducible generation.
 
 Guidance kind: Process Pattern. Pattern source: `MF-10`. Provenance: Engineered fragment catalog.
 
@@ -2890,28 +2890,28 @@ Guidance kind: Practice guidance. Applies to `process`. Provenance: PIM modeling
 
 A PSM increment is done only when AWS wiring, least-privilege posture, observability, traceability, and artifact-generation readiness are reviewed together.
 
-Guidance kind: Practice guidance. Applies to `psm.ph6`. Provenance: AWS PSM modeling component.
+Guidance kind: Practice guidance. Applies to `psm.ph6`. Provenance: PSM modeling component.
 
 ### Generated PSM is a draft (`psm.guid.generated-is-draft`)
 
 Treat PIM→PSM output as AWS scaffolding. Refine IAM, networking, resource settings, integration views, and readiness before M2T generation.
 
-Guidance kind: Practice guidance. Applies to `psm.ph1`. Provenance: AWS PSM modeling component.
+Guidance kind: Practice guidance. Applies to `psm.ph1`. Provenance: PSM modeling component.
 
 ### Integration views for traceability (`psm.guid.integration-views`)
 
 Relationship views denormalize cross-resource wiring for M2T and human review, create them before M2T generation.
 
-Guidance kind: Practice guidance. Applies to `psm.ph6`. Provenance: AWS PSM modeling component.
+Guidance kind: Practice guidance. Applies to `psm.ph6`. Provenance: PSM modeling component.
 
 ### Least-privilege IAM (`psm.guid.least-privilege`)
 
 Security baseline before compute. Lambda permissions and resource policies reference roles from the baseline.
 
-Guidance kind: Practice guidance. Applies to `psm.ph1`. Provenance: AWS PSM modeling component.
+Guidance kind: Practice guidance. Applies to `psm.ph1`. Provenance: PSM modeling component.
 
 ### SAM stack containment (`psm.guid.sam-containment`)
 
 Most AWS resources live under SamStack. Establish stack scaffolding before resource provisioning tasks.
 
-Guidance kind: Practice guidance. Applies to `process`. Provenance: AWS PSM modeling component.
+Guidance kind: Practice guidance. Applies to `process`. Provenance: PSM modeling component.

@@ -15,11 +15,12 @@ import picocli.CommandLine.Model.CommandSpec;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Spec;
 
-/** Generates deployable artifacts from an AWS PSM through the repository EGX/EGL profile. */
+/** Generates deployable artifacts from a PSM through the repository EGX/EGL profile. */
 @Command(
-    name = "aws-psm-to-artifacts",
+    name = "psm-to-artifacts",
+    aliases = {"aws-psm-to-artifacts"},
     mixinStandardHelpOptions = true,
-    description = "Runs the AWS PSM-to-artifacts EGX/EGL code generation profile.")
+    description = "Runs the PSM-to-artifacts EGX/EGL code generation profile.")
 public final class AwsPsmToArtifactsCommand implements Callable<Integer> {
 
   private final EpsilonEgxGenerator generator = new EpsilonEgxGenerator();
@@ -33,7 +34,7 @@ public final class AwsPsmToArtifactsCommand implements Callable<Integer> {
       description = "Repository root containing mde/metamodels and mde/generation.")
   private Path repositoryRoot;
 
-  @Option(names = "--source-model", required = true, description = "Input AWS PSM XMI model file.")
+  @Option(names = "--source-model", required = true, description = "Input PSM XMI model file.")
   private Path sourceModel;
 
   @Option(
@@ -89,7 +90,7 @@ public final class AwsPsmToArtifactsCommand implements Callable<Integer> {
    * @param report successful generation report
    */
   private void writeSuccess(PrintWriter out, EgxGenerationReport report) {
-    out.printf("AWS PSM artifact generation succeeded in %d ms.%n", report.duration().toMillis());
+    out.printf("PSM artifact generation succeeded in %d ms.%n", report.duration().toMillis());
     out.printf("Module: %s%n", report.moduleFile());
     out.printf("Output: %s%n", report.outputDirectory());
     out.printf("Generated files: %d%n", report.generatedFiles().size());
@@ -106,7 +107,7 @@ public final class AwsPsmToArtifactsCommand implements Callable<Integer> {
    */
   private void writeFailure(PrintWriter err, EgxGenerationException exception) {
     EgxGenerationReport report = exception.getReport();
-    err.printf("AWS PSM artifact generation failed in %d ms.%n", report.duration().toMillis());
+    err.printf("PSM artifact generation failed in %d ms.%n", report.duration().toMillis());
     err.printf("Module: %s%n", report.moduleFile());
     err.printf("Output: %s%n", report.outputDirectory());
     for (GenerationDiagnostic diagnostic : report.diagnostics()) {

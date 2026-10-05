@@ -4,7 +4,7 @@ Source: `mde/metamodels/cim/cim-domain-data.emf`.
 
 This module gives the CIM a precise business vocabulary. `DomainEntity` is used when identity and lifecycle matter. `ValueObject` is used for a descriptive value whose equality comes from its contents. `InformationItem` describes a piece of business information that can appear in an entity, command, query, event, decision, or external exchange. `AggregateCandidate` records a proposed consistency boundary without committing to a persistence technology.
 
-The model keeps meaning separate from implementation. A domain entity is not automatically a database table. A collection is not automatically a JSON array in a generated contract. A classification is not a cloud encryption setting. These objects describe business intent that later PIM and AWS PSM transformations refine.
+The model keeps meaning separate from implementation. A domain entity is not automatically a database table. A collection is not automatically a JSON array in a generated contract. A classification is not a cloud encryption setting. These objects describe business intent that later PIM and PSM transformations refine.
 
 ## `DomainConcept`
 

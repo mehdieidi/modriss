@@ -14,5 +14,5 @@ generation is model-to-text.
 - `EgxGenerationReport` - structured result with timing, diagnostics, generated files, and captured
   output.
 - `EgxGenerationException` - thrown on failed generation and always carries a report.
-- `AwsPsmToArtifactsDefaults` - convenience profile for this repository's AWS PSM-to-artifacts
+- `AwsPsmToArtifactsDefaults` - convenience profile for this repository's PSM-to-artifacts
   generator.

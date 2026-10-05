@@ -8,12 +8,12 @@ flowchart LR
     validateCim["CIM EVL validation"]
     pim["PIM<br/>serverless services, functions, APIs, stores, workflows, policies"]
     validatePim["PIM EVL validation"]
-    psm["AWS PSM<br/>Lambda, API Gateway, DynamoDB, S3, EventBridge, SQS/SNS, Step Functions, IAM"]
-    validatePsm["AWS PSM EVL validation"]
+    psm["PSM<br/>Lambda, API Gateway, DynamoDB, S3, EventBridge, SQS/SNS, Step Functions, IAM"]
+    validatePsm["PSM EVL validation"]
     artifacts["Artifacts<br/>SAM/CloudFormation, Go handlers, OpenAPI, ASL, docs, tests, CI scripts"]
 
     cim --> validateCim -->|"CIM-to-PIM ETL"| pim
-    pim --> validatePim -->|"PIM-to-AWS-PSM ETL"| psm
+    pim --> validatePim -->|"PIM-to-PSM ETL"| psm
     psm --> validatePsm -->|"EGX/EGL generation"| artifacts
 ```
 
@@ -35,7 +35,7 @@ flowchart TB
     entry --> root --> boundary --> data --> behavior --> process --> integration --> output
 ```
 
-## PIM to AWS PSM Transformation Profile
+## PIM to PSM Transformation Profile
 
 ```mermaid
 flowchart TB
@@ -47,17 +47,17 @@ flowchart TB
     contracts["contracts-external-policy.etl<br/>schemas, external endpoints, policies"]
     post["ResolveAndValidate post block<br/>relationships, redrive, IAM, placement, readiness, constraints"]
     libs["lib/aws-builders.eol + readiness trace helpers"]
-    output["AWS PSM XMI and imported PSM JSON"]
+    output["PSM XMI and imported PSM JSON"]
 
     entry --> libs
     entry --> root --> compute --> data --> workflow --> contracts --> post --> output
 ```
 
-## AWS PSM to Artifacts Generation
+## PSM to Artifacts Generation
 
 ```mermaid
 flowchart TB
-    psm["AWS PSM model"]
+    psm["PSM model"]
     egx["awspsm2artifacts.egx"]
     ctx["Emit context<br/>naming, paths, protected regions, trace rows, manual issues"]
     infra["Infrastructure templates<br/>SAM template, samconfig, env, IAM rationale"]

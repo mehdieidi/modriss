@@ -176,7 +176,7 @@ class EpsilonEvlValidatorTest {
   }
 
   /**
-   * Validates the repository AWS PSM sample and verifies readiness manual decisions remain explicit
+   * Validates the repository PSM sample and verifies readiness manual decisions remain explicit
    * without triggering mandatory violations.
    *
    * @throws Exception when sample loading or validation fails

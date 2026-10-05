@@ -266,7 +266,7 @@ operation createAslDocument(w) {
     manualDecision("WORKFLOW_STEPS_REQUIRED",
       "Workflow " + w.name + " has no steps.",
       KERNEL!Severity#BLOCKER, true, Sequence{w},
-      "Add at least one StartStep, workflow steps, and SuccessEndStep or FailureEndStep before AWS PSM generation.");
+      "Add at least one StartStep, workflow steps, and SuccessEndStep or FailureEndStep before PSM generation.");
     d.startAt = "Start";
     return d;
   }

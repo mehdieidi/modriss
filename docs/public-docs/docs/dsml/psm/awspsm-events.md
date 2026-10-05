@@ -27,7 +27,7 @@ Direct supertypes: `AwsResource`. Inherited attributes and marker capabilities a
 
 ## `EventBridgeBusPolicy`
 
-`EventBridgeBusPolicy` is an EventBridge deployment record in the AWS platform-specific model. It carries the routing or invocation settings for event bridge bus policy. Its declaration gives the concept a precise home through policy document, bus. Its references provide the wiring that lets generation assemble the corresponding AWS design.
+`EventBridgeBusPolicy` is an EventBridge deployment record in the PSM. It carries the routing or invocation settings for event bridge bus policy. Its declaration gives the concept a precise home through policy document, bus. Its references provide the wiring that lets generation assemble the corresponding AWS design.
 
 Direct supertypes: `AwsResource`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -91,7 +91,7 @@ This class declares no direct relationships.
 
 ## `EventBridgeTarget`
 
-`EventBridgeTarget` is an EventBridge deployment record in the AWS platform-specific model. It carries the routing or invocation settings for event bridge target. Its declaration gives the concept a precise home through input, parameters, retry policy. Its references provide the wiring that lets generation assemble the corresponding AWS design.
+`EventBridgeTarget` is an EventBridge deployment record in the PSM. It carries the routing or invocation settings for event bridge target. Its declaration gives the concept a precise home through input, parameters, retry policy. Its references provide the wiring that lets generation assemble the corresponding AWS design.
 
 Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -119,7 +119,7 @@ Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilit
 
 ## `EventBridgeTargetParameters`
 
-`EventBridgeTargetParameters` is an EventBridge deployment record in the AWS platform-specific model. It carries the routing or invocation settings for event bridge target parameters. Its declaration gives the concept a precise home through its declared properties. Its references provide the wiring that lets generation assemble the corresponding AWS design.
+`EventBridgeTargetParameters` is an EventBridge deployment record in the PSM. It carries the routing or invocation settings for event bridge target parameters. Its declaration gives the concept a precise home through its declared properties. Its references provide the wiring that lets generation assemble the corresponding AWS design.
 
 Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -133,7 +133,7 @@ This class declares no direct relationships.
 
 ## `EventBridgeSqsTargetParameters`
 
-`EventBridgeSqsTargetParameters` is an EventBridge deployment record in the AWS platform-specific model. It carries the routing or invocation settings for event bridge sqs target parameters. Its declaration gives the concept a precise home through its declared properties. Its references provide the wiring that lets generation assemble the corresponding AWS design.
+`EventBridgeSqsTargetParameters` is an EventBridge deployment record in the PSM. It carries the routing or invocation settings for event bridge sqs target parameters. Its declaration gives the concept a precise home through its declared properties. Its references provide the wiring that lets generation assemble the corresponding AWS design.
 
 Direct supertypes: `EventBridgeTargetParameters`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -149,7 +149,7 @@ This class declares no direct relationships.
 
 ## `EventBridgeHttpTargetParameters`
 
-`EventBridgeHttpTargetParameters` is an EventBridge deployment record in the AWS platform-specific model. It carries the routing or invocation settings for event bridge http target parameters. Its declaration gives the concept a precise home through header parameters, query string parameters, path parameter values. Its references provide the wiring that lets generation assemble the corresponding AWS design.
+`EventBridgeHttpTargetParameters` is an EventBridge deployment record in the PSM. It carries the routing or invocation settings for event bridge http target parameters. Its declaration gives the concept a precise home through header parameters, query string parameters, path parameter values. Its references provide the wiring that lets generation assemble the corresponding AWS design.
 
 Direct supertypes: `EventBridgeTargetParameters`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -167,7 +167,7 @@ This class declares no attributes of its own. It inherits the attributes of its 
 
 ## `HttpParameter`
 
-`HttpParameter` is a supporting value object in the AWS platform-specific model. It carries http parameter as explicit model data. Its declaration gives the concept a precise home through its declared properties. Its references provide the wiring that lets generation assemble the corresponding AWS design.
+`HttpParameter` is a supporting value object in the PSM. It carries http parameter as explicit model data. Its declaration gives the concept a precise home through its declared properties. Its references provide the wiring that lets generation assemble the corresponding AWS design.
 
 Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -184,7 +184,7 @@ This class declares no direct relationships.
 
 ## `EventBridgeBatchTargetParameters`
 
-`EventBridgeBatchTargetParameters` is an EventBridge deployment record in the AWS platform-specific model. It carries the routing or invocation settings for event bridge batch target parameters. Its declaration gives the concept a precise home through its declared properties. Its references provide the wiring that lets generation assemble the corresponding AWS design.
+`EventBridgeBatchTargetParameters` is an EventBridge deployment record in the PSM. It carries the routing or invocation settings for event bridge batch target parameters. Its declaration gives the concept a precise home through its declared properties. Its references provide the wiring that lets generation assemble the corresponding AWS design.
 
 Direct supertypes: `EventBridgeTargetParameters`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -203,7 +203,7 @@ This class declares no direct relationships.
 
 ## `EventBridgeInputTransformer`
 
-`EventBridgeInputTransformer` is an EventBridge deployment record in the AWS platform-specific model. It carries the routing or invocation settings for event bridge input transformer. Its declaration gives the concept a precise home through its declared properties. Its references provide the wiring that lets generation assemble the corresponding AWS design.
+`EventBridgeInputTransformer` is an EventBridge deployment record in the PSM. It carries the routing or invocation settings for event bridge input transformer. Its declaration gives the concept a precise home through its declared properties. Its references provide the wiring that lets generation assemble the corresponding AWS design.
 
 Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -220,7 +220,7 @@ This class declares no direct relationships.
 
 ## `EventBridgeArchive`
 
-`EventBridgeArchive` is an EventBridge deployment record in the AWS platform-specific model. It carries the routing or invocation settings for event bridge archive. Its declaration gives the concept a precise home through event source bus. Its references provide the wiring that lets generation assemble the corresponding AWS design.
+`EventBridgeArchive` is an EventBridge deployment record in the PSM. It carries the routing or invocation settings for event bridge archive. Its declaration gives the concept a precise home through event source bus. Its references provide the wiring that lets generation assemble the corresponding AWS design.
 
 Direct supertypes: `AwsResource`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -240,7 +240,7 @@ Direct supertypes: `AwsResource`. Inherited attributes and marker capabilities a
 
 ## `EventBridgeSchedule`
 
-`EventBridgeSchedule` is an EventBridge deployment record in the AWS platform-specific model. It carries the routing or invocation settings for event bridge schedule. Its declaration gives the concept a precise home through flexible time window, target, role. Its references provide the wiring that lets generation assemble the corresponding AWS design.
+`EventBridgeSchedule` is an EventBridge deployment record in the PSM. It carries the routing or invocation settings for event bridge schedule. Its declaration gives the concept a precise home through flexible time window, target, role. Its references provide the wiring that lets generation assemble the corresponding AWS design.
 
 Direct supertypes: `AwsResource`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -265,7 +265,7 @@ Direct supertypes: `AwsResource`. Inherited attributes and marker capabilities a
 
 ## `EventBridgeFlexibleTimeWindow`
 
-`EventBridgeFlexibleTimeWindow` is an EventBridge deployment record in the AWS platform-specific model. It carries the routing or invocation settings for event bridge flexible time window. Its declaration gives the concept a precise home through its declared properties. Its references provide the wiring that lets generation assemble the corresponding AWS design.
+`EventBridgeFlexibleTimeWindow` is an EventBridge deployment record in the PSM. It carries the routing or invocation settings for event bridge flexible time window. Its declaration gives the concept a precise home through its declared properties. Its references provide the wiring that lets generation assemble the corresponding AWS design.
 
 Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -282,7 +282,7 @@ This class declares no direct relationships.
 
 ## `EventBridgePipe`
 
-`EventBridgePipe` is an EventBridge deployment record in the AWS platform-specific model. It carries the routing or invocation settings for event bridge pipe. Its declaration gives the concept a precise home through source resource, target resource, enrichment function. Its references provide the wiring that lets generation assemble the corresponding AWS design.
+`EventBridgePipe` is an EventBridge deployment record in the PSM. It carries the routing or invocation settings for event bridge pipe. Its declaration gives the concept a precise home through source resource, target resource, enrichment function. Its references provide the wiring that lets generation assemble the corresponding AWS design.
 
 Direct supertypes: `AwsResource`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -310,7 +310,7 @@ Direct supertypes: `AwsResource`. Inherited attributes and marker capabilities a
 
 ## `EventBridgeAuthParameters`
 
-`EventBridgeAuthParameters` is an EventBridge deployment record in the AWS platform-specific model. It carries the routing or invocation settings for event bridge auth parameters. Its declaration gives the concept a precise home through its declared properties. Its references provide the wiring that lets generation assemble the corresponding AWS design.
+`EventBridgeAuthParameters` is an EventBridge deployment record in the PSM. It carries the routing or invocation settings for event bridge auth parameters. Its declaration gives the concept a precise home through its declared properties. Its references provide the wiring that lets generation assemble the corresponding AWS design.
 
 Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -324,7 +324,7 @@ This class declares no direct relationships.
 
 ## `EventBridgeApiKeyAuthParameters`
 
-`EventBridgeApiKeyAuthParameters` is an EventBridge deployment record in the AWS platform-specific model. It carries the routing or invocation settings for event bridge api key auth parameters. Its declaration gives the concept a precise home through api key value. Its references provide the wiring that lets generation assemble the corresponding AWS design.
+`EventBridgeApiKeyAuthParameters` is an EventBridge deployment record in the PSM. It carries the routing or invocation settings for event bridge api key auth parameters. Its declaration gives the concept a precise home through api key value. Its references provide the wiring that lets generation assemble the corresponding AWS design.
 
 Direct supertypes: `EventBridgeAuthParameters`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -342,7 +342,7 @@ Direct supertypes: `EventBridgeAuthParameters`. Inherited attributes and marker 
 
 ## `EventBridgeBasicAuthParameters`
 
-`EventBridgeBasicAuthParameters` is an EventBridge deployment record in the AWS platform-specific model. It carries the routing or invocation settings for event bridge basic auth parameters. Its declaration gives the concept a precise home through username, password. Its references provide the wiring that lets generation assemble the corresponding AWS design.
+`EventBridgeBasicAuthParameters` is an EventBridge deployment record in the PSM. It carries the routing or invocation settings for event bridge basic auth parameters. Its declaration gives the concept a precise home through username, password. Its references provide the wiring that lets generation assemble the corresponding AWS design.
 
 Direct supertypes: `EventBridgeAuthParameters`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -359,7 +359,7 @@ This class declares no attributes of its own. It inherits the attributes of its 
 
 ## `EventBridgeOAuthParameters`
 
-`EventBridgeOAuthParameters` is an EventBridge deployment record in the AWS platform-specific model. It carries the routing or invocation settings for event bridge o auth parameters. Its declaration gives the concept a precise home through client id, client secret, oauth http parameters. Its references provide the wiring that lets generation assemble the corresponding AWS design.
+`EventBridgeOAuthParameters` is an EventBridge deployment record in the PSM. It carries the routing or invocation settings for event bridge o auth parameters. Its declaration gives the concept a precise home through client id, client secret, oauth http parameters. Its references provide the wiring that lets generation assemble the corresponding AWS design.
 
 Direct supertypes: `EventBridgeAuthParameters`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -380,7 +380,7 @@ Direct supertypes: `EventBridgeAuthParameters`. Inherited attributes and marker 
 
 ## `EventBridgeHttpParameters`
 
-`EventBridgeHttpParameters` is an EventBridge deployment record in the AWS platform-specific model. It carries the routing or invocation settings for event bridge http parameters. Its declaration gives the concept a precise home through header parameters, query string parameters, body parameters. Its references provide the wiring that lets generation assemble the corresponding AWS design.
+`EventBridgeHttpParameters` is an EventBridge deployment record in the PSM. It carries the routing or invocation settings for event bridge http parameters. Its declaration gives the concept a precise home through header parameters, query string parameters, body parameters. Its references provide the wiring that lets generation assemble the corresponding AWS design.
 
 Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -398,7 +398,7 @@ This class declares no attributes of its own. It inherits the attributes of its 
 
 ## `EventBridgeConnection`
 
-`EventBridgeConnection` is an EventBridge deployment record in the AWS platform-specific model. It carries the routing or invocation settings for event bridge connection. Its declaration gives the concept a precise home through auth parameters, invocation http parameters. Its references provide the wiring that lets generation assemble the corresponding AWS design.
+`EventBridgeConnection` is an EventBridge deployment record in the PSM. It carries the routing or invocation settings for event bridge connection. Its declaration gives the concept a precise home through auth parameters, invocation http parameters. Its references provide the wiring that lets generation assemble the corresponding AWS design.
 
 Direct supertypes: `AwsResource`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -418,7 +418,7 @@ Direct supertypes: `AwsResource`. Inherited attributes and marker capabilities a
 
 ## `EventBridgeApiDestination`
 
-`EventBridgeApiDestination` is an EventBridge deployment record in the AWS platform-specific model. It carries the routing or invocation settings for event bridge api destination. Its declaration gives the concept a precise home through connection. Its references provide the wiring that lets generation assemble the corresponding AWS design.
+`EventBridgeApiDestination` is an EventBridge deployment record in the PSM. It carries the routing or invocation settings for event bridge api destination. Its declaration gives the concept a precise home through connection. Its references provide the wiring that lets generation assemble the corresponding AWS design.
 
 Direct supertypes: `AwsResource`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -439,7 +439,7 @@ Direct supertypes: `AwsResource`. Inherited attributes and marker capabilities a
 
 ## `AwsRetryPolicy`
 
-`AwsRetryPolicy` is a policy record in the AWS platform-specific model. It gives aws retry policy a named place in the design. Its declaration gives the concept a precise home through its declared properties. Its references provide the wiring that lets generation assemble the corresponding AWS design.
+`AwsRetryPolicy` is a policy record in the PSM. It gives aws retry policy a named place in the design. Its declaration gives the concept a precise home through its declared properties. Its references provide the wiring that lets generation assemble the corresponding AWS design.
 
 Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 

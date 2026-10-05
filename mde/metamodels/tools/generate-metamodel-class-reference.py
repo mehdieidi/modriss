@@ -159,7 +159,7 @@ def build_markdown(classes: list[ClassInfo]) -> str:
     level_titles = {
         "cim": "CIM (Computation-Independent Model)",
         "pim": "PIM (Platform-Independent Model)",
-        "psm": "PSM (Platform-Specific Model, AWS)",
+        "psm": "PSM (Platform-Specific Model)",
     }
 
     lines: list[str] = [

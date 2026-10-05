@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This document summarizes how the CIM, PIM, and AWS PSM metamodels are presented in the visual
+This document summarizes how the CIM, PIM, and PSM metamodels are presented in the visual
 modeling editor. The goal is complete abstract-syntax coverage without forcing every EClass onto one
 unreadable canvas.
 
@@ -82,7 +82,7 @@ boundaries, contracts, flows, policies, and deployable responsibilities.
 PIM nodes are responsibility-oriented rather than vendor-oriented. A queue or function is shown by
 its architectural role; provider-specific fields and logos are deliberately deferred to PSM.
 
-## AWS PSM Syntax
+## PSM Syntax
 
 PSM communicates deployable AWS structure. The visual language emphasizes resources, stages,
 stacks, integrations, IAM, operations, and generated infrastructure relationships.

@@ -5,7 +5,7 @@ import "common.eol";
 operation createTraceModel(source) {
   var tm = new KERNEL!TraceModel;
   tm.id = generatedId("trace_model", source, "awspsm");
-  tm.name = firstText(source.name, "PIM") + " AWS PSM Trace";
+  tm.name = firstText(source.name, "PIM") + " PSM Trace";
   tm.generatedByTransformation = true;
   tm.manuallyMaintained = false;
   return tm;
@@ -15,7 +15,7 @@ operation createTraceModel(source) {
 operation createReadinessAssessment(source) {
   var r = new KERNEL!ProductionReadinessAssessment;
   r.id = generatedId("readiness", source, "awspsm");
-  r.name = firstText(source.name, "PIM") + " AWS PSM Readiness";
+  r.name = firstText(source.name, "PIM") + " PSM Readiness";
   r.assessedBy = "pim-to-awspsm";
   r.readinessStatus = KERNEL!LifecycleStatus#REVIEW_REQUIRED;
   r.transformationReady = false;

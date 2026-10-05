@@ -14,7 +14,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.api.parallel.ResourceLock;
 
-/** Semantic regression coverage for the AWS PSM EVL profile. */
+/** Semantic regression coverage for the PSM EVL profile. */
 @ResourceLock("epsilon-runtime")
 class PsmSemanticValidationTest {
 

@@ -181,7 +181,7 @@
         "type": "WorkProductDefinition",
         "methodWorkProductId": "WP-16",
         "workProductKind": "Model",
-        "name": "AWS PSM Revision",
+        "name": "PSM Revision",
         "description": "Provider resources, configuration, relationships, IAM, networking, observability, and deployment intent."
       },
       {

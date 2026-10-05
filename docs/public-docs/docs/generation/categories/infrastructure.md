@@ -1,6 +1,6 @@
 # Code generation: Infrastructure
 
-Infrastructure templates turn the AWS PSM deployment graph into files that SAM, CloudFormation, and the deployment tooling can consume. The important distinction is between a generated deployment description and a user-owned deployment decision: merge mode and protected regions preserve the latter while the template continuously regenerates the former.
+Infrastructure templates turn the PSM deployment graph into files that SAM, CloudFormation, and the deployment tooling can consume. The important distinction is between a generated deployment description and a user-owned deployment decision: merge mode and protected regions preserve the latter while the template continuously regenerates the former.
 
 The category contains 11 EGX generation rules and 7 EGL templates.
 
@@ -20,7 +20,7 @@ The category contains 11 EGX generation rules and 7 EGL templates.
 
 ## `PackageManifest`
 
-**Source context:** ``, `shared AWS PSM generation context` 
+**Source context:** ``, `shared PSM generation context` 
 **Template:**`infrastructure/go-mod.egl` 
 **Target path expression:**`"go.mod"` 
 **EGX source:**`mde/generation/awspsm-to-artifacts/awspsm2artifacts.egx:58`
@@ -47,7 +47,7 @@ Artifact record emitted by the EGX rule:
 
 ### How to troubleshoot or repair it
 
-Verify that the AWS PSM root and the source objects expected by the template exist, then inspect the generated artifact record and the template parameters. If the file is incomplete, distinguish a model omission from a protected-region customization before changing the EGL template.
+Verify that the PSM root and the source objects expected by the template exist, then inspect the generated artifact record and the template parameters. If the file is incomplete, distinguish a model omission from a protected-region customization before changing the EGL template.
 
 ### Authoritative sources
 
@@ -57,7 +57,7 @@ The scheduling, guard, target path, merge policy, and artifact record are define
 
 ## `Gitignore`
 
-**Source context:** ``, `shared AWS PSM generation context` 
+**Source context:** ``, `shared PSM generation context` 
 **Template:**`infrastructure/gitignore.egl` 
 **Target path expression:**`".gitignore"` 
 **EGX source:**`mde/generation/awspsm-to-artifacts/awspsm2artifacts.egx:74`
@@ -86,7 +86,7 @@ Artifact record emitted by the EGX rule:
 
 ### How to troubleshoot or repair it
 
-Verify that the AWS PSM root and the source objects expected by the template exist, then inspect the generated artifact record and the template parameters. If the file is incomplete, distinguish a model omission from a protected-region customization before changing the EGL template.
+Verify that the PSM root and the source objects expected by the template exist, then inspect the generated artifact record and the template parameters. If the file is incomplete, distinguish a model omission from a protected-region customization before changing the EGL template.
 
 ### Authoritative sources
 
@@ -135,7 +135,7 @@ The scheduling, guard, target path, merge policy, and artifact record are define
 
 ## `SamConfig`
 
-**Source context:** ``, `shared AWS PSM generation context` 
+**Source context:** ``, `shared PSM generation context` 
 **Template:**`infrastructure/samconfig.egl` 
 **Target path expression:**`"samconfig.toml"` 
 **EGX source:**`mde/generation/awspsm-to-artifacts/awspsm2artifacts.egx:122`
@@ -164,7 +164,7 @@ Artifact record emitted by the EGX rule:
 
 ### How to troubleshoot or repair it
 
-Verify that the AWS PSM root and the source objects expected by the template exist, then inspect the generated artifact record and the template parameters. If the file is incomplete, distinguish a model omission from a protected-region customization before changing the EGL template.
+Verify that the PSM root and the source objects expected by the template exist, then inspect the generated artifact record and the template parameters. If the file is incomplete, distinguish a model omission from a protected-region customization before changing the EGL template.
 
 ### Authoritative sources
 
@@ -197,7 +197,7 @@ Template parameters: `stageObj`, `emitCtx`.
 
 ### How to troubleshoot or repair it
 
-Verify that the AWS PSM root and the source objects expected by the template exist, then inspect the generated artifact record and the template parameters. If the file is incomplete, distinguish a model omission from a protected-region customization before changing the EGL template.
+Verify that the PSM root and the source objects expected by the template exist, then inspect the generated artifact record and the template parameters. If the file is incomplete, distinguish a model omission from a protected-region customization before changing the EGL template.
 
 ### Authoritative sources
 
@@ -207,7 +207,7 @@ The scheduling, guard, target path, merge policy, and artifact record are define
 
 ## `LocalEnvironmentFile`
 
-**Source context:** ``, `shared AWS PSM generation context` 
+**Source context:** ``, `shared PSM generation context` 
 **Template:**`infrastructure/default-env-json.egl` 
 **Target path expression:**`"env/local.json"` 
 **EGX source:**`mde/generation/awspsm-to-artifacts/awspsm2artifacts.egx:154`
@@ -248,7 +248,7 @@ The scheduling, guard, target path, merge policy, and artifact record are define
 
 ## `DevEnvironmentFile`
 
-**Source context:** ``, `shared AWS PSM generation context` 
+**Source context:** ``, `shared PSM generation context` 
 **Template:**`infrastructure/default-env-json.egl` 
 **Target path expression:**`"env/dev.json"` 
 **EGX source:**`mde/generation/awspsm-to-artifacts/awspsm2artifacts.egx:168`
@@ -289,7 +289,7 @@ The scheduling, guard, target path, merge policy, and artifact record are define
 
 ## `TestEnvironmentFile`
 
-**Source context:** ``, `shared AWS PSM generation context` 
+**Source context:** ``, `shared PSM generation context` 
 **Template:**`infrastructure/default-env-json.egl` 
 **Target path expression:**`"env/test.json"` 
 **EGX source:**`mde/generation/awspsm-to-artifacts/awspsm2artifacts.egx:182`
@@ -330,7 +330,7 @@ The scheduling, guard, target path, merge policy, and artifact record are define
 
 ## `StagingEnvironmentFile`
 
-**Source context:** ``, `shared AWS PSM generation context` 
+**Source context:** ``, `shared PSM generation context` 
 **Template:**`infrastructure/default-env-json.egl` 
 **Target path expression:**`"env/staging.json"` 
 **EGX source:**`mde/generation/awspsm-to-artifacts/awspsm2artifacts.egx:196`
@@ -371,7 +371,7 @@ The scheduling, guard, target path, merge policy, and artifact record are define
 
 ## `ProdExampleEnvironmentFile`
 
-**Source context:** ``, `shared AWS PSM generation context` 
+**Source context:** ``, `shared PSM generation context` 
 **Template:**`infrastructure/default-env-json.egl` 
 **Target path expression:**`"env/prod.example.json"` 
 **EGX source:**`mde/generation/awspsm-to-artifacts/awspsm2artifacts.egx:210`
@@ -412,7 +412,7 @@ The scheduling, guard, target path, merge policy, and artifact record are define
 
 ## `IamRationaleReport`
 
-**Source context:** ``, `shared AWS PSM generation context` 
+**Source context:** ``, `shared PSM generation context` 
 **Template:**`infrastructure/iam-policy-rationale.egl` 
 **Target path expression:**`"generated/reports/iam-policy-rationale.md"` 
 **EGX source:**`mde/generation/awspsm-to-artifacts/awspsm2artifacts.egx:902`
@@ -439,7 +439,7 @@ Artifact record emitted by the EGX rule:
 
 ### How to troubleshoot or repair it
 
-Verify that the AWS PSM root and the source objects expected by the template exist, then inspect the generated artifact record and the template parameters. If the file is incomplete, distinguish a model omission from a protected-region customization before changing the EGL template.
+Verify that the PSM root and the source objects expected by the template exist, then inspect the generated artifact record and the template parameters. If the file is incomplete, distinguish a model omission from a protected-region customization before changing the EGL template.
 
 ### Authoritative sources
 

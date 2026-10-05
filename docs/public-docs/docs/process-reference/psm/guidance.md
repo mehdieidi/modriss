@@ -1,6 +1,6 @@
-# AWS PSM modeling: guidance
+# PSM modeling: guidance
 
-This page documents the **SPEM Guidance** elements used by the AWS PSM modeling process. It is generated from the canonical executable definition, so the names and identifiers match the API and process interface. The explanation adds practical teaching around the normative data.
+This page documents the **SPEM Guidance** elements used by the PSM modeling process. It is generated from the canonical executable definition, so the names and identifiers match the API and process interface. The explanation adds practical teaching around the normative data.
 
 Guidance teaches how to perform or tailor work. It supports tasks and activities without becoming an automatic gate. A project may adapt guidance when its context requires another approach, provided that the method profile records the reasoning and preserves applicable evidence obligations.
 

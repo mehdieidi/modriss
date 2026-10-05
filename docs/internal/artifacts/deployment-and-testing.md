@@ -1,7 +1,7 @@
 # Generated AWS Artifact Deployment and Testing
 
 This process verifies the final downloadable project produced by the complete
-CIM -> PIM -> AWS PSM -> artifacts pipeline.
+CIM -> PIM -> PSM -> artifacts pipeline.
 
 ## 1. Start MODRISS and the selected AWS emulator
 

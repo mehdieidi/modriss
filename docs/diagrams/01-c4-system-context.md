@@ -29,7 +29,7 @@ flowchart TB
     intent["Human intent and review"]
     cim["Computation-independent model"]
     pim["Platform-independent serverless model"]
-    psm["AWS platform-specific model"]
+    psm["PSM"]
     artifacts["Deployable source, contracts, IaC, tests, docs, scripts"]
     assistant["Unified bounded CIM/PIM AI assistant<br/>Generation/evolution, inspected edits, answers"]
     formal["Formal MDE engine<br/>Ecore + EVL + ETL + EGX/EGL"]

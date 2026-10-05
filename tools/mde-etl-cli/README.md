@@ -38,4 +38,4 @@ java -jar tools/mde-etl-cli/target/mde-etl-cli-0.0.1-SNAPSHOT.jar run \
 ```
 
 See also [`mde/transformations/pim-to-awspsm/README.md`](../../mde/transformations/pim-to-awspsm/README.md)
-for the PIM→AWS PSM profile.
+for the PIM→PSM profile.

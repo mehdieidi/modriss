@@ -42,7 +42,7 @@ java -jar tools/mde-evl-cli/target/mde-evl-cli-0.0.1-SNAPSHOT.jar pim `
 
 Module: `tools/mde-etl-cli`
 
-Provides CIM-to-PIM, PIM-to-AWS-PSM, and generic ETL execution using configured source and target
+Provides CIM-to-PIM, PIM-to-PSM, and generic ETL execution using configured source and target
 models, metamodels, aliases, and entry modules.
 
 ```powershell
@@ -58,9 +58,9 @@ java -jar tools/mde-etl-cli/target/mde-etl-cli-0.0.1-SNAPSHOT.jar cim-to-pim `
 Module: `tools/mde-m2t-cli`
 
 ```powershell
-java -jar tools/mde-m2t-cli/target/mde-m2t-cli-0.0.1-SNAPSHOT.jar aws-psm-to-artifacts `
+java -jar tools/mde-m2t-cli/target/mde-m2t-cli-0.0.1-SNAPSHOT.jar psm-to-artifacts `
   --repo-root . `
-  --source-model input-aws-psm.xmi `
+  --source-model input-psm.xmi `
   --output-dir generated-project `
   --log-file target/generation-report.json `
   --verbose

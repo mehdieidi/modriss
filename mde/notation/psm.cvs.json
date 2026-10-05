@@ -12,7 +12,7 @@
       "light": "#475569",
       "dark": "#94a3b8"
     },
-    "category": "AWS PSM",
+    "category": "PSM",
     "notation": {
       "tag": "AWS",
       "shape": "resource-card",
@@ -1085,7 +1085,7 @@
     "platform": "AWS",
     "defaultRegion": "us-east-1",
     "productionMode": false,
-    "summary": "Mandatory-valid starter model for assisted AWS PSM modeling.",
+    "summary": "Mandatory-valid starter model for assisted PSM modeling.",
     "rationale": "Created as the initial bounded context for assistant changes.",
     "stages": [
       {
@@ -1449,8 +1449,8 @@
     },
     {
       "type": "AwsPsmModel",
-      "label": "Aws Psm Model",
-      "displayName": "Aws Psm Model",
+      "label": "PSM Model",
+      "displayName": "PSM Model",
       "icon": "aws-cloudformation",
       "color": {
         "light": "#0f766e",
@@ -5346,7 +5346,7 @@
   "views": [
     {
       "id": "psm-portfolio-governance",
-      "displayName": "AWS PSM Overview",
+      "displayName": "PSM Overview",
       "viewType": "PORTFOLIO_GOVERNANCE",
       "palette": [
         "AwsPsmModel",
@@ -5731,7 +5731,7 @@
           "light": "#334155",
           "dark": "#94a3b8"
         },
-        "category": "AWS PSM / Account",
+        "category": "PSM / Account",
         "notation": {
           "tag": "ACCOUNT",
           "shape": "workspace-container",
@@ -6066,7 +6066,7 @@
       },
       "metadata": {
         "icon": "aws-cloud",
-        "category": "AWS PSM / Account",
+        "category": "PSM / Account",
         "visualRole": "container",
         "notation": {
           "tag": "ACCOUNT",

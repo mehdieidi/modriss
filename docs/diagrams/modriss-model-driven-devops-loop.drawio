@@ -55,7 +55,7 @@
         <!-- Construction activities -->
         <mxCell id="cim" value="CIM modeling" style="whiteSpace=wrap;html=1;align=center;verticalAlign=middle;fillColor=#ffffff;strokeColor=#111111;strokeWidth=1.2;fontFamily=Times New Roman;fontSize=14;" vertex="1" parent="1"><mxGeometry x="64" y="292" width="174" height="32" as="geometry"/></mxCell>
         <mxCell id="pim" value="PIM refinement" style="whiteSpace=wrap;html=1;align=center;verticalAlign=middle;fillColor=#ffffff;strokeColor=#111111;strokeWidth=1.2;fontFamily=Times New Roman;fontSize=14;" vertex="1" parent="1"><mxGeometry x="64" y="340" width="174" height="32" as="geometry"/></mxCell>
-        <mxCell id="psm" value="AWS PSM realization" style="whiteSpace=wrap;html=1;align=center;verticalAlign=middle;fillColor=#ffffff;strokeColor=#111111;strokeWidth=1.2;fontFamily=Times New Roman;fontSize=14;" vertex="1" parent="1"><mxGeometry x="64" y="388" width="174" height="32" as="geometry"/></mxCell>
+        <mxCell id="psm" value="PSM realization" style="whiteSpace=wrap;html=1;align=center;verticalAlign=middle;fillColor=#ffffff;strokeColor=#111111;strokeWidth=1.2;fontFamily=Times New Roman;fontSize=14;" vertex="1" parent="1"><mxGeometry x="64" y="388" width="174" height="32" as="geometry"/></mxCell>
         <mxCell id="artifact" value="Artifact generation" style="whiteSpace=wrap;html=1;align=center;verticalAlign=middle;fillColor=#ffffff;strokeColor=#111111;strokeWidth=1.2;fontFamily=Times New Roman;fontSize=14;" vertex="1" parent="1"><mxGeometry x="64" y="436" width="174" height="32" as="geometry"/></mxCell>
 
         <!-- Operations activities -->

@@ -223,7 +223,7 @@ export const PROCESS_GOVERNANCE = {
     ]),
     governance: {
       entryEvidence: ["accepted PIM revision", "PIM-to-PSM transformation report", "AWS account/stage ownership"],
-      exitEvidence: ["accepted AWS PSM revision", "relationship views", "security and operational posture", "template-generation readiness", "explicit semantic-validation evidence"],
+      exitEvidence: ["accepted PSM revision", "relationship views", "security and operational posture", "template-generation readiness", "explicit semantic-validation evidence"],
       gate: "M2T promotion requires an explicit user/model semantic-validation review; assistant apply/commit remains structural-only.",
     },
   },

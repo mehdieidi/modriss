@@ -38,7 +38,7 @@ Direct supertypes: `AwsResource`, `S3NotificationDestination`. Inherited attribu
 
 ## `SqsRedrivePolicy`
 
-`SqsRedrivePolicy` is an AWS messaging record in the AWS platform-specific model. It carries the delivery setting for sqs redrive policy. Its declaration gives the concept a precise home through dead letter queue. Its references provide the wiring that lets generation assemble the corresponding AWS design.
+`SqsRedrivePolicy` is an AWS messaging record in the PSM. It carries the delivery setting for sqs redrive policy. Its declaration gives the concept a precise home through dead letter queue. Its references provide the wiring that lets generation assemble the corresponding AWS design.
 
 Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -56,7 +56,7 @@ Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilit
 
 ## `SqsRedriveAllowPolicy`
 
-`SqsRedriveAllowPolicy` is an AWS messaging record in the AWS platform-specific model. It carries the delivery setting for sqs redrive allow policy. Its declaration gives the concept a precise home through source queues. Its references provide the wiring that lets generation assemble the corresponding AWS design.
+`SqsRedriveAllowPolicy` is an AWS messaging record in the PSM. It carries the delivery setting for sqs redrive allow policy. Its declaration gives the concept a precise home through source queues. Its references provide the wiring that lets generation assemble the corresponding AWS design.
 
 Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -74,7 +74,7 @@ Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilit
 
 ## `SqsQueuePolicy`
 
-`SqsQueuePolicy` is an AWS messaging record in the AWS platform-specific model. It carries the delivery setting for sqs queue policy. Its declaration gives the concept a precise home through policy document, queues. Its references provide the wiring that lets generation assemble the corresponding AWS design.
+`SqsQueuePolicy` is an AWS messaging record in the PSM. It carries the delivery setting for sqs queue policy. Its declaration gives the concept a precise home through policy document, queues. Its references provide the wiring that lets generation assemble the corresponding AWS design.
 
 Direct supertypes: `AwsResource`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -118,7 +118,7 @@ Direct supertypes: `AwsResource`, `S3NotificationDestination`. Inherited attribu
 
 ## `SnsSubscription`
 
-`SnsSubscription` is an AWS messaging record in the AWS platform-specific model. It carries the delivery setting for sns subscription. Its declaration gives the concept a precise home through filter rules, topic, endpoint resource. Its references provide the wiring that lets generation assemble the corresponding AWS design.
+`SnsSubscription` is an AWS messaging record in the PSM. It carries the delivery setting for sns subscription. Its declaration gives the concept a precise home through filter rules, topic, endpoint resource. Its references provide the wiring that lets generation assemble the corresponding AWS design.
 
 Direct supertypes: `AwsResource`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -144,7 +144,7 @@ Direct supertypes: `AwsResource`. Inherited attributes and marker capabilities a
 
 ## `SnsFilterRule`
 
-`SnsFilterRule` is an AWS messaging record in the AWS platform-specific model. It carries the delivery setting for sns filter rule. Its declaration gives the concept a precise home through its declared properties. Its references provide the wiring that lets generation assemble the corresponding AWS design.
+`SnsFilterRule` is an AWS messaging record in the PSM. It carries the delivery setting for sns filter rule. Its declaration gives the concept a precise home through its declared properties. Its references provide the wiring that lets generation assemble the corresponding AWS design.
 
 Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -162,7 +162,7 @@ This class declares no direct relationships.
 
 ## `SnsTopicPolicy`
 
-`SnsTopicPolicy` is an AWS messaging record in the AWS platform-specific model. It carries the delivery setting for sns topic policy. Its declaration gives the concept a precise home through policy document, topics. Its references provide the wiring that lets generation assemble the corresponding AWS design.
+`SnsTopicPolicy` is an AWS messaging record in the PSM. It carries the delivery setting for sns topic policy. Its declaration gives the concept a precise home through policy document, topics. Its references provide the wiring that lets generation assemble the corresponding AWS design.
 
 Direct supertypes: `AwsResource`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 

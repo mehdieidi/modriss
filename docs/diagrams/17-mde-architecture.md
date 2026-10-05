@@ -8,22 +8,22 @@ flowchart TB
         kernel["shared/kernel.emf/ecore"]
         cim["CIM DSML<br/>organization, domain, behavior, process, governance"]
         pim["PIM DSML<br/>serverless provider-independent architecture"]
-        psm["AWS PSM DSML<br/>AWS resources, stacks, integrations"]
+        psm["PSM DSML<br/>AWS resources, stacks, integrations"]
     end
 
     subgraph validate["Validation Profiles"]
         cimV["CIM EVL profile"]
         pimV["PIM EVL profile"]
-        psmV["AWS PSM EVL profile"]
+        psmV["PSM EVL profile"]
     end
 
     subgraph transform["Model-to-model"]
         c2p["CIM to PIM ETL profile"]
-        p2a["PIM to AWS PSM ETL profile"]
+        p2a["PIM to PSM ETL profile"]
     end
 
     subgraph generate["Model-to-text"]
-        egx["AWS PSM to artifacts EGX"]
+        egx["PSM to artifacts EGX"]
         egl["EGL templates<br/>SAM, Lambda, OpenAPI, ASL, docs, tests, scripts, CI"]
     end
 
@@ -74,7 +74,7 @@ flowchart TB
     mdecli["tools/mde-cli<br/>Emfatic import, Ecore generation, normalization, combining"]
     evlcli["tools/mde-evl-cli<br/>Run repository EVL profiles"]
     etlcli["tools/mde-etl-cli<br/>Run repository ETL profiles"]
-    m2tcli["tools/mde-m2t-cli<br/>Run AWS PSM artifact generation"]
+    m2tcli["tools/mde-m2t-cli<br/>Run PSM artifact generation"]
     metamodels["mde/metamodels"]
     validations["mde/validation"]
     transformations["mde/transformations"]

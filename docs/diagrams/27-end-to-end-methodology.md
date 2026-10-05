@@ -50,7 +50,7 @@ flowchart TB
     end
 
     subgraph psm["PSM track"]
-        PSM["AWS PSM model"]
+        PSM["PSM model"]
         EVL_PSM["psm-semantic-validation<br/>@ psm.ph6"]
         M2T["EGX: awspsm-to-artifacts<br/>e2e.p6"]
         ART["e2e.p7, artifact review"]
@@ -96,7 +96,7 @@ sequenceDiagram
     EVL-->>PR: PIM gate evidence
 
     CPE->>ETL: e2e.p4, pim-to-awspsm
-    ETL-->>CPE: AWS PSM draft
+    ETL-->>CPE: PSM draft
     CPE->>CPE: e2e.p5, psm.ph1..ph6
     PR->>EVL: psm-semantic-validation
     EVL-->>PR: PSM gate evidence
@@ -117,4 +117,4 @@ sequenceDiagram
 | `e2e.p6.m2t-generation`      | `awspsm-to-artifacts`  | :                       |
 | `e2e.p7.artifact-completion` | Manual review          | :                       |
 
-See the [CIM modeling process](24-cim-methodology.md), [PIM modeling process](25-pim-methodology.md), and [AWS PSM modeling process](26-psm-methodology.md).
+See the [CIM modeling process](24-cim-methodology.md), [PIM modeling process](25-pim-methodology.md), and [PSM modeling process](26-psm-methodology.md).

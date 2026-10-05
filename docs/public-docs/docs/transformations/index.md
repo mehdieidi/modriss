@@ -1,6 +1,6 @@
 # Model-to-model transformation reference
 
-This reference explains how the project refines CIM business meaning into provider-independent PIM architecture and then binds PIM architecture to the AWS PSM. It is written around the actual Epsilon Transformation Language (ETL) rules, not around an idealized class mapping: guards, helper-driven construction, deferred relationship resolution, trace identifiers, placeholders, and manual decisions are all part of the transformation contract.
+This reference explains how the project refines CIM business meaning into provider-independent PIM architecture and then binds PIM architecture to the PSM. It is written around the actual Epsilon Transformation Language (ETL) rules, not around an idealized class mapping: guards, helper-driven construction, deferred relationship resolution, trace identifiers, placeholders, and manual decisions are all part of the transformation contract.
 
 ## What a transformation rule means here
 
@@ -8,10 +8,10 @@ An ETL rule takes a source metaclass instance and may create one or more target 
 
 ## Transformation inventory
 
-| Pipeline      | Rules | Purpose                                                                                                                                         | Reference                                     |
-| ------------- | ----: | ----------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------- |
-| CIM → PIM     |    48 | Preserve business intent as portable services, contracts, data, workflows, policies, integrations, and readiness evidence.                      | [CIM → PIM rules](cim-to-pim/index.md)        |
-| PIM → AWS PSM |    32 | Bind portable architecture to AWS stages, stacks, Lambda, APIs, storage, messaging, events, workflows, security, configuration, and operations. | [PIM → AWS PSM rules](pim-to-awspsm/index.md) |
+| Pipeline  | Rules | Purpose                                                                                                                                         | Reference                                 |
+| --------- | ----: | ----------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------- |
+| CIM → PIM |    48 | Preserve business intent as portable services, contracts, data, workflows, policies, integrations, and readiness evidence.                      | [CIM → PIM rules](cim-to-pim/index.md)    |
+| PIM → PSM |    32 | Bind portable architecture to AWS stages, stacks, Lambda, APIs, storage, messaging, events, workflows, security, configuration, and operations. | [PIM → PSM rules](pim-to-awspsm/index.md) |
 
 ## Pipeline lifecycle
 
@@ -54,4 +54,4 @@ Transformation execution should happen after source structural and semantic vali
 - [DSML reference](../dsml/index.md): source and target classes, attributes, and relationships.
 - [EVL semantic validation reference](../evl/index.md): constraints applied before/after transformation.
 - [Validation, transformation, and generation](../concepts/pipeline.md): the validation and transformation steps in the modeling framework.
-- [Model-to-text and code-generation reference](../generation/index.md): follow the EGX/EGL rules that turn AWS PSM into infrastructure, code, tests, scripts, CI/CD, and reports.
+- [Model-to-text and code-generation reference](../generation/index.md): follow the EGX/EGL rules that turn PSM into infrastructure, code, tests, scripts, CI/CD, and reports.

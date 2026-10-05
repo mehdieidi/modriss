@@ -61,7 +61,7 @@ const PSM_PROCESS_PHASES_SOURCE = [
         tasks: [
           {
             id: "psm.ph1.st1.t1",
-            name: "Create AWS PSM model root",
+            name: "Create PSM model root",
             primaryRole: "cloud-platform-engineer",
             viewpoint: "dashboard",
             artifactIds: ["psm-artifact.deployment-strategy"],
@@ -86,7 +86,7 @@ const PSM_PROCESS_PHASES_SOURCE = [
               "Configure AwsStage elements for dev, staging, and production.",
               "Define AwsNamingPolicy and AwsTaggingPolicy conventions.",
             ],
-            entryCriteria: ["AWS PSM root exists"],
+            entryCriteria: ["PSM root exists"],
             exitCriteria: ["Stage strategy and naming policies configured"],
             validationRules: [],
             durationEstimate: "30m",
@@ -103,7 +103,7 @@ const PSM_PROCESS_PHASES_SOURCE = [
               "Record the source PIM revision, provider mapping revision, and review-state convention for the deployable slice.",
               "Keep support and generated relationship concepts in detail views and evidence records rather than treating them as independent resources.",
             ],
-            entryCriteria: ["AWS PSM root exists"],
+            entryCriteria: ["PSM root exists"],
             exitCriteria: ["Shared model contract and evidence convention are recorded"],
             validationRules: [],
             durationEstimate: "30m",

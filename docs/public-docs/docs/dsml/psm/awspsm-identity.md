@@ -45,7 +45,7 @@ Direct supertypes: `AwsResource`. Inherited attributes and marker capabilities a
 
 ## `CognitoPasswordPolicy`
 
-`CognitoPasswordPolicy` is a Cognito deployment record in the AWS platform-specific model. It carries the identity settings for cognito password policy. Its declaration gives the concept a precise home through its declared properties. Its references provide the wiring that lets generation assemble the corresponding AWS design.
+`CognitoPasswordPolicy` is a Cognito deployment record in the PSM. It carries the identity settings for cognito password policy. Its declaration gives the concept a precise home through its declared properties. Its references provide the wiring that lets generation assemble the corresponding AWS design.
 
 Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -66,7 +66,7 @@ This class declares no direct relationships.
 
 ## `CognitoSchemaAttribute`
 
-`CognitoSchemaAttribute` is a Cognito deployment record in the AWS platform-specific model. It carries the identity settings for cognito schema attribute. Its declaration gives the concept a precise home through its declared properties. Its references provide the wiring that lets generation assemble the corresponding AWS design.
+`CognitoSchemaAttribute` is a Cognito deployment record in the PSM. It carries the identity settings for cognito schema attribute. Its declaration gives the concept a precise home through its declared properties. Its references provide the wiring that lets generation assemble the corresponding AWS design.
 
 Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -90,7 +90,7 @@ This class declares no direct relationships.
 
 ## `CognitoEmailConfiguration`
 
-`CognitoEmailConfiguration` is a Cognito deployment record in the AWS platform-specific model. It carries the identity settings for cognito email configuration. Its declaration gives the concept a precise home through its declared properties. Its references provide the wiring that lets generation assemble the corresponding AWS design.
+`CognitoEmailConfiguration` is a Cognito deployment record in the PSM. It carries the identity settings for cognito email configuration. Its declaration gives the concept a precise home through its declared properties. Its references provide the wiring that lets generation assemble the corresponding AWS design.
 
 Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -110,7 +110,7 @@ This class declares no direct relationships.
 
 ## `CognitoAccountRecoverySetting`
 
-`CognitoAccountRecoverySetting` is a Cognito deployment record in the AWS platform-specific model. It carries the identity settings for cognito account recovery setting. Its declaration gives the concept a precise home through recovery mechanisms. Its references provide the wiring that lets generation assemble the corresponding AWS design.
+`CognitoAccountRecoverySetting` is a Cognito deployment record in the PSM. It carries the identity settings for cognito account recovery setting. Its declaration gives the concept a precise home through recovery mechanisms. Its references provide the wiring that lets generation assemble the corresponding AWS design.
 
 Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -126,7 +126,7 @@ This class declares no attributes of its own. It inherits the attributes of its 
 
 ## `CognitoRecoveryMechanism`
 
-`CognitoRecoveryMechanism` is a Cognito deployment record in the AWS platform-specific model. It carries the identity settings for cognito recovery mechanism. Its declaration gives the concept a precise home through its declared properties. Its references provide the wiring that lets generation assemble the corresponding AWS design.
+`CognitoRecoveryMechanism` is a Cognito deployment record in the PSM. It carries the identity settings for cognito recovery mechanism. Its declaration gives the concept a precise home through its declared properties. Its references provide the wiring that lets generation assemble the corresponding AWS design.
 
 Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -143,7 +143,7 @@ This class declares no direct relationships.
 
 ## `CognitoLambdaConfig`
 
-`CognitoLambdaConfig` is a Cognito deployment record in the AWS platform-specific model. It carries the identity settings for cognito lambda config. Its declaration gives the concept a precise home through pre sign up, post confirmation, pre authentication. Its references provide the wiring that lets generation assemble the corresponding AWS design.
+`CognitoLambdaConfig` is a Cognito deployment record in the PSM. It carries the identity settings for cognito lambda config. Its declaration gives the concept a precise home through pre sign up, post confirmation, pre authentication. Its references provide the wiring that lets generation assemble the corresponding AWS design.
 
 Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -168,7 +168,7 @@ This class declares no attributes of its own. It inherits the attributes of its 
 
 ## `CognitoUserPoolClient`
 
-`CognitoUserPoolClient` is a Cognito deployment record in the AWS platform-specific model. It carries the identity settings for cognito user pool client. Its declaration gives the concept a precise home through oauth configuration, user pool. Its references provide the wiring that lets generation assemble the corresponding AWS design.
+`CognitoUserPoolClient` is a Cognito deployment record in the PSM. It carries the identity settings for cognito user pool client. Its declaration gives the concept a precise home through oauth configuration, user pool. Its references provide the wiring that lets generation assemble the corresponding AWS design.
 
 Direct supertypes: `AwsResource`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -200,7 +200,7 @@ Direct supertypes: `AwsResource`. Inherited attributes and marker capabilities a
 
 ## `CognitoOAuthConfiguration`
 
-`CognitoOAuthConfiguration` is a Cognito deployment record in the AWS platform-specific model. It carries the identity settings for cognito o auth configuration. Its declaration gives the concept a precise home through its declared properties. Its references provide the wiring that lets generation assemble the corresponding AWS design.
+`CognitoOAuthConfiguration` is a Cognito deployment record in the PSM. It carries the identity settings for cognito o auth configuration. Its declaration gives the concept a precise home through its declared properties. Its references provide the wiring that lets generation assemble the corresponding AWS design.
 
 Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -221,7 +221,7 @@ This class declares no direct relationships.
 
 ## `CognitoUserPoolGroup`
 
-`CognitoUserPoolGroup` is a Cognito deployment record in the AWS platform-specific model. It carries the identity settings for cognito user pool group. Its declaration gives the concept a precise home through user pool, role. Its references provide the wiring that lets generation assemble the corresponding AWS design.
+`CognitoUserPoolGroup` is a Cognito deployment record in the PSM. It carries the identity settings for cognito user pool group. Its declaration gives the concept a precise home through user pool, role. Its references provide the wiring that lets generation assemble the corresponding AWS design.
 
 Direct supertypes: `AwsResource`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -242,7 +242,7 @@ Direct supertypes: `AwsResource`. Inherited attributes and marker capabilities a
 
 ## `CognitoUserPoolDomain`
 
-`CognitoUserPoolDomain` is a Cognito deployment record in the AWS platform-specific model. It carries the identity settings for cognito user pool domain. Its declaration gives the concept a precise home through user pool. Its references provide the wiring that lets generation assemble the corresponding AWS design.
+`CognitoUserPoolDomain` is a Cognito deployment record in the PSM. It carries the identity settings for cognito user pool domain. Its declaration gives the concept a precise home through user pool. Its references provide the wiring that lets generation assemble the corresponding AWS design.
 
 Direct supertypes: `AwsResource`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -261,7 +261,7 @@ Direct supertypes: `AwsResource`. Inherited attributes and marker capabilities a
 
 ## `CognitoIdentityPool`
 
-`CognitoIdentityPool` is a Cognito deployment record in the AWS platform-specific model. It carries the identity settings for cognito identity pool. Its declaration gives the concept a precise home through its declared properties. Its references provide the wiring that lets generation assemble the corresponding AWS design.
+`CognitoIdentityPool` is a Cognito deployment record in the PSM. It carries the identity settings for cognito identity pool. Its declaration gives the concept a precise home through its declared properties. Its references provide the wiring that lets generation assemble the corresponding AWS design.
 
 Direct supertypes: `AwsResource`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 

@@ -106,7 +106,7 @@ public final class MdeRuntimePaths {
   }
 
   /**
-   * Returns the bundled PIM-to-AWS-PSM transformation root.
+   * Returns the bundled PIM-to-PSM transformation root.
    *
    * @return transformation directory
    */
@@ -117,7 +117,7 @@ public final class MdeRuntimePaths {
   }
 
   /**
-   * Returns the bundled AWS PSM artifact generation root.
+   * Returns the bundled PSM artifact generation root.
    *
    * @return generation directory
    */

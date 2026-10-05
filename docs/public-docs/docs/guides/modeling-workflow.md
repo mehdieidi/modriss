@@ -8,7 +8,7 @@ A project groups its models and artifacts and provides the access-control bounda
 
 ## Create or import a model
 
-Create a model from a CIM, PIM, or AWS PSM workspace, or import JSON or XMI. The default upload limit is 20 MiB. XMI imports are staged while the platform converts them to its stored representation and checks the result.
+Create a model from a CIM, PIM, or PSM workspace, or import JSON or XMI. The default upload limit is 20 MiB. XMI imports are staged while the platform converts them to its stored representation and checks the result.
 
 Models use numeric revisions. An update or patch includes the revision it expects to change. If a newer revision has already been saved, MODRISS returns HTTP `409` so the newer work is not silently replaced.
 
@@ -24,7 +24,7 @@ The chatbot assistant has a separate boundary. Its apply, repair, and commit pat
 
 ## Transform to the next level
 
-The pipeline moves from CIM to PIM, from PIM to AWS PSM, and from AWS PSM to a generated project. Run transformations against a saved source revision and review the resulting model before continuing. Inspect trace links, reports, assumptions, manual decisions, and readiness findings. Generated models are starting points for refinement.
+The pipeline moves from CIM to PIM, from PIM to PSM, and from PSM to a generated project. Run transformations against a saved source revision and review the resulting model before continuing. Inspect trace links, reports, assumptions, manual decisions, and readiness findings. Generated models are starting points for refinement.
 
 See the [Capability-Increment Process](end-to-end-modeling-methodology.md) for the full increment sequence and [Iterative Model Transformations](../architecture/iterative-model-transformations.md) for synchronization during upstream changes.
 

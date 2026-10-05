@@ -3,12 +3,10 @@ package io.mehdieidi.modriss.mde.generation;
 import java.nio.file.Path;
 import java.util.List;
 
-/**
- * Supplies repository-relative defaults for generating deployable artifacts from an AWS PSM model.
- */
+/** Supplies repository-relative defaults for generating deployable artifacts from a PSM model. */
 public final class AwsPsmToArtifactsDefaults {
 
-  /** Model aliases expected by the AWS PSM generation modules. */
+  /** Model aliases expected by the PSM generation modules. */
   public static final List<String> AWS_PSM_ALIASES =
       List.of(
           "AWSPSM",
@@ -31,10 +29,10 @@ public final class AwsPsmToArtifactsDefaults {
   private AwsPsmToArtifactsDefaults() {}
 
   /**
-   * Builds an EGX generation request for the bundled AWS PSM artifact generator.
+   * Builds an EGX generation request for the bundled PSM artifact generator.
    *
    * @param repositoryRoot repository root containing the {@code mde} assets
-   * @param sourcePsmModel source AWS PSM XMI file
+   * @param sourcePsmModel source PSM XMI file
    * @param outputDirectory directory that receives generated files
    * @param failIfOutputDirectoryIsNotEmpty whether non-empty output should fail
    * @param captureOutput whether Epsilon output streams should be captured

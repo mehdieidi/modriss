@@ -19,7 +19,7 @@
         </ownedMethodContentMember>
         <ownedMethodContentMember xmi:type="spem:RoleDefinition" xmi:id="id_role.cloud-platform-engineer" name="Cloud Platform Engineer" modriss:sourceId="role.cloud-platform-engineer">
           <modriss:methodRoleId>R-08</modriss:methodRoleId>
-          <modriss:responsibility>Leads AWS PSM, generation, environments, and platform automation</modriss:responsibility>
+          <modriss:responsibility>Leads PSM, generation, environments, and platform automation</modriss:responsibility>
           <modriss:sourceProcess>end-to-end</modriss:sourceProcess>
           <modriss:sourceProcess>pim</modriss:sourceProcess>
           <modriss:sourceProcess>psm</modriss:sourceProcess>
@@ -955,7 +955,7 @@
           <ownedTaskDefinitionParameter xmi:type="spem:Default_TaskDefinitionParameter" xmi:id="id_task.e2e.p5.psm-refinement.t1.out.e2e-artifact.increment-record" direction="out" optionality="mandatory" parameterType="id_e2e-artifact.increment-record"/>
           <ownedTaskDefinitionParameter xmi:type="spem:Default_TaskDefinitionParameter" xmi:id="id_task.e2e.p5.psm-refinement.t1.out.e2e-artifact.cost-model" direction="out" optionality="mandatory" parameterType="id_e2e-artifact.cost-model"/>
           <ownedTaskDefinitionParameter xmi:type="spem:Default_TaskDefinitionParameter" xmi:id="id_task.e2e.p5.psm-refinement.t1.out.e2e-artifact.risk-register" direction="out" optionality="mandatory" parameterType="id_e2e-artifact.risk-register"/>
-          <step xmi:type="spem:Step" xmi:id="id_task.e2e.p5.psm-refinement.t1.step.1" sectionName="Step 1" sectionDescription="Execute the AWS PSM process for the transformed slice."/>
+          <step xmi:type="spem:Step" xmi:id="id_task.e2e.p5.psm-refinement.t1.step.1" sectionName="Step 1" sectionDescription="Execute the PSM process for the transformed slice."/>
           <step xmi:type="spem:Step" xmi:id="id_task.e2e.p5.psm-refinement.t1.step.2" sectionName="Step 2" sectionDescription="Review resource relationships, IAM, networking, data, eventing, APIs, workflows, observability, quotas, allocation tags, and operational views."/>
           <step xmi:type="spem:Step" xmi:id="id_task.e2e.p5.psm-refinement.t1.step.3" sectionName="Step 3" sectionDescription="Record accepted PSM revision and unresolved deployment risks."/>
           <modriss:sourceProcess>end-to-end</modriss:sourceProcess>
@@ -1965,8 +1965,8 @@
           <step xmi:type="spem:Step" xmi:id="id_task.psm.ph1.st0.t1.step.3" sectionName="Step 3" sectionDescription="Define the PSM EVL gate, artifact-generation readiness criteria, and review participants."/>
           <modriss:sourceProcess>psm</modriss:sourceProcess>
         </ownedMethodContentMember>
-        <ownedMethodContentMember xmi:type="spem:TaskDefinition" xmi:id="id_task.psm.ph1.st1.t1" name="Create AWS PSM model root" modriss:sourceId="task.psm.ph1.st1.t1">
-          <modriss:purpose>Create AWS PSM model root</modriss:purpose>
+        <ownedMethodContentMember xmi:type="spem:TaskDefinition" xmi:id="id_task.psm.ph1.st1.t1" name="Create PSM model root" modriss:sourceId="task.psm.ph1.st1.t1">
+          <modriss:purpose>Create PSM model root</modriss:purpose>
           <modriss:defaultPerformer roleDefinitionRef="id_role.cloud-platform-engineer" modriss:kind="primary"/>
           <ownedTaskDefinitionParameter xmi:type="spem:Default_TaskDefinitionParameter" xmi:id="id_task.psm.ph1.st1.t1.in.psm-artifact.increment-plan" direction="in" optionality="mandatory" parameterType="id_psm-artifact.increment-plan"/>
           <ownedTaskDefinitionParameter xmi:type="spem:Default_TaskDefinitionParameter" xmi:id="id_task.psm.ph1.st1.t1.out.psm-artifact.deployment-strategy" direction="out" optionality="mandatory" parameterType="id_psm-artifact.deployment-strategy"/>
@@ -2953,7 +2953,7 @@
           <modriss:description>Decision context, alternatives, decision, consequences, evidence, and review triggers.</modriss:description>
           <modriss:sourceProcess>engineered-core</modriss:sourceProcess>
         </ownedMethodContentMember>
-        <ownedMethodContentMember xmi:type="spem:WorkProductDefinition" xmi:id="id_wp.aws-psm-revision" name="AWS PSM Revision" modriss:sourceId="wp.aws-psm-revision">
+        <ownedMethodContentMember xmi:type="spem:WorkProductDefinition" xmi:id="id_wp.aws-psm-revision" name="PSM Revision" modriss:sourceId="wp.aws-psm-revision">
           <modriss:workProductKind>Model</modriss:workProductKind>
           <modriss:methodWorkProductId>WP-16</modriss:methodWorkProductId>
           <modriss:description>Provider resources, configuration, relationships, IAM, networking, observability, and deployment intent.</modriss:description>
@@ -3402,15 +3402,15 @@
           <modriss:requirementRef>MR-MDE-05</modriss:requirementRef>
           <modriss:requirementRef>MR-SL-04</modriss:requirementRef>
           <modriss:patternSource>MDASP Transformation</modriss:patternSource>
-          <modriss:patternSource>MODRISS PIM-to-AWS-PSM ETL</modriss:patternSource>
+          <modriss:patternSource>MODRISS PIM-to-PSM ETL</modriss:patternSource>
           <modriss:sourceProcess>engineered-fragments</modriss:sourceProcess>
         </ownedMethodContentMember>
-        <ownedMethodContentMember xmi:type="spem:Guidance" xmi:id="id_guidance.fragment.mf-10" name="MF-10: AWS PSM refinement and assurance" modriss:sourceId="guidance.fragment.mf-10">
+        <ownedMethodContentMember xmi:type="spem:Guidance" xmi:id="id_guidance.fragment.mf-10" name="MF-10: PSM refinement and assurance" modriss:sourceId="guidance.fragment.mf-10">
           <modriss:guidanceKind>Process Pattern</modriss:guidanceKind>
-          <modriss:description>Generated provider resources require explicit security, networking, quota, observability, recovery, cost, and deployment decisions. Result: An accepted AWS PSM is ready for reproducible generation.</modriss:description>
+          <modriss:description>Generated provider resources require explicit security, networking, quota, observability, recovery, cost, and deployment decisions. Result: An accepted PSM is ready for reproducible generation.</modriss:description>
           <modriss:sourcePatternId>MF-10</modriss:sourcePatternId>
-          <modriss:initialContext>A reconciled AWS PSM draft and PIM trace exist.</modriss:initialContext>
-          <modriss:resultContext>An accepted AWS PSM is ready for reproducible generation.</modriss:resultContext>
+          <modriss:initialContext>A reconciled PSM draft and PIM trace exist.</modriss:initialContext>
+          <modriss:resultContext>An accepted PSM is ready for reproducible generation.</modriss:resultContext>
           <modriss:selectionRule>required for AWS profile</modriss:selectionRule>
           <modriss:methodRoleRef>R-08</modriss:methodRoleRef>
           <modriss:methodRoleRef>R-10</modriss:methodRoleRef>
@@ -4277,7 +4277,7 @@
               <nestedBreakdownElement xmi:type="spem:ProcessPerformer" xmi:id="id_ppf.e2e.p3.pim-refinement.t1.ru.e2e.p3.pim-refinement.service-owner" linkedTaskUse="id_e2e.p3.pim-refinement.t1" linkedRoleUse="id_ru.e2e.p3.pim-refinement.service-owner" modriss:kind="supporting"/>
               <nestedBreakdownElement xmi:type="spem:ProcessPerformer" xmi:id="id_ppf.e2e.p3.pim-refinement.t1.ru.e2e.p3.pim-refinement.finops-cost-analyst" linkedTaskUse="id_e2e.p3.pim-refinement.t1" linkedRoleUse="id_ru.e2e.p3.pim-refinement.finops-cost-analyst" modriss:kind="supporting"/>
             </nestedBreakdownElement>
-            <nestedBreakdownElement xmi:type="spem:Activity" xmi:id="id_e2e.p4.pim-to-psm" name="PIM → AWS PSM Transformation" modriss:kind="MODRISS::Stage" modriss:sourceId="e2e.p4.pim-to-psm">
+            <nestedBreakdownElement xmi:type="spem:Activity" xmi:id="id_e2e.p4.pim-to-psm" name="PIM → PSM Transformation" modriss:kind="MODRISS::Stage" modriss:sourceId="e2e.p4.pim-to-psm">
               <nestedBreakdownElement xmi:type="spem:TaskUse" xmi:id="id_e2e.p4.pim-to-psm.t1" name="e2e.p4.pim-to-psm.t1" task="id_task.e2e.p4.pim-to-psm.t1" modriss:sourceId="e2e.p4.pim-to-psm.t1">
                 <ownedProcessParameter xmi:type="spem:ProcessParameter" xmi:id="id_pp.e2e.p4.pim-to-psm.t1.in.wpu.e2e.p4.pim-to-psm.t1.input.e2e-artifact.increment-record" direction="in" parameterType="id_wpu.e2e.p4.pim-to-psm.t1.input.e2e-artifact.increment-record" modriss:optional="false"/>
                 <ownedProcessParameter xmi:type="spem:ProcessParameter" xmi:id="id_pp.e2e.p4.pim-to-psm.t1.in.wpu.e2e.p4.pim-to-psm.t1.input.e2e-artifact.method-profile" direction="in" parameterType="id_wpu.e2e.p4.pim-to-psm.t1.input.e2e-artifact.method-profile" modriss:optional="false"/>
@@ -6109,7 +6109,7 @@
               <nestedBreakdownElement xmi:type="spem:ProcessPerformer" xmi:id="id_ppf.psm.ph6.st3.t1.ru.psm.ph6.st3.process-reviewer" linkedTaskUse="id_psm.ph6.st3.t1" linkedRoleUse="id_ru.psm.ph6.st3.process-reviewer" modriss:kind="primary"/>
             </nestedBreakdownElement>
           </nestedBreakdownElement>
-          <nestedBreakdownElement xmi:type="spem:Activity" xmi:id="id_modriss.psm.modeling.iteration" name="AWS PSM Modeling Engine" modriss:sourceId="modriss.psm.modeling.iteration" modriss:kind="Iteration" modriss:isRepeatable="true" modriss:activityRefs="id_psm.ph1 id_psm.ph2 id_psm.ph3 id_psm.ph4 id_psm.ph5 id_psm.ph6"/>
+          <nestedBreakdownElement xmi:type="spem:Activity" xmi:id="id_modriss.psm.modeling.iteration" name="PSM Modeling Engine" modriss:sourceId="modriss.psm.modeling.iteration" modriss:kind="Iteration" modriss:isRepeatable="true" modriss:activityRefs="id_psm.ph1 id_psm.ph2 id_psm.ph3 id_psm.ph4 id_psm.ph5 id_psm.ph6"/>
           <nestedBreakdownElement xmi:type="spem:WorkSequence" xmi:id="id_ws.psm.ph1.psm.ph2" predecessor="id_psm.ph1" successor="id_psm.ph2" linkKind="finishToStart" modriss:relation="activity-order"/>
           <nestedBreakdownElement xmi:type="spem:WorkSequence" xmi:id="id_ws.psm.ph2.psm.ph3" predecessor="id_psm.ph2" successor="id_psm.ph3" linkKind="finishToStart" modriss:relation="activity-order"/>
           <nestedBreakdownElement xmi:type="spem:WorkSequence" xmi:id="id_ws.psm.ph3.psm.ph4" predecessor="id_psm.ph3" successor="id_psm.ph4" linkKind="finishToStart" modriss:relation="activity-order"/>

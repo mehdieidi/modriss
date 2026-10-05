@@ -1,6 +1,6 @@
-# PIM-to-AWS-PSM Transformation Test Coverage
+# PIM-to-PSM Transformation Test Coverage
 
-This document traces semantic test coverage for the PIM-to-AWS-PSM ETL profile in `mde/transformations/pim-to-awspsm`.
+This document traces semantic test coverage for the PIM-to-PSM ETL profile in `mde/transformations/pim-to-awspsm`.
 
 Coverage status: **100% of direct ETL rules and helper EOL rule families are exercised by semantic tests** in `PimToAwsPsmEtlRegressionTest`.
 
@@ -8,7 +8,7 @@ Coverage status: **100% of direct ETL rules and helper EOL rule families are exe
 
 | Test                                                       | Purpose                                                                                                                                                                                                              |
 | ---------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `transformsSamplePimToAwsPsmWithSpecCompletenessShape`     | Canonical sample regression for generated AWS PSM shape, stages, stacks, resource classes, trace model, readiness checks, and UUID IDs.                                                                              |
+| `transformsSamplePimToAwsPsmWithSpecCompletenessShape`     | Canonical sample regression for generated PSM shape, stages, stacks, resource classes, trace model, readiness checks, and UUID IDs.                                                                                  |
 | `transformsDirectPimRuleFamiliesWithAwsSemantics`          | Synthetic production PIM fixture covering every direct rule family with semantic assertions for AWS-specific outputs.                                                                                                |
 | `resolvesPimToAwsRelationshipsAndReviewBacklogSemantics`   | Synthetic relationship fixture covering post-processing logic: IAM, triggers, flows, EventBridge targets, schema rendering, relationship views, and manual decisions.                                                |
 | `coversPimToAwsPsmHelperEolBranchesWithSemanticAssertions` | Synthetic helper fixture covering default infrastructure, advanced ASL rendering, authorizer helpers, generated IAM fallbacks, cost policies, readiness helpers, schema recursion, and missing-information branches. |

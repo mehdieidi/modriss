@@ -42,8 +42,8 @@ Detailed requirement arrays are stored on every entry in
 | PIM semantics                          | `mde/validation/pim/pim-semantic-validation.evl` and rules                                                                                                   |
 | PIM method component                   | `mde/process/definitions/pim.json` (32 TaskDefinitions)                                                                                                      |
 | PIM coverage                           | `mde/process/coverage-matrix/pim-coverage.json`                                                                                                              |
-| PIM→AWS PSM                            | `mde/transformations/pim-to-awspsm/` with trace/readiness and synchronization contract                                                                       |
-| AWS PSM abstract syntax                | `mde/metamodels/psm/psm-combined.ecore` and modular `.emf` sources                                                                                           |
+| PIM→PSM                                | `mde/transformations/pim-to-awspsm/` with trace/readiness and synchronization contract                                                                       |
+| PSM abstract syntax                    | `mde/metamodels/psm/psm-combined.ecore` and modular `.emf` sources                                                                                           |
 | PSM semantics                          | `mde/validation/psm/psm-semantic-validation.evl`, AWS profile, and rules                                                                                     |
 | PSM method component                   | `mde/process/definitions/psm.json` (28 TaskDefinitions)                                                                                                      |
 | PSM coverage                           | `mde/process/coverage-matrix/psm-coverage.json`                                                                                                              |
@@ -61,7 +61,7 @@ Detailed requirement arrays are stored on every entry in
 | ---------------------- | ---------------------------- | ----------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
 | Product/System Charter | increment selection          | accepted scope and outcome signal               | outcome failure updates charter/backlog, not only implementation                                         |
 | Requirements and CIM   | CIM→PIM ETL                  | traceable PIM draft and report                  | domain/requirement mismatch returns to CIM                                                               |
-| Accepted PIM           | PIM→PSM ETL                  | traceable AWS PSM draft and report              | provider constraint may revise PIM decision or provider choice                                           |
+| Accepted PIM           | PIM→PSM ETL                  | traceable PSM draft and report                  | provider constraint may revise PIM decision or provider choice                                           |
 | Accepted PSM           | EGX/EGL                      | generated baseline, manifest, artifact trace    | structural realization defect returns to PSM/generator                                                   |
 | Generated baseline     | implementation/test          | candidate and verification record               | reusable scaffold defect returns to generator; business logic stays in extension code                    |
 | Qualified candidate    | promotion                    | deployment and handover record                  | release finding returns to earliest affected model/code/release control                                  |

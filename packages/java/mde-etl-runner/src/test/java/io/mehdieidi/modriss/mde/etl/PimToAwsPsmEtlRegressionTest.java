@@ -30,14 +30,14 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.api.parallel.ResourceLock;
 
-/** Regression tests for the default PIM-to-AWS-PSM ETL profile and its emitted EMF model shape. */
+/** Regression tests for the default PIM-to-PSM ETL profile and its emitted EMF model shape. */
 @ResourceLock("epsilon-runtime")
 final class PimToAwsPsmEtlRegressionTest {
 
   /** Repository root discovered from the current test working directory. */
   private static final Path REPOSITORY_ROOT = findRepositoryRoot();
 
-  /** Temporary output directory for generated AWS PSM models. */
+  /** Temporary output directory for generated PSM models. */
   @TempDir Path tempDir;
 
   /**
@@ -59,7 +59,7 @@ final class PimToAwsPsmEtlRegressionTest {
   }
 
   /**
-   * Transforms the repository PIM sample and verifies the AWS PSM model contains the expected
+   * Transforms the repository PIM sample and verifies the PSM model contains the expected
    * production resources, stages, trace links, and readiness backlog.
    *
    * @throws Exception when ETL execution or model loading fails
@@ -75,9 +75,7 @@ final class PimToAwsPsmEtlRegressionTest {
             PimToAwsPsmDefaults.request(REPOSITORY_ROOT, sampleModel, psmModel, true, true));
 
     assertEquals(EtlExecutionStatus.SUCCEEDED, report.status(), report.diagnostics().toString());
-    assertTrue(
-        Files.isRegularFile(psmModel),
-        "The PIM-to-AWS-PSM profile should persist an AWS PSM model.");
+    assertTrue(Files.isRegularFile(psmModel), "The PIM-to-PSM profile should persist a PSM model.");
 
     Resource generatedResource = loadModel(psmMetamodel, psmModel);
     assertEquals(
@@ -2039,7 +2037,7 @@ final class PimToAwsPsmEtlRegressionTest {
   /**
    * Collects all contained objects that inherit from {@code AwsResource}.
    *
-   * @param root AWS PSM root object
+   * @param root PSM root object
    * @return contained AWS resources
    */
   private List<EObject> containedAwsResources(EObject root) {
@@ -2059,7 +2057,7 @@ final class PimToAwsPsmEtlRegressionTest {
   /**
    * Verifies every generated EMF object ID is a UUID.
    *
-   * @param root AWS PSM root object
+   * @param root PSM root object
    */
   private void assertGeneratedIdsAreUuids(EObject root) {
     List<String> ids = new java.util.ArrayList<>();
@@ -2075,7 +2073,7 @@ final class PimToAwsPsmEtlRegressionTest {
       }
     }
     assertTrue(
-        ids.stream().allMatch(this::isUuid), "Generated AWS PSM model element IDs must be UUIDs.");
+        ids.stream().allMatch(this::isUuid), "Generated PSM model element IDs must be UUIDs.");
   }
 
   private boolean isUuid(String value) {

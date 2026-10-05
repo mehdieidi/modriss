@@ -1,4 +1,4 @@
-# PIM → AWS PSM: Data Messaging Events
+# PIM → PSM: Data Messaging Events
 
 This module binds PIM data and integration abstractions to DynamoDB, S3, SQS, SNS, EventBridge, and Scheduler. It does more than rename classes: it encodes AWS key/index rules, encryption, recovery, FIFO and redrive behavior, targets, subscriptions, event patterns, and secure transport policies, with unresolved provider choices represented explicitly.
 

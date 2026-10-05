@@ -681,7 +681,7 @@ The primary performer is **Solution Architect**. The work normally involves Secu
 
 - Generated PIM is treated as scaffolding until the solution architect accepts material decisions
 
-### PIM → AWS PSM Transformation
+### PIM → PSM Transformation
 
 <small>MODRISS::Stage: `e2e.p4.pim-to-psm`</small>
 
@@ -749,7 +749,7 @@ The primary performer is **Cloud Platform Engineer**. The work normally involves
 
 **How to perform the task**
 
-1. Execute the AWS PSM process for the transformed slice.
+1. Execute the PSM process for the transformed slice.
 2. Review resource relationships, IAM, networking, data, eventing, APIs, workflows, observability, quotas, allocation tags, and operational views.
 3. Record accepted PSM revision and unresolved deployment risks.
 

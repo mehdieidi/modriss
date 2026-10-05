@@ -161,8 +161,8 @@ function renderCatalog(process) {
 
   const processTransition = {
     cim: "The CIM process produces a reviewed CIM revision for CIM-to-PIM transformation. Review the resulting PIM draft before beginning PIM refinement.",
-    pim: "The PIM process produces a reviewed PIM revision for PIM-to-AWS-PSM transformation. Review the resulting AWS PSM draft before beginning AWS PSM refinement.",
-    psm: "The AWS PSM process produces a reviewed deployment model for artifact generation. Generate the AWS project and continue with artifact-readiness review.",
+    pim: "The PIM process produces a reviewed PIM revision for PIM-to-PSM transformation. Review the resulting PSM draft before beginning PSM refinement.",
+    psm: "The PSM process produces a reviewed deployment model for artifact generation. Generate the AWS project and continue with artifact-readiness review.",
   }[process.level];
   lines.push(
     "## Process transition",

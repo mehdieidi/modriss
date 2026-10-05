@@ -21,7 +21,7 @@ repeat
 repeat while (G3 PIM acceptance rejected?) is (yes)
 -> no;
 
-:Run versioned PIM→AWS PSM ETL and reconcile;
+:Run versioned PIM→PSM ETL and reconcile;
 repeat
   :Refine AWS resources, IAM, network, storage,\nmessaging, compute, API, workflow and observability;
 repeat while (G4 PSM acceptance rejected?) is (yes)

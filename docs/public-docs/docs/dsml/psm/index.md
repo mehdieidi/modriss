@@ -1,6 +1,6 @@
-# AWS PSM DSML
+# PSM DSML
 
-The AWS Platform-Specific Model is the deployment vocabulary of the current MODRISS target platform. It turns PIM architecture into explicit AWS resources, SAM and CloudFormation settings, IAM and KMS policy objects, integration wiring, and operational controls. The PSM is where provider commitments become visible and reviewable. A generated template is an output of this model, not a substitute for understanding it.
+The PSM is the deployment vocabulary of the current MODRISS target platform. It turns PIM architecture into explicit AWS resources, SAM and CloudFormation settings, IAM and KMS policy objects, integration wiring, and operational controls. The PSM is where provider commitments become visible and reviewable. A generated template is an output of this model, not a substitute for understanding it.
 
 The model is organized around AWS resources and the documents that configure them. Core classes provide logical IDs, physical names, tags, conditions, imports, parameters, outputs, expressions, stacks, and stages. Service modules then describe Lambda, API Gateway, EventBridge, SQS, SNS, DynamoDB, S3, Cognito, networking, IAM, KMS, Step Functions, and CloudWatch. Integration views make important cross-resource connections inspectable when the same connection would otherwise be scattered across several resource classes.
 
@@ -14,7 +14,7 @@ Each class section includes declared attributes, accepted values or examples, an
 
 | Module                     | Use it for                                                                                                                                                                 | Reference                                                                   |
 | -------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------- |
-| `awspsm-root.emf`          | The AWS PSM root is the deployment-oriented container. It owns stages, SAM stacks, AWS policies, documents, and the derived resource index.                                | [AWS PSM model root](awspsm-root.md)                                        |
+| `awspsm-root.emf`          | The PSM root is the deployment-oriented container. It owns stages, SAM stacks, AWS policies, documents, and the derived resource index.                                    | [PSM model root](awspsm-root.md)                                            |
 | `awspsm-core.emf`          | Core classes provide the CloudFormation/SAM vocabulary shared by every AWS service resource, including logical IDs, tags, parameters, expressions, and lifecycle controls. | [AWS resources, SAM stacks, and CloudFormation support](awspsm-core.md)     |
 | `awspsm-security.emf`      | These classes map security intent into IAM documents, roles, KMS keys, Secrets Manager secrets, and Systems Manager parameters.                                            | [IAM, KMS, Secrets Manager, and SSM](awspsm-security.md)                    |
 | `awspsm-networking.emf`    | Networking classes make VPC attachment, subnet placement, endpoints, security groups, and ingress/egress decisions explicit.                                               | [VPC networking and security groups](awspsm-networking.md)                  |
@@ -27,7 +27,7 @@ Each class section includes declared attributes, accepted values or examples, an
 | `awspsm-workflow.emf`      | Workflow classes represent Step Functions state machines and their ASL documents, state types, branches, map processors, retries, catches, logging, and tracing.           | [Step Functions and Amazon States Language](awspsm-workflow.md)             |
 | `awspsm-observability.emf` | Observability classes turn operational intent into CloudWatch log groups, metric filters, alarms, composite alarms, dimensions, and dashboards.                            | [CloudWatch logs, metrics, alarms, and dashboards](awspsm-observability.md) |
 | `awspsm-integrations.emf`  | Integration views are explicit wiring records used to inspect and validate how AWS resources connect across service boundaries.                                            | [Cross-resource integration views](awspsm-integrations.md)                  |
-| `awspsm-enums.emf`         | Enumerations in this module constrain AWS deployment choices to values understood by the provider-specific model and generators.                                           | [AWS PSM enumerations](awspsm-enums.md)                                     |
+| `awspsm-enums.emf`         | Enumerations in this module constrain AWS deployment choices to values understood by the provider-specific model and generators.                                           | [PSM enumerations](awspsm-enums.md)                                         |
 
 ## Model-level guidance
 

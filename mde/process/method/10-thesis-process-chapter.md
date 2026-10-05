@@ -53,7 +53,7 @@ evidence. Reusable SPEM method content supplies definitions used by activities
 within the process part.
 
 The MODRISS modeling framework defines three abstraction levels: CIM, PIM, and
-AWS PSM. Each level has a dedicated DSML.
+PSM. Each level has a dedicated DSML.
 Their abstract syntax is expressed in Ecore, their semantic constraints are
 written in EVL, the CIM-to-PIM and PIM-to-PSM refinements are implemented in
 ETL, and the PSM is used by EGX/EGL generators to produce deployable and
@@ -350,8 +350,8 @@ as a reviewed refinement, not a mechanical file conversion.
 | Level                             | Purpose                                                                                  | Representative concerns                                                                                                                      | Transition                                                                                             |
 | --------------------------------- | ---------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
 | CIM                               | Express the problem and organizational intent without committing to a computing platform | stakeholders, outcomes, capabilities, domain language, information, commands, queries, events, policies, processes, requirements, governance | CIM-to-PIM ETL produces a traceable PIM draft                                                          |
-| PIM                               | Describe a provider-independent serverless solution architecture                         | services, boundaries, functions, contracts, events, APIs, data, state, workflows, integration, security, failure, SLOs, deployment intent    | PIM-to-AWS-PSM ETL produces a traceable provider-specific draft                                        |
-| AWS PSM                           | Describe the concrete cloud realization                                                  | Lambda, API Gateway, EventBridge, SQS/SNS, Step Functions, DynamoDB/S3, IAM/KMS, networking, observability, stages, quotas, recovery         | EGX/EGL produces infrastructure, code, contracts, tests, pipelines, documentation, and trace artifacts |
+| PIM                               | Describe a provider-independent serverless solution architecture                         | services, boundaries, functions, contracts, events, APIs, data, state, workflows, integration, security, failure, SLOs, deployment intent    | PIM-to-PSM ETL produces a traceable provider-specific draft                                            |
+| PSM                               | Describe the concrete cloud realization                                                  | Lambda, API Gateway, EventBridge, SQS/SNS, Step Functions, DynamoDB/S3, IAM/KMS, networking, observability, stages, quotas, recovery         | EGX/EGL produces infrastructure, code, contracts, tests, pipelines, documentation, and trace artifacts |
 | Generated and completed artifacts | Realize the accepted PSM and complete behavior that cannot or should not be generated    | business logic, adapters, clients, tests, configuration, manifests, release artifacts, runbooks                                              | CI/CD qualifies and promotes an immutable release candidate                                            |
 
 The transformations use stable identity, trace information, and a
@@ -469,7 +469,7 @@ decisions. Gate G3 confirms that the provider-independent architecture is
 accepted and mappable.
 
 The PIM-to-PSM transformation and reconciliation follow the same discipline.
-The AWS PSM is refined with exact resources, IAM and encryption, networking,
+The PSM is refined with exact resources, IAM and encryption, networking,
 quotas, concurrency, storage, messaging, workflows, observability, stages,
 recovery, retention, and cost controls. Gate G4 accepts the precise PSM revision
 for generation.
@@ -634,7 +634,7 @@ method repository.
 | MF-07 | CIM-to-PIM transformation and reconciliation              | Required when the MODRISS transformation is used |
 | MF-08 | Platform-independent serverless architecture              | Required                                         |
 | MF-09 | PIM-to-PSM transformation and reconciliation              | Required for a supported PSM                     |
-| MF-10 | AWS PSM refinement and assurance                          | Required for the AWS profile                     |
+| MF-10 | PSM refinement and assurance                              | Required for the AWS profile                     |
 | MF-11 | Reproducible model-to-text generation                     | Required                                         |
 | MF-12 | Artifact completion and test in the small                 | Required                                         |
 | MF-13 | Test in the large and release qualification               | Required; depth is risk-based                    |
@@ -714,7 +714,7 @@ criteria, consumers, provenance, and retention rule.
 |                            | WP-13 | Threat, Privacy, Failure, and Cost Analysis     | Security/Architecture/FinOps owners |
 |                            | WP-14 | PIM Review and Readiness Record                 | Assurance Reviewer                  |
 |                            | WP-15 | PIM-to-PSM Transformation Run                   | Cloud Platform Engineer             |
-|                            | WP-16 | AWS PSM Revision                                | Cloud Platform Engineer             |
+|                            | WP-16 | PSM Revision                                    | Cloud Platform Engineer             |
 |                            | WP-17 | PSM Review and Readiness Record                 | Assurance Reviewer                  |
 |                            | WP-18 | Generated Artifact Baseline and Manifest        | Cloud Platform Engineer             |
 | Implementation and release | WP-19 | Source and Test Baseline                        | Software Engineer                   |

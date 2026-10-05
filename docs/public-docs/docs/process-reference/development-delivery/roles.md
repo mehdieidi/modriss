@@ -15,7 +15,7 @@ A RoleDefinition states a responsibility. RoleUse places it in an activity, whil
 | Requirements Engineer    | Maintains requirements, acceptance criteria, and change impact evidence                                      |             1 |                2 |         3 |
 | Domain Expert            | Validates business language, rules, and operational fit                                                      |             0 |                5 |         4 |
 | Solution Architect       | Leads PIM architecture, contracts, integration, and cross-level decisions                                    |             3 |                4 |         5 |
-| Cloud Platform Engineer  | Leads AWS PSM, generation, environments, and platform automation                                             |             4 |                5 |         6 |
+| Cloud Platform Engineer  | Leads PSM, generation, environments, and platform automation                                                 |             4 |                5 |         6 |
 | Quality Engineer         | Owns verification strategy, evidence quality, and quality risks                                              |             0 |                8 |         8 |
 | Security Engineer        | Owns security, privacy, threat, and exception evidence                                                       |             1 |               15 |        11 |
 | Release Engineer         | Owns release candidates, promotion, rollback, and deployment records                                         |             2 |                3 |         4 |
@@ -244,7 +244,7 @@ The method profile should name the person or team carrying this role. Where one 
 
 **Responsibilities**
 
-- Leads AWS PSM, generation, environments, and platform automation
+- Leads PSM, generation, environments, and platform automation
 
 **Primary task accountability**
 

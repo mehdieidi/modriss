@@ -1,4 +1,4 @@
-# PIM → AWS PSM: Compute API
+# PIM → PSM: Compute API
 
 Compute and API binding converts provider-independent execution into Lambda and API Gateway resources. The rules choose HTTP API versus REST API, materialize routes after their parent API exists, infer conservative operational settings, carry contracts into OpenAPI models, and emit explicit manual decisions where PIM intent cannot safely determine AWS implementation.
 

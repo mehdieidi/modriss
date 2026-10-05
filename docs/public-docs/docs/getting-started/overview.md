@@ -30,7 +30,7 @@ MODRISS serves several related roles:
 3. Create a CIM model or import the included sample.
 4. Model business intent and validate it.
 5. Transform CIM to PIM and review the generated architecture.
-6. Transform PIM to AWS PSM and review provider-specific resources.
+6. Transform PIM to PSM and review provider-specific resources.
 7. Generate an AWS project from PSM.
 8. Browse, edit, and download the generated artifact.
 9. Validate and deploy it to the selected Floci/LocalStack emulator or a controlled AWS environment.
@@ -46,7 +46,7 @@ client cannot silently overwrite a newer revision.
 | Runtime metamodel structure                  | `mde/metamodels/**/*-combined.ecore`                           |
 | Semantic constraints                         | `mde/validation/`                                              |
 | CIM-to-PIM transformation                    | `mde/transformations/cim-to-pim/`                              |
-| PIM-to-AWS-PSM transformation                | `mde/transformations/pim-to-awspsm/`                           |
+| PIM-to-PSM transformation                    | `mde/transformations/pim-to-awspsm/`                           |
 | PSM-to-artifact generation                   | `mde/generation/awspsm-to-artifacts/`                          |
 | Visual syntax and palettes                   | `packages/java/platform-modeling/src/main/resources/modeling/` |
 | Public backend behavior                      | Backend controllers and checked-in OpenAPI contract            |

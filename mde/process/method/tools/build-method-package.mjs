@@ -152,7 +152,7 @@ const sourceLabels = {
   'end-to-end': 'End-to-end lifecycle',
   cim: 'CIM modeling component',
   pim: 'PIM modeling component',
-  psm: 'AWS PSM modeling component',
+  psm: 'PSM modeling component',
   artifact: 'Artifact-readiness component',
   'engineered-core': 'Engineered core content',
   'engineered-fragments': 'Engineered fragment catalog',

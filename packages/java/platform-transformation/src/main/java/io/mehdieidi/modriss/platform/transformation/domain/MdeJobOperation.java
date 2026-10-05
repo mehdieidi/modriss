@@ -4,9 +4,9 @@ package io.mehdieidi.modriss.platform.transformation.domain;
 public enum MdeJobOperation {
   /** Transform a CIM model into a PIM model. */
   CIM_TO_PIM,
-  /** Transform a PIM model into an AWS PSM model. */
+  /** Transform a PIM model into a PSM model. */
   PIM_TO_PSM,
-  /** Generate artifacts from an AWS PSM model. */
+  /** Generate artifacts from a PSM model. */
   PSM_TO_ARTIFACT,
   /** Reserved validation operation value. */
   VALIDATE

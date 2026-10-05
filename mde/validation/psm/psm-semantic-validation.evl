@@ -1,5 +1,5 @@
 /*
- * AWS PSM semantic validation entry point.
+ * PSM semantic validation entry point.
  *
  * Run this module after parsing and structural EMF/Ecore conformance checks.
  *
@@ -8,8 +8,8 @@
  *   - critique = warning: the model remains valid, but quality/readiness is weak.
  *
  * Expected model aliases:
- *   - AWSPSM for the AWS PSM packages
- *   - AWSPSMENUMS for the AWS PSM enum package
+ *   - AWSPSM for the PSM packages
+ *   - AWSPSMENUMS for the PSM enum package
  *   - KERNEL for the shared kernel package
  */
 

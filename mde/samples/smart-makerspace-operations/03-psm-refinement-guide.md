@@ -1,4 +1,4 @@
-# AWS PSM Refinement Guide: Smart Makerspace Operations
+# PSM Refinement Guide: Smart Makerspace Operations
 
 ## Generated baseline
 
@@ -61,7 +61,7 @@ java -jar tools/mde-evl-cli/target/mde-evl-cli-0.0.1-SNAPSHOT.jar psm `
 The final PSM reports **0 mandatory and 0 optional violations**. Generate artifacts with:
 
 ```powershell
-java -jar tools/mde-m2t-cli/target/mde-m2t-cli-0.0.1-SNAPSHOT.jar aws-psm-to-artifacts `
+java -jar tools/mde-m2t-cli/target/mde-m2t-cli-0.0.1-SNAPSHOT.jar psm-to-artifacts `
   --repo-root . `
   --source-model mde/samples/smart-makerspace-operations/smart-makerspace.final.awspsm.xmi `
   --output-dir mde/samples/smart-makerspace-operations/generated-project

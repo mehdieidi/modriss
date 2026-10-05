@@ -6,7 +6,7 @@ Source: `mde/metamodels/psm/awspsm-core.emf`.
 
 ## `AwsResource`
 
-The common deployment resource abstraction for the AWS PSM. It provides logical identity, physical naming, tags, lifecycle behavior, dependencies, conditions, and readiness metadata shared by AWS services.
+The common deployment resource abstraction for the PSM. It provides logical identity, physical naming, tags, lifecycle behavior, dependencies, conditions, and readiness metadata shared by AWS services.
 
 Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 

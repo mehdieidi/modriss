@@ -5,7 +5,7 @@
 This directory contains the research and method-engineering materials for the
 MODRISS development process. It documents three related concerns:
 
-1. the **modeling framework** implemented by the CIM, PIM, and AWS PSM DSMLs,
+1. the **modeling framework** implemented by the CIM, PIM, and PSM DSMLs,
    their Ecore abstract syntax, EVL semantics, ETL transformations, and EGL/EGX
    artifact generation;
 2. the reusable **method content** that explains how roles perform tasks and

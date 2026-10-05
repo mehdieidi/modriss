@@ -1403,9 +1403,9 @@ class ModelServiceXmiImportTest {
   }
 
   /**
-   * Returns a compact AWS PSM XMI fixture with stack containments and a relationship view.
+   * Returns a compact PSM XMI fixture with stack containments and a relationship view.
    *
-   * @return sample AWS PSM XMI text
+   * @return sample PSM XMI text
    */
   private String samplePsmXmi() {
     return """

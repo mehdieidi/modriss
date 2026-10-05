@@ -118,7 +118,7 @@ artifact ids, validation results, and phase timings.
 
 ## Model Synchronization
 
-CIM→PIM and PIM→AWS-PSM transformations generate a fresh target candidate and synchronize it with
+CIM→PIM and PIM→PSM transformations generate a fresh target candidate and synchronize it with
 the downstream Working model using Base/Working/NewGenerated three-way EMF comparison. Accepted
 runs update Working and store the raw generated candidate as the next Base. Real conflicts persist
 a pending session and leave canonical Working and Base unchanged until resolved.

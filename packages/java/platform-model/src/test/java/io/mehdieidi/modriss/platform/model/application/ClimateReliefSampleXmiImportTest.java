@@ -243,8 +243,8 @@ class ClimateReliefSampleXmiImportTest {
   }
 
   /**
-   * Ensures AWS PSM samples with nested PSM package namespaces import through the platform
-   * metamodel resolver.
+   * Ensures PSM samples with nested PSM package namespaces import through the platform metamodel
+   * resolver.
    *
    * @throws Exception when sample loading or import fails
    */

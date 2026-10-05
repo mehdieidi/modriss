@@ -1,7 +1,7 @@
 # Iterative and evolutionary model transformations
 
 MODRISS's model-to-model pipeline is designed for repeated evolution, not one-time waterfall
-generation. A generated PIM or AWS PSM is a persistent working model that users can refine. When its
+generation. A generated PIM or PSM is a persistent working model that users can refine. When its
 upstream model changes, MODRISS generates a new candidate and performs an ancestor-based, three-way
 EMF merge. Independent user edits survive, safe upstream changes propagate, and incompatible edits
 become explicit conflicts.
@@ -11,14 +11,14 @@ This architecture applies to both model-to-model boundaries:
 ```mermaid
 flowchart LR
     CIM["CIM<br/>business intent"] -->|"fresh ETL generation<br/>plus 3-way synchronization"| PIM["PIM Working<br/>user-refined architecture"]
-    PIM -->|"fresh ETL generation<br/>plus 3-way synchronization"| PSM["AWS PSM Working<br/>user-refined deployment model"]
+    PIM -->|"fresh ETL generation<br/>plus 3-way synchronization"| PSM["PSM Working<br/>user-refined deployment model"]
     PSM -->|"EGX / EGL<br/>protected regions"| ART["Deployable artifacts"]
 
     PIM -.->|"repeat after CIM evolves"| CIM
     PSM -.->|"repeat after PIM evolves"| PIM
 ```
 
-The AWS PSM-to-artifact boundary is intentionally different. It continues to use the existing EGL
+The PSM-to-artifact boundary is intentionally different. It continues to use the existing EGL
 protected-region mechanism; EMF Compare is used only for model-to-model synchronization.
 
 ## The three model states
@@ -60,7 +60,7 @@ flowchart TD
 
 ## Runtime architecture
 
-`TransformationService` remains the application entry point for CIM-to-PIM and PIM-to-AWS-PSM.
+`TransformationService` remains the application entry point for CIM-to-PIM and PIM-to-PSM.
 It validates the source and invokes ETL to generate a completely fresh target resource. It then
 hands the raw JSON and XMI to `TransformationSynchronizationCoordinator`.
 

@@ -15,6 +15,6 @@ public final class MdeEtlCommand implements Runnable {
   @Override
   public void run() {
     throw new picocli.CommandLine.ParameterException(
-        new picocli.CommandLine(this), "Choose a subcommand: run, cim-to-pim, or pim-to-awspsm.");
+        new picocli.CommandLine(this), "Choose a subcommand: run, cim-to-pim, or pim-to-psm.");
   }
 }

@@ -1,13 +1,13 @@
-# AWS PSM Modeling Process
+# PSM Modeling Process
 
-The complete AWS PSM reference has separate pages for [activities](../process-reference/psm/activities.md), [tasks](../process-reference/psm/tasks.md), [roles](../process-reference/psm/roles.md), [work products](../process-reference/psm/work-products.md), [guidance](../process-reference/psm/guidance.md), and the [readiness gate](../process-reference/psm/gates.md).
+The complete PSM reference has separate pages for [activities](../process-reference/psm/activities.md), [tasks](../process-reference/psm/tasks.md), [roles](../process-reference/psm/roles.md), [work products](../process-reference/psm/work-products.md), [guidance](../process-reference/psm/guidance.md), and the [readiness gate](../process-reference/psm/gates.md).
 
 The Platform-Specific Model (PSM) binds the PIM to AWS resources and deployment configuration. The
 language covers SAM stacks, IAM, Lambda, API Gateway, DynamoDB, messaging, EventBridge, Step
-Functions, and observability. Each model-driven increment invokes six ordered stages for new AWS PSM
+Functions, and observability. Each model-driven increment invokes six ordered stages for new PSM
 work and for refinement after PIM-to-PSM transformation; they are not product-lifecycle phases.
 Substages and task uses make up each stage; metamodel bindings show
-which AWS PSM classes a task covers, while its process work products are tracked separately.
+which PSM classes a task covers, while its process work products are tracked separately.
 
 Treat resources created by PIM-to-PSM transformation as a draft deployment model. Review the AWS
 mapping and refine the slice before generation. The stage order provides a working path. Return to an
@@ -107,7 +107,7 @@ Create or refresh AwsPsmModel root with partition, region, naming, and tagging p
 
 ##### Tasks
 
-#### Create AWS PSM model root (`psm.ph1.st1.t1`)
+#### Create PSM model root (`psm.ph1.st1.t1`)
 
 **Viewpoint:** dashboard
 **Duration:** 20m
@@ -143,7 +143,7 @@ Create or refresh AwsPsmModel root with partition, region, naming, and tagging p
 
 **Entry criteria:**
 
-- AWS PSM root exists
+- PSM root exists
 
 **Exit criteria:**
 
@@ -178,7 +178,7 @@ Create or refresh AwsPsmModel root with partition, region, naming, and tagging p
 
 **Entry criteria:**
 
-- AWS PSM root exists
+- PSM root exists
 
 **Exit criteria:**
 
@@ -1123,6 +1123,6 @@ Review the AWS deployment slice, accept the increment, and adapt the next cycle.
 
 ## Process transition
 
-The AWS PSM process produces a reviewed deployment model for artifact generation. Generate the AWS project and continue with artifact-readiness review.
+The PSM process produces a reviewed deployment model for artifact generation. Generate the AWS project and continue with artifact-readiness review.
 
 <!-- TASK-CATALOG:END -->

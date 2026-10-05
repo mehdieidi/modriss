@@ -1,4 +1,4 @@
-# PIM → AWS PSM: Contracts External Policy
+# PIM → PSM: Contracts External Policy
 
 Contract and external-policy binding creates AWS-side structured documents and monitoring resources from PIM schemas, event types, business rules, decision models, external adapters, and alert policies. These documents are the bridge between provider-independent meaning and generated OpenAPI/JSON/ASL/IAM-facing artifacts.
 

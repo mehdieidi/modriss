@@ -1,6 +1,6 @@
-# AWS PSM validation: Core
+# PSM validation: Core
 
-AWS PSM core rules protect the deployment graph and CloudFormation/SAM safety model: stages and stacks must exist, logical IDs must be valid and unique, imports must be explicit, expressions must have compatible shapes, and production resources must carry the required governance metadata.
+PSM core rules protect the deployment graph and CloudFormation/SAM safety model: stages and stacks must exist, logical IDs must be valid and unique, imports must be explicit, expressions must have compatible shapes, and production resources must carry the required governance metadata.
 
 Source profile: `mde/validation/psm/rules/core.evl`.
 
@@ -18,7 +18,7 @@ Each entry preserves the actual EVL guard and check. Treat the guard as the appl
 
 ### Why this rule exists
 
-The rule checks whether model has stacks. The aws psm model element provides the relevant evidence through stacks. At this level, the generated CloudFormation/SAM deployment graph is addressable, dependency-safe, and governed for production. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: AWS PSM model has no SAM stacks.
+The rule checks whether model has stacks. The PSM model element provides the relevant evidence through stacks. At this level, the generated CloudFormation/SAM deployment graph is addressable, dependency-safe, and governed for production. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: PSM model has no SAM stacks.
 
 ### When it applies
 
@@ -38,7 +38,7 @@ This rule reads: `stacks`.
 
 ### Diagnostic and repair
 
-> AWS PSM model has no SAM stacks. Fix: add at least one SamStack and place deployable AwsResource elements inside it.
+> PSM model has no SAM stacks. Fix: add at least one SamStack and place deployable AwsResource elements inside it.
 
 **How to fix it:**
 
@@ -56,7 +56,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-The rule checks whether model has stages. The aws psm model element provides the relevant evidence through stages. At this level, the generated CloudFormation/SAM deployment graph is addressable, dependency-safe, and governed for production. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: AWS PSM model has no deployment stages.
+The rule checks whether model has stages. The PSM model element provides the relevant evidence through stages. At this level, the generated CloudFormation/SAM deployment graph is addressable, dependency-safe, and governed for production. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: PSM model has no deployment stages.
 
 ### When it applies
 
@@ -76,7 +76,7 @@ This rule reads: `stages`.
 
 ### Diagnostic and repair
 
-> AWS PSM model has no deployment stages. Fix: add at least one AwsStage with stageName, environmentClass, accountId, and region.
+> PSM model has no deployment stages. Fix: add at least one AwsStage with stageName, environmentClass, accountId, and region.
 
 **How to fix it:**
 
@@ -94,7 +94,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-The rule checks whether production mode has prod stage. The aws psm model element provides the relevant evidence through production mode, stages, environment class. At this level, the generated CloudFormation/SAM deployment graph is addressable, dependency-safe, and governed for production. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: productionMode is true but no PROD stage exists.
+The rule checks whether production mode has prod stage. The PSM model element provides the relevant evidence through production mode, stages, environment class. At this level, the generated CloudFormation/SAM deployment graph is addressable, dependency-safe, and governed for production. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: productionMode is true but no PROD stage exists.
 
 ### When it applies
 
@@ -134,7 +134,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-The rule checks whether unique stack names. The aws psm model element provides the relevant evidence through stacks, stack name. At this level, the generated CloudFormation/SAM deployment graph is addressable, dependency-safe, and governed for production. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: Two or more SAM stacks have the same stackName.
+The rule checks whether unique stack names. The PSM model element provides the relevant evidence through stacks, stack name. At this level, the generated CloudFormation/SAM deployment graph is addressable, dependency-safe, and governed for production. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: Two or more SAM stacks have the same stackName.
 
 ### When it applies
 
@@ -172,7 +172,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-The rule checks whether unique stage names. The aws psm model element provides the relevant evidence through stages, stage name. At this level, the generated CloudFormation/SAM deployment graph is addressable, dependency-safe, and governed for production. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: Two or more deployment stages have the same stageName.
+The rule checks whether unique stage names. The PSM model element provides the relevant evidence through stages, stage name. At this level, the generated CloudFormation/SAM deployment graph is addressable, dependency-safe, and governed for production. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: Two or more deployment stages have the same stageName.
 
 ### When it applies
 
@@ -248,7 +248,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 ### Why this rule exists
 
-The rule checks whether stack resources exist. It examines stack resource set, stacks. Within this part of the model, the generated CloudFormation/SAM deployment graph is addressable, dependency-safe, and governed for production. The gap is AWS PSM model has stacks but no stack-contained resources. A later transformation, generator, or reviewer would otherwise have to infer the missing decision.
+The rule checks whether stack resources exist. It examines stack resource set, stacks. Within this part of the model, the generated CloudFormation/SAM deployment graph is addressable, dependency-safe, and governed for production. The gap is PSM model has stacks but no stack-contained resources. A later transformation, generator, or reviewer would otherwise have to infer the missing decision.
 
 ### When it applies
 
@@ -268,7 +268,7 @@ This rule reads: `stackResourceSet`, `stacks`.
 
 ### Diagnostic and repair
 
-> AWS PSM model has stacks but no stack-contained resources. Fix: place generated resources under SamStack.resources.
+> PSM model has stacks but no stack-contained resources. Fix: place generated resources under SamStack.resources.
 
 **How to fix it:**
 

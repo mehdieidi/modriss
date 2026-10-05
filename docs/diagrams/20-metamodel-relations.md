@@ -186,7 +186,7 @@ classDiagram
     Function *-- "*" Trigger
 ```
 
-## AWS PSM Root and Resource Families
+## PSM Root and Resource Families
 
 ```mermaid
 classDiagram

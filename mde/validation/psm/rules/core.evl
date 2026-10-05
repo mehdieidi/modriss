@@ -8,13 +8,13 @@ context AWSPSM!AwsPsmModel {
   /** Checks that model has stacks. */
   constraint ModelHasStacks {
     check : self.stacks.notEmpty()
-    message : 'AWS PSM model has no SAM stacks. Fix: add at least one SamStack and place deployable AwsResource elements inside it.'
+    message : 'PSM model has no SAM stacks. Fix: add at least one SamStack and place deployable AwsResource elements inside it.'
   }
 
   /** Checks that model has stages. */
   constraint ModelHasStages {
     check : self.stages.notEmpty()
-    message : 'AWS PSM model has no deployment stages. Fix: add at least one AwsStage with stageName, environmentClass, accountId, and region.'
+    message : 'PSM model has no deployment stages. Fix: add at least one AwsStage with stageName, environmentClass, accountId, and region.'
   }
 
   /** Checks that production mode has prod stage. */
@@ -47,7 +47,7 @@ context AWSPSM!AwsPsmModel {
   /** Advises that stack resources exist. */
   critique StackResourcesExist {
     check : self.stackResourceSet().notEmpty() or self.stacks.isEmpty()
-    message : 'AWS PSM model has stacks but no stack-contained resources. Fix: place generated resources under SamStack.resources.'
+    message : 'PSM model has stacks but no stack-contained resources. Fix: place generated resources under SamStack.resources.'
   }
 }
 

@@ -15,7 +15,7 @@ import org.eclipse.epsilon.common.parse.problem.ParseProblem;
 import org.eclipse.epsilon.egl.EglModule;
 import org.junit.jupiter.api.Test;
 
-/** Syntax-level regression tests for the AWS PSM artifact generation templates. */
+/** Syntax-level regression tests for the PSM artifact generation templates. */
 final class AwsPsmArtifactGenerationSyntaxTest {
 
   /** Repository root derived from the Maven module working directory. */

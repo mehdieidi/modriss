@@ -21,11 +21,11 @@ to determine what is required.
 | Shared abstract syntax             | `mde/metamodels/shared/kernel.emf`                                                                   | `kernel.ecore`, all three combined Ecore files, EVL, ETL, EGX/EGL, UI metadata, JSON/XMI bridge, assistant contracts, samples    |
 | CIM abstract syntax                | `mde/metamodels/cim/*.emf`                                                                           | `cim-combined.ecore`, CIM EVL, CIM-to-PIM ETL, CIM UI metadata, model import/export, assistant, samples/tests                    |
 | PIM abstract syntax                | `mde/metamodels/pim/*.emf`                                                                           | `pim-combined.ecore`, PIM EVL, both ETL profiles, PIM UI metadata, model import/export, assistant, samples/tests                 |
-| AWS PSM abstract syntax            | `mde/metamodels/psm/*.emf`                                                                           | `psm-combined.ecore`, PSM EVL, PIM-to-PSM ETL, EGX/EGL, PSM UI metadata, model import/export, samples/tests                      |
+| PSM abstract syntax                | `mde/metamodels/psm/*.emf`                                                                           | `psm-combined.ecore`, PSM EVL, PIM-to-PSM ETL, EGX/EGL, PSM UI metadata, model import/export, samples/tests                      |
 | Runtime metamodel                  | `mde/metamodels/{cim,pim,psm}/*-combined.ecore`                                                      | Java EMF loading, validation, transformation, generation, UI structural metadata, metamodel hash/version                         |
 | Semantic validation                | `mde/validation/{cim,pim,psm}/`                                                                      | `ModelService`, EVL CLI, validation endpoint tests                                                                               |
 | CIM-to-PIM semantics               | `mde/transformations/cim-to-pim/`                                                                    | ETL runner/CLI, `TransformationService`, generated PIM, tests/docs                                                               |
-| PIM-to-AWS-PSM semantics           | `mde/transformations/pim-to-awspsm/`                                                                 | ETL runner/CLI, `TransformationService`, generated PSM, tests/docs                                                               |
+| PIM-to-PSM semantics               | `mde/transformations/pim-to-awspsm/`                                                                 | ETL runner/CLI, `TransformationService`, generated PSM, tests/docs                                                               |
 | PSM-to-artifact semantics          | `mde/generation/awspsm-to-artifacts/`                                                                | M2T runner/CLI, artifact service, generated projects, tests/docs                                                                 |
 | Editor structure and visual syntax | `packages/java/platform-modeling/src/main/resources/modeling/*-ui-metadata.json` plus combined Ecore | `ModelingConfigService`, `/api/modeling/config`, frontend canvas, palette, views, relationship presentation                      |
 | JSON/XMI semantic bridge           | `packages/java/platform-modeling/.../XmiModelImportService.java`                                     | Model create/update/import/export, transformation handoff, graph reconstruction                                                  |
@@ -293,7 +293,7 @@ When a CIM-to-PIM rule changes:
 - Update samples and `CimToPimEtlRegressionTest`.
 - Update `TransformationServiceTest` and end-to-end documentation when observable behavior changes.
 
-### PIM to AWS PSM
+### PIM to PSM
 
 Entry point: `mde/transformations/pim-to-awspsm/pim-to-awspsm.etl`
 

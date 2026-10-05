@@ -186,7 +186,7 @@ engine coordinates the child processes in this order:
 2. run the CIM child process;
 3. transform CIM → PIM and inspect traces, assumptions, and decisions;
 4. run the PIM child process;
-5. transform PIM → AWS PSM and inspect mappings and platform exceptions;
+5. transform PIM → PSM and inspect mappings and platform exceptions;
 6. run the PSM child process;
 7. generate a reproducible artifact baseline;
 8. run artifact readiness and accept, defer, or rework the increment.
@@ -295,7 +295,7 @@ The integrated process assigns responsibilities to at least these groups:
 - sponsor, product owner, and domain experts for authority, value, and meaning;
 - requirements and business modelers for intent and acceptance;
 - solution architect for PIM and cross-level architectural decisions;
-- cloud platform engineer for AWS PSM and platform automation;
+- cloud platform engineer for PSM and platform automation;
 - quality and security engineers for evidence and risk controls;
 - FinOps/Cost Analyst for forecast, allocation, guardrails, anomaly, and unit economics;
 - release engineer and service owner for promotion and operation;

@@ -1,6 +1,6 @@
 # Generated AWS Projects
 
-An AWS PSM can generate a complete reviewable project rather than a single infrastructure file.
+a PSM can generate a complete reviewable project rather than a single infrastructure file.
 The exact files depend on modeled resources and contracts.
 
 ## Review Before Deployment

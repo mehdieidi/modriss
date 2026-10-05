@@ -43,7 +43,7 @@ Direct supertypes: `AwsResource`. Inherited attributes and marker capabilities a
 
 ## `DynamoDbAttributeDefinition`
 
-`DynamoDbAttributeDefinition` is a DynamoDB deployment record in the AWS platform-specific model. It carries the storage setting for dynamo db attribute definition. Its declaration gives the concept a precise home through its declared properties. Its references provide the wiring that lets generation assemble the corresponding AWS design.
+`DynamoDbAttributeDefinition` is a DynamoDB deployment record in the PSM. It carries the storage setting for dynamo db attribute definition. Its declaration gives the concept a precise home through its declared properties. Its references provide the wiring that lets generation assemble the corresponding AWS design.
 
 Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -60,7 +60,7 @@ This class declares no direct relationships.
 
 ## `DynamoDbKeySchemaElement`
 
-`DynamoDbKeySchemaElement` is a DynamoDB deployment record in the AWS platform-specific model. It carries the storage setting for dynamo db key schema element. Its declaration gives the concept a precise home through its declared properties. Its references provide the wiring that lets generation assemble the corresponding AWS design.
+`DynamoDbKeySchemaElement` is a DynamoDB deployment record in the PSM. It carries the storage setting for dynamo db key schema element. Its declaration gives the concept a precise home through its declared properties. Its references provide the wiring that lets generation assemble the corresponding AWS design.
 
 Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -77,7 +77,7 @@ This class declares no direct relationships.
 
 ## `DynamoDbProjection`
 
-`DynamoDbProjection` is a DynamoDB deployment record in the AWS platform-specific model. It carries the storage setting for dynamo db projection. Its declaration gives the concept a precise home through its declared properties. Its references provide the wiring that lets generation assemble the corresponding AWS design.
+`DynamoDbProjection` is a DynamoDB deployment record in the PSM. It carries the storage setting for dynamo db projection. Its declaration gives the concept a precise home through its declared properties. Its references provide the wiring that lets generation assemble the corresponding AWS design.
 
 Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -94,7 +94,7 @@ This class declares no direct relationships.
 
 ## `DynamoDbProvisionedThroughput`
 
-`DynamoDbProvisionedThroughput` is a DynamoDB deployment record in the AWS platform-specific model. It carries the storage setting for dynamo db provisioned throughput. Its declaration gives the concept a precise home through its declared properties. Its references provide the wiring that lets generation assemble the corresponding AWS design.
+`DynamoDbProvisionedThroughput` is a DynamoDB deployment record in the PSM. It carries the storage setting for dynamo db provisioned throughput. Its declaration gives the concept a precise home through its declared properties. Its references provide the wiring that lets generation assemble the corresponding AWS design.
 
 Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -111,7 +111,7 @@ This class declares no direct relationships.
 
 ## `DynamoDbOnDemandThroughput`
 
-`DynamoDbOnDemandThroughput` is a DynamoDB deployment record in the AWS platform-specific model. It carries the storage setting for dynamo db on demand throughput. Its declaration gives the concept a precise home through its declared properties. Its references provide the wiring that lets generation assemble the corresponding AWS design.
+`DynamoDbOnDemandThroughput` is a DynamoDB deployment record in the PSM. It carries the storage setting for dynamo db on demand throughput. Its declaration gives the concept a precise home through its declared properties. Its references provide the wiring that lets generation assemble the corresponding AWS design.
 
 Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -128,7 +128,7 @@ This class declares no direct relationships.
 
 ## `DynamoDbLocalSecondaryIndex`
 
-`DynamoDbLocalSecondaryIndex` is a DynamoDB deployment record in the AWS platform-specific model. It carries the storage setting for dynamo db local secondary index. Its declaration gives the concept a precise home through key schema, projection. Its references provide the wiring that lets generation assemble the corresponding AWS design.
+`DynamoDbLocalSecondaryIndex` is a DynamoDB deployment record in the PSM. It carries the storage setting for dynamo db local secondary index. Its declaration gives the concept a precise home through key schema, projection. Its references provide the wiring that lets generation assemble the corresponding AWS design.
 
 Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -147,7 +147,7 @@ Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilit
 
 ## `DynamoDbGlobalSecondaryIndex`
 
-`DynamoDbGlobalSecondaryIndex` is a DynamoDB deployment record in the AWS platform-specific model. It carries the storage setting for dynamo db global secondary index. Its declaration gives the concept a precise home through key schema, projection, provisioned throughput. Its references provide the wiring that lets generation assemble the corresponding AWS design.
+`DynamoDbGlobalSecondaryIndex` is a DynamoDB deployment record in the PSM. It carries the storage setting for dynamo db global secondary index. Its declaration gives the concept a precise home through key schema, projection, provisioned throughput. Its references provide the wiring that lets generation assemble the corresponding AWS design.
 
 Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -168,7 +168,7 @@ Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilit
 
 ## `DynamoDbReplicaSpecification`
 
-`DynamoDbReplicaSpecification` is a DynamoDB deployment record in the AWS platform-specific model. It carries the storage setting for dynamo db replica specification. Its declaration gives the concept a precise home through kms key. Its references provide the wiring that lets generation assemble the corresponding AWS design.
+`DynamoDbReplicaSpecification` is a DynamoDB deployment record in the PSM. It carries the storage setting for dynamo db replica specification. Its declaration gives the concept a precise home through kms key. Its references provide the wiring that lets generation assemble the corresponding AWS design.
 
 Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -188,7 +188,7 @@ Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilit
 
 ## `DynamoDbStreamSpecification`
 
-`DynamoDbStreamSpecification` is a DynamoDB deployment record in the AWS platform-specific model. It carries the storage setting for dynamo db stream specification. Its declaration gives the concept a precise home through its declared properties. Its references provide the wiring that lets generation assemble the corresponding AWS design.
+`DynamoDbStreamSpecification` is a DynamoDB deployment record in the PSM. It carries the storage setting for dynamo db stream specification. Its declaration gives the concept a precise home through its declared properties. Its references provide the wiring that lets generation assemble the corresponding AWS design.
 
 Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -204,7 +204,7 @@ This class declares no direct relationships.
 
 ## `DynamoDbTimeToLiveSpecification`
 
-`DynamoDbTimeToLiveSpecification` is a DynamoDB deployment record in the AWS platform-specific model. It carries the storage setting for dynamo db time to live specification. Its declaration gives the concept a precise home through its declared properties. Its references provide the wiring that lets generation assemble the corresponding AWS design.
+`DynamoDbTimeToLiveSpecification` is a DynamoDB deployment record in the PSM. It carries the storage setting for dynamo db time to live specification. Its declaration gives the concept a precise home through its declared properties. Its references provide the wiring that lets generation assemble the corresponding AWS design.
 
 Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -221,7 +221,7 @@ This class declares no direct relationships.
 
 ## `DynamoDbSseSpecification`
 
-`DynamoDbSseSpecification` is a DynamoDB deployment record in the AWS platform-specific model. It carries the storage setting for dynamo db sse specification. Its declaration gives the concept a precise home through kms key. Its references provide the wiring that lets generation assemble the corresponding AWS design.
+`DynamoDbSseSpecification` is a DynamoDB deployment record in the PSM. It carries the storage setting for dynamo db sse specification. Its declaration gives the concept a precise home through kms key. Its references provide the wiring that lets generation assemble the corresponding AWS design.
 
 Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -240,7 +240,7 @@ Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilit
 
 ## `DynamoDbBackupPolicy`
 
-`DynamoDbBackupPolicy` is a DynamoDB deployment record in the AWS platform-specific model. It carries the storage setting for dynamo db backup policy. Its declaration gives the concept a precise home through its declared properties. Its references provide the wiring that lets generation assemble the corresponding AWS design.
+`DynamoDbBackupPolicy` is a DynamoDB deployment record in the PSM. It carries the storage setting for dynamo db backup policy. Its declaration gives the concept a precise home through its declared properties. Its references provide the wiring that lets generation assemble the corresponding AWS design.
 
 Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -292,7 +292,7 @@ Direct supertypes: `AwsResource`. Inherited attributes and marker capabilities a
 
 ## `S3BucketEncryption`
 
-`S3BucketEncryption` is an S3 deployment record in the AWS platform-specific model. It carries the object-storage setting for s3 bucket encryption. Its declaration gives the concept a precise home through kms key. Its references provide the wiring that lets generation assemble the corresponding AWS design.
+`S3BucketEncryption` is an S3 deployment record in the PSM. It carries the object-storage setting for s3 bucket encryption. Its declaration gives the concept a precise home through kms key. Its references provide the wiring that lets generation assemble the corresponding AWS design.
 
 Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -311,7 +311,7 @@ Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilit
 
 ## `S3OwnershipControls`
 
-`S3OwnershipControls` is an S3 deployment record in the AWS platform-specific model. It carries the object-storage setting for s3 ownership controls. Its declaration gives the concept a precise home through rules. Its references provide the wiring that lets generation assemble the corresponding AWS design.
+`S3OwnershipControls` is an S3 deployment record in the PSM. It carries the object-storage setting for s3 ownership controls. Its declaration gives the concept a precise home through rules. Its references provide the wiring that lets generation assemble the corresponding AWS design.
 
 Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -327,7 +327,7 @@ This class declares no attributes of its own. It inherits the attributes of its 
 
 ## `S3OwnershipRule`
 
-`S3OwnershipRule` is an S3 deployment record in the AWS platform-specific model. It carries the object-storage setting for s3 ownership rule. Its declaration gives the concept a precise home through its declared properties. Its references provide the wiring that lets generation assemble the corresponding AWS design.
+`S3OwnershipRule` is an S3 deployment record in the PSM. It carries the object-storage setting for s3 ownership rule. Its declaration gives the concept a precise home through its declared properties. Its references provide the wiring that lets generation assemble the corresponding AWS design.
 
 Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -343,7 +343,7 @@ This class declares no direct relationships.
 
 ## `S3LifecycleConfiguration`
 
-`S3LifecycleConfiguration` is an S3 deployment record in the AWS platform-specific model. It carries the object-storage setting for s3 lifecycle configuration. Its declaration gives the concept a precise home through rules. Its references provide the wiring that lets generation assemble the corresponding AWS design.
+`S3LifecycleConfiguration` is an S3 deployment record in the PSM. It carries the object-storage setting for s3 lifecycle configuration. Its declaration gives the concept a precise home through rules. Its references provide the wiring that lets generation assemble the corresponding AWS design.
 
 Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -359,7 +359,7 @@ This class declares no attributes of its own. It inherits the attributes of its 
 
 ## `S3LifecycleRule`
 
-`S3LifecycleRule` is an S3 deployment record in the AWS platform-specific model. It carries the object-storage setting for s3 lifecycle rule. Its declaration gives the concept a precise home through filter, transitions. Its references provide the wiring that lets generation assemble the corresponding AWS design.
+`S3LifecycleRule` is an S3 deployment record in the PSM. It carries the object-storage setting for s3 lifecycle rule. Its declaration gives the concept a precise home through filter, transitions. Its references provide the wiring that lets generation assemble the corresponding AWS design.
 
 Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -383,7 +383,7 @@ Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilit
 
 ## `S3LifecycleFilter`
 
-`S3LifecycleFilter` is an S3 deployment record in the AWS platform-specific model. It carries the object-storage setting for s3 lifecycle filter. Its declaration gives the concept a precise home through tags. Its references provide the wiring that lets generation assemble the corresponding AWS design.
+`S3LifecycleFilter` is an S3 deployment record in the PSM. It carries the object-storage setting for s3 lifecycle filter. Its declaration gives the concept a precise home through tags. Its references provide the wiring that lets generation assemble the corresponding AWS design.
 
 Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -403,7 +403,7 @@ Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilit
 
 ## `S3TagFilter`
 
-`S3TagFilter` is an S3 deployment record in the AWS platform-specific model. It carries the object-storage setting for s3 tag filter. Its declaration gives the concept a precise home through its declared properties. Its references provide the wiring that lets generation assemble the corresponding AWS design.
+`S3TagFilter` is an S3 deployment record in the PSM. It carries the object-storage setting for s3 tag filter. Its declaration gives the concept a precise home through its declared properties. Its references provide the wiring that lets generation assemble the corresponding AWS design.
 
 Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -420,7 +420,7 @@ This class declares no direct relationships.
 
 ## `S3Transition`
 
-`S3Transition` is an S3 deployment record in the AWS platform-specific model. It carries the object-storage setting for s3 transition. Its declaration gives the concept a precise home through its declared properties. Its references provide the wiring that lets generation assemble the corresponding AWS design.
+`S3Transition` is an S3 deployment record in the PSM. It carries the object-storage setting for s3 transition. Its declaration gives the concept a precise home through its declared properties. Its references provide the wiring that lets generation assemble the corresponding AWS design.
 
 Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -437,7 +437,7 @@ This class declares no direct relationships.
 
 ## `S3PublicAccessBlockConfiguration`
 
-`S3PublicAccessBlockConfiguration` is an S3 deployment record in the AWS platform-specific model. It carries the object-storage setting for s3 public access block configuration. Its declaration gives the concept a precise home through its declared properties. Its references provide the wiring that lets generation assemble the corresponding AWS design.
+`S3PublicAccessBlockConfiguration` is an S3 deployment record in the PSM. It carries the object-storage setting for s3 public access block configuration. Its declaration gives the concept a precise home through its declared properties. Its references provide the wiring that lets generation assemble the corresponding AWS design.
 
 Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -456,7 +456,7 @@ This class declares no direct relationships.
 
 ## `S3NotificationConfiguration`
 
-`S3NotificationConfiguration` is an S3 deployment record in the AWS platform-specific model. It carries the object-storage setting for s3 notification configuration. Its declaration gives the concept a precise home through rules. Its references provide the wiring that lets generation assemble the corresponding AWS design.
+`S3NotificationConfiguration` is an S3 deployment record in the PSM. It carries the object-storage setting for s3 notification configuration. Its declaration gives the concept a precise home through rules. Its references provide the wiring that lets generation assemble the corresponding AWS design.
 
 Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -474,7 +474,7 @@ Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilit
 
 ## `S3NotificationRule`
 
-`S3NotificationRule` is an S3 deployment record in the AWS platform-specific model. It carries the object-storage setting for s3 notification rule. Its declaration gives the concept a precise home through configuration, destination. Its references provide the wiring that lets generation assemble the corresponding AWS design.
+`S3NotificationRule` is an S3 deployment record in the PSM. It carries the object-storage setting for s3 notification rule. Its declaration gives the concept a precise home through configuration, destination. Its references provide the wiring that lets generation assemble the corresponding AWS design.
 
 Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -495,7 +495,7 @@ Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilit
 
 ## `S3ReplicationConfiguration`
 
-`S3ReplicationConfiguration` is an S3 deployment record in the AWS platform-specific model. It carries the object-storage setting for s3 replication configuration. Its declaration gives the concept a precise home through rules, role. Its references provide the wiring that lets generation assemble the corresponding AWS design.
+`S3ReplicationConfiguration` is an S3 deployment record in the PSM. It carries the object-storage setting for s3 replication configuration. Its declaration gives the concept a precise home through rules, role. Its references provide the wiring that lets generation assemble the corresponding AWS design.
 
 Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -514,7 +514,7 @@ Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilit
 
 ## `S3ReplicationRule`
 
-`S3ReplicationRule` is an S3 deployment record in the AWS platform-specific model. It carries the object-storage setting for s3 replication rule. Its declaration gives the concept a precise home through filter, destination. Its references provide the wiring that lets generation assemble the corresponding AWS design.
+`S3ReplicationRule` is an S3 deployment record in the PSM. It carries the object-storage setting for s3 replication rule. Its declaration gives the concept a precise home through filter, destination. Its references provide the wiring that lets generation assemble the corresponding AWS design.
 
 Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -537,7 +537,7 @@ Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilit
 
 ## `S3ReplicationDestination`
 
-`S3ReplicationDestination` is an S3 deployment record in the AWS platform-specific model. It carries the object-storage setting for s3 replication destination. Its declaration gives the concept a precise home through replica kms key. Its references provide the wiring that lets generation assemble the corresponding AWS design.
+`S3ReplicationDestination` is an S3 deployment record in the PSM. It carries the object-storage setting for s3 replication destination. Its declaration gives the concept a precise home through replica kms key. Its references provide the wiring that lets generation assemble the corresponding AWS design.
 
 Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -557,7 +557,7 @@ Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilit
 
 ## `S3BucketPolicy`
 
-`S3BucketPolicy` is an S3 deployment record in the AWS platform-specific model. It carries the object-storage setting for s3 bucket policy. Its declaration gives the concept a precise home through policy document, bucket. Its references provide the wiring that lets generation assemble the corresponding AWS design.
+`S3BucketPolicy` is an S3 deployment record in the PSM. It carries the object-storage setting for s3 bucket policy. Its declaration gives the concept a precise home through policy document, bucket. Its references provide the wiring that lets generation assemble the corresponding AWS design.
 
 Direct supertypes: `AwsResource`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 

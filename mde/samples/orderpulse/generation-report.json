@@ -91,7 +91,7 @@
     "tests/workflows/orderpulse-workflow_workflow_test.go"
   ],
   "diagnostics": [],
-  "standardOutput": "AWS PSM artifact generation planned 83 artifacts and 0 manual issues.\r\n",
+  "standardOutput": "PSM artifact generation planned 83 artifacts and 0 manual issues.\r\n",
   "warningOutput": "",
   "errorOutput": ""
 }

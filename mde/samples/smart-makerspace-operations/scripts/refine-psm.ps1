@@ -66,7 +66,7 @@ function Add-NativeResource($stack, [string]$id, [string]$logicalId, [string]$na
   Set-Attribute $resource "updateReplacePolicy" "RETAIN"
   Set-Attribute $resource "lifecycleStatus" "DEPLOYMENT_READY"
   Set-Attribute $resource "summary" $description
-  Set-Attribute $resource "rationale" "Selected during AWS PSM refinement for an unresolved provider-independent store."
+  Set-Attribute $resource "rationale" "Selected during PSM refinement for an unresolved provider-independent store."
   Set-Attribute $resource "manuallyMaintained" "true"
   Add-RequiredTags $resource $logicalId
 
@@ -280,7 +280,7 @@ foreach ($decision in @($root.readiness.SelectNodes("manualDecisions"))) {
     "invoke permissions" { "Grant the generated EventBridge invocation role only the concrete target ARN and required invoke action."; break }
     "access policy" { "Grant only required read/write actions on the selected table, relational cluster, search collection, queue, and secret resources."; break }
     "default stack placement" { "Retain shared generated resources in the qualification stack for this demo; split a shared foundation stack before multi-team production ownership."; break }
-    default { "Reviewed and resolved in the final AWS PSM; verify the corresponding generated template and deployment test evidence." }
+    default { "Reviewed and resolved in the final PSM; verify the corresponding generated template and deployment test evidence." }
   }
   Set-Attribute $decision "decision" $answer
   Set-Attribute $decision "blocking" "false"

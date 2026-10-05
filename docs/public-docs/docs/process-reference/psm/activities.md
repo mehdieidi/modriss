@@ -1,6 +1,6 @@
-# AWS PSM modeling: phases and activities
+# PSM modeling: phases and activities
 
-This page documents the **SPEM process-structure Activity, Phase, and TaskUse** elements used by the AWS PSM modeling process. It is generated from the canonical executable definition, so the names and identifiers match the API and process interface. The explanation adds practical teaching around the normative data.
+This page documents the **SPEM process-structure Activity, Phase, and TaskUse** elements used by the PSM modeling process. It is generated from the canonical executable definition, so the names and identifiers match the API and process interface. The explanation adds practical teaching around the normative data.
 
 A phase establishes a significant lifecycle period and normally ends at a major checkpoint. An activity groups related work within a phase or process component. A TaskUse places reusable task guidance into that process context. Entry and exit conditions describe evidence states; they are not calendar dates.
 
@@ -81,7 +81,7 @@ Create or refresh AwsPsmModel root with partition, region, naming, and tagging p
 
 **Task uses in this activity**
 
-- **Create AWS PSM model root** (TaskUse `psm.ph1.st1.t1`)
+- **Create PSM model root** (TaskUse `psm.ph1.st1.t1`)
 - **Define stage and naming policies** (TaskUse `psm.ph1.st1.t2`)
 - **Establish shared model contract and evidence conventions** (TaskUse `psm.ph1.st1.t3`)
 

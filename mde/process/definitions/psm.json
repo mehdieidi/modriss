@@ -129,8 +129,8 @@
       {
         "id": "task.psm.ph1.st1.t1",
         "type": "TaskDefinition",
-        "name": "Create AWS PSM model root",
-        "purpose": "Create AWS PSM model root",
+        "name": "Create PSM model root",
+        "purpose": "Create PSM model root",
         "viewpoint": "dashboard",
         "performerRoleRefs": ["role.cloud-platform-engineer"],
         "primaryPerformerRoleRef": "role.cloud-platform-engineer",
@@ -210,7 +210,7 @@
           "Configure AwsStage elements for dev, staging, and production.",
           "Define AwsNamingPolicy and AwsTaggingPolicy conventions."
         ],
-        "entryCriteria": ["AWS PSM root exists"],
+        "entryCriteria": ["PSM root exists"],
         "exitCriteria": ["Stage strategy and naming policies configured"],
         "validationRules": [],
         "durationEstimate": "30m",
@@ -275,7 +275,7 @@
           "Record the source PIM revision, provider mapping revision, and review-state convention for the deployable slice.",
           "Keep support and generated relationship concepts in detail views and evidence records rather than treating them as independent resources."
         ],
-        "entryCriteria": ["AWS PSM root exists"],
+        "entryCriteria": ["PSM root exists"],
         "exitCriteria": ["Shared model contract and evidence convention are recorded"],
         "validationRules": [],
         "durationEstimate": "30m",
@@ -5065,7 +5065,7 @@
       "AWS account/stage ownership"
     ],
     "exitEvidence": [
-      "accepted AWS PSM revision",
+      "accepted PSM revision",
       "relationship views",
       "security and operational posture",
       "template-generation readiness",
@@ -5075,7 +5075,7 @@
   },
   "processEngine": {
     "id": "modriss.psm.engine",
-    "displayName": "AWS PSM Modeling Engine",
+    "displayName": "PSM Modeling Engine",
     "description": "Revolves through deployable-slice framing → network/identity → storage/messaging → events/compute → API/workflow → readiness per deployable slice.",
     "incrementUnit": "deployable-slice",
     "deliverable": {
@@ -5194,7 +5194,7 @@
       "id": "modriss.psm.modeling.iteration",
       "type": "Activity",
       "activityKind": "Iteration",
-      "name": "AWS PSM Modeling Engine",
+      "name": "PSM Modeling Engine",
       "isRepeatable": true,
       "activityRefs": ["psm.ph1", "psm.ph2", "psm.ph3", "psm.ph4", "psm.ph5", "psm.ph6"]
     },

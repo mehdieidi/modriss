@@ -1,5 +1,5 @@
 /** Provides reusable common operations. */
-/** Initializes shared roots, lookup maps, and deduplication sets for the PIM-to-AWS-PSM run. */
+/** Initializes shared roots, lookup maps, and deduplication sets for the PIM-to-PSM run. */
 operation initialisePimToAwsPsmCaches() {
   usedAwsLogicalIds = Set{};
   usedAwsPhysicalNames = Set{};

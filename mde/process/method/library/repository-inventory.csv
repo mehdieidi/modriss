@@ -199,7 +199,7 @@ psm,RoleDefinition,role.service-owner,Service Owner / SRE,mde/process/definition
 psm,RoleDefinition,role.release-engineer,Release Engineer,mde/process/definitions/psm.json
 psm,RoleDefinition,role.method-engineer,Method Engineer,mde/process/definitions/psm.json
 psm,TaskDefinition,task.psm.ph1.st0.t1,Plan deployable slice,mde/process/definitions/psm.json
-psm,TaskDefinition,task.psm.ph1.st1.t1,Create AWS PSM model root,mde/process/definitions/psm.json
+psm,TaskDefinition,task.psm.ph1.st1.t1,Create PSM model root,mde/process/definitions/psm.json
 psm,TaskDefinition,task.psm.ph1.st1.t2,Define stage and naming policies,mde/process/definitions/psm.json
 psm,TaskDefinition,task.psm.ph1.st1.t3,Establish shared model contract and evidence conventions,mde/process/definitions/psm.json
 psm,TaskDefinition,task.psm.ph1.st2.t1,Create SAM stack and globals,mde/process/definitions/psm.json
@@ -296,7 +296,7 @@ engineered-core,WorkProductDefinition,wp.architecture-decisions,Architecture Dec
 engineered-core,WorkProductDefinition,wp.crosscutting-analysis,"Threat, Privacy, Failure, and Cost Analysis",mde/process/method/library/core-method-content.json
 engineered-core,WorkProductDefinition,wp.pim-readiness-record,PIM Review and Readiness Record,mde/process/method/library/core-method-content.json
 engineered-core,WorkProductDefinition,wp.pim-psm-transformation-run,PIM to PSM Transformation Run,mde/process/method/library/core-method-content.json
-engineered-core,WorkProductDefinition,wp.aws-psm-revision,AWS PSM Revision,mde/process/method/library/core-method-content.json
+engineered-core,WorkProductDefinition,wp.aws-psm-revision,PSM Revision,mde/process/method/library/core-method-content.json
 engineered-core,WorkProductDefinition,wp.psm-readiness-record,PSM Review and Readiness Record,mde/process/method/library/core-method-content.json
 engineered-core,WorkProductDefinition,wp.generated-artifact-baseline,Generated Artifact Baseline and Manifest,mde/process/method/library/core-method-content.json
 engineered-core,WorkProductDefinition,wp.source-test-baseline,Source and Test Baseline,mde/process/method/library/core-method-content.json
@@ -321,7 +321,7 @@ engineered-fragments,Guidance,guidance.fragment.mf-06,MF-06: CIM assurance and r
 engineered-fragments,Guidance,guidance.fragment.mf-07,MF-07: CIM to PIM transformation and reconciliation,mde/process/method/library/method-fragments.json
 engineered-fragments,Guidance,guidance.fragment.mf-08,MF-08: Platform-independent serverless architecture,mde/process/method/library/method-fragments.json
 engineered-fragments,Guidance,guidance.fragment.mf-09,MF-09: PIM to PSM transformation and reconciliation,mde/process/method/library/method-fragments.json
-engineered-fragments,Guidance,guidance.fragment.mf-10,MF-10: AWS PSM refinement and assurance,mde/process/method/library/method-fragments.json
+engineered-fragments,Guidance,guidance.fragment.mf-10,MF-10: PSM refinement and assurance,mde/process/method/library/method-fragments.json
 engineered-fragments,Guidance,guidance.fragment.mf-11,MF-11: Reproducible model-to-text generation,mde/process/method/library/method-fragments.json
 engineered-fragments,Guidance,guidance.fragment.mf-12,MF-12: Artifact completion and test in the small,mde/process/method/library/method-fragments.json
 engineered-fragments,Guidance,guidance.fragment.mf-13,MF-13: Test in the large and release qualification,mde/process/method/library/method-fragments.json

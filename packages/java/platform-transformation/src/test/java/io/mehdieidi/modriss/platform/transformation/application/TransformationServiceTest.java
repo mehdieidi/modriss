@@ -498,7 +498,7 @@ class TransformationServiceTest {
         "Generated PSM graph should expose enough elements for frontend views.");
     assertFalse(
         psm.modelJson().path("graph").path("relationships").isEmpty(),
-        "Imported AWS PSM graph should include reference and relationship edges.");
+        "Imported PSM graph should include reference and relationship edges.");
     var relationshipKinds =
         psm.modelJson().path("graph").path("relationships").findValuesAsString("kind");
     assertFalse(
@@ -628,7 +628,7 @@ class TransformationServiceTest {
         samTemplate.length() < 500_000, "SAM template must not contain runaway EGL indentation.");
     assertFalse(
         samTemplate.contains("Resources: {}"),
-        "SAM template must be generated from AWS PSM resources.");
+        "SAM template must be generated from PSM resources.");
 
     String handlerPath =
         artifact.files().keySet().stream()

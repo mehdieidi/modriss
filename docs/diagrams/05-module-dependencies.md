@@ -91,13 +91,13 @@ flowchart LR
     kernel["shared/kernel.ecore"]
     cim["CIM combined Ecore"]
     pim["PIM combined Ecore"]
-    psm["AWS PSM combined Ecore"]
+    psm["PSM combined Ecore"]
     cimEvl["CIM EVL profile"]
     pimEvl["PIM EVL profile"]
     psmEvl["PSM EVL profile"]
     cimPim["CIM-to-PIM ETL"]
-    pimPsm["PIM-to-AWS-PSM ETL"]
-    psmArt["AWS-PSM-to-artifacts EGX/EGL"]
+    pimPsm["PIM-to-PSM ETL"]
+    psmArt["PSM-to-artifacts EGX/EGL"]
 
     kernel --> cim
     kernel --> pim

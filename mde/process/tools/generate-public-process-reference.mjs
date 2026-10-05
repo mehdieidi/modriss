@@ -14,7 +14,7 @@ const definitions = Object.fromEntries(levels.map((level) => [
   JSON.parse(fs.readFileSync(path.join(DEFINITIONS, `${level}.json`), "utf8")),
 ]));
 
-const title = { "end-to-end": "Development and Delivery", cim: "CIM modeling", pim: "PIM modeling", psm: "AWS PSM modeling", artifact: "Generated-artifact readiness" };
+const title = { "end-to-end": "Development and Delivery", cim: "CIM modeling", pim: "PIM modeling", psm: "PSM modeling", artifact: "Generated-artifact readiness" };
 const guide = { "end-to-end": "../guides/full-lifecycle-method.md", cim: "../guides/cim-modeling-methodology.md", pim: "../guides/pim-modeling-methodology.md", psm: "../guides/psm-modeling-methodology.md", artifact: "../guides/generated-artifacts.md" };
 const esc = (value) => String(value ?? "").replaceAll("|", "\\|").replaceAll("\n", " ");
 const list = (values, empty = "None declared") => values?.length ? values.map((v) => `- ${v}`).join("\n") : `- ${empty}`;

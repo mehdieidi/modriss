@@ -1,6 +1,6 @@
-# AWS PSM modeling: work products
+# PSM modeling: work products
 
-This page documents the **SPEM WorkProductDefinition, WorkProductUse, and ProcessParameter** elements used by the AWS PSM modeling process. It is generated from the canonical executable definition, so the names and identifiers match the API and process interface. The explanation adds practical teaching around the normative data.
+This page documents the **SPEM WorkProductDefinition, WorkProductUse, and ProcessParameter** elements used by the PSM modeling process. It is generated from the canonical executable definition, so the names and identifiers match the API and process interface. The explanation adds practical teaching around the normative data.
 
 A WorkProductDefinition describes maintained information or a tangible result. WorkProductUse binds that definition to an activity or task as an input or output. ProcessParameter makes the direction explicit. A work product can be stored in several physical files or systems if its identity, owner, revision, and evidence links remain clear.
 
@@ -37,7 +37,7 @@ Selected deployable slice, AWS assumptions, and deployment definition of done
 
 **Consumed by**
 
-- Create AWS PSM model root
+- Create PSM model root
 - Define stage and naming policies
 - Establish shared model contract and evidence conventions
 - Create SAM stack and globals
@@ -66,7 +66,7 @@ Account, region, naming, tagging policies
 
 **Produced or updated by**
 
-- Create AWS PSM model root
+- Create PSM model root
 - Define stage and naming policies
 - Establish shared model contract and evidence conventions
 

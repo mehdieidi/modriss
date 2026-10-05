@@ -1,6 +1,6 @@
 # Full-Lifecycle Development Process
 
-The MODRISS methodology comprises a development process and a modeling framework. This guide documents the process component. It organizes work across CIM, PIM, and AWS PSM modeling, artifact production, release, operations, change, and retirement. The modeling framework defines the languages and technical facilities used by that work.
+The MODRISS methodology comprises a development process and a modeling framework. This guide documents the process component. It organizes work across CIM, PIM, and PSM modeling, artifact production, release, operations, change, and retirement. The modeling framework defines the languages and technical facilities used by that work.
 
 The maintained process is described in [`mde/process/software-development-process.md`](https://github.com/mehdieidi/modriss/blob/main/mde/process/software-development-process.md). The machine-readable definitions are in [`mde/process/definitions/`](https://github.com/mehdieidi/modriss/tree/main/mde/process/definitions). Those sources define the roles, work products, dependencies, and conditions used by the process.
 
@@ -93,12 +93,12 @@ Phase 1 contains a repeatable engine for one capability slice. The slice should 
 
 <figure class="doc-diagram">
   <a class="doc-diagram__link" href="../../assets/diagrams/modriss-model-driven-engine.svg" aria-label="Open the full-size capability-increment process diagram">
-    <img src="../../assets/diagrams/modriss-model-driven-engine.svg" alt="The delivery engine frames an increment, models it in CIM, transforms and refines it through PIM and AWS PSM, generates artifacts, and reviews readiness." />
+    <img src="../../assets/diagrams/modriss-model-driven-engine.svg" alt="The delivery engine frames an increment, models it in CIM, transforms and refines it through PIM and PSM, generates artifacts, and reviews readiness." />
   </a>
   <figcaption>One capability increment moves through the model-driven delivery engine.</figcaption>
 </figure>
 
-For each increment, the engine frames the scope and acceptance evidence, runs the CIM process, transforms CIM to PIM, refines PIM, transforms PIM to AWS PSM, refines PSM, generates an artifact baseline, and reviews readiness. After acceptance, the team can start another increment or leave the engine to assemble a release.
+For each increment, the engine frames the scope and acceptance evidence, runs the CIM process, transforms CIM to PIM, refines PIM, transforms PIM to PSM, refines PSM, generates an artifact baseline, and reviews readiness. After acceptance, the team can start another increment or leave the engine to assemble a release.
 
 Each accepted or reworked increment also reviews outcome, flow, rework, trace,
 cost, and method-friction evidence. The tailored profile receives an owned
@@ -113,7 +113,7 @@ Feedback follows the earliest model that owns the change. A missing business con
 
 An accepted increment is a candidate for later release assembly. The release decision reviews the exact model and artifact revisions, verification results, security findings, rollback and recovery plans, operational readiness, and required approvals. Promotion proceeds through environments with stop and rollback thresholds. Handover includes dashboards, alerts, runbooks, support ownership, recovery access, and post-deployment checks.
 
-Operational findings enter a change workflow. Product and requirement changes return to CIM. Service, contract, or architecture changes return to PIM. Provider and resource changes return to AWS PSM. Implementation, pipeline, and environment changes go to the artifact or release process; operational control and support changes go to their operations work products. The change then moves forward through the affected transformations and receives new evidence.
+Operational findings enter a change workflow. Product and requirement changes return to CIM. Service, contract, or architecture changes return to PIM. Provider and resource changes return to PSM. Implementation, pipeline, and environment changes go to the artifact or release process; operational control and support changes go to their operations work products. The change then moves forward through the affected transformations and receives new evidence.
 
 <details>
   <summary>Open the compatibility copy of the lifecycle map</summary>

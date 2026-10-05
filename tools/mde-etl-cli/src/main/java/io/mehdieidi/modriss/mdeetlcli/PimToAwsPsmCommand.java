@@ -14,11 +14,12 @@ import picocli.CommandLine.Model.CommandSpec;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Spec;
 
-/** Runs the repository's standard PIM-to-AWS-PSM transformation profile. */
+/** Runs the repository's standard PIM-to-PSM transformation profile. */
 @Command(
-    name = "pim-to-awspsm",
+    name = "pim-to-psm",
+    aliases = {"pim-to-awspsm"},
     mixinStandardHelpOptions = true,
-    description = "Runs the repository PIM-to-AWS-PSM ETL transformation profile.")
+    description = "Runs the repository PIM-to-PSM ETL transformation profile.")
 public final class PimToAwsPsmCommand implements Callable<Integer> {
 
   private final EpsilonEtlExecutor executor = new EpsilonEtlExecutor();
@@ -36,7 +37,7 @@ public final class PimToAwsPsmCommand implements Callable<Integer> {
   @Option(names = "--source-model", required = true, description = "Input PIM XMI model file.")
   private Path sourceModel;
 
-  @Option(names = "--target-model", required = true, description = "Output AWS PSM XMI model file.")
+  @Option(names = "--target-model", required = true, description = "Output PSM XMI model file.")
   private Path targetModel;
 
   @Option(names = "--overwrite", description = "Overwrite an existing target model.")
@@ -49,7 +50,7 @@ public final class PimToAwsPsmCommand implements Callable<Integer> {
   private Path logFile;
 
   /**
-   * Executes the configured PIM-to-AWS-PSM transformation and writes its reports.
+   * Executes the configured PIM-to-PSM transformation and writes its reports.
    *
    * @return zero on success or two on execution failure
    * @throws Exception if report output cannot be written

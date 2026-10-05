@@ -30,7 +30,7 @@ operation AWSPSMAPI!ApiGatewayApi emitOpenApiDocument(routeSeq : Collection) : S
   outText = outText + "info:\n";
   outText = outText + "  title: " + self.apiName.orElseText(self.cfnLogicalId()).yamlScalar() + "\n";
   outText = outText + "  version: '1.0.0'\n";
-  outText = outText + "  description: " + self.descriptionText.orElseText("Generated from AWS PSM API model.").yamlScalar() + "\n";
+  outText = outText + "  description: " + self.descriptionText.orElseText("Generated from PSM API model.").yamlScalar() + "\n";
   outText = outText + "paths:\n";
   for (pathText in routeSeq.collect(routeObj | routeObj.routePath()).asSet().asSequence().sortBy(pathText | pathText)) {
     outText = outText + "  " + pathText + ":\n";

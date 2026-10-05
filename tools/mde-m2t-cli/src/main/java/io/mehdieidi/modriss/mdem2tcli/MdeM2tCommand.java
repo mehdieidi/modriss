@@ -15,6 +15,6 @@ public final class MdeM2tCommand implements Runnable {
   @Override
   public void run() {
     throw new picocli.CommandLine.ParameterException(
-        new picocli.CommandLine(this), "Choose a subcommand: aws-psm-to-artifacts.");
+        new picocli.CommandLine(this), "Choose a subcommand: psm-to-artifacts.");
   }
 }

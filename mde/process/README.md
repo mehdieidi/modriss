@@ -13,7 +13,7 @@ with generated task, role, work-product, and G0–G8 coverage ledgers. It is an
 analytical consistency test, not empirical validation.
 
 Canonical, machine-readable **iterative-incremental** process definitions for CIM, PIM,
-AWS PSM, generated-artifact deployment readiness, and the end-to-end pipeline. Each process
+PSM, generated-artifact deployment readiness, and the end-to-end pipeline. Each process
 is a MODRISS JSON representation mapped to SPEM 2.0: reusable method content contains
 RoleDefinitions, TaskDefinitions, WorkProductDefinitions, and Guidance; process Activities
 contain RoleUses, WorkProductUses, TaskUses, explicit WorkSequences, and TaskUse input/output

@@ -958,7 +958,7 @@ function renderFullMethodSummary(process) {
       <div class="process-cadence" aria-label="Lifecycle cadence diagram">
         <div class="process-cadence-node"><span>01</span><strong>Intent</strong><small>Enter with evidence</small></div>
         <div class="process-cadence-arrow" aria-hidden="true">→</div>
-        <div class="process-cadence-node is-cycle"><span>∞</span><strong>CIM → PIM → AWS PSM → artifact</strong><small>Repeatable Phase 1 increment</small></div>
+        <div class="process-cadence-node is-cycle"><span>∞</span><strong>CIM → PIM → PSM → artifact</strong><small>Repeatable Phase 1 increment</small></div>
         <div class="process-cadence-arrow" aria-hidden="true">→</div>
         <div class="process-cadence-node"><span>03</span><strong>Operate</strong><small>Release to retirement</small></div>
       </div>

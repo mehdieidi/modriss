@@ -221,7 +221,7 @@ public final class TransformationService {
   }
 
   /**
-   * Generates an AWS PSM model from a PIM source without a revision precondition.
+   * Generates a PSM model from a PIM source without a revision precondition.
    *
    * @param user requesting user
    * @param sourceModelId source PIM model id
@@ -232,7 +232,7 @@ public final class TransformationService {
   }
 
   /**
-   * Generates an AWS PSM model from a PIM source.
+   * Generates a PSM model from a PIM source.
    *
    * @param user requesting user
    * @param sourceModelId source PIM model id
@@ -270,7 +270,7 @@ public final class TransformationService {
   }
 
   /**
-   * Generates an artifact bundle from an AWS PSM source without a revision precondition.
+   * Generates an artifact bundle from a PSM source without a revision precondition.
    *
    * @param user requesting user
    * @param sourceModelId source PSM model id
@@ -281,7 +281,7 @@ public final class TransformationService {
   }
 
   /**
-   * Generates an artifact bundle from an AWS PSM source.
+   * Generates an artifact bundle from a PSM source.
    *
    * @param user requesting user
    * @param sourceModelId source PSM model id
@@ -412,7 +412,7 @@ public final class TransformationService {
   }
 
   /**
-   * Runs the formal PIM-to-AWS-PSM ETL module and imports the produced PSM XMI.
+   * Runs the formal PIM-to-PSM ETL module and imports the produced PSM XMI.
    *
    * @param source source PIM model
    * @return generated model JSON and source XMI bytes
@@ -472,7 +472,7 @@ public final class TransformationService {
   }
 
   /**
-   * Runs the formal AWS PSM artifact generator and reads the generated files.
+   * Runs the formal PSM artifact generator and reads the generated files.
    *
    * @param source source PSM model
    * @return generated files and traceability metadata

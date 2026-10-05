@@ -1,6 +1,6 @@
 # Modeling Levels
 
-MODRISS uses three related modeling languages. CIM describes the system's business and domain intent. PIM turns that intent into a provider-independent serverless architecture. AWS PSM records the concrete AWS design that can be used for project generation.
+MODRISS uses three related modeling languages. CIM describes the system's business and domain intent. PIM turns that intent into a provider-independent serverless architecture. PSM records the concrete AWS design that can be used for project generation.
 
 ## CIM: Computation-Independent Model
 

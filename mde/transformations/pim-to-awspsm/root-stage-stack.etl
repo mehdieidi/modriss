@@ -6,7 +6,7 @@ rule PIMModel2AwsPsmModel
   copyTraceable(p, a);
   a.id = idFor("awspsm", p);
   a.name = firstText(firstText(p.name, p.domainName), "AwsPsmModel") + "AwsPsm";
-  a.summary = "AWS PSM generated from PIM " + qualifiedName(p);
+  a.summary = "PSM generated from PIM " + qualifiedName(p);
   a.partition = AWSPSMENUMS!AwsPartition#AWS;
   a.accountStrategy = "per-stage";
   if (p.environments.exists(e | hasText(inferRegion(e)))) {

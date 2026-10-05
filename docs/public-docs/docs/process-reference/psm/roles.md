@@ -1,6 +1,6 @@
-# AWS PSM modeling: roles
+# PSM modeling: roles
 
-This page documents the **SPEM RoleDefinition, RoleUse, and ProcessPerformer** elements used by the AWS PSM modeling process. It is generated from the canonical executable definition, so the names and identifiers match the API and process interface. The explanation adds practical teaching around the normative data.
+This page documents the **SPEM RoleDefinition, RoleUse, and ProcessPerformer** elements used by the PSM modeling process. It is generated from the canonical executable definition, so the names and identifiers match the API and process interface. The explanation adds practical teaching around the normative data.
 
 A RoleDefinition states a responsibility. RoleUse places it in an activity, while ProcessPerformer connects it to a TaskUse as a primary or supporting performer. Roles are hats worn by people or teams. They are not required organization-chart positions.
 
@@ -98,7 +98,7 @@ The method profile should name the person or team carrying this role. Where one 
 **Primary task accountability**
 
 - Plan deployable slice
-- Create AWS PSM model root
+- Create PSM model root
 - Define stage and naming policies
 - Create SAM stack and globals
 - Define CFN parameters and outputs

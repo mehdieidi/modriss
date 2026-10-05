@@ -40,7 +40,7 @@ final class MdeM2tCliApplicationTest {
   }
 
   /**
-   * Verifies that the AWS PSM profile generates expected files and a JSON report.
+   * Verifies that the PSM profile generates expected files and a JSON report.
    *
    * @throws Exception if the command or file assertions cannot be completed
    */
@@ -56,7 +56,7 @@ final class MdeM2tCliApplicationTest {
             .setOut(new PrintWriter(out))
             .setErr(new PrintWriter(err))
             .execute(
-                "aws-psm-to-artifacts",
+                "psm-to-artifacts",
                 "--repo-root",
                 REPOSITORY_ROOT.toString(),
                 "--source-model",
@@ -68,7 +68,7 @@ final class MdeM2tCliApplicationTest {
                 reportFile.toString());
 
     assertEquals(0, exitCode);
-    assertTrue(out.toString().contains("AWS PSM artifact generation succeeded"));
+    assertTrue(out.toString().contains("PSM artifact generation succeeded"));
     assertTrue(err.toString().isBlank());
     assertTrue(Files.isRegularFile(outputDirectory.resolve("generated/trace/artifact-trace.json")));
     assertTrue(

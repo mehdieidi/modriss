@@ -1,6 +1,6 @@
-# PIM → AWS PSM: Root Stage Stack
+# PIM → PSM: Root Stage Stack
 
-The PSM root rules establish AWS deployment scope: one PIM root becomes one AWS PSM model, environments become stages, deployment units become SAM stacks, and service ownership becomes structured metadata. They give provider-specific rules a stage and stack context in which names, resources, policies, and readiness can be placed.
+The PSM root rules establish AWS deployment scope: one PIM root becomes one PSM model, environments become stages, deployment units become SAM stacks, and service ownership becomes structured metadata. They give provider-specific rules a stage and stack context in which names, resources, policies, and readiness can be placed.
 
 Source module: `mde/transformations/pim-to-awspsm/root-stage-stack.etl`.
 

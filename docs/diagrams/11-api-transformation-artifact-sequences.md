@@ -35,7 +35,7 @@ sequenceDiagram
     C->>T: pimToPsm(user, sourceModelId, revision)
     T->>M: Load locked PIM source and verify revision
     T->>ETL: Execute PimToAwsPsmDefaults in temp workspace
-    ETL-->>T: Generated AWS PSM XMI + report
+    ETL-->>T: Generated PSM XMI + report
     T->>T: Synchronize fresh PSM with downstream Working/Base
     T->>DB: Persist Working + raw Base, or pending conflict session
     T-->>C: MdeJobRecord (async worker result)

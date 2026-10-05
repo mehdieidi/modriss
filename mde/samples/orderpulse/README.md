@@ -1,6 +1,6 @@
-# OrderPulse AWS PSM case study
+# OrderPulse PSM case study
 
-OrderPulse is the persisted AWS PSM system used to exercise the MODRISS AWS PSM-to-artifacts
+OrderPulse is the persisted PSM system used to exercise the MODRISS PSM-to-artifacts
 pipeline. It models a small but complete serverless order workflow: an HTTP API accepts an order,
 DynamoDB stores it, SQS buffers processing, a Lambda consumer marks it `PROCESSED`, and a second API
 operation reads it back. The PSM also includes a custom EventBridge bus and rule, an SNS topic, an
@@ -31,7 +31,7 @@ From the repository root:
 
 ```powershell
 mvn -q -DskipTests -pl tools/mde-m2t-cli -am package
-java -jar tools/mde-m2t-cli/target/mde-m2t-cli-0.0.1-SNAPSHOT.jar aws-psm-to-artifacts `
+java -jar tools/mde-m2t-cli/target/mde-m2t-cli-0.0.1-SNAPSHOT.jar psm-to-artifacts `
   --repo-root . `
   --source-model mde/samples/orderpulse/orderpulse.awspsm.xmi `
   --output-dir mde/samples/orderpulse/generated-project `
@@ -98,7 +98,7 @@ rechecked.
 
 Static and artifact checks:
 
-- AWS PSM generation completed successfully with 83 artifacts and zero manual issues.
+- PSM generation completed successfully with 83 artifacts and zero manual issues.
 - Generated JSON artifacts parse successfully.
 - `sam validate --lint --template-file template.yaml` passes.
 - The generator’s own model loading/semantic preflight completed without diagnostics. A separate

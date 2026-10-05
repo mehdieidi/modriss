@@ -6,7 +6,7 @@
   "elementVisualDefaults": {
     "icon": "aws-cloud",
     "color": "#475569",
-    "category": "AWS PSM",
+    "category": "PSM",
     "notation": {
       "tag": "AWS",
       "shape": "resource-card",
@@ -1039,7 +1039,7 @@
   "viewDefinitions": [
     {
       "id": "psm-portfolio-governance",
-      "displayName": "AWS PSM Overview",
+      "displayName": "PSM Overview",
       "viewType": "PORTFOLIO_GOVERNANCE",
       "viewpoint": "governance",
       "elementTypes": [
@@ -1593,7 +1593,7 @@
     "platform": "AWS",
     "defaultRegion": "us-east-1",
     "productionMode": false,
-    "summary": "Mandatory-valid starter model for assisted AWS PSM modeling.",
+    "summary": "Mandatory-valid starter model for assisted PSM modeling.",
     "rationale": "Created as the initial bounded context for assistant changes.",
     "stages": [
       {
@@ -2157,8 +2157,8 @@
     },
     {
       "type": "AwsPsmModel",
-      "label": "Aws Psm Model",
-      "displayName": "Aws Psm Model",
+      "label": "PSM Model",
+      "displayName": "PSM Model",
       "category": "CloudFormation / SAM",
       "icon": "aws-cloudformation",
       "color": "#0F766E",

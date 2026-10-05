@@ -62,7 +62,7 @@ The scheduling, guard, target path, merge policy, and artifact record are define
 
 ## `SharedRuntimeLogger`
 
-**Source context:** ``, `shared AWS PSM generation context` 
+**Source context:** ``, `shared PSM generation context` 
 **Template:**`lambda/shared-logger.egl` 
 **Target path expression:**`"src/shared/logger." + emitCtx().sourceExtension()` 
 **EGX source:**`mde/generation/awspsm-to-artifacts/awspsm2artifacts.egx:486`
@@ -85,7 +85,7 @@ Template parameters: `awsRoot`, `emitCtx`.
 
 ### How to troubleshoot or repair it
 
-Verify that the AWS PSM root and the source objects expected by the template exist, then inspect the generated artifact record and the template parameters. If the file is incomplete, distinguish a model omission from a protected-region customization before changing the EGL template.
+Verify that the PSM root and the source objects expected by the template exist, then inspect the generated artifact record and the template parameters. If the file is incomplete, distinguish a model omission from a protected-region customization before changing the EGL template.
 
 ### Authoritative sources
 
@@ -95,7 +95,7 @@ The scheduling, guard, target path, merge policy, and artifact record are define
 
 ## `SharedRuntimeTracer`
 
-**Source context:** ``, `shared AWS PSM generation context` 
+**Source context:** ``, `shared PSM generation context` 
 **Template:**`lambda/shared-tracer.egl` 
 **Target path expression:**`"src/shared/tracer." + emitCtx().sourceExtension()` 
 **EGX source:**`mde/generation/awspsm-to-artifacts/awspsm2artifacts.egx:497`
@@ -118,7 +118,7 @@ Template parameters: `awsRoot`, `emitCtx`.
 
 ### How to troubleshoot or repair it
 
-Verify that the AWS PSM root and the source objects expected by the template exist, then inspect the generated artifact record and the template parameters. If the file is incomplete, distinguish a model omission from a protected-region customization before changing the EGL template.
+Verify that the PSM root and the source objects expected by the template exist, then inspect the generated artifact record and the template parameters. If the file is incomplete, distinguish a model omission from a protected-region customization before changing the EGL template.
 
 ### Authoritative sources
 
@@ -128,7 +128,7 @@ The scheduling, guard, target path, merge policy, and artifact record are define
 
 ## `SharedRuntimeMetrics`
 
-**Source context:** ``, `shared AWS PSM generation context` 
+**Source context:** ``, `shared PSM generation context` 
 **Template:**`lambda/shared-metrics.egl` 
 **Target path expression:**`"src/shared/metrics." + emitCtx().sourceExtension()` 
 **EGX source:**`mde/generation/awspsm-to-artifacts/awspsm2artifacts.egx:508`
@@ -151,7 +151,7 @@ Template parameters: `awsRoot`, `emitCtx`.
 
 ### How to troubleshoot or repair it
 
-Verify that the AWS PSM root and the source objects expected by the template exist, then inspect the generated artifact record and the template parameters. If the file is incomplete, distinguish a model omission from a protected-region customization before changing the EGL template.
+Verify that the PSM root and the source objects expected by the template exist, then inspect the generated artifact record and the template parameters. If the file is incomplete, distinguish a model omission from a protected-region customization before changing the EGL template.
 
 ### Authoritative sources
 
@@ -161,7 +161,7 @@ The scheduling, guard, target path, merge policy, and artifact record are define
 
 ## `SharedRuntimeErrors`
 
-**Source context:** ``, `shared AWS PSM generation context` 
+**Source context:** ``, `shared PSM generation context` 
 **Template:**`lambda/shared-errors.egl` 
 **Target path expression:**`"src/shared/errors." + emitCtx().sourceExtension()` 
 **EGX source:**`mde/generation/awspsm-to-artifacts/awspsm2artifacts.egx:519`
@@ -184,7 +184,7 @@ Template parameters: `awsRoot`, `emitCtx`.
 
 ### How to troubleshoot or repair it
 
-Verify that the AWS PSM root and the source objects expected by the template exist, then inspect the generated artifact record and the template parameters. If the file is incomplete, distinguish a model omission from a protected-region customization before changing the EGL template.
+Verify that the PSM root and the source objects expected by the template exist, then inspect the generated artifact record and the template parameters. If the file is incomplete, distinguish a model omission from a protected-region customization before changing the EGL template.
 
 ### Authoritative sources
 
@@ -194,7 +194,7 @@ The scheduling, guard, target path, merge policy, and artifact record are define
 
 ## `SharedRuntimeValidation`
 
-**Source context:** ``, `shared AWS PSM generation context` 
+**Source context:** ``, `shared PSM generation context` 
 **Template:**`lambda/shared-validation.egl` 
 **Target path expression:**`"src/shared/validation." + emitCtx().sourceExtension()` 
 **EGX source:**`mde/generation/awspsm-to-artifacts/awspsm2artifacts.egx:530`
@@ -217,7 +217,7 @@ Template parameters: `awsRoot`, `emitCtx`.
 
 ### How to troubleshoot or repair it
 
-Verify that the AWS PSM root and the source objects expected by the template exist, then inspect the generated artifact record and the template parameters. If the file is incomplete, distinguish a model omission from a protected-region customization before changing the EGL template.
+Verify that the PSM root and the source objects expected by the template exist, then inspect the generated artifact record and the template parameters. If the file is incomplete, distinguish a model omission from a protected-region customization before changing the EGL template.
 
 ### Authoritative sources
 
@@ -227,7 +227,7 @@ The scheduling, guard, target path, merge policy, and artifact record are define
 
 ## `SharedRuntimeConfig`
 
-**Source context:** ``, `shared AWS PSM generation context` 
+**Source context:** ``, `shared PSM generation context` 
 **Template:**`lambda/shared-config.egl` 
 **Target path expression:**`"src/shared/config." + emitCtx().sourceExtension()` 
 **EGX source:**`mde/generation/awspsm-to-artifacts/awspsm2artifacts.egx:541`
@@ -250,7 +250,7 @@ Template parameters: `awsRoot`, `emitCtx`.
 
 ### How to troubleshoot or repair it
 
-Verify that the AWS PSM root and the source objects expected by the template exist, then inspect the generated artifact record and the template parameters. If the file is incomplete, distinguish a model omission from a protected-region customization before changing the EGL template.
+Verify that the PSM root and the source objects expected by the template exist, then inspect the generated artifact record and the template parameters. If the file is incomplete, distinguish a model omission from a protected-region customization before changing the EGL template.
 
 ### Authoritative sources
 
@@ -260,7 +260,7 @@ The scheduling, guard, target path, merge policy, and artifact record are define
 
 ## `SharedRuntimeIdempotency`
 
-**Source context:** ``, `shared AWS PSM generation context` 
+**Source context:** ``, `shared PSM generation context` 
 **Template:**`lambda/shared-idempotency.egl` 
 **Target path expression:**`"src/shared/idempotency." + emitCtx().sourceExtension()` 
 **EGX source:**`mde/generation/awspsm-to-artifacts/awspsm2artifacts.egx:552`
@@ -285,7 +285,7 @@ Template parameters: `awsRoot`, `emitCtx`.
 
 ### How to troubleshoot or repair it
 
-Verify that the AWS PSM root and the source objects expected by the template exist, then inspect the generated artifact record and the template parameters. If the file is incomplete, distinguish a model omission from a protected-region customization before changing the EGL template.
+Verify that the PSM root and the source objects expected by the template exist, then inspect the generated artifact record and the template parameters. If the file is incomplete, distinguish a model omission from a protected-region customization before changing the EGL template.
 
 ### Authoritative sources
 
@@ -295,7 +295,7 @@ The scheduling, guard, target path, merge policy, and artifact record are define
 
 ## `SharedRuntimeEventPublisher`
 
-**Source context:** ``, `shared AWS PSM generation context` 
+**Source context:** ``, `shared PSM generation context` 
 **Template:**`lambda/shared-event-publisher.egl` 
 **Target path expression:**`"src/shared/event-publisher." + emitCtx().sourceExtension()` 
 **EGX source:**`mde/generation/awspsm-to-artifacts/awspsm2artifacts.egx:563`
@@ -318,7 +318,7 @@ Template parameters: `awsRoot`, `emitCtx`.
 
 ### How to troubleshoot or repair it
 
-Verify that the AWS PSM root and the source objects expected by the template exist, then inspect the generated artifact record and the template parameters. If the file is incomplete, distinguish a model omission from a protected-region customization before changing the EGL template.
+Verify that the PSM root and the source objects expected by the template exist, then inspect the generated artifact record and the template parameters. If the file is incomplete, distinguish a model omission from a protected-region customization before changing the EGL template.
 
 ### Authoritative sources
 
@@ -328,7 +328,7 @@ The scheduling, guard, target path, merge policy, and artifact record are define
 
 ## `SharedRuntimeDataAccess`
 
-**Source context:** ``, `shared AWS PSM generation context` 
+**Source context:** ``, `shared PSM generation context` 
 **Template:**`lambda/shared-data-access.egl` 
 **Target path expression:**`"src/shared/data-access." + emitCtx().sourceExtension()` 
 **EGX source:**`mde/generation/awspsm-to-artifacts/awspsm2artifacts.egx:574`
@@ -351,7 +351,7 @@ Template parameters: `awsRoot`, `emitCtx`.
 
 ### How to troubleshoot or repair it
 
-Verify that the AWS PSM root and the source objects expected by the template exist, then inspect the generated artifact record and the template parameters. If the file is incomplete, distinguish a model omission from a protected-region customization before changing the EGL template.
+Verify that the PSM root and the source objects expected by the template exist, then inspect the generated artifact record and the template parameters. If the file is incomplete, distinguish a model omission from a protected-region customization before changing the EGL template.
 
 ### Authoritative sources
 

@@ -1119,6 +1119,6 @@ Review the service slice architecture, accept the increment, and adapt the next 
 
 ## Process transition
 
-The PIM process produces a reviewed PIM revision for PIM-to-AWS-PSM transformation. Review the resulting AWS PSM draft before beginning AWS PSM refinement.
+The PIM process produces a reviewed PIM revision for PIM-to-PSM transformation. Review the resulting PSM draft before beginning PSM refinement.
 
 <!-- TASK-CATALOG:END -->

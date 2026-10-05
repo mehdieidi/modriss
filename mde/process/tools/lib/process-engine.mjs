@@ -128,7 +128,7 @@ export const PROCESS_ENGINES = {
   },
   psm: {
     id: "modriss.psm.engine",
-    displayName: "AWS PSM Modeling Engine",
+    displayName: "PSM Modeling Engine",
     description:
       "Revolves through deployable-slice framing → network/identity → storage/messaging → events/compute → API/workflow → readiness per deployable slice.",
     incrementUnit: "deployable-slice",

@@ -1,4 +1,4 @@
-# PIM → AWS PSM: Workflow Security Config
+# PIM → PSM: Workflow Security Config
 
 Workflow, identity, security, and configuration binding turns PIM control flow and access intent into Step Functions, Cognito, IAM, Secrets Manager, CloudFormation parameters, and SSM parameters. The module builds an ASL graph in phases, resolves task targets after Lambda resources exist, separates secret from non-secret configuration, and keeps trust/permission decisions traceable.
 

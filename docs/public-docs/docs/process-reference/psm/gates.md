@@ -1,6 +1,6 @@
-# AWS PSM modeling: gates and milestones
+# PSM modeling: gates and milestones
 
-This page documents the **SPEM Milestone with MODRISS evidence and authority extensions** elements used by the AWS PSM modeling process. It is generated from the canonical executable definition, so the names and identifiers match the API and process interface. The explanation adds practical teaching around the normative data.
+This page documents the **SPEM Milestone with MODRISS evidence and authority extensions** elements used by the PSM modeling process. It is generated from the canonical executable definition, so the names and identifiers match the API and process interface. The explanation adds practical teaching around the normative data.
 
 A milestone marks a meaningful decision in the process. MODRISS adds explicit authority and required-evidence references so a gate cannot pass only because its preceding tasks are complete. The decision record should state acceptance, conditional acceptance, redirection, rework, deferral, or closure as applicable.
 

@@ -8,7 +8,7 @@ The same catalog applies at either adjacent model boundary:
 
 ```text
 Upstream = CIM   and Downstream = PIM
-Upstream = PIM   and Downstream = AWS PSM
+Upstream = PIM   and Downstream = PSM
 ```
 
 PSM-to-artifact generation is covered separately near the end because files use regeneration and

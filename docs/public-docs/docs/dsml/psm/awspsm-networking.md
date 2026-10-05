@@ -6,7 +6,7 @@ Source: `mde/metamodels/psm/awspsm-networking.emf`.
 
 ## `VpcAttachmentConfig`
 
-`VpcAttachmentConfig` is an AWS networking record in the AWS platform-specific model. It carries the placement or traffic setting for vpc attachment config. Its declaration gives the concept a precise home through required endpoints, vpc, subnets. Its references provide the wiring that lets generation assemble the corresponding AWS design.
+`VpcAttachmentConfig` is an AWS networking record in the PSM. It carries the placement or traffic setting for vpc attachment config. Its declaration gives the concept a precise home through required endpoints, vpc, subnets. Its references provide the wiring that lets generation assemble the corresponding AWS design.
 
 Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -31,7 +31,7 @@ Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilit
 
 ## `VpcEndpointReference`
 
-`VpcEndpointReference` is an AWS networking record in the AWS platform-specific model. It carries the placement or traffic setting for vpc endpoint reference. Its declaration gives the concept a precise home through its declared properties. Its references provide the wiring that lets generation assemble the corresponding AWS design.
+`VpcEndpointReference` is an AWS networking record in the PSM. It carries the placement or traffic setting for vpc endpoint reference. Its declaration gives the concept a precise home through its declared properties. Its references provide the wiring that lets generation assemble the corresponding AWS design.
 
 Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -67,7 +67,7 @@ This class declares no direct relationships.
 
 ## `Subnet`
 
-`Subnet` is an AWS networking record in the AWS platform-specific model. It carries the placement or traffic setting for subnet. Its declaration gives the concept a precise home through vpc. Its references provide the wiring that lets generation assemble the corresponding AWS design.
+`Subnet` is an AWS networking record in the PSM. It carries the placement or traffic setting for subnet. Its declaration gives the concept a precise home through vpc. Its references provide the wiring that lets generation assemble the corresponding AWS design.
 
 Direct supertypes: `AwsResource`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -88,7 +88,7 @@ Direct supertypes: `AwsResource`. Inherited attributes and marker capabilities a
 
 ## `VpcEndpoint`
 
-`VpcEndpoint` is an AWS networking record in the AWS platform-specific model. It carries the placement or traffic setting for vpc endpoint. Its declaration gives the concept a precise home through vpc, subnets, security groups. Its references provide the wiring that lets generation assemble the corresponding AWS design.
+`VpcEndpoint` is an AWS networking record in the PSM. It carries the placement or traffic setting for vpc endpoint. Its declaration gives the concept a precise home through vpc, subnets, security groups. Its references provide the wiring that lets generation assemble the corresponding AWS design.
 
 Direct supertypes: `AwsResource`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -131,7 +131,7 @@ Direct supertypes: `AwsResource`. Inherited attributes and marker capabilities a
 
 ## `SecurityGroupRule`
 
-`SecurityGroupRule` is an AWS networking record in the AWS platform-specific model. It carries the placement or traffic setting for security group rule. Its declaration gives the concept a precise home through source security group. Its references provide the wiring that lets generation assemble the corresponding AWS design.
+`SecurityGroupRule` is an AWS networking record in the PSM. It carries the placement or traffic setting for security group rule. Its declaration gives the concept a precise home through source security group. Its references provide the wiring that lets generation assemble the corresponding AWS design.
 
 Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 

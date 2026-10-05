@@ -98,7 +98,7 @@ This class declares no direct relationships.
 
 ## `ApiGatewayRoute`
 
-`ApiGatewayRoute` is an API Gateway deployment record in the AWS platform-specific model. It carries the provider settings for api gateway route. Its declaration gives the concept a precise home through request models, response models, route settings. Its references provide the wiring that lets generation assemble the corresponding AWS design.
+`ApiGatewayRoute` is an API Gateway deployment record in the PSM. It carries the provider settings for api gateway route. Its declaration gives the concept a precise home through request models, response models, route settings. Its references provide the wiring that lets generation assemble the corresponding AWS design.
 
 Direct supertypes: `AwsResource`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -165,7 +165,7 @@ This class declares no direct relationships.
 
 ## `RestApiResource`
 
-`RestApiResource` is a provider resource record in the AWS platform-specific model. It gives rest api resource a concrete deployment identity. Its declaration gives the concept a precise home through api, parent resource. Its references provide the wiring that lets generation assemble the corresponding AWS design.
+`RestApiResource` is a provider resource record in the PSM. It gives rest api resource a concrete deployment identity. Its declaration gives the concept a precise home through api, parent resource. Its references provide the wiring that lets generation assemble the corresponding AWS design.
 
 Direct supertypes: `AwsResource`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -220,7 +220,7 @@ This class declares no direct relationships.
 
 ## `ApiGatewayRequestModel`
 
-`ApiGatewayRequestModel` is an API Gateway deployment record in the AWS platform-specific model. It carries the provider settings for api gateway request model. Its declaration gives the concept a precise home through schema resource. Its references provide the wiring that lets generation assemble the corresponding AWS design.
+`ApiGatewayRequestModel` is an API Gateway deployment record in the PSM. It carries the provider settings for api gateway request model. Its declaration gives the concept a precise home through schema resource. Its references provide the wiring that lets generation assemble the corresponding AWS design.
 
 Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -240,7 +240,7 @@ Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilit
 
 ## `ApiGatewayResponseModel`
 
-`ApiGatewayResponseModel` is an API Gateway deployment record in the AWS platform-specific model. It carries the provider settings for api gateway response model. Its declaration gives the concept a precise home through schema resource. Its references provide the wiring that lets generation assemble the corresponding AWS design.
+`ApiGatewayResponseModel` is an API Gateway deployment record in the PSM. It carries the provider settings for api gateway response model. Its declaration gives the concept a precise home through schema resource. Its references provide the wiring that lets generation assemble the corresponding AWS design.
 
 Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -260,7 +260,7 @@ Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilit
 
 ## `ApiGatewayRequestValidator`
 
-`ApiGatewayRequestValidator` is an API Gateway deployment record in the AWS platform-specific model. It carries the provider settings for api gateway request validator. Its declaration gives the concept a precise home through api. Its references provide the wiring that lets generation assemble the corresponding AWS design.
+`ApiGatewayRequestValidator` is an API Gateway deployment record in the PSM. It carries the provider settings for api gateway request validator. Its declaration gives the concept a precise home through api. Its references provide the wiring that lets generation assemble the corresponding AWS design.
 
 Direct supertypes: `AwsResource`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -280,7 +280,7 @@ Direct supertypes: `AwsResource`. Inherited attributes and marker capabilities a
 
 ## `ApiGatewayRouteSetting`
 
-`ApiGatewayRouteSetting` is an API Gateway deployment record in the AWS platform-specific model. It carries the provider settings for api gateway route setting. Its declaration gives the concept a precise home through its declared properties. Its references provide the wiring that lets generation assemble the corresponding AWS design.
+`ApiGatewayRouteSetting` is an API Gateway deployment record in the PSM. It carries the provider settings for api gateway route setting. Its declaration gives the concept a precise home through its declared properties. Its references provide the wiring that lets generation assemble the corresponding AWS design.
 
 Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -300,7 +300,7 @@ This class declares no direct relationships.
 
 ## `ApiGatewayAccessLogSetting`
 
-`ApiGatewayAccessLogSetting` is an API Gateway deployment record in the AWS platform-specific model. It carries the provider settings for api gateway access log setting. Its declaration gives the concept a precise home through destination log group. Its references provide the wiring that lets generation assemble the corresponding AWS design.
+`ApiGatewayAccessLogSetting` is an API Gateway deployment record in the PSM. It carries the provider settings for api gateway access log setting. Its declaration gives the concept a precise home through destination log group. Its references provide the wiring that lets generation assemble the corresponding AWS design.
 
 Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -319,7 +319,7 @@ Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilit
 
 ## `ApiGatewayIntegration`
 
-`ApiGatewayIntegration` is an API Gateway deployment record in the AWS platform-specific model. It carries the provider settings for api gateway integration. Its declaration gives the concept a precise home through response parameters, request templates, lambda target. Its references provide the wiring that lets generation assemble the corresponding AWS design.
+`ApiGatewayIntegration` is an API Gateway deployment record in the PSM. It carries the provider settings for api gateway integration. Its declaration gives the concept a precise home through response parameters, request templates, lambda target. Its references provide the wiring that lets generation assemble the corresponding AWS design.
 
 Direct supertypes: `AwsResource`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -349,7 +349,7 @@ Direct supertypes: `AwsResource`. Inherited attributes and marker capabilities a
 
 ## `ApiGatewayIntegrationRequestTemplate`
 
-`ApiGatewayIntegrationRequestTemplate` is an API Gateway deployment record in the AWS platform-specific model. It carries the provider settings for api gateway integration request template. Its declaration gives the concept a precise home through its declared properties. Its references provide the wiring that lets generation assemble the corresponding AWS design.
+`ApiGatewayIntegrationRequestTemplate` is an API Gateway deployment record in the PSM. It carries the provider settings for api gateway integration request template. Its declaration gives the concept a precise home through its declared properties. Its references provide the wiring that lets generation assemble the corresponding AWS design.
 
 Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -366,7 +366,7 @@ This class declares no direct relationships.
 
 ## `ApiGatewayIntegrationResponseParameter`
 
-`ApiGatewayIntegrationResponseParameter` is an API Gateway deployment record in the AWS platform-specific model. It carries the provider settings for api gateway integration response parameter. Its declaration gives the concept a precise home through value. Its references provide the wiring that lets generation assemble the corresponding AWS design.
+`ApiGatewayIntegrationResponseParameter` is an API Gateway deployment record in the PSM. It carries the provider settings for api gateway integration response parameter. Its declaration gives the concept a precise home through value. Its references provide the wiring that lets generation assemble the corresponding AWS design.
 
 Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -384,7 +384,7 @@ Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilit
 
 ## `ApiGatewayStage`
 
-`ApiGatewayStage` is an API Gateway deployment record in the AWS platform-specific model. It carries the provider settings for api gateway stage. Its declaration gives the concept a precise home through access log setting, default route settings, api. Its references provide the wiring that lets generation assemble the corresponding AWS design.
+`ApiGatewayStage` is an API Gateway deployment record in the PSM. It carries the provider settings for api gateway stage. Its declaration gives the concept a precise home through access log setting, default route settings, api. Its references provide the wiring that lets generation assemble the corresponding AWS design.
 
 Direct supertypes: `AwsResource`, `WafAssociableResource`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -414,7 +414,7 @@ Direct supertypes: `AwsResource`, `WafAssociableResource`. Inherited attributes 
 
 ## `HttpApiStage`
 
-`HttpApiStage` is a deployment-stage record in the AWS platform-specific model. It gives http api stage a provider-facing boundary. Its declaration gives the concept a precise home through its declared properties. Its references provide the wiring that lets generation assemble the corresponding AWS design.
+`HttpApiStage` is a deployment-stage record in the PSM. It gives http api stage a provider-facing boundary. Its declaration gives the concept a precise home through its declared properties. Its references provide the wiring that lets generation assemble the corresponding AWS design.
 
 Direct supertypes: `ApiGatewayStage`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -428,7 +428,7 @@ This class declares no direct relationships.
 
 ## `RestApiStage`
 
-`RestApiStage` is a deployment-stage record in the AWS platform-specific model. It gives rest api stage a provider-facing boundary. Its declaration gives the concept a precise home through deployment. Its references provide the wiring that lets generation assemble the corresponding AWS design.
+`RestApiStage` is a deployment-stage record in the PSM. It gives rest api stage a provider-facing boundary. Its declaration gives the concept a precise home through deployment. Its references provide the wiring that lets generation assemble the corresponding AWS design.
 
 Direct supertypes: `ApiGatewayStage`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -444,7 +444,7 @@ This class declares no attributes of its own. It inherits the attributes of its 
 
 ## `WebSocketStage`
 
-`WebSocketStage` is a deployment-stage record in the AWS platform-specific model. It gives web socket stage a provider-facing boundary. Its declaration gives the concept a precise home through its declared properties. Its references provide the wiring that lets generation assemble the corresponding AWS design.
+`WebSocketStage` is a deployment-stage record in the PSM. It gives web socket stage a provider-facing boundary. Its declaration gives the concept a precise home through its declared properties. Its references provide the wiring that lets generation assemble the corresponding AWS design.
 
 Direct supertypes: `ApiGatewayStage`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -458,7 +458,7 @@ This class declares no direct relationships.
 
 ## `ApiGatewayAuthorizer`
 
-`ApiGatewayAuthorizer` is an API Gateway deployment record in the AWS platform-specific model. It carries the provider settings for api gateway authorizer. Its declaration gives the concept a precise home through api. Its references provide the wiring that lets generation assemble the corresponding AWS design.
+`ApiGatewayAuthorizer` is an API Gateway deployment record in the PSM. It carries the provider settings for api gateway authorizer. Its declaration gives the concept a precise home through api. Its references provide the wiring that lets generation assemble the corresponding AWS design.
 
 Direct supertypes: `AwsResource`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -496,7 +496,7 @@ This class declares no direct relationships.
 
 ## `CognitoAuthorizer`
 
-`CognitoAuthorizer` is a Cognito deployment record in the AWS platform-specific model. It carries the identity settings for cognito authorizer. Its declaration gives the concept a precise home through user pool, clients. Its references provide the wiring that lets generation assemble the corresponding AWS design.
+`CognitoAuthorizer` is a Cognito deployment record in the PSM. It carries the identity settings for cognito authorizer. Its declaration gives the concept a precise home through user pool, clients. Its references provide the wiring that lets generation assemble the corresponding AWS design.
 
 Direct supertypes: `ApiGatewayAuthorizer`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -513,7 +513,7 @@ This class declares no attributes of its own. It inherits the attributes of its 
 
 ## `LambdaAuthorizer`
 
-`LambdaAuthorizer` is a Lambda deployment record in the AWS platform-specific model. It carries the provider settings for lambda authorizer. Its declaration gives the concept a precise home through function. Its references provide the wiring that lets generation assemble the corresponding AWS design.
+`LambdaAuthorizer` is a Lambda deployment record in the PSM. It carries the provider settings for lambda authorizer. Its declaration gives the concept a precise home through function. Its references provide the wiring that lets generation assemble the corresponding AWS design.
 
 Direct supertypes: `ApiGatewayAuthorizer`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -532,7 +532,7 @@ Direct supertypes: `ApiGatewayAuthorizer`. Inherited attributes and marker capab
 
 ## `ApiGatewayDomainName`
 
-`ApiGatewayDomainName` is an API Gateway deployment record in the AWS platform-specific model. It carries the provider settings for api gateway domain name. Its declaration gives the concept a precise home through api, mappings. Its references provide the wiring that lets generation assemble the corresponding AWS design.
+`ApiGatewayDomainName` is an API Gateway deployment record in the PSM. It carries the provider settings for api gateway domain name. Its declaration gives the concept a precise home through api, mappings. Its references provide the wiring that lets generation assemble the corresponding AWS design.
 
 Direct supertypes: `AwsResource`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -554,7 +554,7 @@ Direct supertypes: `AwsResource`. Inherited attributes and marker capabilities a
 
 ## `ApiGatewayBasePathMapping`
 
-`ApiGatewayBasePathMapping` is an API Gateway deployment record in the AWS platform-specific model. It carries the provider settings for api gateway base path mapping. Its declaration gives the concept a precise home through domain name, api, stage. Its references provide the wiring that lets generation assemble the corresponding AWS design.
+`ApiGatewayBasePathMapping` is an API Gateway deployment record in the PSM. It carries the provider settings for api gateway base path mapping. Its declaration gives the concept a precise home through domain name, api, stage. Its references provide the wiring that lets generation assemble the corresponding AWS design.
 
 Direct supertypes: `AwsResource`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -574,7 +574,7 @@ Direct supertypes: `AwsResource`. Inherited attributes and marker capabilities a
 
 ## `ApiGatewayApiKey`
 
-`ApiGatewayApiKey` is an API Gateway deployment record in the AWS platform-specific model. It carries the provider settings for api gateway api key. Its declaration gives the concept a precise home through stages. Its references provide the wiring that lets generation assemble the corresponding AWS design.
+`ApiGatewayApiKey` is an API Gateway deployment record in the PSM. It carries the provider settings for api gateway api key. Its declaration gives the concept a precise home through stages. Its references provide the wiring that lets generation assemble the corresponding AWS design.
 
 Direct supertypes: `AwsResource`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -595,7 +595,7 @@ Direct supertypes: `AwsResource`. Inherited attributes and marker capabilities a
 
 ## `ApiGatewayUsagePlan`
 
-`ApiGatewayUsagePlan` is an API Gateway deployment record in the AWS platform-specific model. It carries the provider settings for api gateway usage plan. Its declaration gives the concept a precise home through api stages. Its references provide the wiring that lets generation assemble the corresponding AWS design.
+`ApiGatewayUsagePlan` is an API Gateway deployment record in the PSM. It carries the provider settings for api gateway usage plan. Its declaration gives the concept a precise home through api stages. Its references provide the wiring that lets generation assemble the corresponding AWS design.
 
 Direct supertypes: `AwsResource`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -618,7 +618,7 @@ Direct supertypes: `AwsResource`. Inherited attributes and marker capabilities a
 
 ## `ApiGatewayUsagePlanKey`
 
-`ApiGatewayUsagePlanKey` is an API Gateway deployment record in the AWS platform-specific model. It carries the provider settings for api gateway usage plan key. Its declaration gives the concept a precise home through api key, usage plan. Its references provide the wiring that lets generation assemble the corresponding AWS design.
+`ApiGatewayUsagePlanKey` is an API Gateway deployment record in the PSM. It carries the provider settings for api gateway usage plan key. Its declaration gives the concept a precise home through api key, usage plan. Its references provide the wiring that lets generation assemble the corresponding AWS design.
 
 Direct supertypes: `AwsResource`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -637,7 +637,7 @@ Direct supertypes: `AwsResource`. Inherited attributes and marker capabilities a
 
 ## `ApiGatewayDeployment`
 
-`ApiGatewayDeployment` is an API Gateway deployment record in the AWS platform-specific model. It carries the provider settings for api gateway deployment. Its declaration gives the concept a precise home through api. Its references provide the wiring that lets generation assemble the corresponding AWS design.
+`ApiGatewayDeployment` is an API Gateway deployment record in the PSM. It carries the provider settings for api gateway deployment. Its declaration gives the concept a precise home through api. Its references provide the wiring that lets generation assemble the corresponding AWS design.
 
 Direct supertypes: `AwsResource`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -655,7 +655,7 @@ Direct supertypes: `AwsResource`. Inherited attributes and marker capabilities a
 
 ## `ApiGatewayTracingConfig`
 
-`ApiGatewayTracingConfig` is an API Gateway deployment record in the AWS platform-specific model. It carries the provider settings for api gateway tracing config. Its declaration gives the concept a precise home through its declared properties. Its references provide the wiring that lets generation assemble the corresponding AWS design.
+`ApiGatewayTracingConfig` is an API Gateway deployment record in the PSM. It carries the provider settings for api gateway tracing config. Its declaration gives the concept a precise home through its declared properties. Its references provide the wiring that lets generation assemble the corresponding AWS design.
 
 Direct supertypes: `TracingConfig`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 

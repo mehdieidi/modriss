@@ -9,8 +9,8 @@
 - Modeling configuration and visual editor metadata
 - AntV G6 diagram canvas renderer
 - Layout and persisted view layout
-- CIM-to-PIM and PIM-to-AWS-PSM transformation profiles
-- AWS PSM artifact generation
+- CIM-to-PIM and PIM-to-PSM transformation profiles
+- PSM artifact generation
 - Artifact browsing, editing, project ZIP download, and artifact ZIP download
 - Change impact analysis across CIM, PIM, PSM models and generated artifacts
 - PostgreSQL persistence and Flyway migrations

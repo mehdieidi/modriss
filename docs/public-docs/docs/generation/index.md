@@ -1,6 +1,6 @@
 # Model-to-text transformation and code-generation reference
 
-This reference explains how the AWS PSM becomes a generated project: infrastructure templates, contracts, Lambda code, tests, scripts, CI/CD workflows, documentation, trace reports, and review artifacts. The executable source is EGX for scheduling and EGL for rendering; this documentation explains the design role of each generation rule without treating generated text as a second model.
+This reference explains how the PSM becomes a generated project: infrastructure templates, contracts, Lambda code, tests, scripts, CI/CD workflows, documentation, trace reports, and review artifacts. The executable source is EGX for scheduling and EGL for rendering; this documentation explains the design role of each generation rule without treating generated text as a second model.
 
 ## Generation is a controlled projection
 
@@ -20,7 +20,7 @@ The generator starts from one `AWSPSM!AwsPsmModel` root, prepares a shared emiss
 
 ## Generation lifecycle
 
-1. The EGX pre block requires exactly one AWS PSM root, captures the shared root and emission context, and collects blocking/manual issues.
+1. The EGX pre block requires exactly one PSM root, captures the shared root and emission context, and collects blocking/manual issues.
 2. Generation rules run according to their guards and invoke EGL templates with model-specific parameters.
 3. Each rule records artifact path, artifact kind, generator identity, model keys, ownership mode, and protected regions.
 4. The EGX post block reports the number of planned artifacts and manual issues so a run cannot appear complete merely because a process exited.

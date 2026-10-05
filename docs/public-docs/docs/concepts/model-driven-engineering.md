@@ -1,6 +1,6 @@
 # Model-Driven Engineering
 
-MODRISS uses models as part of the engineering work. Each modeling level has a formal metamodel that defines its concepts and relationships. Structural checks verify that a model conforms to this structure. Semantic rules describe additional conditions that people can review through explicit validation. Transformations carry selected information to the next level, and generators use the AWS PSM to create project files.
+MODRISS uses models as part of the engineering work. Each modeling level has a formal metamodel that defines its concepts and relationships. Structural checks verify that a model conforms to this structure. Semantic rules describe additional conditions that people can review through explicit validation. Transformations carry selected information to the next level, and generators use the PSM to create project files.
 
 ## Core terms
 
@@ -11,8 +11,8 @@ MODRISS uses models as part of the engineering work. Each modeling level has a f
 | **DSML**                          | A domain-specific modeling language whose concepts and semantics are defined for a particular domain. |
 | **Structural validation**         | A check of Ecore conformance, required features, multiplicities, and reference integrity.             |
 | **Semantic validation**           | A check of domain rules expressed in EVL and run in an explicit user/model validation workflow.       |
-| **Model-to-model transformation** | ETL rules that derive PIM from CIM or AWS PSM from PIM.                                               |
-| **Model-to-text generation**      | EGX/EGL rules that create files from an AWS PSM.                                                      |
+| **Model-to-model transformation** | ETL rules that derive PIM from CIM or PSM from PIM.                                                   |
+| **Model-to-text generation**      | EGX/EGL rules that create files from a PSM.                                                           |
 | **Traceability**                  | Links and reports that connect source concepts to refined model elements and generated artifacts.     |
 
 ## Language stack
@@ -35,4 +35,4 @@ An imported XMI model is staged, converted to the platform representation, and s
 
 ## Why the model has three levels
 
-CIM, PIM, and AWS PSM keep business intent separate from architectural and provider-specific decisions. CIM describes the problem and its domain. PIM defines a serverless architecture without committing to a cloud provider. AWS PSM makes the provider-specific design explicit. Each transformation boundary gives the team a point to review what carried forward and what still needs a decision.
+CIM, PIM, and PSM keep business intent separate from architectural and provider-specific decisions. CIM describes the problem and its domain. PIM defines a serverless architecture without committing to a cloud provider. PSM makes the provider-specific design explicit. Each transformation boundary gives the team a point to review what carried forward and what still needs a decision.

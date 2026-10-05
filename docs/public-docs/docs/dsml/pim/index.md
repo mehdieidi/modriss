@@ -35,7 +35,7 @@ Each class section includes declared attributes, accepted values or examples, an
 - Describe state use through `DataAccess` and `AccessPattern`. The storage choice should be explainable from the way the architecture reads, writes, searches, and protects information.
 - Keep asynchronous behavior explicit. Queues, topics, event buses, subscriptions, schedules, routing rules, retry policies, and dead-letter decisions carry different operational meanings.
 - Use workflows when the business progression requires orchestration, waiting, human approval, compensation, or escalation. Do not hide those decisions inside an opaque function description.
-- Keep provider-neutral intent in PIM. AWS names, ARNs, SAM or CloudFormation properties, and service-specific operational decisions belong in AWS PSM.
+- Keep provider-neutral intent in PIM. AWS names, ARNs, SAM or CloudFormation properties, and service-specific operational decisions belong in PSM.
 
 ## Additional resources
 

@@ -1,8 +1,8 @@
 # Shared kernel reference
 
-The shared kernel is the common semantic foundation of CIM, PIM, and AWS PSM. It gives elements at every modeling level the same concepts for identity, explanation, provenance, lifecycle state, trace links, expressions, and readiness evidence. This vocabulary allows an element to remain identifiable while it is refined from a business concept into a provider-independent design and then into an AWS resource.
+The shared kernel is the common semantic foundation of CIM, PIM, and PSM. It gives elements at every modeling level the same concepts for identity, explanation, provenance, lifecycle state, trace links, expressions, and readiness evidence. This vocabulary allows an element to remain identifiable while it is refined from a business concept into a provider-independent design and then into an AWS resource.
 
-The kernel is an Ecore package with namespace URI `https://modriss.org/kernel/1.0`. Each DSML imports it instead of reproducing these concepts. An inherited feature such as `rationale` therefore has the same structural meaning in a CIM command, a PIM function, and an AWS PSM Lambda resource.
+The kernel is an Ecore package with namespace URI `https://modriss.org/kernel/1.0`. Each DSML imports it instead of reproducing these concepts. An inherited feature such as `rationale` therefore has the same structural meaning in a CIM command, a PIM function, and a PSM Lambda resource.
 
 Source: `mde/metamodels/shared/kernel.emf`.
 
@@ -93,41 +93,41 @@ This enumeration supplies a shared maturity vocabulary. The metamodel encodes no
 
 The endpoints state what is connected; `TraceLinkType` states the semantic direction of that connection.
 
-| Literal          | Meaning                                                                                                                     |
-| ---------------- | --------------------------------------------------------------------------------------------------------------------------- |
-| `DERIVES_FROM`   | The target originates from evidence or meaning held by the source.                                                          |
-| `REFINES`        | The target makes the source more precise while retaining its intent.                                                        |
-| `SATISFIES`      | The target fulfils a need, requirement, or condition represented by the source.                                             |
-| `CONSTRAINS`     | The source limits the permitted form or behavior of the target.                                                             |
-| `GENERATED_FROM` | The target was mechanically produced using the source as input.                                                             |
-| `VALIDATES`      | The source records or performs a validation claim concerning the target.                                                    |
-| `MITIGATES`      | The source reduces a risk or problem represented by the target.                                                             |
-| `CONFLICTS_WITH` | The endpoints contain incompatible intentions or conditions requiring resolution.                                           |
-| `MAPS_TO`        | General correspondence without claiming refinement or realization. PIM-to-AWS PSM uses it for several structured documents. |
-| `TRANSFORMS_TO`  | A model transformation established the target from the source. Both transformation stages use it for their main traces.     |
-| `REALIZES`       | The target provides a concrete realization of the source concept.                                                           |
-| `IMPLEMENTS`     | The target implements behavior, policy, or structure specified by the source.                                               |
-| `DEPLOYS_TO`     | The source is placed into, or made operational through, the target context.                                                 |
-| `OBSERVES`       | The source monitors or records information about the target.                                                                |
-| `OTHER`          | A meaningful relation outside the named set. Its rationale should explain the intended meaning.                             |
+| Literal          | Meaning                                                                                                                 |
+| ---------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| `DERIVES_FROM`   | The target originates from evidence or meaning held by the source.                                                      |
+| `REFINES`        | The target makes the source more precise while retaining its intent.                                                    |
+| `SATISFIES`      | The target fulfils a need, requirement, or condition represented by the source.                                         |
+| `CONSTRAINS`     | The source limits the permitted form or behavior of the target.                                                         |
+| `GENERATED_FROM` | The target was mechanically produced using the source as input.                                                         |
+| `VALIDATES`      | The source records or performs a validation claim concerning the target.                                                |
+| `MITIGATES`      | The source reduces a risk or problem represented by the target.                                                         |
+| `CONFLICTS_WITH` | The endpoints contain incompatible intentions or conditions requiring resolution.                                       |
+| `MAPS_TO`        | General correspondence without claiming refinement or realization. PIM-to-PSM uses it for several structured documents. |
+| `TRANSFORMS_TO`  | A model transformation established the target from the source. Both transformation stages use it for their main traces. |
+| `REALIZES`       | The target provides a concrete realization of the source concept.                                                       |
+| `IMPLEMENTS`     | The target implements behavior, policy, or structure specified by the source.                                           |
+| `DEPLOYS_TO`     | The source is placed into, or made operational through, the target context.                                             |
+| `OBSERVES`       | The source monitors or records information about the target.                                                            |
+| `OTHER`          | A meaningful relation outside the named set. Its rationale should explain the intended meaning.                         |
 
 ### `FindingType`
 
 This classification is independent from severity and blocking status, allowing readiness reports to group findings by cause.
 
-| Literal                     | Meaning                                                                                                      |
-| --------------------------- | ------------------------------------------------------------------------------------------------------------ |
-| `MISSING_INFORMATION`       | Required knowledge or a modeling answer is absent. PIM-to-AWS PSM uses it beside generated manual decisions. |
-| `INCONSISTENCY`             | Parts of the model or its evidence disagree.                                                                 |
-| `BLOCKING_RISK`             | A known risk prevents the relevant progression.                                                              |
-| `BLOCKING_HOTSPOT`          | A concentrated area of uncertainty or design difficulty blocks progress.                                     |
-| `VALIDATION_WARNING`        | An advisory validation concern.                                                                              |
-| `VALIDATION_ERROR`          | A validation error. The PIM-to-AWS PSM finding helper uses this type.                                        |
-| `TRANSFORMATION_ASSUMPTION` | A transformation proceeded on an assumption still needing visibility or confirmation.                        |
-| `POLICY_VIOLATION`          | The modeled state conflicts with an applicable policy.                                                       |
-| `SECURITY_RISK`             | The concern relates to modeled security properties or exposure.                                              |
-| `DEPLOYMENT_RISK`           | The concern affects the ability or safety of deployment.                                                     |
-| `OTHER`                     | Valid readiness evidence outside the named categories.                                                       |
+| Literal                     | Meaning                                                                                                  |
+| --------------------------- | -------------------------------------------------------------------------------------------------------- |
+| `MISSING_INFORMATION`       | Required knowledge or a modeling answer is absent. PIM-to-PSM uses it beside generated manual decisions. |
+| `INCONSISTENCY`             | Parts of the model or its evidence disagree.                                                             |
+| `BLOCKING_RISK`             | A known risk prevents the relevant progression.                                                          |
+| `BLOCKING_HOTSPOT`          | A concentrated area of uncertainty or design difficulty blocks progress.                                 |
+| `VALIDATION_WARNING`        | An advisory validation concern.                                                                          |
+| `VALIDATION_ERROR`          | A validation error. The PIM-to-PSM finding helper uses this type.                                        |
+| `TRANSFORMATION_ASSUMPTION` | A transformation proceeded on an assumption still needing visibility or confirmation.                    |
+| `POLICY_VIOLATION`          | The modeled state conflicts with an applicable policy.                                                   |
+| `SECURITY_RISK`             | The concern relates to modeled security properties or exposure.                                          |
+| `DEPLOYMENT_RISK`           | The concern affects the ability or safety of deployment.                                                 |
+| `OTHER`                     | Valid readiness evidence outside the named categories.                                                   |
 
 ### `StructuredFormat`
 
@@ -215,7 +215,7 @@ The markers are orthogonal roles. A function implements several because it is de
 
 ### `KeyValue`
 
-`KeyValue` is a small reusable record. Its owner determines what the pair means. AWS PSM stage parameter overrides reuse it instead of introducing a provider-specific pair class.
+`KeyValue` is a small reusable record. Its owner determines what the pair means. PSM stage parameter overrides reuse it instead of introducing a provider-specific pair class.
 
 | Attribute | Type            | Meaning                                                                                                       |
 | --------- | --------------- | ------------------------------------------------------------------------------------------------------------- |
@@ -237,7 +237,7 @@ The inherited `key` is required and `value` remains optional. The annotation's l
 
 ### `ModelElement` abstract
 
-`ModelElement` establishes stable technical identity beside human explanation, lifecycle state, annotations, and bidirectional trace navigation. Almost every CIM, PIM, and AWS PSM concept inherits it through `TraceableElement`.
+`ModelElement` establishes stable technical identity beside human explanation, lifecycle state, annotations, and bidirectional trace navigation. Almost every CIM, PIM, and PSM concept inherits it through `TraceableElement`.
 
 | Attribute         | Type                     | Meaning                                                                                                                                                                   |
 | ----------------- | ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -266,7 +266,7 @@ This subtype is for concepts whose abstract syntax requires a distinct presentat
 | ------------- | ------------ | --------------------------------------------------------------------------------------- |
 | `displayName` | `String [1]` | Required human-facing label, kept separate from stable `id` and general-purpose `name`. |
 
-It declares no relationships. No current CIM, PIM, or AWS PSM class extends it directly, but it remains available as a stricter shared naming contract.
+It declares no relationships. No current CIM, PIM, or PSM class extends it directly, but it remains available as a stricter shared naming contract.
 
 ## Provenance and correspondence
 
@@ -288,7 +288,7 @@ Every declared attribute is structurally optional. CIM asks each traceable eleme
 | `generatedByTransformation` | `Boolean [0..1]` | States that transformation logic created the element. Helpers set it for targets, traces, readiness evidence, and generated support objects.                              |
 | `rationale`                 | `String [0..1]`  | Explains why the element exists or why one interpretation was selected. Transformation helpers also record their producing rule here.                                     |
 | `reviewStatus`              | `String [0..1]`  | Open review-workflow label. CIM-to-PIM uses values such as `reviewable` and `review-required`; the field is intentionally independent from `LifecycleStatus`.             |
-| `reviewNotes`               | `String [0..1]`  | Human review commentary. PIM-to-AWS PSM places a generated manual decision's recommendation here.                                                                         |
+| `reviewNotes`               | `String [0..1]`  | Human review commentary. PIM-to-PSM places a generated manual decision's recommendation here.                                                                             |
 | `manuallyMaintained`        | `Boolean [0..1]` | Identifies content maintained by people after creation. Transformation-created objects normally set it to `false`; PIM EVL requests justification when it is `true`.      |
 
 No relationships are declared beyond those inherited from `ModelElement`.
@@ -299,7 +299,7 @@ No relationships are declared beyond those inherited from `ModelElement`.
 
 ### `TraceModel`
 
-`TraceModel` is the containment root for correspondence links associated with a model. CIM, PIM, and AWS PSM roots can each own one. Both transformation chains create a target-side trace model.
+`TraceModel` is the containment root for correspondence links associated with a model. CIM, PIM, and PSM roots can each own one. Both transformation chains create a target-side trace model.
 
 | Attribute               | Type            | Meaning                                                                                                             |
 | ----------------------- | --------------- | ------------------------------------------------------------------------------------------------------------------- |
@@ -403,7 +403,7 @@ CIM-to-PIM preserves all four attributes when cloning an expression. When materi
 
 ### `StructuredDocument`
 
-`StructuredDocument` carries a document payload as a traceable model object. It bridges modeled concepts and serializations visible in the PSM before artifact generation. AWS PSM specialises it as `AslDocument`.
+`StructuredDocument` carries a document payload as a traceable model object. It bridges modeled concepts and serializations visible in the PSM before artifact generation. PSM specialises it as `AslDocument`.
 
 | Attribute     | Type                   | Meaning                                                                                                  |
 | ------------- | ---------------------- | -------------------------------------------------------------------------------------------------------- |
@@ -411,7 +411,7 @@ CIM-to-PIM preserves all four attributes when cloning an expression. When materi
 | `content`     | `String [0..1]`        | Inline payload. The artifact generator emits ordinary structured documents only when content is present. |
 | `externalUri` | `String [0..1]`        | Location of externally maintained content or its publication/source location.                            |
 
-PIM-to-AWS PSM creates JSON documents for schemas, event contracts, business rules, configuration metadata, and service metadata, then gathers uncontained documents under `AwsPsmModel.documents`. Generation writes non-ASL documents with inline content to role-sensitive paths. ASL documents use their dedicated generation path.
+PIM-to-PSM creates JSON documents for schemas, event contracts, business rules, configuration metadata, and service metadata, then gathers uncontained documents under `AwsPsmModel.documents`. Generation writes non-ASL documents with inline content to role-sensitive paths. ASL documents use their dedicated generation path.
 
 ## Readiness and human review
 
@@ -477,7 +477,7 @@ A check records a named pass/fail evaluation and the action required after failu
 | `assessment`       | `ProductionReadinessAssessment [1]`, readonly transient reference | Navigation to the owner through `checks`. |
 | `affectedElements` | reference to `ModelElement [*]`                                   | Precise model scope of the evaluation.    |
 
-CIM-to-PIM builds the object ID from `checkId` and affected keys. PIM-to-AWS PSM also includes the message, tying a check instance to a generated diagnostic.
+CIM-to-PIM builds the object ID from `checkId` and affected keys. PIM-to-PSM also includes the message, tying a check instance to a generated diagnostic.
 
 ### `ManualDecision`
 
@@ -500,7 +500,7 @@ CIM-to-PIM builds the object ID from `checkId` and affected keys. PIM-to-AWS PSM
 | `assessment`       | `ProductionReadinessAssessment [0..1]`, readonly transient reference | Owning-assessment navigation. It is optional because a decision may exist without belonging to an assessment. For example, `TransformationProfile.requiredDecisions` can reference a manual decision directly. |
 | `affectedElements` | reference to `ModelElement [*]`                                      | Elements whose transformation, deployment, or production status depends on the answer.                                                                                                                         |
 
-CIM-to-PIM creates review-required decisions for unresolved choices and attaches target-side affected elements. PIM-to-AWS PSM creates a corresponding `MISSING_INFORMATION` finding beside each decision, preserving both the human task and the readiness issue that caused it.
+CIM-to-PIM creates review-required decisions for unresolved choices and attaches target-side affected elements. PIM-to-PSM creates a corresponding `MISSING_INFORMATION` finding beside each decision, preserving both the human task and the readiness issue that caused it.
 
 ## Ownership and navigation
 
@@ -512,7 +512,7 @@ CIMModel / PIMModel / AwsPsmModel
 │   ├── findings: ReadinessFinding[*]
 │   ├── checks: ReadinessCheck[*]
 │   └── manualDecisions: ManualDecision[*]
-└── documents: StructuredDocument[*]      (AWS PSM only)
+└── documents: StructuredDocument[*]      (PSM only)
 
 any ModelElement
 └── annotations: Annotation[*]

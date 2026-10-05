@@ -130,7 +130,7 @@
   <text x="151" y="360" class="activity" text-anchor="middle">PIM refinement</text>
   <line x1="151" y1="372" x2="151" y2="386" stroke="#111111" stroke-width="1" marker-end="url(#academic-arrow)"/>
   <rect x="64" y="388" width="174" height="32" fill="#ffffff" stroke="#111111" stroke-width="1"/>
-  <text x="151" y="408" class="activity" text-anchor="middle">AWS PSM realization</text>
+  <text x="151" y="408" class="activity" text-anchor="middle">PSM realization</text>
   <line x1="151" y1="420" x2="151" y2="434" stroke="#111111" stroke-width="1" marker-end="url(#academic-arrow)"/>
   <rect x="64" y="436" width="174" height="32" fill="#ffffff" stroke="#111111" stroke-width="1"/>
   <text x="151" y="456" class="activity" text-anchor="middle">Artifact generation</text>

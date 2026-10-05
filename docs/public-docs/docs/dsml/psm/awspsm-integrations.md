@@ -6,7 +6,7 @@ Source: `mde/metamodels/psm/awspsm-integrations.emf`.
 
 ## `AwsRelationshipView`
 
-`AwsRelationshipView` is an integration view in the AWS platform-specific model. It makes aws relationship view visible as a connection. Its declaration gives the concept a precise home through source, target. Its references provide the wiring that lets generation assemble the corresponding AWS design.
+`AwsRelationshipView` is an integration view in the PSM. It makes aws relationship view visible as a connection. Its declaration gives the concept a precise home through source, target. Its references provide the wiring that lets generation assemble the corresponding AWS design.
 
 Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -25,7 +25,7 @@ Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilit
 
 ## `ApiGatewayLambdaIntegrationView`
 
-`ApiGatewayLambdaIntegrationView` is an API Gateway deployment record in the AWS platform-specific model. It carries the provider settings for api gateway lambda integration view. Its declaration gives the concept a precise home through route, function, integration. Its references provide the wiring that lets generation assemble the corresponding AWS design.
+`ApiGatewayLambdaIntegrationView` is an API Gateway deployment record in the PSM. It carries the provider settings for api gateway lambda integration view. Its declaration gives the concept a precise home through route, function, integration. Its references provide the wiring that lets generation assemble the corresponding AWS design.
 
 Direct supertypes: `AwsRelationshipView`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -44,7 +44,7 @@ This class declares no attributes of its own. It inherits the attributes of its 
 
 ## `EventBridgeLambdaTargetView`
 
-`EventBridgeLambdaTargetView` is an EventBridge deployment record in the AWS platform-specific model. It carries the routing or invocation settings for event bridge lambda target view. Its declaration gives the concept a precise home through rule, target row, function. Its references provide the wiring that lets generation assemble the corresponding AWS design.
+`EventBridgeLambdaTargetView` is an EventBridge deployment record in the PSM. It carries the routing or invocation settings for event bridge lambda target view. Its declaration gives the concept a precise home through rule, target row, function. Its references provide the wiring that lets generation assemble the corresponding AWS design.
 
 Direct supertypes: `AwsRelationshipView`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -63,7 +63,7 @@ This class declares no attributes of its own. It inherits the attributes of its 
 
 ## `SnsLambdaSubscriptionView`
 
-`SnsLambdaSubscriptionView` is an AWS messaging record in the AWS platform-specific model. It carries the delivery setting for sns lambda subscription view. Its declaration gives the concept a precise home through topic, function, subscription. Its references provide the wiring that lets generation assemble the corresponding AWS design.
+`SnsLambdaSubscriptionView` is an AWS messaging record in the PSM. It carries the delivery setting for sns lambda subscription view. Its declaration gives the concept a precise home through topic, function, subscription. Its references provide the wiring that lets generation assemble the corresponding AWS design.
 
 Direct supertypes: `AwsRelationshipView`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -82,7 +82,7 @@ This class declares no attributes of its own. It inherits the attributes of its 
 
 ## `SqsLambdaEventSourceView`
 
-`SqsLambdaEventSourceView` is an AWS messaging record in the AWS platform-specific model. It carries the delivery setting for sqs lambda event source view. Its declaration gives the concept a precise home through queue, function, mapping. Its references provide the wiring that lets generation assemble the corresponding AWS design.
+`SqsLambdaEventSourceView` is an AWS messaging record in the PSM. It carries the delivery setting for sqs lambda event source view. Its declaration gives the concept a precise home through queue, function, mapping. Its references provide the wiring that lets generation assemble the corresponding AWS design.
 
 Direct supertypes: `AwsRelationshipView`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -100,7 +100,7 @@ This class declares no attributes of its own. It inherits the attributes of its 
 
 ## `StepFunctionEventBridgeTargetView`
 
-`StepFunctionEventBridgeTargetView` is a Step Functions deployment record in the AWS platform-specific model. It carries the orchestration setting for step function event bridge target view. Its declaration gives the concept a precise home through rule, state machine, target row. Its references provide the wiring that lets generation assemble the corresponding AWS design.
+`StepFunctionEventBridgeTargetView` is a Step Functions deployment record in the PSM. It carries the orchestration setting for step function event bridge target view. Its declaration gives the concept a precise home through rule, state machine, target row. Its references provide the wiring that lets generation assemble the corresponding AWS design.
 
 Direct supertypes: `AwsRelationshipView`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -118,7 +118,7 @@ This class declares no attributes of its own. It inherits the attributes of its 
 
 ## `S3LambdaNotificationView`
 
-`S3LambdaNotificationView` is an S3 deployment record in the AWS platform-specific model. It carries the object-storage setting for s3 lambda notification view. Its declaration gives the concept a precise home through bucket, function, rule. Its references provide the wiring that lets generation assemble the corresponding AWS design.
+`S3LambdaNotificationView` is an S3 deployment record in the PSM. It carries the object-storage setting for s3 lambda notification view. Its declaration gives the concept a precise home through bucket, function, rule. Its references provide the wiring that lets generation assemble the corresponding AWS design.
 
 Direct supertypes: `AwsRelationshipView`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -137,7 +137,7 @@ This class declares no attributes of its own. It inherits the attributes of its 
 
 ## `S3QueueNotificationView`
 
-`S3QueueNotificationView` is an S3 deployment record in the AWS platform-specific model. It carries the object-storage setting for s3 queue notification view. Its declaration gives the concept a precise home through bucket, queue, rule. Its references provide the wiring that lets generation assemble the corresponding AWS design.
+`S3QueueNotificationView` is an S3 deployment record in the PSM. It carries the object-storage setting for s3 queue notification view. Its declaration gives the concept a precise home through bucket, queue, rule. Its references provide the wiring that lets generation assemble the corresponding AWS design.
 
 Direct supertypes: `AwsRelationshipView`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
@@ -156,7 +156,7 @@ This class declares no attributes of its own. It inherits the attributes of its 
 
 ## `S3TopicNotificationView`
 
-`S3TopicNotificationView` is an S3 deployment record in the AWS platform-specific model. It carries the object-storage setting for s3 topic notification view. Its declaration gives the concept a precise home through bucket, topic, rule. Its references provide the wiring that lets generation assemble the corresponding AWS design.
+`S3TopicNotificationView` is an S3 deployment record in the PSM. It carries the object-storage setting for s3 topic notification view. Its declaration gives the concept a precise home through bucket, topic, rule. Its references provide the wiring that lets generation assemble the corresponding AWS design.
 
 Direct supertypes: `AwsRelationshipView`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 

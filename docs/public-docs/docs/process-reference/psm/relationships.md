@@ -1,6 +1,6 @@
-# AWS PSM modeling: flow and bindings
+# PSM modeling: flow and bindings
 
-This page documents the **SPEM WorkSequence, ProcessPerformer, and ProcessParameter** elements used by the AWS PSM modeling process. It is generated from the canonical executable definition, so the names and identifiers match the API and process interface. The explanation adds practical teaching around the normative data.
+This page documents the **SPEM WorkSequence, ProcessPerformer, and ProcessParameter** elements used by the PSM modeling process. It is generated from the canonical executable definition, so the names and identifiers match the API and process interface. The explanation adds practical teaching around the normative data.
 
 WorkSequence records explicit process flow. ProcessPerformer binds a role use to a task use. ProcessParameter binds a work-product use to a task use and states whether it enters or leaves the task. These relationships make dependencies inspectable and prevent document order from being treated as hidden process logic.
 

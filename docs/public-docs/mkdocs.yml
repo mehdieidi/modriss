@@ -56,7 +56,7 @@ nav:
       - Capability-increment process: guides/end-to-end-modeling-methodology.md
       - CIM modeling process: guides/cim-modeling-methodology.md
       - PIM modeling process: guides/pim-modeling-methodology.md
-      - AWS PSM modeling process: guides/psm-modeling-methodology.md
+      - PSM modeling process: guides/psm-modeling-methodology.md
       - Complete process reference:
           - Overview: process-reference/index.md
           - SPEM structure: process-reference/spem-structure.md
@@ -94,7 +94,7 @@ nav:
               - Flow and bindings: process-reference/pim/relationships.md
               - Guidance: process-reference/pim/guidance.md
               - Gate: process-reference/pim/gates.md
-          - AWS PSM modeling process:
+          - PSM modeling process:
               - Phases and activities: process-reference/psm/activities.md
               - Tasks: process-reference/psm/tasks.md
               - Roles: process-reference/psm/roles.md
@@ -143,7 +143,7 @@ nav:
               - Security: dsml/pim/pim-security.md
               - Configuration: dsml/pim/pim-config.md
               - Enumerations: dsml/pim/pim-types.md
-          - AWS PSM:
+          - PSM:
               - Overview: dsml/psm/index.md
               - Model root: dsml/psm/awspsm-root.md
               - Core and SAM: dsml/psm/awspsm-core.md
@@ -181,7 +181,7 @@ nav:
               - Readiness: evl/pim/readiness.md
               - Security, configuration, and external systems: evl/pim/security-config-external.md
               - Workflows: evl/pim/workflow.md
-          - AWS PSM:
+          - PSM:
               - APIs: evl/psm/api.md
               - Compute: evl/psm/compute.md
               - Core and deployment: evl/psm/core.md
@@ -204,7 +204,7 @@ nav:
               - Integration and deployment: transformations/cim-to-pim/integration-deployment.md
               - Processes and policies: transformations/cim-to-pim/process-policy.md
               - Root scaffolding: transformations/cim-to-pim/root-scaffolding.md
-          - PIM to AWS PSM:
+          - PIM to PSM:
               - Overview: transformations/pim-to-awspsm/index.md
               - Compute and APIs: transformations/pim-to-awspsm/compute-api.md
               - Contracts, external systems, and policy: transformations/pim-to-awspsm/contracts-external-policy.md

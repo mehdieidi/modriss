@@ -19,7 +19,7 @@ A phase establishes a significant lifecycle period and normally ends at a major 
 | CIM Child Process                                        | Activity  | Active Product Construction & Evolution |         1 | defined sequence |
 | CIM → PIM Transformation                                 | Activity  | Active Product Construction & Evolution |         1 | defined sequence |
 | PIM Child Process                                        | Activity  | Active Product Construction & Evolution |         1 | defined sequence |
-| PIM → AWS PSM Transformation                             | Activity  | Active Product Construction & Evolution |         1 | defined sequence |
+| PIM → PSM Transformation                                 | Activity  | Active Product Construction & Evolution |         1 | defined sequence |
 | PSM Child Process                                        | Activity  | Active Product Construction & Evolution |         1 | defined sequence |
 | Model-to-Text Generation                                 | Activity  | Active Product Construction & Evolution |         1 | defined sequence |
 | Increment Readiness & Acceptance                         | Activity  | Active Product Construction & Evolution |         2 | defined sequence |
@@ -242,7 +242,7 @@ Refine service boundaries, contracts, data, behavior, integration, assurance, an
 
 - **Run the PIM increment** (TaskUse `e2e.p3.pim-refinement.t1`)
 
-### PIM → AWS PSM Transformation
+### PIM → PSM Transformation
 
 <small>Activity · MODRISS::Stage: `e2e.p4.pim-to-psm` · contained by **Active Product Construction & Evolution**</small>
 

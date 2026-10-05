@@ -26,7 +26,7 @@ the suitable method depends on the project situation. A fragment useful in a
 regulated, multi-team product may be disproportionate in a short exploratory
 study, even though both projects use the same modeling languages.
 
-In MODRISS, the modeling framework defines CIM, PIM, and AWS PSM. The separate
+In MODRISS, the modeling framework defines CIM, PIM, and PSM. The separate
 development-process component covers feasibility analysis, release control,
 operational learning, retirement, and continuous management. Reusable method
 content supports that process. Copying its definitions into each project
@@ -91,7 +91,7 @@ technical role definitions map to 16 conceptual process roles because the
 conceptual Requirements/Business Modeler role is represented by two stable
 tooling roles: Requirements Engineer and Business Modeler. The task definitions
 come from five process components: 37 from the end-to-end lifecycle, 26 from
-CIM modeling, 32 from PIM modeling, 28 from AWS PSM modeling, and 16 from
+CIM modeling, 32 from PIM modeling, 28 from PSM modeling, and 16 from
 artifact readiness. The guidance collection combines 26 focused practice
 guides with 19 process-pattern descriptions.
 
@@ -230,14 +230,14 @@ defaults, trace links, conflicts, and unsupported capabilities. The result is
 a reconciled PSM draft with visible mapping gaps rather than a silent claim
 that platform realization is complete.
 
-#### MF-10: AWS PSM refinement and assurance
+#### MF-10: PSM refinement and assurance
 
 MF-10 completes the provider-specific design. It covers account and stage
 structure, naming, stacks, parameters, IAM, keys, secrets, networking, compute,
 storage, messaging, APIs, workflows, observability, quotas, concurrency,
 retention, recovery, regional behavior, and cost controls. The Cloud Platform
 Engineer owns the PSM, with quality, security, cost, service, and assurance
-participation. The accepted result is an exact AWS PSM revision ready for
+participation. The accepted result is an exact PSM revision ready for
 reproducible generation, accompanied by a readiness record rather than an
 informal approval.
 
@@ -427,7 +427,7 @@ realize part of that solution.
 | End-to-end lifecycle |    37 | initiation, feasibility/cost authorization, tailoring, increment framing, transformation orchestration, release, operational pull control, change, learning, and retirement |
 | CIM                  |    26 | strategic intent, domain discovery, behavior, requirements, process/policy, governance, assurance, and readiness                                                            |
 | PIM                  |    32 | services, contracts, data, compute, APIs, events, workflows, integration, policies, security, deployment intent, and readiness                                              |
-| AWS PSM              |    28 | platform baseline, IAM, networking, storage, messaging, compute, APIs, workflows, observability, integration views, and readiness                                           |
+| PSM                  |    28 | platform baseline, IAM, networking, storage, messaging, compute, APIs, workflows, observability, integration views, and readiness                                           |
 | Artifact readiness   |    16 | generated-baseline control, environment configuration, CI/CD, testing, release planning, recovery, and handover                                                             |
 
 The complete task narratives appear in the generated catalog. This preserves
@@ -506,7 +506,7 @@ throughout this sequence.
 The library exposes five top-level process packages. The end-to-end package
 provides two coordinated components: three-phase Development and Delivery and
 the ongoing, event-driven Operations and Maintenance Process, plus the nested
-release cycle and vertical MDE increment. The CIM, PIM, and AWS PSM components encapsulate their respective
+release cycle and vertical MDE increment. The CIM, PIM, and PSM components encapsulate their respective
 modeling engines and can be invoked as child processes without copying their
 tasks into the parent process. The artifact-readiness component begins with a
 generated project baseline and covers controlled refinement, delivery

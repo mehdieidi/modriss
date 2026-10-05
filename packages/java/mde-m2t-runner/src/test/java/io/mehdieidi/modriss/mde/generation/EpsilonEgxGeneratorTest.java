@@ -51,14 +51,14 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.api.parallel.ResourceLock;
 
-/** Regression tests for EGX-driven artifact generation from AWS PSM models. */
+/** Regression tests for EGX-driven artifact generation from PSM models. */
 @ResourceLock("epsilon-runtime")
 final class EpsilonEgxGeneratorTest {
 
   /** Repository root discovered from the current test working directory. */
   private static final Path REPOSITORY_ROOT = findRepositoryRoot();
 
-  /** EGX coordinator for the AWS PSM artifact generator. */
+  /** EGX coordinator for the PSM artifact generator. */
   private static final Path AWS_PSM_EGX =
       REPOSITORY_ROOT.resolve("mde/generation/awspsm-to-artifacts/awspsm2artifacts.egx");
 
@@ -137,14 +137,14 @@ final class EpsilonEgxGeneratorTest {
   }
 
   /**
-   * Catalog AR-01: generates the complete initial artifact set from a synthetic AWS PSM fixture.
+   * Catalog AR-01: generates the complete initial artifact set from a synthetic PSM fixture.
    * Verifies the generated tree, reports, traces, scripts, and CI configuration.
    *
    * @throws Exception when fixture creation or generation fails
    */
   @Test
   void generatesArtifactsForRepresentativeAwsPsmModel() throws Exception {
-    Path sourceModel = tempDir.resolve("representative-aws-psm.xmi");
+    Path sourceModel = tempDir.resolve("representative-psm.xmi");
     Path outputDirectory = tempDir.resolve("generated-project");
     createRepresentativeAwsPsmModel(sourceModel);
 
@@ -200,7 +200,7 @@ final class EpsilonEgxGeneratorTest {
    */
   @Test
   void generatesSamForBroadAwsPsmResourceSurface() throws Exception {
-    Path sourceModel = tempDir.resolve("broad-aws-psm.xmi");
+    Path sourceModel = tempDir.resolve("broad-psm.xmi");
     Path outputDirectory = tempDir.resolve("broad-generated-project");
     createBroadAwsPsmRenderingModel(sourceModel);
     assertSourceModelReloads(sourceModel);
@@ -226,7 +226,7 @@ final class EpsilonEgxGeneratorTest {
    */
   @Test
   void honorsEgxGuardsForMinimalAwsPsmModel() throws Exception {
-    Path sourceModel = tempDir.resolve("minimal-aws-psm.xmi");
+    Path sourceModel = tempDir.resolve("minimal-psm.xmi");
     Path outputDirectory = tempDir.resolve("minimal-generated-project");
     createMinimalGuardAwsPsmModel(sourceModel);
     assertSourceModelReloads(sourceModel);
@@ -266,7 +266,7 @@ final class EpsilonEgxGeneratorTest {
     Assumptions.assumeTrue(goExecutable != null, "Go toolchain is not available.");
     Assumptions.assumeTrue(commandExecutable("docker") != null, "Docker is not available.");
 
-    Path sourceModel = tempDir.resolve("localstack-aws-psm.xmi");
+    Path sourceModel = tempDir.resolve("localstack-psm.xmi");
     Path outputDirectory = tempDir.resolve("localstack-generated-project");
     createRepresentativeAwsPsmModel(sourceModel);
 
@@ -380,7 +380,7 @@ final class EpsilonEgxGeneratorTest {
    */
   @Test
   void preservesProtectedRegionsWhenRegeneratingExistingArtifacts() throws Exception {
-    Path sourceModel = tempDir.resolve("representative-aws-psm.xmi");
+    Path sourceModel = tempDir.resolve("representative-psm.xmi");
     Path outputDirectory = tempDir.resolve("regenerated-project");
     createRepresentativeAwsPsmModel(sourceModel);
 
@@ -415,7 +415,7 @@ final class EpsilonEgxGeneratorTest {
   /** Catalog AR-07: generator-owned text outside protected regions may be replaced on replay. */
   @Test
   void regenerationReplacesUserTextOutsideProtectedRegions() throws Exception {
-    Path sourceModel = tempDir.resolve("owned-text-aws-psm.xmi");
+    Path sourceModel = tempDir.resolve("owned-text-psm.xmi");
     Path outputDirectory = tempDir.resolve("owned-text-project");
     createRepresentativeAwsPsmModel(sourceModel);
     generateOrFail(
@@ -445,7 +445,7 @@ final class EpsilonEgxGeneratorTest {
   /** Catalog AR-08: malformed protected-region markers fail without publishing a partial run. */
   @Test
   void malformedProtectedRegionMarkersAreRejectedSafely() throws Exception {
-    Path sourceModel = tempDir.resolve("malformed-regions-aws-psm.xmi");
+    Path sourceModel = tempDir.resolve("malformed-regions-psm.xmi");
     Path outputDirectory = tempDir.resolve("malformed-regions-project");
     createRepresentativeAwsPsmModel(sourceModel);
     generateOrFail(
@@ -482,7 +482,7 @@ final class EpsilonEgxGeneratorTest {
    */
   @Test
   void unchangedPsmRegenerationIsIdempotent() throws Exception {
-    Path sourceModel = tempDir.resolve("idempotent-aws-psm.xmi");
+    Path sourceModel = tempDir.resolve("idempotent-psm.xmi");
     Path outputDirectory = tempDir.resolve("idempotent-project");
     createRepresentativeAwsPsmModel(sourceModel);
     generateOrFail(
@@ -506,7 +506,7 @@ final class EpsilonEgxGeneratorTest {
    */
   @Test
   void artifactSetTracksGeneratedResourceLifecycle() throws Exception {
-    Path sourceModel = tempDir.resolve("lifecycle-aws-psm.xmi");
+    Path sourceModel = tempDir.resolve("lifecycle-psm.xmi");
     Path outputDirectory = tempDir.resolve("lifecycle-project");
     createMinimalGuardAwsPsmModel(sourceModel);
     generateOrFail(
@@ -544,7 +544,7 @@ final class EpsilonEgxGeneratorTest {
   /** Catalog AR-09: regeneration never overwrites an independently owned, unknown file. */
   @Test
   void regenerationPreservesIndependentUserFiles() throws Exception {
-    Path sourceModel = tempDir.resolve("user-file-aws-psm.xmi");
+    Path sourceModel = tempDir.resolve("user-file-psm.xmi");
     Path outputDirectory = tempDir.resolve("user-file-project");
     createRepresentativeAwsPsmModel(sourceModel);
     generateOrFail(
@@ -564,7 +564,7 @@ final class EpsilonEgxGeneratorTest {
   /** Catalog AR-10/F-11: a later EGL failure does not publish partial temporary output. */
   @Test
   void failedGenerationRetainsPreviouslyPublishedArtifactSet() throws Exception {
-    Path sourceModel = tempDir.resolve("atomic-aws-psm.xmi");
+    Path sourceModel = tempDir.resolve("atomic-psm.xmi");
     createRepresentativeAwsPsmModel(sourceModel);
     Path outputDirectory = tempDir.resolve("atomic-project");
     Files.createDirectories(outputDirectory);
@@ -3537,7 +3537,7 @@ final class EpsilonEgxGeneratorTest {
   /**
    * Creates a reusable plaintext value expression for fixture models.
    *
-   * @param metamodelResource loaded AWS PSM metamodel
+   * @param metamodelResource loaded PSM metamodel
    * @param id stable fixture id
    * @param literal literal value
    * @return configured value expression
@@ -3555,7 +3555,7 @@ final class EpsilonEgxGeneratorTest {
   /**
    * Creates an allow policy document for fixture resources.
    *
-   * @param metamodelResource loaded AWS PSM metamodel
+   * @param metamodelResource loaded PSM metamodel
    * @param id stable fixture id
    * @param action IAM action
    * @param resource IAM resource
@@ -3588,8 +3588,8 @@ final class EpsilonEgxGeneratorTest {
   /**
    * Creates a deployable AWS resource fixture with common identity fields.
    *
-   * @param metamodelResource loaded AWS PSM metamodel
-   * @param classifierName concrete AWS PSM resource classifier
+   * @param metamodelResource loaded PSM metamodel
+   * @param classifierName concrete PSM resource classifier
    * @param id stable fixture id
    * @param name display name
    * @param logicalId CloudFormation logical id
@@ -3620,7 +3620,7 @@ final class EpsilonEgxGeneratorTest {
   }
 
   /**
-   * Creates a LocalStack-deployable AWS PSM model with Lambda, IAM, SQS, SNS, DynamoDB, S3, and
+   * Creates a LocalStack-deployable PSM model with Lambda, IAM, SQS, SNS, DynamoDB, S3, and
    * CloudWatch Logs resources.
    *
    * @param modelFile output XMI file path
@@ -3968,7 +3968,7 @@ final class EpsilonEgxGeneratorTest {
 
     EObject model = create(metamodelResource, "AwsPsmModel");
     set(model, "id", "aws_psm_localstack_runtime");
-    set(model, "name", "LocalStack Runtime AWS PSM");
+    set(model, "name", "LocalStack Runtime PSM");
     set(model, "partition", enumValue(metamodelResource, "AwsPartition", "AWS"));
     set(model, "accountStrategy", "single-account");
     set(model, "regionStrategy", "single-region");
@@ -4003,7 +4003,7 @@ final class EpsilonEgxGeneratorTest {
   }
 
   /**
-   * Creates a minimal valid AWS PSM model for negative EGX guard assertions.
+   * Creates a minimal valid PSM model for negative EGX guard assertions.
    *
    * @param modelFile output XMI file path
    * @throws IOException when the generated fixture cannot be saved
@@ -4043,7 +4043,7 @@ final class EpsilonEgxGeneratorTest {
 
     EObject model = create(metamodelResource, "AwsPsmModel");
     set(model, "id", "aws_psm_minimal_guard");
-    set(model, "name", "Minimal Guard AWS PSM");
+    set(model, "name", "Minimal Guard PSM");
     set(model, "partition", enumValue(metamodelResource, "AwsPartition", "AWS"));
     set(model, "accountStrategy", "single-account");
     set(model, "regionStrategy", "single-region");
@@ -4060,7 +4060,7 @@ final class EpsilonEgxGeneratorTest {
   }
 
   /**
-   * Creates a broad AWS PSM model that exercises concrete SAM/CloudFormation rendering branches.
+   * Creates a broad PSM model that exercises concrete SAM/CloudFormation rendering branches.
    *
    * @param modelFile output XMI file path
    * @throws IOException when the generated fixture cannot be saved
@@ -5264,7 +5264,7 @@ final class EpsilonEgxGeneratorTest {
 
     EObject model = create(metamodelResource, "AwsPsmModel");
     set(model, "id", "aws_psm_broad");
-    set(model, "name", "Broad AWS PSM");
+    set(model, "name", "Broad PSM");
     set(model, "partition", enumValue(metamodelResource, "AwsPartition", "AWS"));
     set(model, "accountStrategy", "single-account");
     set(model, "regionStrategy", "single-region");
@@ -5289,7 +5289,7 @@ final class EpsilonEgxGeneratorTest {
   /**
    * Creates a structured document fixture.
    *
-   * @param metamodelResource loaded AWS PSM metamodel
+   * @param metamodelResource loaded PSM metamodel
    * @param id stable fixture id
    * @param name display name
    * @param formatLiteral structured format literal
@@ -5309,7 +5309,7 @@ final class EpsilonEgxGeneratorTest {
   /**
    * Creates a named ASL state for broad workflow fixtures.
    *
-   * @param metamodelResource loaded AWS PSM metamodel
+   * @param metamodelResource loaded PSM metamodel
    * @param id stable fixture id
    * @param stateName ASL state name
    * @param typeLiteral ASL state kind used to select its concrete classifier
@@ -5338,7 +5338,7 @@ final class EpsilonEgxGeneratorTest {
   }
 
   /**
-   * Creates a representative AWS PSM model that drives Lambda, IAM, CloudWatch, S3, SAM stack, and
+   * Creates a representative PSM model that drives Lambda, IAM, CloudWatch, S3, SAM stack, and
    * stage artifact generation.
    *
    * @param modelFile output XMI file path
@@ -5616,7 +5616,7 @@ final class EpsilonEgxGeneratorTest {
 
     EObject model = create(metamodelResource, "AwsPsmModel");
     set(model, "id", "aws_psm_representative");
-    set(model, "name", "Representative AWS PSM");
+    set(model, "name", "Representative PSM");
     set(model, "partition", enumValue(metamodelResource, "AwsPartition", "AWS"));
     set(model, "accountStrategy", "single-account");
     set(model, "regionStrategy", "single-region");
@@ -5669,7 +5669,7 @@ final class EpsilonEgxGeneratorTest {
   }
 
   /**
-   * Creates an EMF object by classifier name from the loaded AWS PSM metamodel.
+   * Creates an EMF object by classifier name from the loaded PSM metamodel.
    *
    * @param metamodelResource loaded metamodel resource
    * @param classifierName EClass name to instantiate

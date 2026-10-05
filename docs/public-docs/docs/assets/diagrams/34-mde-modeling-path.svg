@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 384" role="img" aria-labelledby="mde-path-title mde-path-desc">
     <title id="mde-path-title">MODRISS model-driven modeling path</title>
-    <desc id="mde-path-desc">A four-stage path from a computation-independent model through a platform-independent serverless architecture and AWS platform-specific model to generated AWS artifacts.</desc>
+    <desc id="mde-path-desc">A four-stage path from a computation-independent model through a platform-independent serverless architecture and PSM to generated AWS artifacts.</desc>
 
     <defs><style>@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&amp;display=swap');</style>
       <marker id="mde-path-arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
@@ -58,10 +58,10 @@
     <rect x="388" y="284" width="142" height="16" rx="2" fill="#d7e9e5"/>
     <text x="459" y="295" fill="#075d5b" font-family="'Space Grotesk', 'Segoe UI', sans-serif" font-size="8" font-weight="600" letter-spacing="0.08em" text-anchor="middle">PLATFORM-INDEPENDENT</text>
 
-    <!-- Stage 3: AWS PSM -->
+    <!-- Stage 3: PSM -->
     <rect x="664" y="96" width="224" height="208" rx="6" fill="#f4e5dc" stroke="#b4653c" stroke-width="1.6"/>
     <text x="684" y="122" fill="#b4653c" font-family="'Space Grotesk', 'Segoe UI', sans-serif" font-size="8" font-weight="600" letter-spacing="0.16em">03 · MODEL · CURRENT TARGET</text>
-    <text x="684" y="162" fill="#102c3a" font-family="Georgia, 'Times New Roman', serif" font-size="28">AWS PSM</text>
+    <text x="684" y="162" fill="#102c3a" font-family="Georgia, 'Times New Roman', serif" font-size="28">PSM</text>
     <text x="684" y="188" fill="#2c4652" font-family="'Space Grotesk', 'Segoe UI', sans-serif" font-size="12" font-weight="600">AWS Serverless</text>
     <text x="684" y="204" fill="#2c4652" font-family="'Space Grotesk', 'Segoe UI', sans-serif" font-size="12" font-weight="600">Ecosystem</text>
     <line x1="684" y1="220" x2="868" y2="220" stroke="#d8b8a6" stroke-width="1"/>

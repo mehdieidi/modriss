@@ -1,4 +1,4 @@
-# AWS PSM Code Generator E2E
+# PSM Code Generator E2E
 
 Validation boundary: generated model output is gated by structural Ecore/EMF conformance only. This
 E2E test does not invoke EVL semantic validation.

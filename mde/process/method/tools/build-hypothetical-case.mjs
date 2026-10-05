@@ -122,7 +122,7 @@ const gateDecisions = {
   G1: 'Authorized standard profile, named owners, first vertical slice, evidence rules, and operations policy.',
   G2: 'Accepted CIM revision for shipment telemetry and excursion response.',
   G3: 'Accepted PIM after adding idempotency and late-event policies.',
-  G4: 'Accepted AWS PSM with manual private-ERP mapping explicitly owned.',
+  G4: 'Accepted PSM with manual private-ERP mapping explicitly owned.',
   G5: 'Increment 1 accepted; Increment 2 initially reworked, then accepted after retry-policy correction.',
   G6: 'Release 1 authorized; Release 2 rejected once at stop threshold, corrected, then authorized.',
   G7: 'Each promoted release was handed to Operations with SLO, runbook, rollback, cost, and support evidence.',

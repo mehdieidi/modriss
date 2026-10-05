@@ -49,7 +49,7 @@ Suggested caption:
 
 > **The MODRISS iterative model-driven delivery engine.** A bounded outcome
 > slice progresses through CIM discovery, transformation and three-way
-> reconciliation, PIM architecture, AWS PSM realization, reproducible EGL/EGX
+> reconciliation, PIM architecture, PSM realization, reproducible EGL/EGX
 > generation, implementation completion, integration, testing, and acceptance.
 > Gates G2–G5 accept exact revisions; generated output remains a draft until
 > reviewed, and findings are routed to the earliest authoritative source.

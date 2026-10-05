@@ -10,8 +10,8 @@ flowchart LR
     CV --> CP["CIM-to-PIM ETL"]
     CP --> P["PIM"]
     P --> PV["PIM validation"]
-    PV --> PP["PIM-to-AWS-PSM ETL"]
-    PP --> A["AWS PSM"]
+    PV --> PP["PIM-to-PSM ETL"]
+    PP --> A["PSM"]
     A --> AV["PSM validation"]
     AV --> G["EGX/EGL generation"]
     G --> O["AWS project"]
@@ -31,13 +31,13 @@ The [EVL reference](../evl/index.md) explains the rules. The [transformation ref
 
 The CIM-to-PIM ETL profile derives PIM scaffolding from a CIM model. It covers service boundaries, security concepts, data structures, behavior, contracts, processes, policies, integrations, deployment concepts, traces, and readiness. Concern-specific ETL modules use shared EOL helpers.
 
-## PIM to AWS PSM
+## PIM to PSM
 
-The PIM-to-AWS-PSM ETL profile derives AWS roots, stages, stacks, compute, APIs, storage, messaging, events, workflows, IAM, configuration, observability, and provider mappings. Post-processing resolves relationships and checks placement and readiness.
+The PIM-to-PSM ETL profile derives AWS roots, stages, stacks, compute, APIs, storage, messaging, events, workflows, IAM, configuration, observability, and provider mappings. Post-processing resolves relationships and checks placement and readiness.
 
 Both model-to-model stages support repeated upstream evolution through deterministic fresh generation and three-way EMF synchronization. The [iterative transformation guide](../architecture/iterative-model-transformations.md) explains the Base, Working, and NewGenerated lifecycle, merge rules, conflicts, and safety checks.
 
-## AWS PSM to artifacts
+## PSM to artifacts
 
 The generator creates a reviewable AWS serverless project. Depending on the model, the output can include:
 

@@ -8,11 +8,11 @@ import picocli.CommandLine.Model.CommandSpec;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Spec;
 
-/** Runs the repository-standard AWS PSM semantic validation profile. */
+/** Runs the repository-standard PSM semantic validation profile. */
 @Command(
     name = "psm",
     mixinStandardHelpOptions = true,
-    description = "Runs the repository AWS PSM semantic validation profile.")
+    description = "Runs the repository PSM semantic validation profile.")
 public final class PsmCommand implements Callable<Integer> {
 
   private final ValidationRunner runner = new ValidationRunner();

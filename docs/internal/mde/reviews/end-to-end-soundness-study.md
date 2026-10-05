@@ -5,7 +5,7 @@
 This document records findings from an end-to-end validation of the frontend REST workflow for a
 realistic serverless domain model. The study uses the browser API contract to create an isolated
 project, import a CIM model, validate it, transform it to PIM, review the generated manual backlog,
-refine it, transform it to AWS PSM, and review the second backlog.
+refine it, transform it to PSM, and review the second backlog.
 
 ## Findings recorded before implementation changes
 
@@ -72,7 +72,7 @@ Further findings will be appended here before their implementation changes.
 
 ### F-016: Multiple Choice defaults can silently overwrite one another
 
-- **Observed:** The PIM-to-AWS-PSM transition loop assigned `AslChoiceState.nextState` once for
+- **Observed:** The PIM-to-PSM transition loop assigned `AslChoiceState.nextState` once for
   every transition marked `defaultTransition`. If a PIM Choice had two defaults, iteration order
   determined which target was retained. An unresolved default target was also skipped without a
   target-specific blocker.
@@ -226,9 +226,9 @@ Further findings will be appended here before their implementation changes.
   intentional, visibly ellipsized summary. Preserve the full question in the generated readiness
   decision and ensure the frontend backlog continues to expose it as guidance.
 
-### F-003: AWS PSM manual-task titles expose rule IDs instead of reviewer questions
+### F-003: PSM manual-task titles expose rule IDs instead of reviewer questions
 
-- **Observed:** The PIM→AWS PSM output contains 47 required manual decisions, but the frontend-facing
+- **Observed:** The PIM→PSM output contains 47 required manual decisions, but the frontend-facing
   backlog titles are repeated identifiers such as `AWS_REGION_REQUIRED`,
   `LAMBDA_DLQ_TARGET_REQUIRED`, and `IAM_WILDCARD_REVIEW`. The full decision is only present in
   the rationale/question text.
@@ -256,18 +256,18 @@ Further findings will be appended here before their implementation changes.
 - **F-001:** Resolved in `XmiModelImportService`; the Smart Makerspace CIM fixture now imports.
 - **F-002:** Resolved in the CIM→PIM readiness helper; long titles now end in `...`, while the full
   question remains available to the reviewer.
-- **F-003:** Resolved in the PIM→AWS PSM readiness helper; the rule ID remains stable metadata, and
+- **F-003:** Resolved in the PIM→PSM readiness helper; the rule ID remains stable metadata, and
   the backlog title now contains the actionable reviewer question.
 - **F-004:** Resolved in the transformation synchronization coordinator; task completion metadata
   now survives regeneration and display-title changes.
-- **F-006:** Resolved in the PIM-to-AWS-PSM workflow mapping; function-backed Task states now retain
+- **F-006:** Resolved in the PIM-to-PSM workflow mapping; function-backed Task states now retain
   generated Lambda targets, while external adapter placeholders remain explicit blockers.
 - **F-007:** Resolved in the workflow ASL mapping and artifact renderer; supported durations and
   concrete JSONata conditions are preserved in both persisted ASL and generated artifact files.
-- **F-008:** Resolved in the PIM-to-AWS-PSM workflow mapping; every function-backed ChoiceStep now
+- **F-008:** Resolved in the PIM-to-PSM workflow mapping; every function-backed ChoiceStep now
   has a Lambda evaluator Task whose next state is the corresponding Choice state, and incoming
   transitions target the evaluator entry state.
-- **F-009:** Resolved in the PIM-to-AWS-PSM readiness mapping; generator-managed ZIP Lambda
+- **F-009:** Resolved in the PIM-to-PSM readiness mapping; generator-managed ZIP Lambda
   scaffolds now produce blocking implementation tasks.
 - **F-010:** Resolved in the ASL mapping and readiness boundary; JSONata is now scoped to Choice
   states, evaluator Task results are retained without replacing workflow input, and missing
@@ -300,7 +300,7 @@ Climate Relief Grants CIM fixture:
   at revision 3 and contains 3 workflows with 30 workflow steps, including 15 function-backed
   `TaskStep`/`ChoiceStep` references. Its semantic and structural validations returned valid with
   zero issues. The 40 earlier CIM→PIM review tasks were applied.
-- PIM→AWS PSM completed without unresolved synchronization conflicts after generated changes were
+- PIM→PSM completed without unresolved synchronization conflicts after generated changes were
   accepted. The PSM is revision 10 and contains 88 persisted manual decisions/backlog items: 44
   reviewed `DONE` items and 44 `OPEN` blockers. The generated AWS wiring is present, and previously
   reviewed decisions remain `DONE` across regeneration.

@@ -115,7 +115,7 @@ canonical owner, acceptance criteria, provenance, or retention obligation.
 | WP-13 | Threat, Privacy, Failure, and Cost Analysis | Security/Architecture/FinOps owners | scenarios, controls/treatments, residual risk, tests/monitors                                                 |
 | WP-14 | PIM Review and Readiness Record             | Assurance Reviewer                  | validation, platform mapping, trace, findings, accepted revision                                              |
 | WP-15 | PIM→PSM Transformation Run                  | Cloud Platform Engineer             | source/baseline/working/target revisions, profile, trace, conflicts, manual decisions                         |
-| WP-16 | AWS PSM Revision                            | Cloud Platform Engineer             | provider resources, configuration, relationships, IAM, networking, observability, deployment intent           |
+| WP-16 | PSM Revision                                | Cloud Platform Engineer             | provider resources, configuration, relationships, IAM, networking, observability, deployment intent           |
 | WP-17 | PSM Review and Readiness Record             | Assurance Reviewer                  | validation, trace, quotas/cost/security decisions, generation readiness                                       |
 | WP-18 | Generated Artifact Baseline and Manifest    | Cloud Platform Engineer             | output list/hashes, model and generator revisions, warnings, manual actions, artifact trace                   |
 
