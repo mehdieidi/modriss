@@ -120,6 +120,17 @@ button {
   padding-bottom: 3rem;
 }
 
+@media screen and (min-width: 76.25rem) {
+  .md-main__inner.md-grid {
+    width: calc(100% - 4rem);
+    max-width: 100rem;
+  }
+
+  .md-content__inner {
+    max-width: 64rem;
+  }
+}
+
 .md-typeset {
   color: var(--md-default-fg-color);
   font-size: 0.85rem;
