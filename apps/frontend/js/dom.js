@@ -210,6 +210,7 @@ export const el = {
   authBackToLoginBtn: document.getElementById("authBackToLoginBtn"),
   authSubmitBtn: document.getElementById("authSubmitBtn"),
   authError: document.getElementById("authError"),
+  authInfo: document.getElementById("authInfo"),
   authSuccess: document.getElementById("authSuccess"),
   profileOverlay: document.getElementById("profileOverlay"),
   profileDisplayNameInput: document.getElementById("profileDisplayNameInput"),

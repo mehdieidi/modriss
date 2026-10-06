@@ -109,12 +109,30 @@ function showAuthError(message) {
   el.authError.classList.remove("hidden");
 }
 
+function showAuthInfo(message) {
+  if (!el.authInfo) {
+    return;
+  }
+  el.authInfo.textContent = message;
+  el.authInfo.classList.remove("hidden");
+}
+
+function clearAuthInfo() {
+  if (!el.authInfo) {
+    return;
+  }
+  el.authInfo.textContent = "";
+  el.authInfo.classList.add("hidden");
+}
+
 function clearAuthError() {
   if (!el.authError) {
+    clearAuthInfo();
     return;
   }
   el.authError.textContent = "";
   el.authError.classList.add("hidden");
+  clearAuthInfo();
 }
 
 function showAuthSuccess(message) {
@@ -231,6 +249,7 @@ async function showAuthDialog() {
       el.authRegisterTabBtn?.removeEventListener("click", onRegisterMode);
       el.authForm?.removeEventListener("submit", onFormSubmit);
       el.authEmailInput?.removeEventListener("keydown", onKeyDown);
+      el.authEmailInput?.removeEventListener("input", onEmailInput);
       el.authPasswordInput?.removeEventListener("keydown", onKeyDown);
       el.authDisplayNameInput?.removeEventListener("keydown", onKeyDown);
       el.authConfirmPasswordInput?.removeEventListener("keydown", onKeyDown);
@@ -282,6 +301,11 @@ async function showAuthDialog() {
       clearAuthError();
       clearAuthSuccess();
       const email = (el.authEmailInput?.value || "").trim();
+      if (!email) {
+        showAuthInfo("Enter your email address below to request a password reset.");
+        el.authEmailInput?.focus();
+        return;
+      }
       if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
         showAuthError("Enter a valid email address");
         el.authEmailInput?.focus();
@@ -389,10 +413,13 @@ async function showAuthDialog() {
       }
     };
 
+    const onEmailInput = () => clearAuthInfo();
+
     el.authLoginTabBtn?.addEventListener("click", onLoginMode);
     el.authRegisterTabBtn?.addEventListener("click", onRegisterMode);
     el.authForm?.addEventListener("submit", onFormSubmit);
     el.authEmailInput?.addEventListener("keydown", onKeyDown);
+    el.authEmailInput?.addEventListener("input", onEmailInput);
     el.authPasswordInput?.addEventListener("keydown", onKeyDown);
     el.authDisplayNameInput?.addEventListener("keydown", onKeyDown);
     el.authConfirmPasswordInput?.addEventListener("keydown", onKeyDown);

@@ -544,6 +544,12 @@
   color: color-mix(in srgb, var(--danger) 86%, #fff 14%);
 }
 
+.auth-message-info {
+  border-color: color-mix(in srgb, var(--accent) 45%, transparent);
+  background: color-mix(in srgb, var(--accent-glow) 48%, transparent);
+  color: var(--text);
+}
+
 .auth-message-success {
   border-color: rgba(22, 180, 133, 0.45);
   background: rgba(22, 180, 133, 0.14);
