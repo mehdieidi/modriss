@@ -10,7 +10,7 @@ Source: `mde/metamodels/pim/pim-workflow.emf`.
 
 A provider-independent orchestration model. Its steps, transitions, error handling, waits, human tasks, compensation, and escalation describe the process before it becomes a Step Functions state machine.
 
-Direct supertypes: `TraceableElement`, `DeployableElement`, `InvocationTarget`, `WorkflowTarget`, `SubscriptionTarget`, `RoutingTarget`, `FlowEndpoint`, `PolicyTarget`, `ProtectedResource`, `ConfigurableElement`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `TraceableElement`, `DeployableElement`, `InvocationTarget`, `WorkflowTarget`, `SubscriptionTarget`, `RoutingTarget`, `FlowEndpoint`, `PolicyTarget`, `ProtectedResource`, `ConfigurableElement`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
@@ -40,7 +40,7 @@ Direct supertypes: `TraceableElement`, `DeployableElement`, `InvocationTarget`, 
 
 The common execution and control unit of a PIM workflow. It carries order, responsibility, optionality, and transition context for its specialized step types.
 
-Direct supertypes: `TraceableElement`, `FlowEndpoint`, `PolicyTarget`, `ProtectedResource`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `TraceableElement`, `FlowEndpoint`, `PolicyTarget`, `ProtectedResource`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
@@ -63,7 +63,7 @@ Direct supertypes: `TraceableElement`, `FlowEndpoint`, `PolicyTarget`, `Protecte
 
 The explicit entry node of a workflow graph. It establishes where execution begins and may associate a compensation policy that governs reversal if later work fails.
 
-Direct supertypes: `WorkflowStep`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `WorkflowStep`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
@@ -79,7 +79,7 @@ This class declares no attributes of its own. It inherits the attributes of its 
 
 A terminal workflow node representing successful completion. Incoming transitions to this node make the successful paths explicit for validation and state-machine generation.
 
-Direct supertypes: `WorkflowStep`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `WorkflowStep`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
@@ -93,7 +93,7 @@ This class declares no direct relationships.
 
 A terminal workflow node representing unsuccessful completion. It gives failure paths a deliberate destination instead of leaving termination implicit in an error handler or missing transition.
 
-Direct supertypes: `WorkflowStep`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `WorkflowStep`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
@@ -107,7 +107,7 @@ This class declares no direct relationships.
 
 A workflow step that performs work through a function, adapter, or nested workflow. It is the bridge between orchestration structure and an executable target.
 
-Direct supertypes: `WorkflowStep`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `WorkflowStep`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
@@ -128,7 +128,7 @@ This class declares no attributes of its own. It inherits the attributes of its 
 
 A workflow branch selected by a condition or decision expression. It exposes routing logic that would otherwise be hidden inside generated state-machine JSON.
 
-Direct supertypes: `WorkflowStep`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `WorkflowStep`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
@@ -147,7 +147,7 @@ Direct supertypes: `WorkflowStep`. Inherited attributes and marker capabilities 
 
 A workflow step that starts independent branches together. Its branch references and join behavior capture the concurrency decision at the provider-independent level.
 
-Direct supertypes: `WorkflowStep`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `WorkflowStep`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
@@ -163,7 +163,7 @@ This class declares no attributes of its own. It inherits the attributes of its 
 
 A workflow step that applies a nested process to items in a collection. It holds the collection, item mapping, concurrency, and result behavior needed for later provider mapping.
 
-Direct supertypes: `WorkflowStep`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `WorkflowStep`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
@@ -179,7 +179,7 @@ This class declares no attributes of its own. It inherits the attributes of its 
 
 A provider-independent workflow step that delays execution. Its duration and reason are architecture decisions because they affect retries, cost, human response, and long-running behavior.
 
-Direct supertypes: `WorkflowStep`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `WorkflowStep`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
@@ -198,7 +198,7 @@ Direct supertypes: `WorkflowStep`. Inherited attributes and marker capabilities 
 
 A workflow node that advances control without invoking computation or an external system. Its inherited input and output mappings can reshape workflow state between substantive steps.
 
-Direct supertypes: `WorkflowStep`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `WorkflowStep`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
@@ -212,7 +212,7 @@ This class declares no direct relationships.
 
 A directed edge between two workflow steps. Its condition or decision outcome selects the edge, while `defaultTransition` marks the fallback path when no guarded alternative matches.
 
-Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
@@ -235,7 +235,7 @@ Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilit
 
 A workflow response to a named failure. It connects error matching to a next step, retry or catch behavior, and the business recovery path.
 
-Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
@@ -257,7 +257,7 @@ Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilit
 
 One owned subgraph executed by a `ParallelStep`. Its local steps and transitions preserve each concurrent path as a complete graph with traceable nodes and edges.
 
-Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
@@ -275,7 +275,7 @@ This class declares no attributes of its own. It inherits the attributes of its 
 
 The iteration contract of a `MapStep`. It identifies the input collection, item projection, concurrency, distributed-execution choice, result writer, and the branch used to process each item.
 
-Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
@@ -297,7 +297,7 @@ Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilit
 
 The callback protocol for a task that pauses until external completion. It records where the task token is stored, which route may return it, the accepted completion events, and the applicable timeout.
 
-Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
@@ -317,7 +317,7 @@ Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilit
 
 The rule for reassigning or raising an unfinished human task. It states when escalation occurs, the elapsed-time threshold, and the principals who receive the escalated responsibility.
 
-Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
@@ -336,7 +336,7 @@ Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilit
 
 A workflow task whose completion depends on a person. It preserves the assignment, evidence, deadline, and completion-event expectations that an automated function cannot provide.
 
-Direct supertypes: `TraceableElement`, `PolicyTarget`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `TraceableElement`, `PolicyTarget`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
@@ -358,7 +358,7 @@ Direct supertypes: `TraceableElement`, `PolicyTarget`. Inherited attributes and 
 
 A human task with an explicit approval decision. It makes the approver, approval evidence, and positive or negative continuation visible in the workflow model.
 
-Direct supertypes: `HumanTask`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `HumanTask`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
@@ -375,7 +375,7 @@ This class declares no direct relationships.
 
 The recovery policy for work that must be reversed or compensated. It connects a failed or cancelled path to compensating functions, events, and escalation.
 
-Direct supertypes: `ArchitecturePolicy`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `ArchitecturePolicy`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 

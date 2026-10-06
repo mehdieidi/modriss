@@ -97,7 +97,7 @@ const PIM_PROCESS_PHASES_SOURCE = [
             primaryRole: "method-engineer",
             viewpoint: "dashboard",
             artifactIds: ["pim-artifact.architecture-posture"],
-            coverageGroups: ["shared-kernel", "shared-enums"],
+            coverageGroups: ["kernel", "shared-enums"],
             steps: [
               "Apply shared identity, annotation, traceability, expression, and lifecycle conventions across PIM elements.",
               "Record the revision, transformation provenance, and review-state convention for the service slice.",

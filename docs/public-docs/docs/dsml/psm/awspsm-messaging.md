@@ -8,7 +8,7 @@ Source: `mde/metamodels/psm/awspsm-messaging.emf`.
 
 An AWS SQS queue resource with delivery, retention, encryption, redrive, FIFO, and policy settings. It is the deployable realization of buffered asynchronous delivery.
 
-Direct supertypes: `AwsResource`, `S3NotificationDestination`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `AwsResource`, `S3NotificationDestination`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
@@ -40,7 +40,7 @@ Direct supertypes: `AwsResource`, `S3NotificationDestination`. Inherited attribu
 
 `SqsRedrivePolicy` is an AWS messaging record in the PSM. It carries the delivery setting for sqs redrive policy. Its declaration gives the concept a precise home through dead letter queue. Its references provide the wiring that lets generation assemble the corresponding AWS design.
 
-Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
@@ -58,7 +58,7 @@ Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilit
 
 `SqsRedriveAllowPolicy` is an AWS messaging record in the PSM. It carries the delivery setting for sqs redrive allow policy. Its declaration gives the concept a precise home through source queues. Its references provide the wiring that lets generation assemble the corresponding AWS design.
 
-Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
@@ -76,7 +76,7 @@ Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilit
 
 `SqsQueuePolicy` is an AWS messaging record in the PSM. It carries the delivery setting for sqs queue policy. Its declaration gives the concept a precise home through policy document, queues. Its references provide the wiring that lets generation assemble the corresponding AWS design.
 
-Direct supertypes: `AwsResource`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `AwsResource`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
@@ -95,7 +95,7 @@ Direct supertypes: `AwsResource`. Inherited attributes and marker capabilities a
 
 An AWS SNS topic resource that publishes messages to subscriptions. Its policy, encryption, ordering, filtering, and delivery settings define the fan-out boundary.
 
-Direct supertypes: `AwsResource`, `S3NotificationDestination`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `AwsResource`, `S3NotificationDestination`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
@@ -120,7 +120,7 @@ Direct supertypes: `AwsResource`, `S3NotificationDestination`. Inherited attribu
 
 `SnsSubscription` is an AWS messaging record in the PSM. It carries the delivery setting for sns subscription. Its declaration gives the concept a precise home through filter rules, topic, endpoint resource. Its references provide the wiring that lets generation assemble the corresponding AWS design.
 
-Direct supertypes: `AwsResource`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `AwsResource`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
@@ -146,7 +146,7 @@ Direct supertypes: `AwsResource`. Inherited attributes and marker capabilities a
 
 `SnsFilterRule` is an AWS messaging record in the PSM. It carries the delivery setting for sns filter rule. Its declaration gives the concept a precise home through its declared properties. Its references provide the wiring that lets generation assemble the corresponding AWS design.
 
-Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
@@ -164,7 +164,7 @@ This class declares no direct relationships.
 
 `SnsTopicPolicy` is an AWS messaging record in the PSM. It carries the delivery setting for sns topic policy. Its declaration gives the concept a precise home through policy document, topics. Its references provide the wiring that lets generation assemble the corresponding AWS design.
 
-Direct supertypes: `AwsResource`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `AwsResource`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 

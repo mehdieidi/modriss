@@ -86,7 +86,7 @@ software development process. The main defects were:
 - several change workflows referenced obsolete stage IDs, so change impact
   could not be routed reliably;
 - concept coverage was made green by silently assigning unowned concepts to a
-  generic readiness task; coverage is now explicit, including shared kernel,
+  generic readiness task; coverage is now explicit, including kernel,
   shared enums, shared readiness, and PSM platform-enum ownership;
 - roles and responsibilities were too narrow for product ownership, delivery
   coordination, quality, security, release, and service operation;

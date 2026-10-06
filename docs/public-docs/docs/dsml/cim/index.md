@@ -40,7 +40,7 @@ In the relationship tables:
 - An `opposite` is the reverse end of the same bidirectional Ecore reference. It is not a second business relationship.
 - A `val` declaration in Emfatic becomes a containment. A `ref` declaration becomes a non-containment reference unless the source explicitly declares containment through another construct.
 
-Every CIM element also inherits the shared kernel. `ModelElement` supplies the stable `id`, user-facing name, explanations, tags, lifecycle status, annotations, and trace links. `TraceableElement` adds source evidence, rationale, review information, and transformation provenance. These inherited features are documented in the [shared kernel reference](../shared-kernel.md).
+Every CIM element also inherits the kernel. `ModelElement` supplies the stable `id`, user-facing name, explanations, tags, lifecycle status, annotations, and trace links. `TraceableElement` adds source evidence, rationale, review information, and transformation provenance. These inherited features are documented in the [kernel reference](../shared-kernel.md).
 
 ## Module map
 
@@ -72,5 +72,5 @@ The CIM-to-PIM entry point is `mde/transformations/cim-to-pim/cim-to-pim.etl`. I
 - [CIM modeling methodology](../../guides/cim-modeling-methodology.md)
 - [CIM-to-PIM transformation overview](../../transformations/cim-to-pim/index.md)
 - [CIM EVL validation overview](../../evl/index.md)
-- [Shared kernel reference](../shared-kernel.md)
+- [Kernel reference](../shared-kernel.md)
 - [Sample CIM model](https://github.com/mehdieidi/modriss/blob/main/mde/samples/cim.xmi)

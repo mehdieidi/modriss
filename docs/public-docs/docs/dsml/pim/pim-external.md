@@ -10,7 +10,7 @@ Source: `mde/metamodels/pim/pim-external.emf`.
 
 A provider-independent description of a system outside the modeled application. It records endpoint, protocol, trust, network, rate, and credential expectations without embedding a vendor resource.
 
-Direct supertypes: `TraceableElement`, `ExternalCallTarget`, `PolicyTarget`, `ProtectedResource`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `TraceableElement`, `ExternalCallTarget`, `PolicyTarget`, `ProtectedResource`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
@@ -34,7 +34,7 @@ This class declares no direct relationships.
 
 The integration boundary used by the PIM to call or receive from an external endpoint. It captures protocol behavior, resilience, credentials, and the endpoint mapping in one place.
 
-Direct supertypes: `TraceableElement`, `DeployableElement`, `FlowEndpoint`, `InvocationTarget`, `FunctionTarget`, `SubscriptionTarget`, `RoutingTarget`, `ExternalCallTarget`, `ProtectedResource`, `PolicyTarget`, `ConfigurableElement`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `TraceableElement`, `DeployableElement`, `FlowEndpoint`, `InvocationTarget`, `FunctionTarget`, `SubscriptionTarget`, `RoutingTarget`, `ExternalCallTarget`, `ProtectedResource`, `PolicyTarget`, `ConfigurableElement`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 

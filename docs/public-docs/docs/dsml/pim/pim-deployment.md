@@ -10,7 +10,7 @@ Source: `mde/metamodels/pim/pim-deployment.emf`.
 
 A provider-independent service boundary that groups related PIM elements around a responsibility. It is a candidate unit of architecture and ownership, with deployment units kept as a separate decision.
 
-Direct supertypes: `TraceableElement`, `PolicyTarget`, `ConfigurableElement`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `TraceableElement`, `PolicyTarget`, `ConfigurableElement`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
@@ -40,7 +40,7 @@ Direct supertypes: `TraceableElement`, `PolicyTarget`, `ConfigurableElement`. In
 
 The record that places a PIM element inside a serverless service. It makes service ownership explicit when the same architecture also has deployment and integration boundaries.
 
-Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
@@ -59,7 +59,7 @@ Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilit
 
 A release and deployment boundary for PIM elements. It connects owned architecture content to an environment and release strategy without naming an AWS resource.
 
-Direct supertypes: `TraceableElement`, `PolicyTarget`, `ConfigurableElement`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `TraceableElement`, `PolicyTarget`, `ConfigurableElement`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
@@ -83,7 +83,7 @@ Direct supertypes: `TraceableElement`, `PolicyTarget`, `ConfigurableElement`. In
 
 A named execution context such as development, test, or production. It carries the assumptions and configuration targets that make the same architecture deployable in more than one setting.
 
-Direct supertypes: `TraceableElement`, `EnvironmentTarget`, `PolicyTarget`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `TraceableElement`, `EnvironmentTarget`, `PolicyTarget`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
@@ -106,7 +106,7 @@ Direct supertypes: `TraceableElement`, `EnvironmentTarget`, `PolicyTarget`. Inhe
 
 The provider-independent implementation preferences used when a PIM model is prepared for a target platform. It holds choices that guide mapping without turning the PIM itself into an AWS model.
 
-Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
@@ -132,7 +132,7 @@ This class declares no direct relationships.
 
 A capability expected from the target platform. It records what the architecture needs so a platform mapping can distinguish supported, substituted, and unresolved concerns.
 
-Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
@@ -153,7 +153,7 @@ Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilit
 
 The review record for mapping a PIM concern to platform capabilities. It captures evidence and unresolved gaps instead of treating provider mapping as automatic.
 
-Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 

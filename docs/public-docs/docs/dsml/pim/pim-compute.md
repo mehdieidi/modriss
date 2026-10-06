@@ -10,7 +10,7 @@ Source: `mde/metamodels/pim/pim-compute.emf`.
 
 The abstract base for executable PIM computation. It gives every compute subtype a responsibility statement and a workload profile, while the inherited endpoint and policy roles allow computation to participate in flows and receive protection policies.
 
-Direct supertypes: `TraceableElement`, `FlowEndpoint`, `PolicyTarget`, `ProtectedResource`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `TraceableElement`, `FlowEndpoint`, `PolicyTarget`, `ProtectedResource`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
@@ -33,7 +33,7 @@ This class declares no direct relationships.
 
 A provider-independent unit of serverless computation. It describes responsibility, state access, events, contracts, resilience, security, and runtime expectations without choosing Lambda or another provider runtime.
 
-Direct supertypes: `ComputeElement`, `DeployableElement`, `InvocationTarget`, `FunctionTarget`, `SubscriptionTarget`, `RoutingTarget`, `ConfigurableElement`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `ComputeElement`, `DeployableElement`, `InvocationTarget`, `FunctionTarget`, `SubscriptionTarget`, `RoutingTarget`, `ConfigurableElement`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
@@ -77,7 +77,7 @@ Direct supertypes: `ComputeElement`, `DeployableElement`, `InvocationTarget`, `F
 
 The condition or source that invokes a function or workflow. It keeps invocation intent, enablement, input, and target explicit instead of hiding the entry point in an integration diagram.
 
-Direct supertypes: `TraceableElement`, `PolicyTarget`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `TraceableElement`, `PolicyTarget`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 

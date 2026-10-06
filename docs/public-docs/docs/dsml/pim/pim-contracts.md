@@ -10,7 +10,7 @@ Source: `mde/metamodels/pim/pim-contracts.emf`.
 
 A reusable description of structured data. It is the shared vocabulary used by API, event, message, function, and data-model contracts, with fields and constraints kept explicit.
 
-Direct supertypes: `TraceableElement`, `PolicyTarget`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `TraceableElement`, `PolicyTarget`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
@@ -34,7 +34,7 @@ Direct supertypes: `TraceableElement`, `PolicyTarget`. Inherited attributes and 
 
 One named member of a schema. It carries type, requiredness, nullability, sensitivity, examples, defaults, bounds, and links to nested or enumerated structure.
 
-Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
@@ -74,7 +74,7 @@ Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilit
 
 A permitted literal for an enumerated schema field. Keeping literals as model elements allows their meaning and field ownership to be reviewed rather than buried in a string.
 
-Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
@@ -94,7 +94,7 @@ Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilit
 
 A field-level validation rule expressed in the shared, language-neutral expression model. Its message explains the failure to a contract consumer, while `expression` carries the condition that a validator or later transformation can interpret.
 
-Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
@@ -115,7 +115,7 @@ Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilit
 
 A validation rule that applies to a schema as a whole, including rules that compare several fields. The textual language and expression preserve the portable contract, and `expressionModel` can hold the same rule as a structured kernel expression.
 
-Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
@@ -137,7 +137,7 @@ Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilit
 
 The input, output, and error contract at a function boundary. It gives a function a stable interface for callers, validation, correlation, and idempotency decisions.
 
-Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
@@ -164,7 +164,7 @@ Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilit
 
 The collection of request, response, and error schemas associated with an API. It separates payload compatibility from the route or transport that exposes it.
 
-Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
@@ -185,7 +185,7 @@ Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilit
 
 The metadata wrapper around an event payload. It gives correlation, causation, identity, time, and version information a defined place alongside the business data.
 
-Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
@@ -209,7 +209,7 @@ This class declares no direct relationships.
 
 A named asynchronous contract in the PIM. It connects event meaning to a schema and envelope, then allows functions, channels, flows, and object stores to publish or consume it.
 
-Direct supertypes: `TraceableElement`, `FlowEndpoint`, `PolicyTarget`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `TraceableElement`, `FlowEndpoint`, `PolicyTarget`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 

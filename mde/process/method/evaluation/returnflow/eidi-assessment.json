@@ -460,7 +460,7 @@
       "type": "Scale",
       "design": "A",
       "realization": "B",
-      "reason": "Shared kernel TraceModel/TraceLink and transformation traces support links; change-preserved trace across independently refined models was not executed in this audit.",
+      "reason": "Kernel TraceModel/TraceLink and transformation traces support links; change-preserved trace across independently refined models was not executed in this audit.",
       "empiricalEffectiveness": "not evaluated",
       "id": "M22",
       "source": "Table 2, p.563"

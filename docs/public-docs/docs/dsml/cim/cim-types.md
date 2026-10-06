@@ -2,7 +2,7 @@
 
 Source: `mde/metamodels/cim/cim-types.emf`.
 
-The enumerations in this file are closed vocabularies. They keep important distinctions explicit and make EVL checks and ETL mappings predictable. A value should be selected because it describes the business meaning of the modeled element. It should not be used as a substitute for the explanation fields inherited from the shared kernel.
+The enumerations in this file are closed vocabularies. They keep important distinctions explicit and make EVL checks and ETL mappings predictable. A value should be selected because it describes the business meaning of the modeled element. It should not be used as a substitute for the explanation fields inherited from the kernel.
 
 ## `RequirementType`
 

@@ -1,6 +1,6 @@
 # Metamodel Relations
 
-## Shared Kernel
+## Kernel
 
 ```mermaid
 classDiagram

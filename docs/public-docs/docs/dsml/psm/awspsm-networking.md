@@ -8,7 +8,7 @@ Source: `mde/metamodels/psm/awspsm-networking.emf`.
 
 `VpcAttachmentConfig` is an AWS networking record in the PSM. It carries the placement or traffic setting for vpc attachment config. Its declaration gives the concept a precise home through required endpoints, vpc, subnets. Its references provide the wiring that lets generation assemble the corresponding AWS design.
 
-Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
@@ -33,7 +33,7 @@ Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilit
 
 `VpcEndpointReference` is an AWS networking record in the PSM. It carries the placement or traffic setting for vpc endpoint reference. Its declaration gives the concept a precise home through its declared properties. Its references provide the wiring that lets generation assemble the corresponding AWS design.
 
-Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
@@ -51,7 +51,7 @@ This class declares no direct relationships.
 
 An AWS VPC resource that groups subnets, security groups, and endpoints into a network boundary. It makes private connectivity and placement inspectable in the PSM.
 
-Direct supertypes: `AwsResource`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `AwsResource`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
@@ -69,7 +69,7 @@ This class declares no direct relationships.
 
 `Subnet` is an AWS networking record in the PSM. It carries the placement or traffic setting for subnet. Its declaration gives the concept a precise home through vpc. Its references provide the wiring that lets generation assemble the corresponding AWS design.
 
-Direct supertypes: `AwsResource`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `AwsResource`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
@@ -90,7 +90,7 @@ Direct supertypes: `AwsResource`. Inherited attributes and marker capabilities a
 
 `VpcEndpoint` is an AWS networking record in the PSM. It carries the placement or traffic setting for vpc endpoint. Its declaration gives the concept a precise home through vpc, subnets, security groups. Its references provide the wiring that lets generation assemble the corresponding AWS design.
 
-Direct supertypes: `AwsResource`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `AwsResource`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
@@ -112,7 +112,7 @@ Direct supertypes: `AwsResource`. Inherited attributes and marker capabilities a
 
 An AWS security group attached to a VPC. Its ingress and egress rules define the stateful network permissions granted to attached resources.
 
-Direct supertypes: `AwsResource`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `AwsResource`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
@@ -133,7 +133,7 @@ Direct supertypes: `AwsResource`. Inherited attributes and marker capabilities a
 
 `SecurityGroupRule` is an AWS networking record in the PSM. It carries the placement or traffic setting for security group rule. Its declaration gives the concept a precise home through source security group. Its references provide the wiring that lets generation assemble the corresponding AWS design.
 
-Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 

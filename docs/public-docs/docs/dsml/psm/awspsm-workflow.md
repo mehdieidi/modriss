@@ -8,7 +8,7 @@ Source: `mde/metamodels/psm/awspsm-workflow.emf`.
 
 An AWS Step Functions state-machine resource. It binds the provider-independent workflow to an ASL document, IAM role, logging, tracing, aliases, and SAM event sources.
 
-Direct supertypes: `AwsResource`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `AwsResource`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
@@ -36,7 +36,7 @@ Direct supertypes: `AwsResource`. Inherited attributes and marker capabilities a
 
 The structured Amazon States Language document owned by a Step Functions state machine. It supplies the start state and the contained state graph that generation renders as JSON.
 
-Direct supertypes: `StructuredDocument`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `StructuredDocument`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
@@ -56,7 +56,7 @@ Direct supertypes: `StructuredDocument`. Inherited attributes and marker capabil
 
 The common state representation for an ASL document. It carries paths, transitions, timeout, retry, catch, branch, map, and invoked-resource details shared by concrete state types.
 
-Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
@@ -92,7 +92,7 @@ Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilit
 
 `AslPassState` is a Step Functions deployment record in the PSM. It carries the orchestration setting for asl pass state. Its declaration gives the concept a precise home through its declared properties. Its references provide the wiring that lets generation assemble the corresponding AWS design.
 
-Direct supertypes: `AslState`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `AslState`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
@@ -106,7 +106,7 @@ This class declares no direct relationships.
 
 An ASL task state that invokes work or an AWS integration. It is where the generated state machine connects an orchestration step to a function or resource.
 
-Direct supertypes: `AslState`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `AslState`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
@@ -120,7 +120,7 @@ This class declares no direct relationships.
 
 An ASL choice state that selects a next state using choice rules. It gives generated routing a structured home instead of leaving the branch as raw JSON.
 
-Direct supertypes: `AslState`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `AslState`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
@@ -134,7 +134,7 @@ This class declares no direct relationships.
 
 `AslWaitState` is a Step Functions deployment record in the PSM. It carries the orchestration setting for asl wait state. Its declaration gives the concept a precise home through its declared properties. Its references provide the wiring that lets generation assemble the corresponding AWS design.
 
-Direct supertypes: `AslState`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `AslState`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
@@ -148,7 +148,7 @@ This class declares no direct relationships.
 
 `AslSucceedState` is a Step Functions deployment record in the PSM. It carries the orchestration setting for asl succeed state. Its declaration gives the concept a precise home through its declared properties. Its references provide the wiring that lets generation assemble the corresponding AWS design.
 
-Direct supertypes: `AslState`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `AslState`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
@@ -162,7 +162,7 @@ This class declares no direct relationships.
 
 `AslFailState` is a Step Functions deployment record in the PSM. It carries the orchestration setting for asl fail state. Its declaration gives the concept a precise home through its declared properties. Its references provide the wiring that lets generation assemble the corresponding AWS design.
 
-Direct supertypes: `AslState`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `AslState`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
@@ -176,7 +176,7 @@ This class declares no direct relationships.
 
 An ASL parallel state that runs branches concurrently. Its branch containments preserve the parallel structure that came from the PIM workflow.
 
-Direct supertypes: `AslState`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `AslState`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
@@ -190,7 +190,7 @@ This class declares no direct relationships.
 
 An ASL map state that processes collection items. Its map configuration controls item selection, processor branches, concurrency, distribution, and result writing.
 
-Direct supertypes: `AslState`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `AslState`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
@@ -204,7 +204,7 @@ This class declares no direct relationships.
 
 `AslBranch` is a Step Functions deployment record in the PSM. It carries the orchestration setting for asl branch. Its declaration gives the concept a precise home through states. Its references provide the wiring that lets generation assemble the corresponding AWS design.
 
-Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
@@ -222,7 +222,7 @@ Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilit
 
 `AslMapConfig` is a Step Functions deployment record in the PSM. It carries the orchestration setting for asl map config. Its declaration gives the concept a precise home through item processor. Its references provide the wiring that lets generation assemble the corresponding AWS design.
 
-Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
@@ -244,7 +244,7 @@ Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilit
 
 An ASL retry rule attached to a state. It specifies which errors are retried and how interval, attempts, backoff, delay, and jitter are applied.
 
-Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
@@ -265,7 +265,7 @@ This class declares no direct relationships.
 
 An ASL catch rule that redirects a failed state to a recovery state. It records matching errors and the result path used to preserve failure data.
 
-Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
@@ -284,7 +284,7 @@ Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilit
 
 `AslChoiceRule` is a Step Functions deployment record in the PSM. It carries the orchestration setting for asl choice rule. Its declaration gives the concept a precise home through next state. Its references provide the wiring that lets generation assemble the corresponding AWS design.
 
-Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
@@ -303,7 +303,7 @@ Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilit
 
 `StepFunctionLoggingConfig` is a Step Functions deployment record in the PSM. It carries the orchestration setting for step function logging config. Its declaration gives the concept a precise home through log group. Its references provide the wiring that lets generation assemble the corresponding AWS design.
 
-Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
@@ -322,7 +322,7 @@ Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilit
 
 `StepFunctionTracingConfig` is a Step Functions deployment record in the PSM. It carries the orchestration setting for step function tracing config. Its declaration gives the concept a precise home through its declared properties. Its references provide the wiring that lets generation assemble the corresponding AWS design.
 
-Direct supertypes: `TracingConfig`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `TracingConfig`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
@@ -336,7 +336,7 @@ This class declares no direct relationships.
 
 A SAM event declaration owned by a Step Functions state machine. Its type selects the trigger mechanism and its native properties retain the provider configuration.
 
-Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 

@@ -10,7 +10,7 @@ Source: `mde/metamodels/pim/pim-root.emf`.
 
 The root of one provider-independent serverless architecture. It collects deployment structure, compute, APIs, integrations, data, contracts, workflows, policies, security, configuration, traceability, and readiness evidence.
 
-Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 

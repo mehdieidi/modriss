@@ -8,7 +8,7 @@ The PIM metamodel keeps several decisions separate because they answer different
 
 Begin with the root and deployment pages. Decide which PIM elements belong to a service and which belong to a deployment unit before refining detailed integrations. Use compute, API, contracts, data, and workflow pages together because a function is meaningful only in relation to its entry points, state, payloads, and failure paths. Use policy, security, configuration, and external pages to record cross-cutting decisions that should survive provider mapping.
 
-Each class section includes declared attributes, accepted values or examples, and relationships. Attributes inherited from the shared kernel are documented once and apply to every subtype. The reference describes the relationship between architecture objects as well as the objects themselves, since those connections are what ETL uses to construct a provider-specific design.
+Each class section includes declared attributes, accepted values or examples, and relationships. Attributes inherited from the kernel are documented once and apply to every subtype. The reference describes the relationship between architecture objects as well as the objects themselves, since those connections are what ETL uses to construct a provider-specific design.
 
 ## Module map
 

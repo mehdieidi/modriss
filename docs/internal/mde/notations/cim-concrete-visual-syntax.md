@@ -7,7 +7,7 @@ efforts.
 The configuration is implemented in
 [`mde/notation/cim.cvs.json`](../mde/notation/cim.cvs.json). The decisions below
 are based on the Ecore generated from the eight CIM Emfatic modules and the
-shared kernel, not on the names that happened to exist in the previous CVS.
+kernel, not on the names that happened to exist in the previous CVS.
 
 ## 1. What CIM is for
 
@@ -121,7 +121,7 @@ and compliance constraints. `Risk`, `Assumption`, and `Hotspot` capture
 uncertainty and transformation blockers. `TransformationProfile` stores
 cross-cutting transformation preferences.
 
-The shared kernel supplies traceability, expressions, multiplicities,
+The kernel supplies traceability, expressions, multiplicities,
 annotations, readiness findings/checks, and manual decisions. These are
 supporting model structures. They are available through their owner or a
 dedicated overlay rather than being mixed into every modeling palette.

@@ -10,7 +10,7 @@ Source: `mde/metamodels/pim/pim-integration.emf`.
 
 The common base for provider-independent integration resources. Its inherited endpoint, policy-target, and protected-resource roles let channels and schedules enter flows, receive operational policies, and be governed as architectural boundaries.
 
-Direct supertypes: `TraceableElement`, `FlowEndpoint`, `PolicyTarget`, `ProtectedResource`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `TraceableElement`, `FlowEndpoint`, `PolicyTarget`, `ProtectedResource`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
@@ -26,7 +26,7 @@ This class declares no direct relationships.
 
 A provider-independent route for asynchronous event delivery. It separates the channel's delivery semantics from the functions, workflows, or external systems that use it.
 
-Direct supertypes: `IntegrationElement`, `DeployableElement`, `InvocationSource`, `SubscriptionTarget`, `RoutingTarget`, `EventCarrier`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `IntegrationElement`, `DeployableElement`, `InvocationSource`, `SubscriptionTarget`, `RoutingTarget`, `EventCarrier`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
@@ -58,7 +58,7 @@ Direct supertypes: `IntegrationElement`, `DeployableElement`, `InvocationSource`
 
 A buffered asynchronous channel with delivery and retry expectations. It models ordering, visibility, dead-letter, retention, and consumer behavior before an AWS queue is selected.
 
-Direct supertypes: `EventChannel`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `EventChannel`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
@@ -82,7 +82,7 @@ Direct supertypes: `EventChannel`. Inherited attributes and marker capabilities 
 
 A fan-out publication channel. It expresses ordering, delivery, filtering, and subscription intent for a set of consumers.
 
-Direct supertypes: `EventChannel`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `EventChannel`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
@@ -101,7 +101,7 @@ Direct supertypes: `EventChannel`. Inherited attributes and marker capabilities 
 
 A named routing boundary for events. It keeps event ownership and rule-based delivery distinct from a queue or a direct function trigger.
 
-Direct supertypes: `EventChannel`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `EventChannel`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
@@ -119,7 +119,7 @@ Direct supertypes: `EventChannel`. Inherited attributes and marker capabilities 
 
 A time-based source of invocations. It states when and how often work should start, as well as whether the schedule is enabled and what it targets.
 
-Direct supertypes: `IntegrationElement`, `DeployableElement`, `InvocationSource`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `IntegrationElement`, `DeployableElement`, `InvocationSource`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
@@ -140,7 +140,7 @@ Direct supertypes: `IntegrationElement`, `DeployableElement`, `InvocationSource`
 
 A consumer's enrollment in an event channel. It carries protocol, filtering, delivery, retry, dead-letter, and endpoint decisions for one relationship between a channel and a consumer.
 
-Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
@@ -163,7 +163,7 @@ Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilit
 
 A rule that selects events and directs them to integration targets. It makes event-pattern, enablement, retry, and target behavior explicit.
 
-Direct supertypes: `TraceableElement`, `InvocationSource`, `PolicyTarget`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `TraceableElement`, `InvocationSource`, `PolicyTarget`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
@@ -187,7 +187,7 @@ Direct supertypes: `TraceableElement`, `InvocationSource`, `PolicyTarget`. Inher
 
 The abstract common form for a PIM interaction path. It provides purpose, contract, direction, resilience, and traceability fields shared by request-response and event-oriented flows.
 
-Direct supertypes: `TraceableElement`, `PolicyTarget`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `TraceableElement`, `PolicyTarget`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
@@ -211,7 +211,7 @@ Direct supertypes: `TraceableElement`, `PolicyTarget`. Inherited attributes and 
 
 A synchronous or asynchronous request-response connection between a source and target. It records the request and response contracts and the API context that carries them.
 
-Direct supertypes: `Flow`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `Flow`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
@@ -229,7 +229,7 @@ Direct supertypes: `Flow`. Inherited attributes and marker capabilities are docu
 
 A flow driven by one declared event type. It makes event delivery, filtering, and downstream handling visible across the integration model.
 
-Direct supertypes: `Flow`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `Flow`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
@@ -246,7 +246,7 @@ This class declares no attributes of its own. It inherits the attributes of its 
 
 A message exchange that carries a schema through a channel or external boundary. It keeps message shape and delivery purpose explicit.
 
-Direct supertypes: `Flow`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `Flow`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
@@ -263,7 +263,7 @@ This class declares no attributes of its own. It inherits the attributes of its 
 
 A flow that records publication through one topic and the subscriptions that distribute it. It exposes the intended fan-out topology independently of the concrete topic and subscription resources selected later.
 
-Direct supertypes: `Flow`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `Flow`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
@@ -280,7 +280,7 @@ This class declares no attributes of its own. It inherits the attributes of its 
 
 A flow whose interaction is coordinated by a `Workflow`. The reference identifies the orchestration boundary responsible for sequencing the participating endpoints.
 
-Direct supertypes: `Flow`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `Flow`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
@@ -296,7 +296,7 @@ This class declares no attributes of its own. It inherits the attributes of its 
 
 A flow that crosses the modeled system boundary through an `ExternalAdapter`. It keeps the architectural interaction tied to the adapter that owns protocol, credential, timeout, and resilience concerns.
 
-Direct supertypes: `Flow`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `Flow`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 

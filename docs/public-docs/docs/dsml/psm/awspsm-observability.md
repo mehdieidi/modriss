@@ -8,7 +8,7 @@ Source: `mde/metamodels/psm/awspsm-observability.emf`.
 
 An AWS CloudWatch log group resource. It gives functions, APIs, workflows, and subscription filters a retention, encryption, class, and operational log destination.
 
-Direct supertypes: `AwsResource`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `AwsResource`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
@@ -31,7 +31,7 @@ Direct supertypes: `AwsResource`. Inherited attributes and marker capabilities a
 
 A rule that scans one log group for matching events and turns those matches into one or more CloudWatch metric observations.
 
-Direct supertypes: `AwsResource`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `AwsResource`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
@@ -51,7 +51,7 @@ Direct supertypes: `AwsResource`. Inherited attributes and marker capabilities a
 
 The definition of a metric emitted by a log metric filter, including its namespace, value expression, default, unit, and optional dimensions.
 
-Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
@@ -73,7 +73,7 @@ Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilit
 
 A forwarding rule for selected log events. It connects one log group with a destination and, where necessary, the IAM role used for delivery.
 
-Direct supertypes: `AwsResource`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `AwsResource`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
@@ -95,7 +95,7 @@ Direct supertypes: `AwsResource`. Inherited attributes and marker capabilities a
 
 A CloudWatch alarm resource derived from an operational threshold. It records the metric, comparison, evaluation window, actions, and affected resource used to detect a condition.
 
-Direct supertypes: `AwsResource`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `AwsResource`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
@@ -131,7 +131,7 @@ Direct supertypes: `AwsResource`. Inherited attributes and marker capabilities a
 
 A CloudWatch dimension attached to an AWS metric or alarm. It identifies the dimension name and value that let operators distinguish one resource or signal series from another.
 
-Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
@@ -149,7 +149,7 @@ Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilit
 
 An alarm whose state is calculated from a Boolean rule over other alarms. Its action references give structural counterparts to the ARN lists.
 
-Direct supertypes: `AwsResource`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `AwsResource`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
@@ -170,7 +170,7 @@ Direct supertypes: `AwsResource`. Inherited attributes and marker capabilities a
 
 A deployable CloudWatch dashboard whose JSON body defines the widgets and operational view presented to users.
 
-Direct supertypes: `AwsResource`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `AwsResource`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 

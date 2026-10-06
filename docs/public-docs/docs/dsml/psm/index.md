@@ -8,7 +8,7 @@ The model is organized around AWS resources and the documents that configure the
 
 Start with the root, core, and stage pages to understand the deployment frame. Then follow the resource that realizes the PIM element you are refining. Read security, networking, storage, messaging, events, workflow, and observability pages together when a resource crosses service boundaries. The integration-view page is useful for checking that the references among those resources describe one coherent path.
 
-Each class section includes declared attributes, accepted values or examples, and relationships. Attributes inherited from the shared kernel are documented once and apply to every subtype. Provider details are intentionally kept in the class that owns them, while shared documents such as IAM policies and ASL definitions remain structured model elements that can be referenced from their resource.
+Each class section includes declared attributes, accepted values or examples, and relationships. Attributes inherited from the kernel are documented once and apply to every subtype. Provider details are intentionally kept in the class that owns them, while shared documents such as IAM policies and ASL definitions remain structured model elements that can be referenced from their resource.
 
 ## Module map
 

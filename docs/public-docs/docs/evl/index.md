@@ -23,12 +23,12 @@ A guard does not make a rule weaker; it says which variant the rule is about. Fo
 
 | Profile       | Entry EVL                                        | Scope                                                                                                               | Rules |
 | ------------- | ------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------- | ----: |
-| Shared kernel | `mde/validation/shared/kernel-constraints.evl`   | Identity and traceability invariants imported by the level profiles                                                 |     2 |
+| Kernel | `mde/validation/shared/kernel-constraints.evl`   | Identity and traceability invariants imported by the level profiles                                                 |     2 |
 | CIM           | `mde/validation/cim/cim-semantic-validation.evl` | Business intent, domain, behavior, process, policy, governance, and readiness                                       |   158 |
 | PIM           | `mde/validation/pim/pim-semantic-validation.evl` | Provider-independent serverless architecture, contracts, integration, security, workflow, policy, and readiness     |   185 |
 | PSM           | `mde/validation/psm/psm-semantic-validation.evl` | AWS resources, SAM/CloudFormation, Lambda, APIs, events, storage, security, workflow, networking, and relationships |   201 |
 
-The level entry files import the shared kernel rules and their concern-specific modules. Validate a model after structural parsing/conformance and before the transformation or generation gate that depends on its semantics.
+The level entry files import the kernel rules and their concern-specific modules. Validate a model after structural parsing/conformance and before the transformation or generation gate that depends on its semantics.
 
 ## Rule map
 
@@ -63,7 +63,7 @@ The level entry files import the shared kernel rules and their concern-specific 
 | PSM: Security                     | IAM, KMS, Secrets Manager, and SSM rules enforce the security properties that are too important to leave to template conventions: trust and permission statements, least privilege evidence, key rotation, secret sources, secure parameter types, and safe production defaults.                                                               | [PSM: Security](psm/security.md)                                  |    17 |
 | PSM: Storage                      | DynamoDB and S3 rules validate key coverage, capacity-mode consistency, index definitions, TTL/encryption/backup choices, public-access blocking, notifications, and replication. These checks are aimed at preventing deployable templates that still lose or expose data.                                                                    | [PSM: Storage](psm/storage.md)                                    |    18 |
 | PSM: Workflow                     | Step Functions and ASL rules protect the executable state graph. They verify definition sources, entry and terminal states, state naming, task targets, JSONPath/JSONata boundaries, waits, choices, retries, and catches so a generated state machine is not merely syntactically shaped but operationally startable.                         | [PSM: Workflow](psm/workflow.md)                                  |    20 |
-| Shared kernel: Kernel Constraints | The shared kernel rules protect invariants that every DSML relies on: stable identity, traceability, and a usable correspondence between model elements. They run in each level's entry profile, so a model that is meaningful at CIM is still required to remain addressable and traceable after refinement.                                  | [Shared kernel: Kernel Constraints](shared/kernel-constraints.md) |     2 |
+| Kernel constraints | The kernel rules protect invariants that every DSML relies on: stable identity, traceability, and a usable correspondence between model elements. They run in each level's entry profile, so a model that is meaningful at CIM is still required to remain addressable and traceable after refinement.                                  | [Kernel constraints](shared/kernel-constraints.md) |     2 |
 
 ## How this relates to the assistant
 

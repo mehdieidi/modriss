@@ -18,7 +18,7 @@ java -jar tools/mde-etl-cli/target/mde-etl-cli-0.0.1-SNAPSHOT.jar run \
 ```
 
 Keep `KERNEL` on the target aliases only. The source and target combined Ecore files both contain
-the shared kernel package, and assigning the same alias to both sides creates an ambiguous Epsilon
+the kernel package, and assigning the same alias to both sides creates an ambiguous Epsilon
 model group when the transformation creates target-side trace, readiness, and structured-document
 elements.
 

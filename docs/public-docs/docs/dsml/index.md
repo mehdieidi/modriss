@@ -34,7 +34,7 @@ EVL supplies semantic validation. It checks relationships between features and a
 - [CIM reference](cim/index.md): begin with business and domain vocabulary.
 - [PIM reference](pim/index.md): refine behavior into generic serverless architecture.
 - [PSM reference](psm/index.md): bind the architecture to AWS resources and deployment details.
-- [Shared kernel reference](shared-kernel.md): find inherited identity, lifecycle, traceability, expression, and readiness attributes.
+- [Kernel reference](shared-kernel.md): find inherited identity, lifecycle, traceability, expression, and readiness attributes.
 - [Capability-increment process](../guides/end-to-end-modeling-methodology.md): see how the process coordinates work across all three modeling levels.
 - [Validation, transformation, and generation](../concepts/pipeline.md): understand where EVL, ETL, EGX, and EGL act on the models.
 - [EVL semantic validation reference](../evl/index.md): understand every semantic constraint and critique, its applicability, its diagnostic, and the repair path.
@@ -47,7 +47,7 @@ Each class section begins with its role in the DSML and names its direct superty
 
 **Relationships** lists every `val` containment and `ref` reference, including multiplicity, opposite role where declared, and whether the relationship is derived or read-only. A containment answers “which object owns this part of the model?” A reference answers “which separately modeled concept does this object depend on or describe?” That difference matters during transformation, synchronization, and deletion.
 
-Inherited attributes are not copied into every class table because that would obscure the class-specific vocabulary and make the reference difficult to maintain. A class section names all direct supertypes and links to the shared-kernel page; the inherited fields remain part of that class's effective Ecore API.
+Inherited attributes are not copied into every class table because that would obscure the class-specific vocabulary and make the reference difficult to maintain. A class section names all direct supertypes and links to the kernel page; the inherited fields remain part of that class's effective Ecore API.
 
 ## Source-of-truth boundaries
 
@@ -57,7 +57,7 @@ For chatbot assistant apply, repair, and commit paths, generated model output is
 
 ## Coverage
 
-The reference covers the current repository definitions: 56 CIM classes, 110 PIM classes, 214 PSM classes, and the shared kernel used by all three levels. It includes the declared attributes and relationships in every module. When a metamodel changes, update the affected semantic prose together with the `.emf` declaration, the combined Ecore model, EVL rules, transformations, notation, samples, and generation behavior.
+The reference covers the current repository definitions: 56 CIM classes, 110 PIM classes, 214 PSM classes, and the kernel used by all three levels. It includes the declared attributes and relationships in every module. When a metamodel changes, update the affected semantic prose together with the `.emf` declaration, the combined Ecore model, EVL rules, transformations, notation, samples, and generation behavior.
 
 ## Additional resources
 

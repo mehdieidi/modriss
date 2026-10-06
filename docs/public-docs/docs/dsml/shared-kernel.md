@@ -1,6 +1,6 @@
-# Shared kernel reference
+# Kernel reference
 
-The shared kernel is the common semantic foundation of CIM, PIM, and PSM. It gives elements at every modeling level the same concepts for identity, explanation, provenance, lifecycle state, trace links, expressions, and readiness evidence. This vocabulary allows an element to remain identifiable while it is refined from a business concept into a provider-independent design and then into an AWS resource.
+The kernel is the common semantic foundation of CIM, PIM, and PSM. It gives elements at every modeling level the same concepts for identity, explanation, provenance, lifecycle state, trace links, expressions, and readiness evidence. This vocabulary allows an element to remain identifiable while it is refined from a business concept into a provider-independent design and then into an AWS resource.
 
 The kernel is an Ecore package with namespace URI `https://modriss.org/kernel/1.0`. Each DSML imports it instead of reproducing these concepts. An inherited feature such as `rationale` therefore has the same structural meaning in a CIM command, a PIM function, and a PSM Lambda resource.
 
@@ -529,4 +529,4 @@ The shared profile enforces two minimum invariants:
 
 CIM and PIM add contextual rules for names, provenance, complete trace endpoint pairs, readiness consistency, actionable findings, failed-check remediation, and ownership of blocking decisions. These rules do not change Ecore multiplicity. They evaluate whether a structurally conforming model is semantically suitable for a particular workflow.
 
-For exact guards and diagnostics, see [Shared kernel validation](../evl/shared/kernel-constraints.md), together with the CIM and PIM EVL pages for their level-specific kernel contexts.
+For exact guards and diagnostics, see [Kernel validation](../evl/shared/kernel-constraints.md), together with the CIM and PIM EVL pages for their level-specific kernel contexts.

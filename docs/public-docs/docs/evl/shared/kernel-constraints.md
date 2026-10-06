@@ -1,6 +1,6 @@
-# Shared kernel validation: Kernel Constraints
+# Kernel constraints
 
-The shared kernel rules protect invariants that every DSML relies on: stable identity, traceability, and a usable correspondence between model elements. They run in each level's entry profile, so a model that is meaningful at CIM is still required to remain addressable and traceable after refinement.
+The kernel rules protect invariants that every DSML relies on: stable identity, traceability, and a usable correspondence between model elements. They run in each level's entry profile, so a model that is meaningful at CIM is still required to remain addressable and traceable after refinement.
 
 Source profile: `mde/validation/shared/kernel-constraints.evl`.
 

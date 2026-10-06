@@ -8,7 +8,7 @@ Source: `mde/metamodels/psm/awspsm-security.emf`.
 
 An AWS IAM role that a service or trusted principal can assume. Its trust policy, inline policies, managed policies, and naming explain the permissions boundary used by generated resources.
 
-Direct supertypes: `AwsResource`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `AwsResource`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
@@ -33,7 +33,7 @@ Direct supertypes: `AwsResource`. Inherited attributes and marker capabilities a
 
 `IamInlinePolicy` is an AWS security or configuration record in the PSM. It carries the provider setting for iam inline policy. Its declaration gives the concept a precise home through document. Its references provide the wiring that lets generation assemble the corresponding AWS design.
 
-Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
@@ -51,7 +51,7 @@ Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilit
 
 `IamPolicy` is an AWS security or configuration record in the PSM. It carries the provider setting for iam policy. Its declaration gives the concept a precise home through document, roles. Its references provide the wiring that lets generation assemble the corresponding AWS design.
 
-Direct supertypes: `AwsResource`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `AwsResource`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
@@ -71,7 +71,7 @@ Direct supertypes: `AwsResource`. Inherited attributes and marker capabilities a
 
 `IamManagedPolicy` is an AWS security or configuration record in the PSM. It carries the provider setting for iam managed policy. Its declaration gives the concept a precise home through document. Its references provide the wiring that lets generation assemble the corresponding AWS design.
 
-Direct supertypes: `AwsResource`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `AwsResource`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
@@ -91,7 +91,7 @@ Direct supertypes: `AwsResource`. Inherited attributes and marker capabilities a
 
 The structured IAM policy document carried by one or more AWS resources. It contains statements, principals, conditions, actions, resources, and effects before JSON generation.
 
-Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
@@ -109,7 +109,7 @@ Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilit
 
 `IamStatement` is an AWS security or configuration record in the PSM. It carries the provider setting for iam statement. Its declaration gives the concept a precise home through principals, conditions. Its references provide the wiring that lets generation assemble the corresponding AWS design.
 
-Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
@@ -136,7 +136,7 @@ Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilit
 
 `IamPrincipal` is an AWS security or configuration record in the PSM. It carries the provider setting for iam principal. Its declaration gives the concept a precise home through its declared properties. Its references provide the wiring that lets generation assemble the corresponding AWS design.
 
-Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
@@ -153,7 +153,7 @@ This class declares no direct relationships.
 
 `IamCondition` is an AWS security or configuration record in the PSM. It carries the provider setting for iam condition. Its declaration gives the concept a precise home through its declared properties. Its references provide the wiring that lets generation assemble the corresponding AWS design.
 
-Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
@@ -171,7 +171,7 @@ This class declares no direct relationships.
 
 An AWS KMS key used to protect data or configuration. Its rotation, deletion, multi-region, key policy, and alias settings make encryption a concrete deployment decision.
 
-Direct supertypes: `AwsResource`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `AwsResource`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
@@ -197,7 +197,7 @@ Direct supertypes: `AwsResource`. Inherited attributes and marker capabilities a
 
 `KmsAlias` is an AWS security or configuration record in the PSM. It carries the provider setting for kms alias. Its declaration gives the concept a precise home through target key. Its references provide the wiring that lets generation assemble the corresponding AWS design.
 
-Direct supertypes: `AwsResource`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `AwsResource`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
@@ -215,7 +215,7 @@ Direct supertypes: `AwsResource`. Inherited attributes and marker capabilities a
 
 `GenerateSecretStringConfig` is a configuration record in the PSM. It makes generate secret string config explicit. Its declaration gives the concept a precise home through its declared properties. Its references provide the wiring that lets generation assemble the corresponding AWS design.
 
-Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
@@ -240,7 +240,7 @@ This class declares no direct relationships.
 
 An AWS Secrets Manager secret resource. It provides the provider-specific home for protected configuration, generated values, KMS choice, rotation, replicas, and resource policy.
 
-Direct supertypes: `AwsResource`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `AwsResource`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
@@ -266,7 +266,7 @@ Direct supertypes: `AwsResource`. Inherited attributes and marker capabilities a
 
 The timing policy for automatic secret rotation, expressed either as an interval or schedule together with an optional rotation-window duration.
 
-Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
@@ -284,7 +284,7 @@ This class declares no direct relationships.
 
 The resource that joins a secret to its rotation function and timing rules. This separation allows the secret and its rotation lifecycle to remain explicit resources.
 
-Direct supertypes: `AwsResource`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `AwsResource`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
@@ -304,7 +304,7 @@ Direct supertypes: `AwsResource`. Inherited attributes and marker capabilities a
 
 `SecretsManagerResourcePolicy` is an AWS security or configuration record in the PSM. It carries the provider setting for secrets manager resource policy. Its declaration gives the concept a precise home through resource policy, secret. Its references provide the wiring that lets generation assemble the corresponding AWS design.
 
-Direct supertypes: `AwsResource`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `AwsResource`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
@@ -323,7 +323,7 @@ Direct supertypes: `AwsResource`. Inherited attributes and marker capabilities a
 
 `SsmParameter` is an AWS security or configuration record in the PSM. It carries the provider setting for ssm parameter. Its declaration gives the concept a precise home through value, kms key. Its references provide the wiring that lets generation assemble the corresponding AWS design.
 
-Direct supertypes: `AwsResource`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `AwsResource`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
@@ -347,7 +347,7 @@ Direct supertypes: `AwsResource`. Inherited attributes and marker capabilities a
 
 `SsmParameterValueExpression` is an AWS security or configuration record in the PSM. It carries the provider setting for ssm parameter value expression. Its declaration gives the concept a precise home through ssm parameter. Its references provide the wiring that lets generation assemble the corresponding AWS design.
 
-Direct supertypes: `ValueExpression`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `ValueExpression`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
@@ -363,7 +363,7 @@ This class declares no attributes of its own. It inherits the attributes of its 
 
 `SecretValueExpression` is a supporting value object in the PSM. It carries secret value expression as explicit model data. Its declaration gives the concept a precise home through secret ref. Its references provide the wiring that lets generation assemble the corresponding AWS design.
 
-Direct supertypes: `ValueExpression`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `ValueExpression`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 

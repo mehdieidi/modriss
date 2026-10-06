@@ -29,7 +29,7 @@ transformation risks, assumptions, hotspots, trace links, and readiness evidence
 
 Create a CIM model in the MODRISS workbench and use the element type named in each step from the
 palette. Set the element's `id` to the backticked value; later connector steps use those IDs.
-All elements inherit `name`, `summary`, `rationale`, and `lifecycleStatus` from the shared kernel.
+All elements inherit `name`, `summary`, `rationale`, and `lifecycleStatus` from the kernel.
 For this reviewed case study, use `APPROVED` unless a step explicitly says otherwise.
 
 The workbench exposes two kinds of connection:

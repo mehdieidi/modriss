@@ -117,7 +117,7 @@ nav:
           - Validation, transformation, and generation: concepts/pipeline.md
       - DSML reference:
           - Overview: dsml/index.md
-          - Shared kernel: dsml/shared-kernel.md
+          - Kernel: dsml/shared-kernel.md
           - CIM:
               - Overview: dsml/cim/index.md
               - Model root: dsml/cim/cim-root.md
@@ -161,7 +161,7 @@ nav:
               - Enumerations: dsml/psm/awspsm-enums.md
       - EVL validation:
           - Overview: evl/index.md
-          - Shared kernel: evl/shared/kernel-constraints.md
+          - Kernel: evl/shared/kernel-constraints.md
           - CIM:
               - Behavior: evl/cim/behavior.md
               - Core and traceability: evl/cim/core-kernel-trace.md

@@ -54,7 +54,7 @@ const CIM_PROCESS_PHASES_SOURCE = [
             primaryRole: "method-engineer",
             viewpoint: "dashboard",
             artifactIds: ["cim-artifact.model-root"],
-            coverageGroups: ["shared-kernel", "shared-enums"],
+            coverageGroups: ["kernel", "shared-enums"],
             steps: [
               "Apply the shared identity, annotation, traceability, expression, and lifecycle conventions used by every CIM element.",
               "Set the evidence convention for source references, review status, and model-level provenance.",

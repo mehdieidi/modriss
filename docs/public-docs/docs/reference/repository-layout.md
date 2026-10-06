@@ -23,7 +23,7 @@ mde/
   samples/                 XMI samples and case study
 packages/
   java/
-    platform-kernel/         Shared kernel types (PlatformException, ModelLevel)
+    platform-kernel/         Kernel types (PlatformException, ModelLevel)
     platform-storage-api/    PlatformStore persistence port
     platform-identity/       Auth and user lifecycle
     platform-project/        Projects and membership
@@ -48,7 +48,7 @@ scripts/                   Repository automation (format, lint, verify, Flyway c
 
 ## Maven Dependency Direction
 
-Feature libraries depend inward on the shared kernel and storage port. The backend composes
+Feature libraries depend inward on the kernel and storage port. The backend composes
 feature modules plus the Postgres storage adapter. MDE runner modules stay Spring-free and are
 reused from CLIs and transformation services.
 

@@ -9,7 +9,7 @@
  *
  * Expected model aliases:
  *   - CIM for the CIM metamodel packages
- *   - KERNEL for the shared kernel package
+ *   - KERNEL for the kernel package
  */
 
 import "../shared/shared-validation-helpers.eol";

@@ -8,7 +8,7 @@ Source: `mde/metamodels/psm/awspsm-root.emf`.
 
 The root of one AWS platform-specific design. It owns AWS stages, SAM stacks, resource objects, policies, documents, and explicit integration views that can be rendered into deployment artifacts.
 
-Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 

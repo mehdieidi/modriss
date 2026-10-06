@@ -8,7 +8,7 @@ Source: `mde/metamodels/psm/awspsm-core.emf`.
 
 The common deployment resource abstraction for the PSM. It provides logical identity, physical naming, tags, lifecycle behavior, dependencies, conditions, and readiness metadata shared by AWS services.
 
-Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
@@ -42,7 +42,7 @@ Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilit
 
 A key-value tag emitted with an AWS resource. It carries ownership, environment, cost, or operational classification into the generated resource metadata.
 
-Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
@@ -60,7 +60,7 @@ This class declares no direct relationships.
 
 A declaration that a resource or value is supplied from outside the generated stack. It prevents generation from creating a duplicate resource when the deployment depends on an existing object.
 
-Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
@@ -80,7 +80,7 @@ This class declares no direct relationships.
 
 A provider property retained as an explicit name and value when the current PSM does not give it a dedicated class. It preserves a deliberate AWS setting without widening the abstract syntax unnecessarily.
 
-Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
@@ -102,7 +102,7 @@ Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilit
 
 A provider-facing value that can be rendered as a literal, reference, substitution, or intrinsic expression. It keeps generated configuration from confusing a value with the resource that supplies it.
 
-Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
@@ -128,7 +128,7 @@ Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilit
 
 A value expression with an explicit name. It is useful when a generated parameter or substitution must be referred to consistently from several resource properties.
 
-Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
@@ -146,7 +146,7 @@ Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilit
 
 The reusable CORS settings attached to an AWS-facing endpoint. It keeps allowed origins, methods, headers, and credentials separate from the API or bucket that applies them.
 
-Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
@@ -167,7 +167,7 @@ This class declares no direct relationships.
 
 The shared AWS tracing settings for a resource. It gives a Lambda function, API, or workflow an explicit tracing decision that generation can render.
 
-Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
@@ -183,7 +183,7 @@ This class declares no direct relationships.
 
 An escape hatch for an AWS resource or property that has no dedicated class in the current PSM. It keeps an explicit provider object available without pretending the metamodel knows its full semantics.
 
-Direct supertypes: `AwsResource`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `AwsResource`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
@@ -201,7 +201,7 @@ Direct supertypes: `AwsResource`. Inherited attributes and marker capabilities a
 
 An AWS deployment stage carrying region, account, environment, and stage-specific settings. It is the provider-specific counterpart of a PIM environment.
 
-Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
@@ -230,7 +230,7 @@ Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilit
 
 A SAM or CloudFormation stack boundary. It groups resources into a deployable unit and carries template, parameter, output, policy, and dependency information.
 
-Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
@@ -261,7 +261,7 @@ Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilit
 
 A CloudFormation parameter exposed by the generated stack. It separates deploy-time input from the resource properties that consume it.
 
-Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
@@ -284,7 +284,7 @@ Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilit
 
 A CloudFormation mapping used to select values from a static keyed table. It keeps environment or region lookup data explicit in the generated template.
 
-Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
@@ -302,7 +302,7 @@ This class declares no direct relationships.
 
 A CloudFormation condition that controls whether a resource or property is emitted or applied. It preserves deployment branching in the PSM instead of burying it in template text.
 
-Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
@@ -321,7 +321,7 @@ Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilit
 
 A CloudFormation output published by the stack. It records the value that later stacks, operators, or generated documentation may need after deployment.
 
-Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
@@ -342,7 +342,7 @@ Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilit
 
 The shared SAM defaults applied to a group of generated resources. It avoids repeating common runtime or API settings while keeping the default visible in the model.
 
-Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
@@ -361,7 +361,7 @@ This class declares no attributes of its own. It inherits the attributes of its 
 
 The rule set used to derive stable AWS logical and physical names. It keeps naming decisions consistent across resources and generated artifacts.
 
-Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
@@ -381,7 +381,7 @@ This class declares no direct relationships.
 
 The rule set used to derive AWS tags. It makes the metadata applied to resources a deliberate deployment concern rather than an incidental template detail.
 
-Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
@@ -402,7 +402,7 @@ Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilit
 
 The common AWS security expectations applied to a deployment. It gathers baseline controls that should be checked across otherwise unrelated resources.
 
-Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 

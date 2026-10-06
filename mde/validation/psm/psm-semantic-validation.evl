@@ -10,7 +10,7 @@
  * Expected model aliases:
  *   - AWSPSM for the PSM packages
  *   - AWSPSMENUMS for the PSM enum package
- *   - KERNEL for the shared kernel package
+ *   - KERNEL for the kernel package
  */
 
 import "../shared/shared-validation-helpers.eol";

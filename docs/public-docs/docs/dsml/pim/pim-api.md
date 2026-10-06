@@ -10,7 +10,7 @@ Source: `mde/metamodels/pim/pim-api.emf`.
 
 An externally or internally exposed API boundary in the provider-independent architecture. It groups routes and their contract, authentication, consumer, and operational expectations.
 
-Direct supertypes: `TraceableElement`, `DeployableElement`, `FlowEndpoint`, `PolicyTarget`, `ProtectedResource`, `ConfigurableElement`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `TraceableElement`, `DeployableElement`, `FlowEndpoint`, `PolicyTarget`, `ProtectedResource`, `ConfigurableElement`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
@@ -41,7 +41,7 @@ Direct supertypes: `TraceableElement`, `DeployableElement`, `FlowEndpoint`, `Pol
 
 One addressable operation in a PIM API. It connects method and path semantics to exactly one backend integration while retaining request, response, authorization, and error decisions.
 
-Direct supertypes: `TraceableElement`, `InvocationSource`, `FlowEndpoint`, `RouteEndpoint`, `PolicyTarget`, `ProtectedResource`, `ConfigurableElement`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `TraceableElement`, `InvocationSource`, `FlowEndpoint`, `RouteEndpoint`, `PolicyTarget`, `ProtectedResource`, `ConfigurableElement`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
@@ -75,7 +75,7 @@ Direct supertypes: `TraceableElement`, `InvocationSource`, `FlowEndpoint`, `Rout
 
 The rule that turns a backend failure into an API-facing error response. It preserves the relationship between a business or technical error, its schema, and the route behavior.
 
-Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 

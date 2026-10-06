@@ -8,7 +8,7 @@ The root gathers five kinds of information. Its scalar attributes identify the d
 
 ## `CIMModel`
 
-Direct supertype: `kernel.TraceableElement`. Inherited identity, explanations, lifecycle, source evidence, review, and trace features are documented in the [shared kernel](../shared-kernel.md).
+Direct supertype: `kernel.TraceableElement`. Inherited identity, explanations, lifecycle, source evidence, review, and trace features are documented in the [kernel](../shared-kernel.md).
 
 ### Declared attributes
 

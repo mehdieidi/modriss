@@ -10,7 +10,7 @@ Source: `mde/metamodels/pim/pim-policy.emf`.
 
 The abstract base for policies that may be attached to any kernel `PolicyTarget`. `policyScope` explains the boundary of application, while `productionRequired` distinguishes a production obligation from guidance used in earlier environments.
 
-Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
@@ -29,7 +29,7 @@ Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilit
 
 The abstract base for settings that exist inside a larger architecture policy. Retry, dead-letter, logging, metric, tracing, and alert records inherit traceability here without becoming independently attachable policies.
 
-Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
@@ -43,7 +43,7 @@ This class declares no direct relationships.
 
 A PIM policy describing how classified or sensitive data must be protected. It is the architectural form that later maps to encryption, masking, access, and audit controls.
 
-Direct supertypes: `ArchitecturePolicy`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `ArchitecturePolicy`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
@@ -66,7 +66,7 @@ This class declares no direct relationships.
 
 A policy for the quality characteristics expected of stored or exchanged data. It connects measurement and validation expectations to data models and readiness evidence.
 
-Direct supertypes: `ArchitecturePolicy`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `ArchitecturePolicy`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
@@ -87,7 +87,7 @@ This class declares no direct relationships.
 
 A PIM realization of a compliance obligation. It preserves the control, evidence, audit, and scope decisions before they become provider-specific resources or generated documents.
 
-Direct supertypes: `ArchitecturePolicy`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `ArchitecturePolicy`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
@@ -106,7 +106,7 @@ This class declares no direct relationships.
 
 A PIM rule that constrains or reacts to application behavior. It is the architectural counterpart of a CIM policy when the rule must be attached to functions, data, contracts, or workflows.
 
-Direct supertypes: `TraceableElement`, `PolicyTarget`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `TraceableElement`, `PolicyTarget`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
@@ -127,7 +127,7 @@ Direct supertypes: `TraceableElement`, `PolicyTarget`. Inherited attributes and 
 
 A provider-independent decision structure used by a policy or workflow. It separates decision inputs and outputs from the implementation mechanism that evaluates them.
 
-Direct supertypes: `TraceableElement`, `DeployableElement`, `PolicyTarget`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `TraceableElement`, `DeployableElement`, `PolicyTarget`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
@@ -147,7 +147,7 @@ Direct supertypes: `TraceableElement`, `DeployableElement`, `PolicyTarget`. Inhe
 
 A PIM decision row used by a provider-independent policy or workflow. It keeps inputs, condition logic, and resulting architecture behavior separate from the service that will execute the decision.
 
-Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
@@ -164,7 +164,7 @@ This class declares no attributes of its own. It inherits the attributes of its 
 
 A policy grouping the failure-handling expectations for a PIM element. It provides the context for timeout, retry, dead-letter, idempotency, and compensation decisions.
 
-Direct supertypes: `ArchitecturePolicy`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `ArchitecturePolicy`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
@@ -188,7 +188,7 @@ Direct supertypes: `ArchitecturePolicy`. Inherited attributes and marker capabil
 
 The retry algorithm for a failed operation. It defines the attempt ceiling, delay and backoff progression, maximum delay, and the error categories that may or may not be retried.
 
-Direct supertypes: `PolicySetting`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `PolicySetting`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
@@ -209,7 +209,7 @@ This class declares no direct relationships.
 
 The handling decision for work that cannot be processed successfully. It records why dead-letter handling is needed, how long failed items should remain, whether an alarm is required, and which event carrier receives them.
 
-Direct supertypes: `PolicySetting`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `PolicySetting`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
@@ -230,7 +230,7 @@ Direct supertypes: `PolicySetting`. Inherited attributes and marker capabilities
 
 A pair of timing boundaries for an operation and its caller. `timeoutSeconds` limits server-side execution, while `clientTimeoutSeconds` records the external waiting budget that must remain coherent with it.
 
-Direct supertypes: `ArchitecturePolicy`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `ArchitecturePolicy`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
@@ -247,7 +247,7 @@ This class declares no direct relationships.
 
 The duplicate-suppression contract for state-changing or retryable work. It identifies the key source, storage and expiry of idempotency records, their scope, and whether the guarantee covers retries and repeated client requests.
 
-Direct supertypes: `ArchitecturePolicy`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `ArchitecturePolicy`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
@@ -268,7 +268,7 @@ This class declares no direct relationships.
 
 The workload concurrency boundary used for capacity and isolation decisions. It combines maximum and reserved hints with burst assumptions, optional per-source limiting, and the rationale that explains why those values are suitable.
 
-Direct supertypes: `ArchitecturePolicy`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `ArchitecturePolicy`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
@@ -288,7 +288,7 @@ This class declares no direct relationships.
 
 The admission limit applied to a policy target. It states steady and burst request capacity, the identity or field used to partition the limit, and whether different clients receive separate quotas.
 
-Direct supertypes: `ArchitecturePolicy`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `ArchitecturePolicy`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
@@ -307,7 +307,7 @@ This class declares no direct relationships.
 
 The consumption policy for grouped records. It controls batch size, collection time, parallel processing, and the explicit decisions for splitting failed batches and reporting partial failures.
 
-Direct supertypes: `ArchitecturePolicy`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `ArchitecturePolicy`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
@@ -328,7 +328,7 @@ This class declares no direct relationships.
 
 The ordering contract for a channel or flow. It identifies the key used to form an ordered sequence and distinguishes no ordering, ordering within each key, and a single global order.
 
-Direct supertypes: `ArchitecturePolicy`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `ArchitecturePolicy`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
@@ -346,7 +346,7 @@ This class declares no direct relationships.
 
 The caching decision attached to an architectural target. It records whether caching is required, how long entries live, which value forms the cache key, and whether entries are private to a caller or context.
 
-Direct supertypes: `ArchitecturePolicy`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `ArchitecturePolicy`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
@@ -365,7 +365,7 @@ This class declares no direct relationships.
 
 The recovery policy for persistent storage. It records whether backups are required, their expected frequency, and the recovery point and recovery time objectives that a platform mapping must satisfy.
 
-Direct supertypes: `ArchitecturePolicy`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `ArchitecturePolicy`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
@@ -384,7 +384,7 @@ This class declares no direct relationships.
 
 The lifecycle rule for retained data or messages. It states the retention duration, whether automatic deletion follows, and whether legal hold can suspend that deletion.
 
-Direct supertypes: `ArchitecturePolicy`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `ArchitecturePolicy`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
@@ -402,7 +402,7 @@ This class declares no direct relationships.
 
 A cost constraint or optimization intention attached to part of the architecture. It records the budget, the workload characteristic expected to drive expenditure, the desired optimization, and whether budget alarms are required.
 
-Direct supertypes: `ArchitecturePolicy`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `ArchitecturePolicy`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
@@ -421,7 +421,7 @@ This class declares no direct relationships.
 
 The observability contract for an architectural target. Its flags state which telemetry capabilities are expected, while the owned logging, metric, tracing, alert, and SLO records define the details that should survive platform mapping.
 
-Direct supertypes: `ArchitecturePolicy`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `ArchitecturePolicy`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
@@ -449,7 +449,7 @@ Direct supertypes: `ArchitecturePolicy`. Inherited attributes and marker capabil
 
 The logging requirements for a target, including representation, severity threshold, structure, correlation identifiers, sensitive-value masking, and log retention.
 
-Direct supertypes: `PolicySetting`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `PolicySetting`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
@@ -470,7 +470,7 @@ This class declares no direct relationships.
 
 One metric required from an observed target. It defines the metric identity, unit, aggregation statistic, business significance, and the dimensions by which measurements are separated.
 
-Direct supertypes: `PolicySetting`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `PolicySetting`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
@@ -492,7 +492,7 @@ Direct supertypes: `PolicySetting`. Inherited attributes and marker capabilities
 
 A PIM metric dimension that partitions an operational measurement by a named business or runtime value. It keeps the intended slice visible before a monitoring provider is selected.
 
-Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
@@ -511,7 +511,7 @@ Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilit
 
 The distributed-tracing decision for a target. It records whether traces are required, how sampling should be governed, and whether trace context must cross calls and asynchronous boundaries.
 
-Direct supertypes: `PolicySetting`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `PolicySetting`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
@@ -529,7 +529,7 @@ This class declares no direct relationships.
 
 A condition that should create an operational notification. It identifies the metric, comparison, threshold, evaluation window, severity, and recipient, with an optional structured expression for the same condition.
 
-Direct supertypes: `PolicySetting`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `PolicySetting`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
@@ -553,7 +553,7 @@ Direct supertypes: `PolicySetting`. Inherited attributes and marker capabilities
 
 A measurable service-level objective. It binds an objective name to a metric, target, measurement window, and the policy for acting when the available error budget is consumed.
 
-Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
@@ -575,7 +575,7 @@ Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilit
 
 The browser cross-origin access contract for an API. It enumerates permitted origins, methods, request and response headers, credentials behavior, and the duration for which a preflight result may be cached.
 
-Direct supertypes: `ArchitecturePolicy`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `ArchitecturePolicy`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 

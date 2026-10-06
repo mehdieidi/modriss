@@ -102,7 +102,7 @@ export const PSM_ENUMS = new Set([
 ]);
 
 export const COVERAGE_GROUPS = {
-  "shared-kernel": KERNEL_TYPES,
+  "kernel": KERNEL_TYPES,
   "shared-enums": SHARED_ENUMS,
   "shared-readiness": SHARED_READINESS_TYPES,
   "psm-enums": PSM_ENUMS,
@@ -144,8 +144,8 @@ export function assignConceptsToTasks(phases, concepts) {
       assignment.set(concept, explicit.get(concept));
       continue;
     }
-    if (KERNEL_TYPES.has(concept) && groupTasks.get("shared-kernel")) {
-      assignment.set(concept, groupTasks.get("shared-kernel"));
+    if (KERNEL_TYPES.has(concept) && groupTasks.get("kernel")) {
+      assignment.set(concept, groupTasks.get("kernel"));
       continue;
     }
     if (SHARED_ENUMS.has(concept) && groupTasks.get("shared-enums")) {

@@ -97,7 +97,7 @@ const PSM_PROCESS_PHASES_SOURCE = [
             primaryRole: "method-engineer",
             viewpoint: "dashboard",
             artifactIds: ["psm-artifact.deployment-strategy"],
-            coverageGroups: ["shared-kernel", "shared-enums", "psm-enums"],
+            coverageGroups: ["kernel", "shared-enums", "psm-enums"],
             steps: [
               "Apply shared identity, annotation, traceability, expression, lifecycle, and release-provenance conventions across AWS resources.",
               "Record the source PIM revision, provider mapping revision, and review-state convention for the deployable slice.",

@@ -251,7 +251,7 @@ class ModelingConfigServiceTest {
     }
     concreteKernelTypes.removeAll(reachableKernelTypes);
     assertTrue(
-        concreteKernelTypes.isEmpty(), "Shared kernel unreachable types: " + concreteKernelTypes);
+        concreteKernelTypes.isEmpty(), "Kernel unreachable types: " + concreteKernelTypes);
   }
 
   /** Verifies that the API reports structural and view coverage for every concrete syntax. */

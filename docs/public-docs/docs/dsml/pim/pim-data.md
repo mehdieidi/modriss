@@ -10,7 +10,7 @@ Source: `mde/metamodels/pim/pim-data.emf`.
 
 The abstract base for provider-independent storage. It records persistence, encryption, and personal-data intent once for both structured data stores and object stores, and provides common links to ownership, retention, backup, and data-protection policies.
 
-Direct supertypes: `TraceableElement`, `DeployableElement`, `FlowEndpoint`, `PolicyTarget`, `ProtectedResource`, `DataAccessTarget`, `ConfigurableElement`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `TraceableElement`, `DeployableElement`, `FlowEndpoint`, `PolicyTarget`, `ProtectedResource`, `DataAccessTarget`, `ConfigurableElement`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
@@ -33,7 +33,7 @@ Direct supertypes: `TraceableElement`, `DeployableElement`, `FlowEndpoint`, `Pol
 
 A provider-independent persistent or transient store. It records ownership, persistence, consistency, protection, access patterns, data models, backup, retention, and change-stream expectations.
 
-Direct supertypes: `StorageElement`, `RoutingTarget`, `SubscriptionTarget`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `StorageElement`, `RoutingTarget`, `SubscriptionTarget`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
@@ -63,7 +63,7 @@ Direct supertypes: `StorageElement`, `RoutingTarget`, `SubscriptionTarget`. Inhe
 
 The change feed associated with a `DataStore`. It says which event types are emitted when stored data changes, allowing downstream consumers to be designed without selecting a provider-specific stream service.
 
-Direct supertypes: `TraceableElement`, `DeployableElement`, `InvocationSource`, `EventCarrier`, `FlowEndpoint`, `PolicyTarget`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `TraceableElement`, `DeployableElement`, `InvocationSource`, `EventCarrier`, `FlowEndpoint`, `PolicyTarget`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
@@ -84,7 +84,7 @@ Direct supertypes: `TraceableElement`, `DeployableElement`, `InvocationSource`, 
 
 A provider-independent object-oriented store for files or blobs. Its versioning, lifecycle, notifications, encryption, and retention decisions describe object storage intent before S3 is chosen.
 
-Direct supertypes: `StorageElement`, `InvocationSource`, `RoutingTarget`, `SubscriptionTarget`, `EventCarrier`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `StorageElement`, `InvocationSource`, `RoutingTarget`, `SubscriptionTarget`, `EventCarrier`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
@@ -108,7 +108,7 @@ Direct supertypes: `StorageElement`, `InvocationSource`, `RoutingTarget`, `Subsc
 
 A routing rule for changes in an `ObjectStore`. It narrows notifications by event and key patterns, declares the emitted event contracts, and names the invocation targets that should receive matching object activity.
 
-Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
@@ -130,7 +130,7 @@ Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilit
 
 The logical shape and ownership of data held in a store. It connects a schema to storage fields, source-of-truth status, and access patterns.
 
-Direct supertypes: `TraceableElement`, `FlowEndpoint`, `PolicyTarget`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `TraceableElement`, `FlowEndpoint`, `PolicyTarget`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
@@ -156,7 +156,7 @@ Direct supertypes: `TraceableElement`, `FlowEndpoint`, `PolicyTarget`. Inherited
 
 A storage-facing field in a PIM data model. It records key candidacy, sensitivity, source, generated status, and the physical naming hint needed during provider mapping.
 
-Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
@@ -183,7 +183,7 @@ Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilit
 
 A named way the application reads or writes data. It describes operation shape, frequency, cardinality, consistency, and supported indexes so storage follows usage rather than the reverse.
 
-Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
@@ -215,7 +215,7 @@ Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilit
 
 A proposed index justified by one or more access patterns. It makes key fields, projection, production importance, and provider mapping decisions inspectable.
 
-Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
@@ -239,7 +239,7 @@ Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilit
 
 A function or workflow's declared use of a data model. It joins operation, purpose, permission, and access-pattern intent so data access can be secured and transformed coherently.
 
-Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 

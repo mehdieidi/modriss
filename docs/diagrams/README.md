@@ -38,7 +38,7 @@ The diagrams were derived from:
 | MDE                 | [17-mde-architecture.md](17-mde-architecture.md)                                                             | MDE assets, runners, services, and tools           |
 | MDE                 | [18-mde-end-to-end-pipeline.md](18-mde-end-to-end-pipeline.md)                                               | CIM to PIM to PSM to artifacts                     |
 | MDE                 | [19-mde-validation-transformation-generation.md](19-mde-validation-transformation-generation.md)             | EVL, ETL, and EGX execution internals              |
-| MDE                 | [20-metamodel-relations.md](20-metamodel-relations.md)                                                       | Shared kernel and CIM/PIM/PSM package relations    |
+| MDE                 | [20-metamodel-relations.md](20-metamodel-relations.md)                                                       | Kernel and CIM/PIM/PSM package relations    |
 | Frontend            | [21-frontend-architecture-and-flows.md](21-frontend-architecture-and-flows.md)                               | Browser modules and primary user flows             |
 | Functions           | [22-major-function-flows.md](22-major-function-flows.md)                                                     | Important service algorithms and state machines    |
 | Cross-cutting       | [23-security-observability-failure.md](23-security-observability-failure.md)                                 | Security boundaries, logging, failure paths        |

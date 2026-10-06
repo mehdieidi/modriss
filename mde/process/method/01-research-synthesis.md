@@ -166,7 +166,7 @@ the same Ramsin–Paige/SMEP requirements and traceability procedure.
 The repository already implements a substantial modeling framework:
 
 - CIM, PIM, and PSM combined Ecore models contain 90, 144, and 250 EClasses
-  respectively, plus shared kernel concepts;
+  respectively, plus kernel concepts;
 - EVL suites express level-specific semantic rules;
 - ETL implements CIM→PIM and PIM→PSM transformations with trace,
   readiness, deterministic identifiers, and three-way synchronization;

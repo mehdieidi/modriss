@@ -9,7 +9,7 @@
  *
  * Expected model aliases:
  *   - PIM for the provider-independent serverless PIM packages
- *   - KERNEL for the shared kernel package
+ *   - KERNEL for the kernel package
  */
 
 import "../shared/shared-validation-helpers.eol";

@@ -4,7 +4,7 @@ Source: `mde/metamodels/cim/cim-process-policy.emf`.
 
 The process-policy module expresses progression through business work. A `BusinessProcess` owns typed steps and transitions. The step subclasses distinguish commands, queries, events, policies, human work, external interactions, decisions, waits, and the process boundary. `Policy` and `DecisionTable` express rules that can influence those paths. `ExceptionScenario` and `TemporalConstraint` keep failure and time behavior explicit.
 
-The process model is still computation-independent. A `WaitStep` is a business wait, not yet a Step Functions state. A `CommandStep` is a business action, not yet a Lambda invocation. ETL performs those interpretations later and records trace links. All classes inherit from `kernel.TraceableElement`, except `ProcessStep` and `ProcessTransition`, whose direct supertypes are shown below. See the [shared kernel](../shared-kernel.md) for inherited features.
+The process model is still computation-independent. A `WaitStep` is a business wait, not yet a Step Functions state. A `CommandStep` is a business action, not yet a Lambda invocation. ETL performs those interpretations later and records trace links. All classes inherit from `kernel.TraceableElement`, except `ProcessStep` and `ProcessTransition`, whose direct supertypes are shown below. See the [kernel](../shared-kernel.md) for inherited features.
 
 ## `BusinessProcess`
 

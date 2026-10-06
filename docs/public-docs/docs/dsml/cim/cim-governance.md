@@ -4,7 +4,7 @@ Source: `mde/metamodels/cim/cim-governance.emf`.
 
 Governance classes turn quality and control expectations into model elements that can constrain later architecture. They remain at the business level. A security constraint says what must be protected and why. A privacy constraint says why information may be processed, for how long, and with which data-subject obligations. A compliance constraint identifies the control and evidence. The CIM-to-PIM transformation then chooses concrete policy, security, data-protection, resilience, observability, and contract structures.
 
-`NonFunctionalRequirement` extends `cimorg.Requirement`, so it inherits requirement type, source, priority, mandatory and production-blocking status, acceptance criteria, goal links, and generic constrained elements. The other governance classes inherit from it unless stated otherwise. Shared kernel features remain documented in the [shared kernel](../shared-kernel.md).
+`NonFunctionalRequirement` extends `cimorg.Requirement`, so it inherits requirement type, source, priority, mandatory and production-blocking status, acceptance criteria, goal links, and generic constrained elements. The other governance classes inherit from it unless stated otherwise. Kernel features remain documented in the [kernel](../shared-kernel.md).
 
 ## `NonFunctionalRequirement`
 

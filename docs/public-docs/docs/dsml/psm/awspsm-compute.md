@@ -8,7 +8,7 @@ Source: `mde/metamodels/psm/awspsm-compute.emf`.
 
 The AWS resource realization of a serverless compute function. It binds code packaging, runtime, memory, timeout, environment, event sources, permissions, destinations, networking, logging, and tracing to Lambda.
 
-Direct supertypes: `AwsResource`, `S3NotificationDestination`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `AwsResource`, `S3NotificationDestination`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
@@ -57,7 +57,7 @@ Direct supertypes: `AwsResource`, `S3NotificationDestination`. Inherited attribu
 
 `LambdaCodeConfig` is a Lambda deployment record in the PSM. It carries the provider settings for lambda code config. Its declaration gives the concept a precise home through its declared properties. Its references provide the wiring that lets generation assemble the corresponding AWS design.
 
-Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
@@ -71,7 +71,7 @@ This class declares no direct relationships.
 
 `LambdaZipCodeConfig` is a Lambda deployment record in the PSM. It carries the provider settings for lambda zip code config. Its declaration gives the concept a precise home through its declared properties. Its references provide the wiring that lets generation assemble the corresponding AWS design.
 
-Direct supertypes: `LambdaCodeConfig`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `LambdaCodeConfig`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
@@ -93,7 +93,7 @@ This class declares no direct relationships.
 
 `LambdaImageCodeConfig` is a Lambda deployment record in the PSM. It carries the provider settings for lambda image code config. Its declaration gives the concept a precise home through image config. Its references provide the wiring that lets generation assemble the corresponding AWS design.
 
-Direct supertypes: `LambdaCodeConfig`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `LambdaCodeConfig`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
@@ -111,7 +111,7 @@ Direct supertypes: `LambdaCodeConfig`. Inherited attributes and marker capabilit
 
 `LambdaImageConfig` is a Lambda deployment record in the PSM. It carries the provider settings for lambda image config. Its declaration gives the concept a precise home through its declared properties. Its references provide the wiring that lets generation assemble the corresponding AWS design.
 
-Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
@@ -129,7 +129,7 @@ This class declares no direct relationships.
 
 `LambdaEnvironmentVariable` is a Lambda deployment record in the PSM. It carries the provider settings for lambda environment variable. Its declaration gives the concept a precise home through value. Its references provide the wiring that lets generation assemble the corresponding AWS design.
 
-Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
@@ -148,7 +148,7 @@ Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilit
 
 `LambdaInvocationBinding` is a Lambda deployment record in the PSM. It carries the provider settings for lambda invocation binding. Its declaration gives the concept a precise home through its declared properties. Its references provide the wiring that lets generation assemble the corresponding AWS design.
 
-Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
@@ -164,7 +164,7 @@ This class declares no direct relationships.
 
 A SAM-level trigger owned by a Lambda function. Its event type determines how the contained native properties are rendered and how invocation reaches the target function.
 
-Direct supertypes: `LambdaInvocationBinding`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `LambdaInvocationBinding`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
@@ -184,7 +184,7 @@ Direct supertypes: `LambdaInvocationBinding`. Inherited attributes and marker ca
 
 `LambdaEventSourceMapping` is a Lambda deployment record in the PSM. It carries the provider settings for lambda event source mapping. Its declaration gives the concept a precise home through destination config, function. Its references provide the wiring that lets generation assemble the corresponding AWS design.
 
-Direct supertypes: `AwsResource`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `AwsResource`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
@@ -216,7 +216,7 @@ Direct supertypes: `AwsResource`. Inherited attributes and marker capabilities a
 
 `SqsLambdaEventSourceMapping` is an AWS messaging record in the PSM. It carries the delivery setting for sqs lambda event source mapping. Its declaration gives the concept a precise home through queue. Its references provide the wiring that lets generation assemble the corresponding AWS design.
 
-Direct supertypes: `LambdaEventSourceMapping`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `LambdaEventSourceMapping`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
@@ -235,7 +235,7 @@ Direct supertypes: `LambdaEventSourceMapping`. Inherited attributes and marker c
 
 `DynamoDbStreamLambdaEventSourceMapping` is a DynamoDB deployment record in the PSM. It carries the storage setting for dynamo db stream lambda event source mapping. Its declaration gives the concept a precise home through table. Its references provide the wiring that lets generation assemble the corresponding AWS design.
 
-Direct supertypes: `LambdaEventSourceMapping`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `LambdaEventSourceMapping`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
@@ -251,7 +251,7 @@ This class declares no attributes of its own. It inherits the attributes of its 
 
 An escape hatch for supported Lambda polling sources that do not have a dedicated mapping subclass. The source kind and ARN expression state the provider binding, while `eventSourceResource` keeps an optional structural link.
 
-Direct supertypes: `LambdaEventSourceMapping`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `LambdaEventSourceMapping`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
@@ -270,7 +270,7 @@ Direct supertypes: `LambdaEventSourceMapping`. Inherited attributes and marker c
 
 `LambdaDeadLetterConfig` is a Lambda deployment record in the PSM. It carries the provider settings for lambda dead letter config. Its declaration gives the concept a precise home through target queue, target topic. Its references provide the wiring that lets generation assemble the corresponding AWS design.
 
-Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
@@ -287,7 +287,7 @@ This class declares no attributes of its own. It inherits the attributes of its 
 
 `LambdaEventInvokeConfig` is a Lambda deployment record in the PSM. It carries the provider settings for lambda event invoke config. Its declaration gives the concept a precise home through destination config, function, qualifier alias. Its references provide the wiring that lets generation assemble the corresponding AWS design.
 
-Direct supertypes: `AwsResource`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `AwsResource`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
@@ -308,7 +308,7 @@ Direct supertypes: `AwsResource`. Inherited attributes and marker capabilities a
 
 `LambdaDestinationConfig` is a Lambda deployment record in the PSM. It carries the provider settings for lambda destination config. Its declaration gives the concept a precise home through on success, on failure. Its references provide the wiring that lets generation assemble the corresponding AWS design.
 
-Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
@@ -325,7 +325,7 @@ This class declares no attributes of its own. It inherits the attributes of its 
 
 `LambdaTracingConfig` is a Lambda deployment record in the PSM. It carries the provider settings for lambda tracing config. Its declaration gives the concept a precise home through its declared properties. Its references provide the wiring that lets generation assemble the corresponding AWS design.
 
-Direct supertypes: `TracingConfig`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `TracingConfig`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
@@ -341,7 +341,7 @@ This class declares no direct relationships.
 
 `LambdaLoggingConfig` is a Lambda deployment record in the PSM. It carries the provider settings for lambda logging config. Its declaration gives the concept a precise home through its declared properties. Its references provide the wiring that lets generation assemble the corresponding AWS design.
 
-Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
@@ -360,7 +360,7 @@ This class declares no direct relationships.
 
 `LambdaLayerVersion` is a Lambda deployment record in the PSM. It carries the provider settings for lambda layer version. Its declaration gives the concept a precise home through its declared properties. Its references provide the wiring that lets generation assemble the corresponding AWS design.
 
-Direct supertypes: `AwsResource`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `AwsResource`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
@@ -380,7 +380,7 @@ This class declares no direct relationships.
 
 `LambdaLayerPermission` is a Lambda deployment record in the PSM. It carries the provider settings for lambda layer permission. Its declaration gives the concept a precise home through layer version. Its references provide the wiring that lets generation assemble the corresponding AWS design.
 
-Direct supertypes: `AwsResource`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `AwsResource`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
@@ -400,7 +400,7 @@ Direct supertypes: `AwsResource`. Inherited attributes and marker capabilities a
 
 `LambdaVersion` is a Lambda deployment record in the PSM. It carries the provider settings for lambda version. Its declaration gives the concept a precise home through provisioned concurrency config, function. Its references provide the wiring that lets generation assemble the corresponding AWS design.
 
-Direct supertypes: `AwsResource`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `AwsResource`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
@@ -419,7 +419,7 @@ Direct supertypes: `AwsResource`. Inherited attributes and marker capabilities a
 
 `LambdaAlias` is a Lambda deployment record in the PSM. It carries the provider settings for lambda alias. Its declaration gives the concept a precise home through provisioned concurrency config, function, version. Its references provide the wiring that lets generation assemble the corresponding AWS design.
 
-Direct supertypes: `AwsResource`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `AwsResource`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
@@ -441,7 +441,7 @@ Direct supertypes: `AwsResource`. Inherited attributes and marker capabilities a
 
 `LambdaProvisionedConcurrencyConfig` is a Lambda deployment record in the PSM. It carries the provider settings for lambda provisioned concurrency config. Its declaration gives the concept a precise home through its declared properties. Its references provide the wiring that lets generation assemble the corresponding AWS design.
 
-Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
@@ -457,7 +457,7 @@ This class declares no direct relationships.
 
 `LambdaPermission` is a Lambda deployment record in the PSM. It carries the provider settings for lambda permission. Its declaration gives the concept a precise home through function. Its references provide the wiring that lets generation assemble the corresponding AWS design.
 
-Direct supertypes: `AwsResource`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `AwsResource`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
@@ -479,7 +479,7 @@ Direct supertypes: `AwsResource`. Inherited attributes and marker capabilities a
 
 `LambdaFunctionUrl` is a Lambda deployment record in the PSM. It carries the provider settings for lambda function url. Its declaration gives the concept a precise home through cors, function. Its references provide the wiring that lets generation assemble the corresponding AWS design.
 
-Direct supertypes: `AwsResource`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `AwsResource`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
@@ -499,7 +499,7 @@ Direct supertypes: `AwsResource`. Inherited attributes and marker capabilities a
 
 `LambdaUrlCorsConfiguration` is a Lambda deployment record in the PSM. It carries the provider settings for lambda url cors configuration. Its declaration gives the concept a precise home through its declared properties. Its references provide the wiring that lets generation assemble the corresponding AWS design.
 
-Direct supertypes: `CorsConfiguration`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `CorsConfiguration`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
@@ -513,7 +513,7 @@ This class declares no direct relationships.
 
 `LambdaFileSystemConfig` is a Lambda deployment record in the PSM. It carries the provider settings for lambda file system config. Its declaration gives the concept a precise home through its declared properties. Its references provide the wiring that lets generation assemble the corresponding AWS design.
 
-Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
@@ -530,7 +530,7 @@ This class declares no direct relationships.
 
 `CodeSigningConfig` is a configuration record in the PSM. It makes code signing config explicit. Its declaration gives the concept a precise home through its declared properties. Its references provide the wiring that lets generation assemble the corresponding AWS design.
 
-Direct supertypes: `AwsResource`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `AwsResource`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 

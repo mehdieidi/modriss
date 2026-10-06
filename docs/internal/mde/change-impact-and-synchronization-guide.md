@@ -136,7 +136,7 @@ The runtime Java services load the combined Ecore files, not the `.emf` files. E
 without regenerating combined Ecore changes documentation/source but does not change runtime
 behavior.
 
-### Shared kernel changes
+### Kernel changes
 
 `kernel.emf` is imported by CIM, PIM, and PSM. After changing it:
 
@@ -667,7 +667,7 @@ change.
      --overwrite
    ```
 
-6. If the shared kernel changed, regenerate `kernel.ecore` and all three combined Ecore files:
+6. If the kernel changed, regenerate `kernel.ecore` and all three combined Ecore files:
 
    ```powershell
    java -jar tools/mde-cli/target/mde-cli-0.0.1-SNAPSHOT.jar `

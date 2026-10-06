@@ -10,7 +10,7 @@ Source: `mde/metamodels/pim/pim-security.emf`.
 
 The provider-independent identity service expected to authenticate users or callers. It records identity, federation, MFA, token, recovery, and client-facing requirements before Cognito mapping.
 
-Direct supertypes: `TraceableElement`, `DeployableElement`, `PolicyTarget`, `ProtectedResource`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `TraceableElement`, `DeployableElement`, `PolicyTarget`, `ProtectedResource`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
@@ -37,7 +37,7 @@ Direct supertypes: `TraceableElement`, `DeployableElement`, `PolicyTarget`, `Pro
 
 An identity or service principal that can receive permissions. It is the PIM security subject from which IAM roles and policy statements are later derived.
 
-Direct supertypes: `TraceableElement`, `PolicyTarget`, `ProtectedResource`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `TraceableElement`, `PolicyTarget`, `ProtectedResource`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
@@ -57,7 +57,7 @@ Direct supertypes: `TraceableElement`, `PolicyTarget`, `ProtectedResource`. Inhe
 
 An allowed or denied action over a resource or capability. It captures authorization intent independently from IAM JSON syntax.
 
-Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
@@ -85,7 +85,7 @@ Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilit
 
 A provider-independent security policy that gathers authentication, authorization, encryption, audit, and network expectations for a protected target.
 
-Direct supertypes: `ArchitecturePolicy`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `ArchitecturePolicy`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
@@ -108,7 +108,7 @@ This class declares no direct relationships.
 
 The policy governing how a caller proves identity before reaching an API or function. It keeps authentication method and failure behavior separate from route definitions.
 
-Direct supertypes: `SecurityPolicy`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `SecurityPolicy`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
@@ -130,7 +130,7 @@ Direct supertypes: `SecurityPolicy`. Inherited attributes and marker capabilitie
 
 The decision policy for what an authenticated principal may do. It provides a place for role, permission, condition, and resource scope before IAM or Cognito details.
 
-Direct supertypes: `SecurityPolicy`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `SecurityPolicy`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 

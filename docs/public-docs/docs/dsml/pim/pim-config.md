@@ -10,7 +10,7 @@ Source: `mde/metamodels/pim/pim-config.emf`.
 
 A named group of deployment and runtime configuration values. It separates configuration from code and provides the unit later mapped to parameters, environment variables, and secrets.
 
-Direct supertypes: `TraceableElement`, `DeployableElement`, `PolicyTarget`, `ConfigurableElement`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `TraceableElement`, `DeployableElement`, `PolicyTarget`, `ConfigurableElement`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
@@ -31,7 +31,7 @@ Direct supertypes: `TraceableElement`, `DeployableElement`, `PolicyTarget`, `Con
 
 A declared configuration value with an owner, type, default or required status, and secret decision. It gives deployment configuration a stable identity before it becomes a CloudFormation parameter or SSM value.
 
-Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
@@ -55,7 +55,7 @@ Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilit
 
 A runtime name-value binding made available to a function or environment. It distinguishes a reference used by code from the parameter or secret that supplies it.
 
-Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
@@ -77,7 +77,7 @@ Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilit
 
 A protected configuration value or credential reference. It identifies the purpose, rotation, ownership, and generated-reference behavior without placing secret material in the model.
 
-Direct supertypes: `TraceableElement`, `ProtectedResource`, `PolicyTarget`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `TraceableElement`, `ProtectedResource`, `PolicyTarget`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
@@ -100,7 +100,7 @@ Direct supertypes: `TraceableElement`, `ProtectedResource`, `PolicyTarget`. Inhe
 
 A statement that an external interaction needs a particular credential. It links the integration purpose to the secret that can satisfy it.
 
-Direct supertypes: `TraceableElement`, `CredentialRequirementLike`. Inherited attributes and marker capabilities are documented in the [shared kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+Direct supertypes: `TraceableElement`, `CredentialRequirementLike`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes
 
