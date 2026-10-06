@@ -250,8 +250,7 @@ class ModelingConfigServiceTest {
           key.toUpperCase() + " unreachable level types: " + unreachableLevelTypes);
     }
     concreteKernelTypes.removeAll(reachableKernelTypes);
-    assertTrue(
-        concreteKernelTypes.isEmpty(), "Kernel unreachable types: " + concreteKernelTypes);
+    assertTrue(concreteKernelTypes.isEmpty(), "Kernel unreachable types: " + concreteKernelTypes);
   }
 
   /** Verifies that the API reports structural and view coverage for every concrete syntax. */

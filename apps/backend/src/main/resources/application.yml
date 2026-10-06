@@ -32,6 +32,18 @@ spring:
       minimum-idle: ${MODRISS_DB_MIN_IDLE:2}
       connection-timeout: 30000
       validation-timeout: 5000
+  mail:
+    host: ${MODRISS_MAIL_HOST:}
+    port: ${MODRISS_MAIL_PORT:587}
+    username: ${MODRISS_MAIL_USERNAME:}
+    password: ${MODRISS_MAIL_PASSWORD:}
+    properties:
+      mail.smtp.auth: ${MODRISS_MAIL_SMTP_AUTH:true}
+      mail.smtp.starttls.enable: ${MODRISS_MAIL_STARTTLS:true}
+      mail.smtp.starttls.required: ${MODRISS_MAIL_STARTTLS_REQUIRED:true}
+      mail.smtp.connectiontimeout: 5000
+      mail.smtp.timeout: 5000
+      mail.smtp.writetimeout: 5000
   flyway:
     enabled: true
     ignore-migration-patterns: "*:missing"
@@ -48,6 +60,9 @@ spring:
 
 modriss:
   session-ttl: 30d
+  password-reset:
+    from: ${MODRISS_MAIL_FROM:}
+    editor-url: ${MODRISS_EDITOR_URL:http://localhost:8082}
   guest:
     prompt-limit: ${MODRISS_GUEST_PROMPT_LIMIT:5}
   admin:

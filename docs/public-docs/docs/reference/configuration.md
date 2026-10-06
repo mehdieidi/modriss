@@ -41,6 +41,13 @@ values and behavior, in the sections below.
 | `MODRISS_ALLOWED_ORIGINS`       | derived by Compose        | Comma-separated CORS origins for browser REST/SSE requests. Setting it replaces the generated origin list; an incorrect list blocks browser requests. |
 | `MODRISS_CONTAINER_UPLOAD_ROOT` | `/app/uploads` in Compose | Backend-container upload path. Change it only if the corresponding storage mount/path exists.                                                         |
 
+## Password reset email
+
+Configure `MODRISS_MAIL_HOST` and `MODRISS_MAIL_FROM` to enable password reset email. Set
+`MODRISS_MAIL_USERNAME` and `MODRISS_MAIL_PASSWORD` when the SMTP server requires authentication.
+The editor builds links with `MODRISS_EDITOR_URL`. Reset links expire after 30 minutes and work
+once. Without SMTP configuration, reset requests return `503`.
+
 ## MDE and uploads
 
 `MODRISS_MDE_EXECUTION_TIMEOUT` and `MODRISS_MDE_JOB_TIMEOUT` control command and queued-job

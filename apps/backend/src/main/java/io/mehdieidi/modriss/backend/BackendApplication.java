@@ -4,10 +4,12 @@ import io.mehdieidi.modriss.backend.admin.AdminProperties;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
 /** Starts the MODRISS backend and enables its scheduled maintenance tasks. */
 @SpringBootApplication
+@EnableAsync
 @EnableScheduling
 @EnableConfigurationProperties(AdminProperties.class)
 public class BackendApplication {

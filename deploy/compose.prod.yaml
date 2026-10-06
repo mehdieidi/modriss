@@ -20,6 +20,7 @@ services:
 
   backend:
     environment:
+      MODRISS_EDITOR_URL: ${MODRISS_EDITOR_URL:-https://editor.modriss.site}
       MODRISS_DB_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set in production .env}
       MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE: health,prometheus
       MANAGEMENT_ENDPOINT_HEALTH_SHOW_DETAILS: never

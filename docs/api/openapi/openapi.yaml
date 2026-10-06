@@ -92,6 +92,49 @@ paths:
           $ref: "#/components/responses/BadRequest"
         "401":
           $ref: "#/components/responses/Unauthorized"
+  /api/auth/password-reset/request:
+    post:
+      tags: [Auth]
+      summary: Email a password reset link
+      description: Returns the same response whether or not the email belongs to an account.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PasswordResetRequest"
+      responses:
+        "200":
+          description: Generic response for every valid email address
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PasswordResetRequestResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "503":
+          description: SMTP email delivery is not configured
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+  /api/auth/password-reset/complete:
+    post:
+      tags: [Auth]
+      summary: Set a password from a reset link
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CompletePasswordResetRequest"
+      responses:
+        "200":
+          description: Password updated and active sessions revoked
+        "400":
+          $ref: "#/components/responses/BadRequest"
   /api/auth/guest:
     post:
       tags: [Auth]
@@ -2019,6 +2062,29 @@ components:
         email:
           type: string
           format: email
+        password:
+          type: string
+          minLength: 8
+    PasswordResetRequest:
+      type: object
+      required: [email]
+      properties:
+        email:
+          type: string
+          format: email
+    PasswordResetRequestResponse:
+      type: object
+      required: [message]
+      properties:
+        message:
+          type: string
+          example: If an account with that email exists, a password reset link has been sent.
+    CompletePasswordResetRequest:
+      type: object
+      required: [token, password]
+      properties:
+        token:
+          type: string
         password:
           type: string
           minLength: 8

@@ -1,6 +1,7 @@
 package io.mehdieidi.modriss.platform.identity.application;
 
 import io.mehdieidi.modriss.platform.identity.domain.AuthSession;
+import io.mehdieidi.modriss.platform.identity.domain.PasswordResetToken;
 import io.mehdieidi.modriss.platform.identity.domain.UserRecord;
 import io.mehdieidi.modriss.platform.kernel.PlatformException;
 import io.mehdieidi.modriss.platform.storage.api.PlatformStore;
@@ -16,6 +17,7 @@ import java.util.Base64;
 import java.util.HexFormat;
 import java.util.List;
 import java.util.Locale;
+import java.util.Optional;
 import java.util.UUID;
 import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.PBEKeySpec;
@@ -33,6 +35,9 @@ public final class AuthService {
 
   /** PBKDF2 output key length in bits. */
   private static final int KEY_BITS = 256;
+
+  /** Lifetime of an emailed password reset link. */
+  private static final Duration PASSWORD_RESET_TTL = Duration.ofMinutes(30);
 
   /** File repository used for users and sessions. */
   private final PlatformStore store;
@@ -117,6 +122,92 @@ public final class AuthService {
       throw new PlatformException(401, "Invalid email or password.");
     }
     return issueSession(user);
+  }
+
+  /**
+   * Creates a short-lived password reset token for an existing, non-guest account.
+   *
+   * @param email account email address
+   * @return reset email details when an eligible account exists
+   */
+  public Optional<PasswordResetRequest> createPasswordReset(String email) {
+    return store.inTransaction(
+        () -> {
+          UserRecord user = findByEmail(normalizeEmail(email));
+          if (user == null || user.email().endsWith("@guest.modriss.invalid")) {
+            return Optional.empty();
+          }
+
+          invalidatePasswordResetTokens(user.id());
+          Instant now = Instant.now();
+          String id = UUID.randomUUID().toString();
+          String secret = randomToken(32);
+          store.write(
+              Path.of("password-resets", id + ".json"),
+              new PasswordResetToken(
+                  id, user.id(), sha256Hex(secret), now.plus(PASSWORD_RESET_TTL)));
+          return Optional.of(
+              new PasswordResetRequest(user.email(), user.displayName(), id + "." + secret));
+        });
+  }
+
+  /**
+   * Replaces an account password using an unexpired reset token and revokes its active sessions.
+   *
+   * @param token emailed password reset token
+   * @param password replacement password
+   */
+  public void resetPassword(String token, String password) {
+    store.inTransaction(
+        () -> {
+          resetPasswordWithinTransaction(token, password);
+          return null;
+        });
+  }
+
+  private void resetPasswordWithinTransaction(String token, String password) {
+    validatePassword(password);
+    String[] parts = token == null ? new String[0] : token.split("\\.", -1);
+    if (parts.length != 2 || parts[1].isBlank()) {
+      throw invalidPasswordResetToken();
+    }
+
+    String id;
+    try {
+      id = UUID.fromString(parts[0]).toString();
+    } catch (IllegalArgumentException ex) {
+      throw invalidPasswordResetToken();
+    }
+
+    Path tokenPath = Path.of("password-resets", id + ".json");
+    PasswordResetToken reset = store.read(tokenPath, PasswordResetToken.class).orElse(null);
+    if (reset == null
+        || reset.expiresAt().isBefore(Instant.now())
+        || !constantTimeEquals(reset.secretHash(), sha256Hex(parts[1]))) {
+      throw invalidPasswordResetToken();
+    }
+
+    Path userPath = Path.of("users", reset.userId() + ".json");
+    UserRecord user =
+        store.read(userPath, UserRecord.class).orElseThrow(this::invalidPasswordResetToken);
+    if (user.email().endsWith("@guest.modriss.invalid")) {
+      throw invalidPasswordResetToken();
+    }
+
+    String salt = randomToken(24);
+    store.write(
+        userPath,
+        new UserRecord(
+            user.id(),
+            user.email(),
+            user.displayName(),
+            hashPassword(password, salt),
+            salt,
+            user.createdAt(),
+            Instant.now()));
+    store.deleteIfExists(tokenPath);
+    invalidatePasswordResetTokens(user.id());
+    revokeSessions(user.id());
   }
 
   /**
@@ -215,6 +306,27 @@ public final class AuthService {
     return new AuthResult(token, user);
   }
 
+  private void invalidatePasswordResetTokens(String userId) {
+    for (PasswordResetToken reset :
+        store.list(Path.of("password-resets"), PasswordResetToken.class)) {
+      if (userId.equals(reset.userId())) {
+        store.deleteIfExists(Path.of("password-resets", reset.id() + ".json"));
+      }
+    }
+  }
+
+  private void revokeSessions(String userId) {
+    for (AuthSession session : store.list(Path.of("sessions"), AuthSession.class)) {
+      if (userId.equals(session.userId())) {
+        store.deleteIfExists(Path.of("sessions", session.token() + ".json"));
+      }
+    }
+  }
+
+  private PlatformException invalidPasswordResetToken() {
+    return new PlatformException(400, "Password reset link is invalid or expired.");
+  }
+
   private String sessionTokenHash(String token) {
     if (token == null || token.isBlank()) {
       throw new PlatformException(401, "Authentication token is required.");
@@ -225,6 +337,16 @@ public final class AuthService {
               MessageDigest.getInstance("SHA-256").digest(token.getBytes(StandardCharsets.UTF_8)));
     } catch (NoSuchAlgorithmException ex) {
       throw new PlatformException(500, "Could not process session token.");
+    }
+  }
+
+  private String sha256Hex(String value) {
+    try {
+      return HexFormat.of()
+          .formatHex(
+              MessageDigest.getInstance("SHA-256").digest(value.getBytes(StandardCharsets.UTF_8)));
+    } catch (NoSuchAlgorithmException ex) {
+      throw new PlatformException(500, "Could not process password reset token.");
     }
   }
 
@@ -330,4 +452,7 @@ public final class AuthService {
    * @param user authenticated user
    */
   public record AuthResult(String token, UserRecord user) {}
+
+  /** Details used only to deliver a password reset email. */
+  public record PasswordResetRequest(String email, String displayName, String token) {}
 }

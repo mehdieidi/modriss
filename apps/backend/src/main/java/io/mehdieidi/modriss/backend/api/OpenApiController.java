@@ -20,6 +20,8 @@ public class OpenApiController {
     Map<String, Object> paths = new LinkedHashMap<>();
     add(paths, "/api/auth/register", "post", "Register a user");
     add(paths, "/api/auth/login", "post", "Create an auth session");
+    add(paths, "/api/auth/password-reset/request", "post", "Email a password reset link");
+    add(paths, "/api/auth/password-reset/complete", "post", "Set a password from a reset link");
     add(paths, "/api/auth/me", "get", "Get current user");
     add(paths, "/api/projects", "get", "List projects");
     add(paths, "/api/projects", "post", "Create project");

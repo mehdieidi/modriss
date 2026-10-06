@@ -34,25 +34,29 @@ documentation, and Swagger UI.
 `errorId` matches the request correlation ID when available; otherwise the server generates a UUID
 for log lookup.
 
-Common statuses are `400`, `401`, `403`, `404`, `409`, `413`, `500`, and `501`.
+Common statuses are `400`, `401`, `403`, `404`, `409`, `413`, `500`, `501`, and `503`.
 
 ## Endpoint Groups
 
 ### Authentication
 
-| Method | Path                 | Purpose                                                             |
-| ------ | -------------------- | ------------------------------------------------------------------- |
-| `POST` | `/api/auth/register` | Register and start a session                                        |
-| `POST` | `/api/auth/login`    | Start a session                                                     |
-| `POST` | `/api/auth/guest`    | Start an isolated guest session (five assistant prompts by default) |
-| `GET`  | `/api/auth/me`       | Get current user                                                    |
-| `PUT`  | `/api/auth/me`       | Update display name                                                 |
-| `POST` | `/api/auth/logout`   | End current session                                                 |
+| Method | Path                                | Purpose                                                             |
+| ------ | ----------------------------------- | ------------------------------------------------------------------- |
+| `POST` | `/api/auth/register`                | Register and start a session                                        |
+| `POST` | `/api/auth/login`                   | Start a session                                                     |
+| `POST` | `/api/auth/password-reset/request`  | Email a password reset link                                         |
+| `POST` | `/api/auth/password-reset/complete` | Set a password from a reset link                                    |
+| `POST` | `/api/auth/guest`                   | Start an isolated guest session (five assistant prompts by default) |
+| `GET`  | `/api/auth/me`                      | Get current user                                                    |
+| `PUT`  | `/api/auth/me`                      | Update display name                                                 |
+| `POST` | `/api/auth/logout`                  | End current session                                                 |
 
 Guest accounts are normal authenticated accounts with an anonymous display name; their projects,
 models, uploads, and assistant history remain isolated by the same ownership checks as registered
 users. The server atomically counts accepted assistant prompts and returns `403` once the guest
 allowance is exhausted. The limit defaults to five and can be configured with `MODRISS_GUEST_PROMPT_LIMIT`.
+Password reset links expire after 30 minutes and can be used once. SMTP settings must be configured
+before the editor can send reset emails.
 
 ### Projects
 

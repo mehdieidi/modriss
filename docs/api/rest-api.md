@@ -44,16 +44,21 @@ project permission failures, `404` for missing records, `409` for conflicts such
 
 ## Auth
 
-| Method | Path                 | Body                               | Response       |
-| ------ | -------------------- | ---------------------------------- | -------------- |
-| `POST` | `/api/auth/register` | `email`, `password`, `displayName` | `AuthResponse` |
-| `POST` | `/api/auth/login`    | `email`, `password`                | `AuthResponse` |
-| `GET`  | `/api/auth/me`       | none                               | `UserDto`      |
-| `PUT`  | `/api/auth/me`       | `displayName`                      | `UserDto`      |
-| `POST` | `/api/auth/logout`   | none                               | empty response |
+| Method | Path                                | Body                               | Response                     |
+| ------ | ----------------------------------- | ---------------------------------- | ---------------------------- |
+| `POST` | `/api/auth/register`                | `email`, `password`, `displayName` | `AuthResponse`               |
+| `POST` | `/api/auth/login`                   | `email`, `password`                | `AuthResponse`               |
+| `POST` | `/api/auth/password-reset/request`  | `email`                            | Generic reset email response |
+| `POST` | `/api/auth/password-reset/complete` | `token`, `password`                | Empty response               |
+| `GET`  | `/api/auth/me`                      | none                               | `UserDto`                    |
+| `PUT`  | `/api/auth/me`                      | `displayName`                      | `UserDto`                    |
+| `POST` | `/api/auth/logout`                  | none                               | empty response               |
 
 Passwords must be at least 8 characters. `displayName` is required and has a maximum length of 80
-characters.
+characters. Password reset links expire after 30 minutes and can be used once. Configure
+`MODRISS_MAIL_HOST`, `MODRISS_MAIL_FROM`, and `MODRISS_EDITOR_URL` (plus SMTP credentials when
+required) to enable reset email delivery. Reset requests use the same response whether or not the
+email belongs to an account.
 
 ## Projects
 

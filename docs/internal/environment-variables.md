@@ -47,6 +47,23 @@ The modeling frontend uses the AntV G6 canvas renderer.
 | -------------------------- | --------------- | ------------------------------------------- |
 | `MODRISS_DIAGRAM_RENDERER` | `antv-g6`       | Frontend diagram renderer (AntV G6 canvas). |
 
+## Password Reset Email
+
+Password reset needs an SMTP account. Without an SMTP host and sender address, reset requests
+return `503` and no account lookup occurs.
+
+| Variable                         | Default                                  | What it means                                        |
+| -------------------------------- | ---------------------------------------- | ---------------------------------------------------- |
+| `MODRISS_EDITOR_URL`             | `http://localhost:8082` in local Compose | Public editor address used in reset links.           |
+| `MODRISS_MAIL_HOST`              | blank                                    | SMTP server hostname.                                |
+| `MODRISS_MAIL_PORT`              | `587`                                    | SMTP server port.                                    |
+| `MODRISS_MAIL_USERNAME`          | blank                                    | SMTP login username, when authentication is enabled. |
+| `MODRISS_MAIL_PASSWORD`          | blank                                    | SMTP login password. Treat it as a secret.           |
+| `MODRISS_MAIL_FROM`              | blank                                    | Sender email address accepted by the SMTP server.    |
+| `MODRISS_MAIL_SMTP_AUTH`         | `true`                                   | Enables SMTP username/password authentication.       |
+| `MODRISS_MAIL_STARTTLS`          | `true`                                   | Enables STARTTLS encryption.                         |
+| `MODRISS_MAIL_STARTTLS_REQUIRED` | `true`                                   | Requires STARTTLS before sending.                    |
+
 ## PostgreSQL
 
 These define the database container and the backend connection to it.

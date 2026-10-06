@@ -516,6 +516,20 @@
   background: color-mix(in srgb, var(--accent-glow) 68%, transparent);
 }
 
+.auth-text-btn {
+  align-self: flex-start;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--accent-light);
+  font: 600 12px/1.4 var(--font-ui);
+  cursor: pointer;
+}
+
+.auth-text-btn:hover {
+  text-decoration: underline;
+}
+
 .auth-message {
   border-radius: 8px;
   border: 1px solid transparent;

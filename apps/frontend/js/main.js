@@ -61,7 +61,11 @@ import { CHAT_ATTACHMENT_MAX_BYTES } from "./config.js";
 import { isMobileViewport } from "./responsive.js";
 import { applyTextDirection } from "./text-direction.js";
 import { closeMobilePanels, setMobileBackdropVisible, syncMobileDockState } from "./mobile-ui.js";
-import { ensureAuthenticated, logout, updateDisplayName } from "./auth.js";
+import {
+  ensureAuthenticated,
+  logout,
+  updateDisplayName,
+} from "./auth.js?v=password-reset-20261006";
 import { initSvgIconMasks } from "./icons.js";
 import {
   isModelingLevel,

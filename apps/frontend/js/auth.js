@@ -25,31 +25,64 @@ export function clearAuthSession() {
 
 function setAuthMode(mode) {
   const registerMode = mode === "register";
+  const resetMode = mode === "reset";
+  const title = registerMode
+    ? "Create your MODRISS account"
+    : resetMode
+      ? "Set a new password"
+      : "Sign in to MODRISS";
+  const subtitle = registerMode
+    ? "Register to create and manage projects."
+    : resetMode
+      ? "Choose a new password for your account."
+      : "Use your account to continue.";
   if (el.authLoginTabBtn) {
     el.authLoginTabBtn.classList.toggle("active", !registerMode);
+    el.authLoginTabBtn.classList.toggle("hidden", resetMode);
   }
   if (el.authRegisterTabBtn) {
     el.authRegisterTabBtn.classList.toggle("active", registerMode);
+    el.authRegisterTabBtn.classList.toggle("hidden", resetMode);
+  }
+  if (el.authModeSwitch) {
+    el.authModeSwitch.classList.toggle("hidden", resetMode);
+  }
+  if (el.authEmailInput) {
+    el.authEmailInput.classList.toggle("hidden", resetMode);
+    el.authEmailInput.required = !resetMode;
   }
   if (el.authDisplayNameInput) {
     el.authDisplayNameInput.classList.toggle("hidden", !registerMode);
   }
   if (el.authConfirmPasswordInput) {
-    el.authConfirmPasswordInput.classList.toggle("hidden", !registerMode);
+    el.authConfirmPasswordInput.classList.toggle("hidden", !registerMode && !resetMode);
   }
-  if (el.authTitle) {
-    el.authTitle.textContent = registerMode ? "Create your MODRISS account" : "Sign in to MODRISS";
+  if (el.authForgotPasswordBtn) {
+    el.authForgotPasswordBtn.classList.toggle("hidden", registerMode || resetMode);
   }
-  if (el.authSubtitle) {
-    el.authSubtitle.textContent = registerMode
-      ? "Register to create and manage projects."
-      : "Use your account to continue.";
+  if (el.authBackToLoginBtn) {
+    el.authBackToLoginBtn.classList.toggle("hidden", !resetMode);
+  }
+  if (el.authTitle && el.authChoice?.classList.contains("hidden")) {
+    el.authTitle.textContent = title;
+  }
+  if (el.authSubtitle && el.authChoice?.classList.contains("hidden")) {
+    el.authSubtitle.textContent = subtitle;
   }
   if (el.authPasswordInput) {
-    el.authPasswordInput.autocomplete = registerMode ? "new-password" : "current-password";
+    el.authPasswordInput.classList.remove("hidden");
+    el.authPasswordInput.autocomplete =
+      registerMode || resetMode ? "new-password" : "current-password";
+    el.authPasswordInput.placeholder = resetMode
+      ? "New password (min 8 chars)"
+      : "Password (min 8 chars)";
   }
   if (el.authSubmitBtn) {
-    el.authSubmitBtn.textContent = registerMode ? "Register" : "Login";
+    el.authSubmitBtn.textContent = registerMode
+      ? "Register"
+      : resetMode
+        ? "Update password"
+        : "Login";
   }
 }
 
@@ -60,13 +93,11 @@ function setAuthChoiceVisible(visible) {
   if (el.authSubmitBtn) {
     el.authSubmitBtn.classList.toggle("hidden", visible);
   }
-  if (el.authTitle) {
-    el.authTitle.textContent = visible ? "How would you like to continue?" : "Sign in to MODRISS";
+  if (visible && el.authTitle) {
+    el.authTitle.textContent = "How would you like to continue?";
   }
-  if (el.authSubtitle) {
-    el.authSubtitle.textContent = visible
-      ? "Use a guest workspace or access your account."
-      : "Use your account to continue.";
+  if (visible && el.authSubtitle) {
+    el.authSubtitle.textContent = "Use a guest workspace or access your account.";
   }
 }
 
@@ -109,17 +140,17 @@ function validateAuthForm(mode) {
   const confirmPassword = el.authConfirmPasswordInput?.value || "";
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-  if (!emailRegex.test(email)) {
+  if (mode !== "reset" && !emailRegex.test(email)) {
     throw new Error("Enter a valid email address");
   }
   if (password.length < 8) {
     throw new Error("Password must be at least 8 characters");
   }
-  if (mode === "register") {
-    if (!displayName) {
+  if (mode === "register" || mode === "reset") {
+    if (mode === "register" && !displayName) {
       throw new Error("Display name is required");
     }
-    if (displayName.length > 80) {
+    if (mode === "register" && displayName.length > 80) {
       throw new Error("Display name must be at most 80 characters");
     }
     if (password !== confirmPassword) {
@@ -134,8 +165,15 @@ async function showAuthDialog() {
     throw new Error("Authentication UI is unavailable");
   }
   let mode = "login";
+  let resetToken = new URLSearchParams(window.location.search).get("resetToken") || "";
+  if (resetToken) {
+    mode = "reset";
+  }
   setAuthMode(mode);
-  setAuthChoiceVisible(true);
+  setAuthChoiceVisible(!resetToken);
+  if (resetToken) {
+    setAuthMode(mode);
+  }
   clearAuthError();
   clearAuthSuccess();
   el.authEmailInput.value = "";
@@ -178,6 +216,12 @@ async function showAuthDialog() {
       if (el.authConfirmPasswordInput) {
         el.authConfirmPasswordInput.disabled = busy;
       }
+      if (el.authForgotPasswordBtn) {
+        el.authForgotPasswordBtn.disabled = busy;
+      }
+      if (el.authBackToLoginBtn) {
+        el.authBackToLoginBtn.disabled = busy;
+      }
     };
 
     const cleanup = () => {
@@ -192,6 +236,8 @@ async function showAuthDialog() {
       el.authConfirmPasswordInput?.removeEventListener("keydown", onKeyDown);
       el.authGuestBtn?.removeEventListener("click", onGuest);
       el.authContinueLoginBtn?.removeEventListener("click", onContinueLogin);
+      el.authForgotPasswordBtn?.removeEventListener("click", onForgotPassword);
+      el.authBackToLoginBtn?.removeEventListener("click", onBackToLogin);
     };
 
     const resolveSession = (result) => {
@@ -215,8 +261,52 @@ async function showAuthDialog() {
       el.authDisplayNameInput?.focus();
     };
 
+    const clearResetTokenFromUrl = () => {
+      const url = new URL(window.location.href);
+      url.searchParams.delete("resetToken");
+      window.history.replaceState({}, "", url);
+    };
+
+    const onBackToLogin = () => {
+      resetToken = "";
+      clearResetTokenFromUrl();
+      mode = "login";
+      clearAuthError();
+      clearAuthSuccess();
+      setAuthChoiceVisible(false);
+      setAuthMode(mode);
+      el.authEmailInput?.focus();
+    };
+
+    const onForgotPassword = async () => {
+      clearAuthError();
+      clearAuthSuccess();
+      const email = (el.authEmailInput?.value || "").trim();
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        showAuthError("Enter a valid email address");
+        el.authEmailInput?.focus();
+        return;
+      }
+      try {
+        setBusy(true);
+        const result = await api("/auth/password-reset/request", {
+          method: "POST",
+          body: JSON.stringify({ email }),
+        });
+        showAuthSuccess(
+          result?.message ||
+            "If an account with that email exists, a password reset link has been sent.",
+        );
+      } catch (error) {
+        showAuthError(formatUserError(error));
+      } finally {
+        setBusy(false);
+      }
+    };
+
     const onContinueLogin = () => {
       setAuthChoiceVisible(false);
+      setAuthMode(mode);
       el.authEmailInput?.focus();
     };
 
@@ -244,6 +334,22 @@ async function showAuthDialog() {
       }
       try {
         setBusy(true);
+        if (mode === "reset") {
+          await api("/auth/password-reset/complete", {
+            method: "POST",
+            body: JSON.stringify({ token: resetToken, password: payload.password }),
+          });
+          resetToken = "";
+          clearResetTokenFromUrl();
+          mode = "login";
+          setAuthMode(mode);
+          el.authPasswordInput.value = "";
+          el.authConfirmPasswordInput.value = "";
+          showAuthSuccess("Password updated. You can now sign in.");
+          el.authEmailInput?.focus();
+          setBusy(false);
+          return;
+        }
         if (mode === "register") {
           const result = await api("/auth/register", {
             method: "POST",
@@ -292,14 +398,26 @@ async function showAuthDialog() {
     el.authConfirmPasswordInput?.addEventListener("keydown", onKeyDown);
     el.authGuestBtn?.addEventListener("click", onGuest);
     el.authContinueLoginBtn?.addEventListener("click", onContinueLogin);
+    el.authForgotPasswordBtn?.addEventListener("click", onForgotPassword);
+    el.authBackToLoginBtn?.addEventListener("click", onBackToLogin);
 
-    el.authGuestBtn?.focus();
+    if (mode === "reset") {
+      el.authPasswordInput?.focus();
+    } else {
+      el.authGuestBtn?.focus();
+    }
   });
 }
 
 export async function ensureAuthenticated() {
+  const hasPasswordResetToken = Boolean(
+    new URLSearchParams(window.location.search).get("resetToken"),
+  );
+  if (hasPasswordResetToken) {
+    clearAuthSession();
+  }
   const existingToken = getAuthToken();
-  if (existingToken) {
+  if (existingToken && !hasPasswordResetToken) {
     try {
       const me = await api("/auth/me", {
         headers: { "X-Auth-Token": existingToken },

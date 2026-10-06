@@ -4,6 +4,7 @@ import io.mehdieidi.modriss.platform.artifact.domain.ArtifactIndexRecord;
 import io.mehdieidi.modriss.platform.artifact.domain.ArtifactRecord;
 import io.mehdieidi.modriss.platform.artifact.storage.ArtifactStorage;
 import io.mehdieidi.modriss.platform.identity.domain.AuthSession;
+import io.mehdieidi.modriss.platform.identity.domain.PasswordResetToken;
 import io.mehdieidi.modriss.platform.identity.domain.UserRecord;
 import io.mehdieidi.modriss.platform.kernel.ModelLevel;
 import io.mehdieidi.modriss.platform.kernel.PlatformException;
@@ -90,6 +91,13 @@ public final class PostgresPlatformStore implements PlatformStore, ArtifactStora
       return maybeOne("SELECT * FROM auth_sessions WHERE token = ?", this::session, id(key, 1))
           .orElse(null);
     }
+    if (type == PasswordResetToken.class) {
+      return maybeOne(
+              "SELECT * FROM password_reset_tokens WHERE id = ?",
+              this::passwordResetToken,
+              id(key, 1))
+          .orElse(null);
+    }
     if (type == ProjectRecord.class) {
       return maybeOne("SELECT * FROM projects WHERE id = ?", this::project, id(key, 1))
           .orElse(null);
@@ -164,6 +172,8 @@ public final class PostgresPlatformStore implements PlatformStore, ArtifactStora
         writeUser(record);
       } else if (value instanceof AuthSession record) {
         writeSession(record);
+      } else if (value instanceof PasswordResetToken record) {
+        writePasswordResetToken(record);
       } else if (value instanceof ProjectRecord record) {
         writeProject(record);
       } else if (value instanceof ModelRecord record) {
@@ -258,6 +268,8 @@ public final class PostgresPlatformStore implements PlatformStore, ArtifactStora
       jdbc.update("DELETE FROM staged_import_payloads WHERE token = ?", id(key, 1));
     } else if (key[0].equals("sessions")) {
       jdbc.update("DELETE FROM auth_sessions WHERE token = ?", id(key, 1));
+    } else if (key[0].equals("password-resets")) {
+      jdbc.update("DELETE FROM password_reset_tokens WHERE id = ?", id(key, 1));
     } else if (key[0].equals("model-imports")) {
       jdbc.update("DELETE FROM staged_imports WHERE token = ?", id(key, 1));
     } else if (key[0].equals("projects") && key.length >= 5 && key[2].equals("models")) {
@@ -283,6 +295,13 @@ public final class PostgresPlatformStore implements PlatformStore, ArtifactStora
       List<?> values;
       if (type == UserRecord.class) {
         values = jdbc.query("SELECT * FROM users ORDER BY created_at", this::user);
+      } else if (type == AuthSession.class) {
+        values = jdbc.query("SELECT * FROM auth_sessions ORDER BY created_at", this::session);
+      } else if (type == PasswordResetToken.class) {
+        values =
+            jdbc.query(
+                "SELECT * FROM password_reset_tokens ORDER BY expires_at",
+                this::passwordResetToken);
       } else if (type == ProjectRecord.class) {
         values = jdbc.query("SELECT * FROM projects ORDER BY updated_at DESC", this::project);
       } else if (type == ModelRecord.class) {
@@ -433,6 +452,19 @@ public final class PostgresPlatformStore implements PlatformStore, ArtifactStora
         r.token(),
         r.userId(),
         timestamp(r.createdAt()),
+        timestamp(r.expiresAt()));
+  }
+
+  private void writePasswordResetToken(PasswordResetToken r) {
+    jdbc.update(
+        """
+        INSERT INTO password_reset_tokens VALUES (?, ?, ?, ?)
+        ON CONFLICT (id) DO UPDATE SET user_id=EXCLUDED.user_id,
+          secret_hash=EXCLUDED.secret_hash, expires_at=EXCLUDED.expires_at
+        """,
+        r.id(),
+        r.userId(),
+        r.secretHash(),
         timestamp(r.expiresAt()));
   }
 
@@ -649,6 +681,14 @@ ON CONFLICT (id) DO UPDATE SET project_id=EXCLUDED.project_id,
         instant(rs, "expires_at"));
   }
 
+  private PasswordResetToken passwordResetToken(ResultSet rs, int row) throws SQLException {
+    return new PasswordResetToken(
+        rs.getString("id"),
+        rs.getString("user_id"),
+        rs.getString("secret_hash"),
+        instant(rs, "expires_at"));
+  }
+
   private ProjectRecord project(ResultSet rs, int row) throws SQLException {
     String id = rs.getString("id");
     List<ProjectMember> members =
@@ -833,6 +873,9 @@ ON CONFLICT (id) DO UPDATE SET project_id=EXCLUDED.project_id,
     }
     if (key[0].equals("sessions")) {
       return AuthSession.class;
+    }
+    if (key[0].equals("password-resets")) {
+      return PasswordResetToken.class;
     }
     if (key[0].equals("model-imports")) {
       return StagedImportRecord.class;

@@ -10,6 +10,8 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -24,10 +26,13 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/auth")
 public class AuthController {
 
+  private static final Logger log = LoggerFactory.getLogger(AuthController.class);
+
   private final AuthService authService;
   private final AdminAccessService adminAccess;
   private final VisitorAnalyticsService analytics;
   private final GuestAccessService guests;
+  private final PasswordResetEmailService passwordResetEmail;
 
   /**
    * Creates the authentication controller.
@@ -38,11 +43,13 @@ public class AuthController {
       AuthService authService,
       AdminAccessService adminAccess,
       VisitorAnalyticsService analytics,
-      GuestAccessService guests) {
+      GuestAccessService guests,
+      PasswordResetEmailService passwordResetEmail) {
     this.authService = authService;
     this.adminAccess = adminAccess;
     this.analytics = analytics;
     this.guests = guests;
+    this.passwordResetEmail = passwordResetEmail;
   }
 
   /**
@@ -70,6 +77,31 @@ public class AuthController {
     adminAccess.requireEnabled(result.user());
     analytics.recordLogin(result.user(), httpRequest, request.publicIp());
     return new AuthResponse(result.token(), UserDto.from(result.user(), false));
+  }
+
+  /** Sends a reset link when an account exists, with the same response for every email address. */
+  @PostMapping("/password-reset/request")
+  PasswordResetRequestResponse requestPasswordReset(
+      @Valid @RequestBody PasswordResetRequestPayload request) {
+    passwordResetEmail.requireConfigured();
+    authService
+        .createPasswordReset(request.email())
+        .ifPresent(
+            reset -> {
+              try {
+                passwordResetEmail.send(reset);
+              } catch (RuntimeException ex) {
+                log.error("Could not deliver password reset email", ex);
+              }
+            });
+    return new PasswordResetRequestResponse(
+        "If an account with that email exists, a password reset link has been sent.");
+  }
+
+  /** Replaces the account password using a valid emailed token. */
+  @PostMapping("/password-reset/complete")
+  void completePasswordReset(@Valid @RequestBody CompletePasswordResetPayload request) {
+    authService.resetPassword(request.token(), request.password());
   }
 
   /** Creates an isolated anonymous session. No client-provided identity is trusted. */
@@ -139,6 +171,16 @@ public class AuthController {
       @Email @NotBlank String email,
       @Size(min = 8) String password,
       @Size(max = 45) String publicIp) {}
+
+  /** Email address submitted to request a password reset link. */
+  public record PasswordResetRequestPayload(@Email @NotBlank String email) {}
+
+  /** One-time reset token and replacement password. */
+  public record CompletePasswordResetPayload(
+      @NotBlank String token, @NotBlank @Size(min = 8) String password) {}
+
+  /** Non-enumerating response returned for every reset email request. */
+  public record PasswordResetRequestResponse(String message) {}
 
   /**
    * Current-user profile update payload.
