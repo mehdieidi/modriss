@@ -122,7 +122,7 @@ button {
 
 @media screen and (min-width: 76.25rem) {
   .md-main__inner.md-grid {
-    width: calc(100% - 4rem);
+    width: calc(100% - 10rem);
     max-width: 100rem;
   }
 
