@@ -65,7 +65,7 @@ import {
   ensureAuthenticated,
   logout,
   updateDisplayName,
-} from "./auth.js?v=password-reset-20261006";
+} from "./auth.js?v=email-verification-20261006";
 import { initSvgIconMasks } from "./icons.js";
 import {
   isModelingLevel,

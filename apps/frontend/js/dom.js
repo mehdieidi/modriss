@@ -207,6 +207,7 @@ export const el = {
   authPasswordInput: document.getElementById("authPasswordInput"),
   authConfirmPasswordInput: document.getElementById("authConfirmPasswordInput"),
   authForgotPasswordBtn: document.getElementById("authForgotPasswordBtn"),
+  authResendVerificationBtn: document.getElementById("authResendVerificationBtn"),
   authBackToLoginBtn: document.getElementById("authBackToLoginBtn"),
   authSubmitBtn: document.getElementById("authSubmitBtn"),
   authError: document.getElementById("authError"),

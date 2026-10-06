@@ -4,6 +4,7 @@ import io.mehdieidi.modriss.platform.artifact.domain.ArtifactIndexRecord;
 import io.mehdieidi.modriss.platform.artifact.domain.ArtifactRecord;
 import io.mehdieidi.modriss.platform.artifact.storage.ArtifactStorage;
 import io.mehdieidi.modriss.platform.identity.domain.AuthSession;
+import io.mehdieidi.modriss.platform.identity.domain.EmailVerificationToken;
 import io.mehdieidi.modriss.platform.identity.domain.PasswordResetToken;
 import io.mehdieidi.modriss.platform.identity.domain.UserRecord;
 import io.mehdieidi.modriss.platform.kernel.ModelLevel;
@@ -98,6 +99,13 @@ public final class PostgresPlatformStore implements PlatformStore, ArtifactStora
               id(key, 1))
           .orElse(null);
     }
+    if (type == EmailVerificationToken.class) {
+      return maybeOne(
+              "SELECT * FROM email_verification_tokens WHERE id = ?",
+              this::emailVerificationToken,
+              id(key, 1))
+          .orElse(null);
+    }
     if (type == ProjectRecord.class) {
       return maybeOne("SELECT * FROM projects WHERE id = ?", this::project, id(key, 1))
           .orElse(null);
@@ -174,6 +182,8 @@ public final class PostgresPlatformStore implements PlatformStore, ArtifactStora
         writeSession(record);
       } else if (value instanceof PasswordResetToken record) {
         writePasswordResetToken(record);
+      } else if (value instanceof EmailVerificationToken record) {
+        writeEmailVerificationToken(record);
       } else if (value instanceof ProjectRecord record) {
         writeProject(record);
       } else if (value instanceof ModelRecord record) {
@@ -270,6 +280,8 @@ public final class PostgresPlatformStore implements PlatformStore, ArtifactStora
       jdbc.update("DELETE FROM auth_sessions WHERE token = ?", id(key, 1));
     } else if (key[0].equals("password-resets")) {
       jdbc.update("DELETE FROM password_reset_tokens WHERE id = ?", id(key, 1));
+    } else if (key[0].equals("email-verifications")) {
+      jdbc.update("DELETE FROM email_verification_tokens WHERE id = ?", id(key, 1));
     } else if (key[0].equals("model-imports")) {
       jdbc.update("DELETE FROM staged_imports WHERE token = ?", id(key, 1));
     } else if (key[0].equals("projects") && key.length >= 5 && key[2].equals("models")) {
@@ -302,6 +314,11 @@ public final class PostgresPlatformStore implements PlatformStore, ArtifactStora
             jdbc.query(
                 "SELECT * FROM password_reset_tokens ORDER BY expires_at",
                 this::passwordResetToken);
+      } else if (type == EmailVerificationToken.class) {
+        values =
+            jdbc.query(
+                "SELECT * FROM email_verification_tokens ORDER BY expires_at",
+                this::emailVerificationToken);
       } else if (type == ProjectRecord.class) {
         values = jdbc.query("SELECT * FROM projects ORDER BY updated_at DESC", this::project);
       } else if (type == ModelRecord.class) {
@@ -428,10 +445,12 @@ public final class PostgresPlatformStore implements PlatformStore, ArtifactStora
   private void writeUser(UserRecord r) {
     jdbc.update(
         """
-        INSERT INTO users VALUES (?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO users (id, email, display_name, password_hash, salt, created_at, updated_at,
+          email_verified) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
         ON CONFLICT (id) DO UPDATE SET email=EXCLUDED.email,
           display_name=EXCLUDED.display_name, password_hash=EXCLUDED.password_hash,
-          salt=EXCLUDED.salt, updated_at=EXCLUDED.updated_at
+          salt=EXCLUDED.salt, updated_at=EXCLUDED.updated_at,
+          email_verified=EXCLUDED.email_verified
         """,
         r.id(),
         r.email(),
@@ -439,7 +458,8 @@ public final class PostgresPlatformStore implements PlatformStore, ArtifactStora
         r.passwordHash(),
         r.salt(),
         timestamp(r.createdAt()),
-        timestamp(r.updatedAt()));
+        timestamp(r.updatedAt()),
+        r.isEmailVerified());
   }
 
   private void writeSession(AuthSession r) {
@@ -459,6 +479,20 @@ public final class PostgresPlatformStore implements PlatformStore, ArtifactStora
     jdbc.update(
         """
         INSERT INTO password_reset_tokens VALUES (?, ?, ?, ?)
+        ON CONFLICT (id) DO UPDATE SET user_id=EXCLUDED.user_id,
+          secret_hash=EXCLUDED.secret_hash, expires_at=EXCLUDED.expires_at
+        """,
+        r.id(),
+        r.userId(),
+        r.secretHash(),
+        timestamp(r.expiresAt()));
+  }
+
+  private void writeEmailVerificationToken(EmailVerificationToken r) {
+    jdbc.update(
+        """
+        INSERT INTO email_verification_tokens (id, user_id, secret_hash, expires_at)
+        VALUES (?, ?, ?, ?)
         ON CONFLICT (id) DO UPDATE SET user_id=EXCLUDED.user_id,
           secret_hash=EXCLUDED.secret_hash, expires_at=EXCLUDED.expires_at
         """,
@@ -670,7 +704,8 @@ ON CONFLICT (id) DO UPDATE SET project_id=EXCLUDED.project_id,
         rs.getString("password_hash"),
         rs.getString("salt"),
         instant(rs, "created_at"),
-        instant(rs, "updated_at"));
+        instant(rs, "updated_at"),
+        rs.getBoolean("email_verified"));
   }
 
   private AuthSession session(ResultSet rs, int row) throws SQLException {
@@ -683,6 +718,14 @@ ON CONFLICT (id) DO UPDATE SET project_id=EXCLUDED.project_id,
 
   private PasswordResetToken passwordResetToken(ResultSet rs, int row) throws SQLException {
     return new PasswordResetToken(
+        rs.getString("id"),
+        rs.getString("user_id"),
+        rs.getString("secret_hash"),
+        instant(rs, "expires_at"));
+  }
+
+  private EmailVerificationToken emailVerificationToken(ResultSet rs, int row) throws SQLException {
+    return new EmailVerificationToken(
         rs.getString("id"),
         rs.getString("user_id"),
         rs.getString("secret_hash"),
@@ -876,6 +919,9 @@ ON CONFLICT (id) DO UPDATE SET project_id=EXCLUDED.project_id,
     }
     if (key[0].equals("password-resets")) {
       return PasswordResetToken.class;
+    }
+    if (key[0].equals("email-verifications")) {
+      return EmailVerificationToken.class;
     }
     if (key[0].equals("model-imports")) {
       return StagedImportRecord.class;

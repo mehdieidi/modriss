@@ -51,7 +51,9 @@ paths:
   /api/auth/register:
     post:
       tags: [Auth]
-      summary: Register a user
+      summary: Register a user and send an email verification link
+      description: >-
+        The account cannot sign in until the email link is completed. The link expires after 24 hours.
       security: []
       requestBody:
         required: true
@@ -61,15 +63,21 @@ paths:
               $ref: "#/components/schemas/RegisterRequest"
       responses:
         "200":
-          description: Created auth session
+          description: Account created; verification email is being sent
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/AuthResponse"
+                $ref: "#/components/schemas/RegistrationResponse"
         "400":
           $ref: "#/components/responses/BadRequest"
         "409":
           $ref: "#/components/responses/Conflict"
+        "503":
+          description: SMTP email delivery is not configured
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
   /api/auth/login:
     post:
       tags: [Auth]
@@ -92,6 +100,52 @@ paths:
           $ref: "#/components/responses/BadRequest"
         "401":
           $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+  /api/auth/email-verification/request:
+    post:
+      tags: [Auth]
+      summary: Resend an email verification link
+      description: >-
+        Returns the same response whether or not an unverified account exists for the email.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EmailVerificationRequest"
+      responses:
+        "200":
+          description: Generic response for every valid email address
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EmailVerificationRequestResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "503":
+          description: SMTP email delivery is not configured
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+  /api/auth/email-verification/complete:
+    post:
+      tags: [Auth]
+      summary: Verify an account email address
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CompleteEmailVerificationRequest"
+      responses:
+        "200":
+          description: Email address verified
+        "400":
+          $ref: "#/components/responses/BadRequest"
   /api/auth/password-reset/request:
     post:
       tags: [Auth]
@@ -2055,6 +2109,13 @@ components:
         displayName:
           type: string
           maxLength: 80
+    RegistrationResponse:
+      type: object
+      required: [message]
+      properties:
+        message:
+          type: string
+          example: Account created. Check your email for a verification link before signing in.
     LoginRequest:
       type: object
       required: [email, password]
@@ -2079,6 +2140,27 @@ components:
         message:
           type: string
           example: If an account with that email exists, a password reset link has been sent.
+    EmailVerificationRequest:
+      type: object
+      required: [email]
+      properties:
+        email:
+          type: string
+          format: email
+    EmailVerificationRequestResponse:
+      type: object
+      required: [message]
+      properties:
+        message:
+          type: string
+          example: >-
+            If an unverified account with that email exists, a verification link has been sent.
+    CompleteEmailVerificationRequest:
+      type: object
+      required: [token]
+      properties:
+        token:
+          type: string
     CompletePasswordResetRequest:
       type: object
       required: [token, password]

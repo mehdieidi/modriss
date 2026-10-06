@@ -99,6 +99,10 @@ python scripts/format.py --check
 For the required unified chatbot fixtures, rebuild the Docker Compose backend, verify health, and
 use the durable live-eval gate:
 
+Set `MODRISS_LIVE_EVAL_EMAIL` and `MODRISS_LIVE_EVAL_PASSWORD` to credentials for an account that
+has completed email verification. The script signs in with that account so live evaluations are
+not constrained by the guest prompt limit.
+
 ```powershell
 powershell -ExecutionPolicy Bypass -File scripts\run-assistant-live-eval.ps1 `
   -FixtureId create-cim-library `
@@ -106,7 +110,7 @@ powershell -ExecutionPolicy Bypass -File scripts\run-assistant-live-eval.ps1 `
 ```
 
 Run the same command for `cim-feature-evolution`, `source-to-cim-pantry`, and
-`create-pim-serverless`. The script registers a temporary user, creates project/model state,
+`create-pim-serverless`. The script creates project/model state,
 uploads fixture source when required, submits durable turns, follows checkpoints/terminal state,
 fetches the model, and records calls, tokens, latency, coverage, preservation, structure, and
 validation evidence.

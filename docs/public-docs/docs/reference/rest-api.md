@@ -10,14 +10,15 @@ Interactive and machine-readable contracts:
 
 ## Authentication
 
-Registration, login, and guest access return a session token. Send it on protected endpoints:
+Login and guest access return a session token. Registration sends an email verification link and
+does not create a session until the address is verified. Send a session token on protected endpoints:
 
 ```http
 X-Auth-Token: <token>
 ```
 
-Public endpoints include health, registration, login, guest-session creation, modeling configuration, layout, generated API
-documentation, and Swagger UI.
+Public endpoints include health, registration, email verification, login, guest-session creation,
+modeling configuration, layout, generated API documentation, and Swagger UI.
 
 ## Error Shape
 
@@ -40,23 +41,25 @@ Common statuses are `400`, `401`, `403`, `404`, `409`, `413`, `500`, `501`, and 
 
 ### Authentication
 
-| Method | Path                                | Purpose                                                             |
-| ------ | ----------------------------------- | ------------------------------------------------------------------- |
-| `POST` | `/api/auth/register`                | Register and start a session                                        |
-| `POST` | `/api/auth/login`                   | Start a session                                                     |
-| `POST` | `/api/auth/password-reset/request`  | Email a password reset link                                         |
-| `POST` | `/api/auth/password-reset/complete` | Set a password from a reset link                                    |
-| `POST` | `/api/auth/guest`                   | Start an isolated guest session (five assistant prompts by default) |
-| `GET`  | `/api/auth/me`                      | Get current user                                                    |
-| `PUT`  | `/api/auth/me`                      | Update display name                                                 |
-| `POST` | `/api/auth/logout`                  | End current session                                                 |
+| Method | Path                                    | Purpose                                                             |
+| ------ | --------------------------------------- | ------------------------------------------------------------------- |
+| `POST` | `/api/auth/register`                    | Register and email an address verification link                     |
+| `POST` | `/api/auth/email-verification/request`  | Resend an address verification link                                 |
+| `POST` | `/api/auth/email-verification/complete` | Verify an address from its emailed link                             |
+| `POST` | `/api/auth/login`                       | Start a session after email verification                            |
+| `POST` | `/api/auth/password-reset/request`      | Email a password reset link                                         |
+| `POST` | `/api/auth/password-reset/complete`     | Set a password from a reset link                                    |
+| `POST` | `/api/auth/guest`                       | Start an isolated guest session (five assistant prompts by default) |
+| `GET`  | `/api/auth/me`                          | Get current user                                                    |
+| `PUT`  | `/api/auth/me`                          | Update display name                                                 |
+| `POST` | `/api/auth/logout`                      | End current session                                                 |
 
 Guest accounts are normal authenticated accounts with an anonymous display name; their projects,
 models, uploads, and assistant history remain isolated by the same ownership checks as registered
 users. The server atomically counts accepted assistant prompts and returns `403` once the guest
 allowance is exhausted. The limit defaults to five and can be configured with `MODRISS_GUEST_PROMPT_LIMIT`.
-Password reset links expire after 30 minutes and can be used once. SMTP settings must be configured
-before the editor can send reset emails.
+Verification links expire after 24 hours; password reset links expire after 30 minutes. Both can be
+used once. SMTP settings must be configured before the editor can send account emails.
 
 ### Projects
 

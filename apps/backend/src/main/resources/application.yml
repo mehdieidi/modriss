@@ -63,6 +63,9 @@ modriss:
   password-reset:
     from: ${MODRISS_MAIL_FROM:}
     editor-url: ${MODRISS_EDITOR_URL:http://localhost:8082}
+  email-verification:
+    from: ${MODRISS_MAIL_FROM:}
+    editor-url: ${MODRISS_EDITOR_URL:http://localhost:8082}
   guest:
     prompt-limit: ${MODRISS_GUEST_PROMPT_LIMIT:5}
   admin:

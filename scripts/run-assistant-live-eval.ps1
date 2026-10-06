@@ -666,11 +666,14 @@ if ($FixtureId.Count -gt 0) {
   }
 }
 
-$email = "assistant-live-" + [guid]::NewGuid().ToString("N").Substring(0, 10) + "@example.test"
-$auth = Invoke-Api -Method POST -Path "/api/auth/register" -Body @{
+$email = $env:MODRISS_LIVE_EVAL_EMAIL
+$password = $env:MODRISS_LIVE_EVAL_PASSWORD
+if ([string]::IsNullOrWhiteSpace($email) -or [string]::IsNullOrWhiteSpace($password)) {
+  throw "Set MODRISS_LIVE_EVAL_EMAIL and MODRISS_LIVE_EVAL_PASSWORD for a verified account."
+}
+$auth = Invoke-Api -Method POST -Path "/api/auth/login" -Body @{
   email = $email
-  password = "correct horse 2026"
-  displayName = "Assistant Live Eval"
+  password = $password
 }
 $token = $auth.token
 $project = Invoke-Api -Method POST -Path "/api/projects" -Token $token -Body @{

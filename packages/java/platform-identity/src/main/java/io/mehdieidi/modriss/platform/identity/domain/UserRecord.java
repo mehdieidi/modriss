@@ -12,6 +12,8 @@ import java.time.Instant;
  * @param salt password salt
  * @param createdAt creation timestamp
  * @param updatedAt last update timestamp
+ * @param emailVerified whether the user has verified their email address; null legacy values mean
+ *     verified
  */
 public record UserRecord(
     String id,
@@ -20,4 +22,29 @@ public record UserRecord(
     String passwordHash,
     String salt,
     Instant createdAt,
-    Instant updatedAt) {}
+    Instant updatedAt,
+    Boolean emailVerified) {
+
+  public UserRecord {
+    if (emailVerified == null) {
+      emailVerified = true;
+    }
+  }
+
+  /** Creates a verified user record for trusted internal account creation and legacy callers. */
+  public UserRecord(
+      String id,
+      String email,
+      String displayName,
+      String passwordHash,
+      String salt,
+      Instant createdAt,
+      Instant updatedAt) {
+    this(id, email, displayName, passwordHash, salt, createdAt, updatedAt, true);
+  }
+
+  /** Treats records written before email verification existed as verified. */
+  public boolean isEmailVerified() {
+    return !Boolean.FALSE.equals(emailVerified);
+  }
+}

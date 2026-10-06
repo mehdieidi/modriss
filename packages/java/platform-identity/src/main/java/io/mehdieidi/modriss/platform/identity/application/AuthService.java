@@ -1,6 +1,7 @@
 package io.mehdieidi.modriss.platform.identity.application;
 
 import io.mehdieidi.modriss.platform.identity.domain.AuthSession;
+import io.mehdieidi.modriss.platform.identity.domain.EmailVerificationToken;
 import io.mehdieidi.modriss.platform.identity.domain.PasswordResetToken;
 import io.mehdieidi.modriss.platform.identity.domain.UserRecord;
 import io.mehdieidi.modriss.platform.kernel.PlatformException;
@@ -39,6 +40,9 @@ public final class AuthService {
   /** Lifetime of an emailed password reset link. */
   private static final Duration PASSWORD_RESET_TTL = Duration.ofMinutes(30);
 
+  /** Lifetime of an emailed email verification link. */
+  private static final Duration EMAIL_VERIFICATION_TTL = Duration.ofHours(24);
+
   /** File repository used for users and sessions. */
   private final PlatformStore store;
 
@@ -60,7 +64,10 @@ public final class AuthService {
   }
 
   /**
-   * Registers a new user and immediately issues a session.
+   * Creates a verified account and session for trusted internal account creation.
+   *
+   * <p>Public self-registration must use {@link #registerPendingVerification(String, String,
+   * String)} so the account cannot sign in until the email address is verified.
    *
    * @param email user email address
    * @param password plain-text password to hash
@@ -87,6 +94,34 @@ public final class AuthService {
     store.write(Path.of("users", user.id() + ".json"), user);
     log.info("Registered user {}", user.email());
     return issueSession(user);
+  }
+
+  /** Creates a public registration and a one-time email verification request without a session. */
+  public EmailVerificationRequest registerPendingVerification(
+      String email, String password, String displayName) {
+    return store.inTransaction(
+        () -> {
+          String normalizedEmail = normalizeEmail(email);
+          validatePassword(password);
+          if (findByEmail(normalizedEmail) != null) {
+            throw new PlatformException(409, "An account with this email already exists.");
+          }
+          Instant now = Instant.now();
+          String salt = randomToken(24);
+          UserRecord user =
+              new UserRecord(
+                  UUID.randomUUID().toString(),
+                  normalizedEmail,
+                  requireText(displayName, "Display name is required."),
+                  hashPassword(password, salt),
+                  salt,
+                  now,
+                  now,
+                  false);
+          store.write(Path.of("users", user.id() + ".json"), user);
+          log.info("Registered user awaiting email verification {}", user.email());
+          return createEmailVerificationRequest(user);
+        });
   }
 
   /** Creates an anonymous account with an unguessable internal credential and a session. */
@@ -121,7 +156,79 @@ public final class AuthService {
         || !constantTimeEquals(user.passwordHash(), hashPassword(password, user.salt()))) {
       throw new PlatformException(401, "Invalid email or password.");
     }
+    if (!user.isEmailVerified()) {
+      throw new PlatformException(
+          403,
+          "Verify your email address before signing in. Check your inbox or request a new"
+              + " verification email.");
+    }
     return issueSession(user);
+  }
+
+  /** Creates a fresh verification email request for an existing unverified account. */
+  public Optional<EmailVerificationRequest> createEmailVerification(String email) {
+    return store.inTransaction(
+        () -> {
+          UserRecord user = findByEmail(normalizeEmail(email));
+          if (user == null || isGuest(user) || user.isEmailVerified()) {
+            return Optional.empty();
+          }
+          return Optional.of(createEmailVerificationRequest(user));
+        });
+  }
+
+  /** Marks an account verified using a valid, unexpired one-time token. */
+  public void verifyEmail(String token) {
+    store.inTransaction(
+        () -> {
+          String[] parts = token == null ? new String[0] : token.split("\\.", -1);
+          if (parts.length != 2 || parts[1].isBlank()) {
+            throw invalidEmailVerificationToken();
+          }
+
+          String id;
+          try {
+            id = UUID.fromString(parts[0]).toString();
+          } catch (IllegalArgumentException ex) {
+            throw invalidEmailVerificationToken();
+          }
+
+          Path tokenPath = Path.of("email-verifications", id + ".json");
+          EmailVerificationToken verification =
+              store.read(tokenPath, EmailVerificationToken.class).orElse(null);
+          if (verification == null
+              || !verification.expiresAt().isAfter(Instant.now())
+              || !constantTimeEquals(verification.secretHash(), sha256Hex(parts[1]))) {
+            throw invalidEmailVerificationToken();
+          }
+
+          Path userPath = Path.of("users", verification.userId() + ".json");
+          UserRecord user =
+              store
+                  .read(userPath, UserRecord.class)
+                  .orElseThrow(this::invalidEmailVerificationToken);
+          if (isGuest(user)) {
+            throw invalidEmailVerificationToken();
+          }
+
+          if (!user.isEmailVerified()) {
+            store.write(
+                userPath,
+                new UserRecord(
+                    user.id(),
+                    user.email(),
+                    user.displayName(),
+                    user.passwordHash(),
+                    user.salt(),
+                    user.createdAt(),
+                    Instant.now(),
+                    true));
+            log.info("Verified email address for user {}", user.id());
+          }
+          store.deleteIfExists(tokenPath);
+          invalidateEmailVerificationTokens(user.id());
+          return null;
+        });
   }
 
   /**
@@ -204,7 +311,8 @@ public final class AuthService {
             hashPassword(password, salt),
             salt,
             user.createdAt(),
-            Instant.now()));
+            Instant.now(),
+            user.isEmailVerified()));
     store.deleteIfExists(tokenPath);
     invalidatePasswordResetTokens(user.id());
     revokeSessions(user.id());
@@ -229,8 +337,14 @@ public final class AuthService {
       logout(token);
       throw new PlatformException(401, "Session is invalid or expired.");
     }
-    return store.require(
-        Path.of("users", session.userId() + ".json"), UserRecord.class, "User not found.");
+    UserRecord user =
+        store.require(
+            Path.of("users", session.userId() + ".json"), UserRecord.class, "User not found.");
+    if (!user.isEmailVerified()) {
+      logout(token);
+      throw new PlatformException(403, "Verify your email address before using this account.");
+    }
+    return user;
   }
 
   /**
@@ -250,7 +364,8 @@ public final class AuthService {
             user.passwordHash(),
             user.salt(),
             user.createdAt(),
-            Instant.now());
+            Instant.now(),
+            user.isEmailVerified());
     store.write(Path.of("users", user.id() + ".json"), updated);
     return updated;
   }
@@ -298,6 +413,9 @@ public final class AuthService {
    * @return issued authentication result
    */
   private AuthResult issueSession(UserRecord user) {
+    if (!user.isEmailVerified()) {
+      throw new PlatformException(403, "Verify your email address before signing in.");
+    }
     Instant now = Instant.now();
     String token = randomToken(32);
     String tokenHash = sessionTokenHash(token);
@@ -315,6 +433,31 @@ public final class AuthService {
     }
   }
 
+  private EmailVerificationRequest createEmailVerificationRequest(UserRecord user) {
+    invalidateEmailVerificationTokens(user.id());
+    Instant now = Instant.now();
+    String id = UUID.randomUUID().toString();
+    String secret = randomToken(32);
+    store.write(
+        Path.of("email-verifications", id + ".json"),
+        new EmailVerificationToken(
+            id, user.id(), sha256Hex(secret), now.plus(EMAIL_VERIFICATION_TTL)));
+    return new EmailVerificationRequest(user.email(), user.displayName(), id + "." + secret);
+  }
+
+  private void invalidateEmailVerificationTokens(String userId) {
+    for (EmailVerificationToken verification :
+        store.list(Path.of("email-verifications"), EmailVerificationToken.class)) {
+      if (userId.equals(verification.userId())) {
+        store.deleteIfExists(Path.of("email-verifications", verification.id() + ".json"));
+      }
+    }
+  }
+
+  private boolean isGuest(UserRecord user) {
+    return user.email().endsWith("@guest.modriss.invalid");
+  }
+
   private void revokeSessions(String userId) {
     for (AuthSession session : store.list(Path.of("sessions"), AuthSession.class)) {
       if (userId.equals(session.userId())) {
@@ -325,6 +468,10 @@ public final class AuthService {
 
   private PlatformException invalidPasswordResetToken() {
     return new PlatformException(400, "Password reset link is invalid or expired.");
+  }
+
+  private PlatformException invalidEmailVerificationToken() {
+    return new PlatformException(400, "Email verification link is invalid or expired.");
   }
 
   private String sessionTokenHash(String token) {
@@ -455,4 +602,7 @@ public final class AuthService {
 
   /** Details used only to deliver a password reset email. */
   public record PasswordResetRequest(String email, String displayName, String token) {}
+
+  /** Details used only to deliver an email verification link. */
+  public record EmailVerificationRequest(String email, String displayName, String token) {}
 }

@@ -12,14 +12,14 @@ Local development defaults to:
 http://127.0.0.1:8080
 ```
 
-All protected endpoints require the session token returned by login or registration:
+All protected endpoints require a session token returned by login or guest-session creation:
 
 ```http
 X-Auth-Token: <token>
 ```
 
-`/api/health`, `/api/auth/register`, `/api/auth/login`, `/api/modeling/config`, and `/api/layout`
-do not require this header.
+`/api/health`, authentication endpoints (including registration, email verification, login, and
+guest creation), `/api/modeling/config`, and `/api/layout` do not require this header.
 
 ## Errors
 
@@ -39,26 +39,31 @@ Errors are returned as JSON:
 for log lookup.
 
 Common status codes are `400` for invalid input, `401` for missing or expired auth, `403` for
-project permission failures, `404` for missing records, `409` for conflicts such as stale revisions,
+unverified accounts or project permission failures, `404` for missing records, `409` for conflicts such as stale revisions,
 `413` for model/artifact size limits, `501` for planned endpoints, and `500` for unexpected errors.
 
 ## Auth
 
-| Method | Path                                | Body                               | Response                     |
-| ------ | ----------------------------------- | ---------------------------------- | ---------------------------- |
-| `POST` | `/api/auth/register`                | `email`, `password`, `displayName` | `AuthResponse`               |
-| `POST` | `/api/auth/login`                   | `email`, `password`                | `AuthResponse`               |
-| `POST` | `/api/auth/password-reset/request`  | `email`                            | Generic reset email response |
-| `POST` | `/api/auth/password-reset/complete` | `token`, `password`                | Empty response               |
-| `GET`  | `/api/auth/me`                      | none                               | `UserDto`                    |
-| `PUT`  | `/api/auth/me`                      | `displayName`                      | `UserDto`                    |
-| `POST` | `/api/auth/logout`                  | none                               | empty response               |
+| Method | Path                                    | Body                               | Response                            |
+| ------ | --------------------------------------- | ---------------------------------- | ----------------------------------- |
+| `POST` | `/api/auth/register`                    | `email`, `password`, `displayName` | Verification instructions           |
+| `POST` | `/api/auth/login`                       | `email`, `password`                | `AuthResponse`                      |
+| `POST` | `/api/auth/email-verification/request`  | `email`                            | Generic verification email response |
+| `POST` | `/api/auth/email-verification/complete` | `token`                            | Empty response                      |
+| `POST` | `/api/auth/password-reset/request`      | `email`                            | Generic reset email response        |
+| `POST` | `/api/auth/password-reset/complete`     | `token`, `password`                | Empty response                      |
+| `POST` | `/api/auth/guest`                       | none                               | `AuthResponse`                      |
+| `GET`  | `/api/auth/me`                          | none                               | `UserDto`                           |
+| `PUT`  | `/api/auth/me`                          | `displayName`                      | `UserDto`                           |
+| `POST` | `/api/auth/logout`                      | none                               | empty response                      |
 
 Passwords must be at least 8 characters. `displayName` is required and has a maximum length of 80
-characters. Password reset links expire after 30 minutes and can be used once. Configure
-`MODRISS_MAIL_HOST`, `MODRISS_MAIL_FROM`, and `MODRISS_EDITOR_URL` (plus SMTP credentials when
-required) to enable reset email delivery. Reset requests use the same response whether or not the
-email belongs to an account.
+characters. New registered accounts cannot sign in until they follow the emailed verification link;
+verification links expire after 24 hours and can be used once. Guest sessions do not require email.
+Password reset links expire after 30 minutes and can be used once. Configure `MODRISS_MAIL_HOST`,
+`MODRISS_MAIL_FROM`, and `MODRISS_EDITOR_URL` (plus SMTP credentials when required) to enable both
+email flows. Verification resend and password reset requests use the same response for eligible and
+ineligible email addresses.
 
 ## Projects
 

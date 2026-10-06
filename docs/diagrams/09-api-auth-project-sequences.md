@@ -11,12 +11,28 @@ sequenceDiagram
     participant S as AuthService
     participant DB as PlatformStore / PostgreSQL
     Client->>C: email, password, displayName
-    C->>S: register(...)
+    C->>S: registerPendingVerification(...)
     S->>DB: Check normalized email uniqueness
     S->>S: Generate salt and password hash
-    S->>DB: Insert user and auth session
-    S-->>C: AuthResult(token, user)
-    C-->>Client: AuthResponse
+    S->>DB: Insert unverified user and hashed one-time token
+    S-->>C: EmailVerificationRequest
+    C->>Mail: Send verification link
+    C-->>Client: Verification instructions (no session)
+```
+
+## POST `/api/auth/email-verification/complete`
+
+```mermaid
+sequenceDiagram
+    actor Client
+    participant C as AuthController
+    participant S as AuthService
+    participant DB as PlatformStore / PostgreSQL
+    Client->>C: one-time email verification token
+    C->>S: verifyEmail(token)
+    S->>DB: Validate token hash and expiry
+    S->>DB: Mark user verified and delete all verification tokens
+    C-->>Client: Email verified
 ```
 
 ## POST `/api/auth/login`
@@ -31,6 +47,7 @@ sequenceDiagram
     C->>S: login(...)
     S->>DB: Load user by normalized email
     S->>S: Verify salted password hash
+    S->>S: Reject sign-in until email is verified
     S->>DB: Insert new auth session
     S-->>C: AuthResult(token, user)
     C-->>Client: AuthResponse

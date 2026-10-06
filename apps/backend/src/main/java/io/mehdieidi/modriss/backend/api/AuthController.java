@@ -33,6 +33,7 @@ public class AuthController {
   private final VisitorAnalyticsService analytics;
   private final GuestAccessService guests;
   private final PasswordResetEmailService passwordResetEmail;
+  private final EmailVerificationEmailService emailVerificationEmail;
 
   /**
    * Creates the authentication controller.
@@ -44,25 +45,31 @@ public class AuthController {
       AdminAccessService adminAccess,
       VisitorAnalyticsService analytics,
       GuestAccessService guests,
-      PasswordResetEmailService passwordResetEmail) {
+      PasswordResetEmailService passwordResetEmail,
+      EmailVerificationEmailService emailVerificationEmail) {
     this.authService = authService;
     this.adminAccess = adminAccess;
     this.analytics = analytics;
     this.guests = guests;
     this.passwordResetEmail = passwordResetEmail;
+    this.emailVerificationEmail = emailVerificationEmail;
   }
 
   /**
-   * Registers a user and creates their initial session.
+   * Registers a user and sends an email verification link without creating a session.
    *
    * @param request registration details
-   * @return session token and registered user
+   * @return instructions to verify the registered email address
    */
   @PostMapping("/register")
-  AuthResponse register(@Valid @RequestBody RegisterRequest request) {
-    AuthService.AuthResult result =
-        authService.register(request.email(), request.password(), request.displayName());
-    return new AuthResponse(result.token(), UserDto.from(result.user(), false));
+  RegistrationResponse register(@Valid @RequestBody RegisterRequest request) {
+    emailVerificationEmail.requireConfigured();
+    AuthService.EmailVerificationRequest verification =
+        authService.registerPendingVerification(
+            request.email(), request.password(), request.displayName());
+    emailVerificationEmail.send(verification);
+    return new RegistrationResponse(
+        "Account created. Check your email for a verification link before signing in.");
   }
 
   /**
@@ -102,6 +109,22 @@ public class AuthController {
   @PostMapping("/password-reset/complete")
   void completePasswordReset(@Valid @RequestBody CompletePasswordResetPayload request) {
     authService.resetPassword(request.token(), request.password());
+  }
+
+  /** Sends a verification link if the address belongs to an unverified account. */
+  @PostMapping("/email-verification/request")
+  EmailVerificationRequestResponse requestEmailVerification(
+      @Valid @RequestBody EmailVerificationRequestPayload request) {
+    emailVerificationEmail.requireConfigured();
+    authService.createEmailVerification(request.email()).ifPresent(emailVerificationEmail::send);
+    return new EmailVerificationRequestResponse(
+        "If an unverified account with that email exists, a verification link has been sent.");
+  }
+
+  /** Verifies an account using a valid emailed token. */
+  @PostMapping("/email-verification/complete")
+  void completeEmailVerification(@Valid @RequestBody CompleteEmailVerificationPayload request) {
+    authService.verifyEmail(request.token());
   }
 
   /** Creates an isolated anonymous session. No client-provided identity is trusted. */
@@ -175,12 +198,24 @@ public class AuthController {
   /** Email address submitted to request a password reset link. */
   public record PasswordResetRequestPayload(@Email @NotBlank String email) {}
 
+  /** Email address submitted to request another account verification link. */
+  public record EmailVerificationRequestPayload(@Email @NotBlank String email) {}
+
   /** One-time reset token and replacement password. */
   public record CompletePasswordResetPayload(
       @NotBlank String token, @NotBlank @Size(min = 8) String password) {}
 
+  /** One-time verification token from the emailed link. */
+  public record CompleteEmailVerificationPayload(@NotBlank String token) {}
+
   /** Non-enumerating response returned for every reset email request. */
   public record PasswordResetRequestResponse(String message) {}
+
+  /** Instructions returned after a public registration. */
+  public record RegistrationResponse(String message) {}
+
+  /** Non-enumerating response returned when requesting another verification link. */
+  public record EmailVerificationRequestResponse(String message) {}
 
   /**
    * Current-user profile update payload.

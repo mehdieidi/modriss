@@ -1,5 +1,5 @@
 import { state } from "./state.js";
-import { el } from "./dom.js";
+import { el } from "./dom.js?v=email-verification-20261006";
 import { api } from "./api.js";
 import { formatUserError } from "./errors.js";
 
@@ -178,7 +178,7 @@ function validateAuthForm(mode) {
   return { email, password, displayName };
 }
 
-async function showAuthDialog() {
+async function showAuthDialog(initialNotice = null) {
   if (!el.authOverlay) {
     throw new Error("Authentication UI is unavailable");
   }
@@ -188,12 +188,19 @@ async function showAuthDialog() {
     mode = "reset";
   }
   setAuthMode(mode);
-  setAuthChoiceVisible(!resetToken);
-  if (resetToken) {
+  setAuthChoiceVisible(!resetToken && !initialNotice);
+  if (resetToken || initialNotice) {
     setAuthMode(mode);
   }
   clearAuthError();
   clearAuthSuccess();
+  if (initialNotice) {
+    if (initialNotice.type === "error") {
+      showAuthError(initialNotice.message);
+    } else {
+      showAuthSuccess(initialNotice.message);
+    }
+  }
   el.authEmailInput.value = "";
   el.authPasswordInput.value = "";
   if (el.authDisplayNameInput) {
@@ -202,10 +209,19 @@ async function showAuthDialog() {
   if (el.authConfirmPasswordInput) {
     el.authConfirmPasswordInput.value = "";
   }
+  el.authResendVerificationBtn?.classList.add("hidden");
   el.authOverlay.classList.remove("hidden");
   document.body.classList.add("modal-open");
 
   return new Promise((resolve) => {
+    let verificationPending = false;
+    const updateResendVerificationVisibility = () => {
+      el.authResendVerificationBtn?.classList.toggle(
+        "hidden",
+        !verificationPending || mode !== "login",
+      );
+    };
+
     const setBusy = (busy) => {
       if (el.authSubmitBtn) {
         el.authSubmitBtn.disabled = busy;
@@ -237,6 +253,9 @@ async function showAuthDialog() {
       if (el.authForgotPasswordBtn) {
         el.authForgotPasswordBtn.disabled = busy;
       }
+      if (el.authResendVerificationBtn) {
+        el.authResendVerificationBtn.disabled = busy;
+      }
       if (el.authBackToLoginBtn) {
         el.authBackToLoginBtn.disabled = busy;
       }
@@ -256,6 +275,7 @@ async function showAuthDialog() {
       el.authGuestBtn?.removeEventListener("click", onGuest);
       el.authContinueLoginBtn?.removeEventListener("click", onContinueLogin);
       el.authForgotPasswordBtn?.removeEventListener("click", onForgotPassword);
+      el.authResendVerificationBtn?.removeEventListener("click", onResendVerification);
       el.authBackToLoginBtn?.removeEventListener("click", onBackToLogin);
     };
 
@@ -269,6 +289,7 @@ async function showAuthDialog() {
       clearAuthError();
       clearAuthSuccess();
       setAuthMode(mode);
+      updateResendVerificationVisibility();
       el.authEmailInput?.focus();
     };
 
@@ -277,6 +298,7 @@ async function showAuthDialog() {
       clearAuthError();
       clearAuthSuccess();
       setAuthMode(mode);
+      updateResendVerificationVisibility();
       el.authDisplayNameInput?.focus();
     };
 
@@ -294,6 +316,7 @@ async function showAuthDialog() {
       clearAuthSuccess();
       setAuthChoiceVisible(false);
       setAuthMode(mode);
+      updateResendVerificationVisibility();
       el.authEmailInput?.focus();
     };
 
@@ -321,6 +344,39 @@ async function showAuthDialog() {
           result?.message ||
             "If an account with that email exists, a password reset link has been sent.",
         );
+      } catch (error) {
+        showAuthError(formatUserError(error));
+      } finally {
+        setBusy(false);
+      }
+    };
+
+    const onResendVerification = async () => {
+      clearAuthError();
+      clearAuthSuccess();
+      const email = (el.authEmailInput?.value || "").trim();
+      if (!email) {
+        showAuthInfo("Enter your email address below to resend the verification link.");
+        el.authEmailInput?.focus();
+        return;
+      }
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        showAuthError("Enter a valid email address");
+        el.authEmailInput?.focus();
+        return;
+      }
+      try {
+        setBusy(true);
+        const result = await api("/auth/email-verification/request", {
+          method: "POST",
+          body: JSON.stringify({ email }),
+        });
+        showAuthSuccess(
+          result?.message ||
+            "If an unverified account with that email exists, a verification link has been sent.",
+        );
+        verificationPending = true;
+        updateResendVerificationVisibility();
       } catch (error) {
         showAuthError(formatUserError(error));
       } finally {
@@ -383,8 +439,19 @@ async function showAuthDialog() {
               displayName: payload.displayName,
             }),
           });
-          showAuthSuccess("Registration successful. Signing you in…");
-          resolveSession(result);
+          mode = "login";
+          setAuthMode(mode);
+          verificationPending = true;
+          updateResendVerificationVisibility();
+          el.authPasswordInput.value = "";
+          el.authDisplayNameInput.value = "";
+          el.authConfirmPasswordInput.value = "";
+          showAuthSuccess(
+            result?.message ||
+              "Account created. Check your email for a verification link before signing in.",
+          );
+          setBusy(false);
+          el.authEmailInput?.focus();
           return;
         }
         const result = await api("/auth/login", {
@@ -396,6 +463,14 @@ async function showAuthDialog() {
         });
         resolveSession(result);
       } catch (error) {
+        if (
+          mode === "login" &&
+          error?.status === 403 &&
+          /verify your email|verification email/i.test(error.message || "")
+        ) {
+          verificationPending = true;
+          updateResendVerificationVisibility();
+        }
         showAuthError(formatUserError(error));
         setBusy(false);
       }
@@ -426,10 +501,13 @@ async function showAuthDialog() {
     el.authGuestBtn?.addEventListener("click", onGuest);
     el.authContinueLoginBtn?.addEventListener("click", onContinueLogin);
     el.authForgotPasswordBtn?.addEventListener("click", onForgotPassword);
+    el.authResendVerificationBtn?.addEventListener("click", onResendVerification);
     el.authBackToLoginBtn?.addEventListener("click", onBackToLogin);
 
     if (mode === "reset") {
       el.authPasswordInput?.focus();
+    } else if (initialNotice) {
+      el.authEmailInput?.focus();
     } else {
       el.authGuestBtn?.focus();
     }
@@ -437,14 +515,31 @@ async function showAuthDialog() {
 }
 
 export async function ensureAuthenticated() {
-  const hasPasswordResetToken = Boolean(
-    new URLSearchParams(window.location.search).get("resetToken"),
-  );
-  if (hasPasswordResetToken) {
+  const url = new URL(window.location.href);
+  const hasPasswordResetToken = Boolean(url.searchParams.get("resetToken"));
+  const verificationToken = url.searchParams.get("verifyToken") || "";
+  if (hasPasswordResetToken || verificationToken) {
     clearAuthSession();
   }
+  let initialNotice = null;
+  if (verificationToken) {
+    try {
+      await api("/auth/email-verification/complete", {
+        method: "POST",
+        body: JSON.stringify({ token: verificationToken }),
+      });
+      initialNotice = {
+        type: "success",
+        message: "Your email is verified. Sign in with your account to continue.",
+      };
+    } catch (error) {
+      initialNotice = { type: "error", message: formatUserError(error) };
+    }
+    url.searchParams.delete("verifyToken");
+    window.history.replaceState({}, "", url);
+  }
   const existingToken = getAuthToken();
-  if (existingToken && !hasPasswordResetToken) {
+  if (existingToken && !hasPasswordResetToken && !verificationToken) {
     try {
       const me = await api("/auth/me", {
         headers: { "X-Auth-Token": existingToken },
@@ -456,7 +551,7 @@ export async function ensureAuthenticated() {
       setAuthToken("");
     }
   }
-  const result = await showAuthDialog();
+  const result = await showAuthDialog(initialNotice);
   setAuthToken(result.token);
   state.auth.token = result.token;
   state.auth.user = result.user;

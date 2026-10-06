@@ -47,14 +47,8 @@ class ApiSmokeContractTest {
 
   @Test
   void authProjectAndModelLifecycle() {
-    String email = "contract-" + System.nanoTime() + "@example.com";
-    String password = "Contract-Test-123!";
-
     ResponseEntity<Map> register =
-        restTemplate.postForEntity(
-            url("/api/auth/register"),
-            Map.of("email", email, "password", password, "displayName", "Contract Tester"),
-            Map.class);
+        restTemplate.postForEntity(url("/api/auth/guest"), Map.of(), Map.class);
     assertThat(register.getStatusCode()).isEqualTo(HttpStatus.OK);
     String token = (String) register.getBody().get("token");
     assertThat(token).isNotBlank();
@@ -65,7 +59,7 @@ class ApiSmokeContractTest {
         restTemplate.exchange(
             url("/api/auth/me"), HttpMethod.GET, new HttpEntity<>(authHeaders), Map.class);
     assertThat(me.getStatusCode()).isEqualTo(HttpStatus.OK);
-    assertThat(me.getBody()).containsEntry("email", email);
+    assertThat(me.getBody()).containsEntry("guest", true);
 
     ResponseEntity<Map> project =
         restTemplate.exchange(
@@ -123,16 +117,7 @@ class ApiSmokeContractTest {
   @Test
   void assistantMessageCreatesIdempotentDurableTurn() {
     ResponseEntity<Map> register =
-        restTemplate.postForEntity(
-            url("/api/auth/register"),
-            Map.of(
-                "email",
-                "turn-" + System.nanoTime() + "@example.com",
-                "password",
-                "Contract-Test-123!",
-                "displayName",
-                "Turn Tester"),
-            Map.class);
+        restTemplate.postForEntity(url("/api/auth/guest"), Map.of(), Map.class);
     String token = (String) register.getBody().get("token");
     HttpHeaders headers = authHeaders(token);
     ResponseEntity<Map> project =
