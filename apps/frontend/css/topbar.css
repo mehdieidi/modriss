@@ -27,15 +27,18 @@
   z-index: 0;
 }
 
-/* The topbar and workspace rail share one rounded, border-free junction. */
+/* Draw the top and rail edges with one border so the corner stays continuous. */
 .topbar::after {
   content: "";
   position: absolute;
-  left: calc(var(--rail-w) + var(--radius-md) - 1px);
+  top: calc(var(--topbar-h) - 1px);
+  left: calc(var(--rail-w) - 1px);
   right: 0;
-  bottom: 0;
-  height: 1px;
-  background: var(--workspace-bar-border-color);
+  height: calc(100vh - var(--topbar-h) + 1px);
+  background: transparent;
+  border-top: 1px solid var(--workspace-bar-border-color);
+  border-left: 1px solid var(--workspace-bar-border-color);
+  border-top-left-radius: var(--radius-md);
   pointer-events: none;
   z-index: 0;
 }
@@ -566,6 +569,12 @@ html.light .tab.active {
 
   .topbar::after {
     left: 0;
+    top: auto;
+    bottom: 0;
+    height: 1px;
+    border: 0;
+    border-radius: 0;
+    background: var(--workspace-bar-border-color);
   }
 
   .topbar-menu-strip {

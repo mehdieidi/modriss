@@ -180,40 +180,27 @@ select[multiple] option {
   z-index: 5;
 }
 
-.workspace-rail::after {
-  content: "";
-  position: absolute;
-  top: calc(var(--radius-md) - 1px);
-  right: 0;
-  bottom: 0;
-  width: 1px;
-  border-radius: 0 0 var(--radius-md) 0;
-  background: var(--workspace-bar-border-color);
-  pointer-events: none;
-}
-
-/* Continue the matching border around the rounded inside corner. */
+/* Fill the small outside wedge so the rail and toolbar surfaces meet cleanly. */
 .workspace-rail::before {
   content: "";
   position: absolute;
-  top: 0;
-  left: 100%;
+  top: -1px;
+  left: calc(100% - 1px);
   width: var(--radius-md);
   height: var(--radius-md);
-  /* Fill outside the curve, then draw its stroke to join the straight borders. */
-  background:
-    radial-gradient(
-      circle farthest-corner at 100% 100%,
-      transparent 68%,
-      var(--workspace-bar-border-color) 68.5%,
-      var(--workspace-bar-border-color) 72.9%,
-      transparent 73.4%
-    ),
-    radial-gradient(
-      circle farthest-corner at 100% 100%,
-      transparent 70%,
-      var(--workspace-bar-bg) 70.71%
-    );
+  background: var(--workspace-bar-bg);
+  -webkit-mask: radial-gradient(
+    circle at 100% 100%,
+    transparent calc(var(--radius-md) - 1px),
+    #000 var(--radius-md)
+  );
+  mask: radial-gradient(
+    circle at 100% 100%,
+    transparent calc(var(--radius-md) - 1px),
+    #000 var(--radius-md)
+  );
+  -webkit-backdrop-filter: var(--glass-pane-blur);
+  backdrop-filter: var(--glass-pane-blur);
   pointer-events: none;
 }
 
