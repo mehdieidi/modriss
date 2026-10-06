@@ -183,7 +183,7 @@ select[multiple] option {
 .workspace-rail::after {
   content: "";
   position: absolute;
-  top: var(--radius-md);
+  top: calc(var(--radius-md) - 1px);
   right: 0;
   bottom: 0;
   width: 1px;
@@ -200,9 +200,20 @@ select[multiple] option {
   left: 100%;
   width: var(--radius-md);
   height: var(--radius-md);
-  border-top: 1px solid var(--workspace-bar-border-color);
-  border-left: 1px solid var(--workspace-bar-border-color);
-  border-top-left-radius: 100%;
+  /* Fill outside the curve, then draw its stroke to join the straight borders. */
+  background:
+    radial-gradient(
+      circle farthest-corner at 100% 100%,
+      transparent 68%,
+      var(--workspace-bar-border-color) 68.5%,
+      var(--workspace-bar-border-color) 72.9%,
+      transparent 73.4%
+    ),
+    radial-gradient(
+      circle farthest-corner at 100% 100%,
+      transparent 70%,
+      var(--workspace-bar-bg) 70.71%
+    );
   pointer-events: none;
 }
 

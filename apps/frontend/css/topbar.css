@@ -31,7 +31,7 @@
 .topbar::after {
   content: "";
   position: absolute;
-  left: calc(var(--rail-w) + var(--radius-md));
+  left: calc(var(--rail-w) + var(--radius-md) - 1px);
   right: 0;
   bottom: 0;
   height: 1px;
