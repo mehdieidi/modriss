@@ -3163,14 +3163,14 @@ final class EpsilonEgxGeneratorTest {
     }
 
     String goMod = Files.readString(outputDirectory.resolve("go.mod"));
-    assertTrue(goMod.contains("module example.com/representative-aws-psm"));
+    assertTrue(goMod.contains("module example.com/representative-psm"));
     assertTrue(goMod.contains("github.com/aws/aws-lambda-go"));
 
     String handler =
         Files.readString(outputDirectory.resolve("src/functions/order-handler/handler.go"));
     assertTrue(handler.contains("package main"));
     assertTrue(handler.contains("lambda.Start(Handler)"));
-    assertTrue(handler.contains("\"example.com/representative-aws-psm/src/shared\""));
+    assertTrue(handler.contains("\"example.com/representative-psm/src/shared\""));
     assertTrue(handler.contains("return mapKnownError("));
     assertFalse(
         handler.contains(
