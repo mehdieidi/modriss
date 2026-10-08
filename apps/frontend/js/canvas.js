@@ -1390,9 +1390,6 @@ function diagramBounds({ forFit = false } = {}) {
   if (!state.diagram?.nodes?.length) {
     return null;
   }
-  if (forFit) {
-    // Fit is anchored to visible nodes; stale edge bend points can be far outside the active view.
-  }
   const nodeW = getNodeWidth();
   const nodeH = getNodeHeight();
   let minX = Infinity;
@@ -1406,6 +1403,18 @@ function diagramBounds({ forFit = false } = {}) {
     maxX = Math.max(maxX, extent.maxX);
     maxY = Math.max(maxY, extent.maxY);
   });
+  if (forFit && activeView()?.layoutGeometryVersion === CURRENT_LAYOUT_GEOMETRY_VERSION) {
+    // The persisted ELK routes include feedback corridors outside the node bounds.
+    state.diagram.connections.forEach((edge) => {
+      safeArray(edge.pinPoints).forEach((point) => {
+        if (!Number.isFinite(point.x) || !Number.isFinite(point.y)) return;
+        minX = Math.min(minX, point.x);
+        minY = Math.min(minY, point.y);
+        maxX = Math.max(maxX, point.x);
+        maxY = Math.max(maxY, point.y);
+      });
+    });
+  }
   const bounds = {
     minX,
     minY,

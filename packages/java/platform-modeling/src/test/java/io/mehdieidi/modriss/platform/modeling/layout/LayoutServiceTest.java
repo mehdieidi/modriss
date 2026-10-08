@@ -2,7 +2,6 @@ package io.mehdieidi.modriss.platform.modeling.layout;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -88,11 +87,9 @@ class LayoutServiceTest {
     assertTrue(exception.getMessage().contains("missing target node"));
   }
 
-  /**
-   * Verifies that every supported layout strategy can be selected without dropping nodes or edges.
-   */
+  /** Verifies that legacy strategy names resolve to one layout without dropping content. */
   @Test
-  void supportsSelectableLayoutStrategies() {
+  void legacyStrategyNamesUseTheSingleLayout() {
     List<String> strategies =
         List.of(
             "SPACIOUS_LAYERED",
@@ -108,6 +105,7 @@ class LayoutServiceTest {
 
       assertEquals(3, response.nodes().size(), strategy);
       assertEquals(2, response.edges().size(), strategy);
+      assertEquals(layoutForStrategy("LAYERED"), response, strategy);
     }
   }
 
@@ -177,17 +175,124 @@ class LayoutServiceTest {
             });
   }
 
-  /**
-   * Verifies that non-layered strategies invoke distinct ELK algorithms instead of falling back to
-   * the same layered coordinates.
-   */
+  /** Verifies that legacy strategy hints cannot change the canonical layout. */
   @Test
-  void selectableAlgorithmsProduceDistinctGeometry() {
+  void layoutIsRepeatable() {
     String balanced = geometrySignature(layoutForStrategy("BALANCED_LAYERED"));
 
-    assertNotEquals(balanced, geometrySignature(layoutForStrategy("TREE")));
-    assertNotEquals(balanced, geometrySignature(layoutForStrategy("RADIAL")));
-    assertNotEquals(balanced, geometrySignature(layoutForStrategy("FORCE")));
+    assertEquals(balanced, geometrySignature(layoutForStrategy("TREE")));
+    assertEquals(balanced, geometrySignature(layoutForStrategy("RADIAL")));
+    assertEquals(balanced, geometrySignature(layoutForStrategy("FORCE")));
+  }
+
+  /** Automatic ports stay clear of the text below an icon after ELK's final route pass. */
+  @Test
+  void respectsMeasuredAttachmentArea() {
+    List<LayoutService.LayoutEdge> edges = new ArrayList<>();
+    for (int index = 0; index < 12; index++) {
+      edges.add(new LayoutService.LayoutEdge("edge-" + index, "flow", "a", "b", null, null));
+    }
+    LayoutService.LayoutResponse response =
+        service.layout(
+            new LayoutService.LayoutRequest(
+                "icons",
+                "",
+                false,
+                List.of(),
+                Map.of(
+                    "portInsetsByNodeId",
+                    Map.of(
+                        "a", Map.of("top", 10, "bottom", 68),
+                        "b", Map.of("top", 10, "bottom", 68))),
+                List.of(
+                    new LayoutService.LayoutNode(
+                        "a", "Multiline label", 120, 138, null, null, List.of()),
+                    new LayoutService.LayoutNode(
+                        "b", "Other multiline label", 120, 138, null, null, List.of())),
+                edges));
+    LayoutService.LaidOutNode a = response.nodes().get(0);
+    LayoutService.LaidOutNode b = response.nodes().get(1);
+    for (LayoutService.RoutedEdge edge : response.edges()) {
+      LayoutService.EdgeSection section = edge.sections().get(0);
+      assertTrue(section.startPoint().y() - a.y() >= 10);
+      assertTrue(section.startPoint().y() - a.y() <= 70);
+      assertTrue(section.endPoint().y() - b.y() >= 10);
+      assertTrue(section.endPoint().y() - b.y() <= 70);
+    }
+    assertNoOverlappingSegments(response);
+  }
+
+  /** Cycles, long edges, disconnected nodes and self loops remain orthogonal and avoid nodes. */
+  @Test
+  void routesCyclicGraphAroundNodeObstacles() {
+    List<LayoutService.LayoutNode> nodes =
+        List.of(
+            new LayoutService.LayoutNode("a", "A", 120, 140, null, null, List.of()),
+            new LayoutService.LayoutNode("b", "B", 160, 110, null, null, List.of()),
+            new LayoutService.LayoutNode("c", "C", 120, 170, null, null, List.of()),
+            new LayoutService.LayoutNode("d", "D", 120, 120, null, null, List.of()),
+            new LayoutService.LayoutNode("isolated", "Isolated", 120, 120, null, null, List.of()));
+    List<LayoutService.LayoutEdge> edges =
+        List.of(
+            new LayoutService.LayoutEdge("ab", "flow", "a", "b", null, null),
+            new LayoutService.LayoutEdge("bc", "flow", "b", "c", null, null),
+            new LayoutService.LayoutEdge("ca", "feedback", "c", "a", null, null),
+            new LayoutService.LayoutEdge("ad", "long", "a", "d", null, null),
+            new LayoutService.LayoutEdge("cd", "flow", "c", "d", null, null),
+            new LayoutService.LayoutEdge("bb", "loop", "b", "b", null, null));
+    LayoutService.LayoutResponse response =
+        service.layout(
+            new LayoutService.LayoutRequest(
+                "obstacles", "DEFAULT_LAYERED", false, List.of(), Map.of(), nodes, edges));
+    assertEquals(nodes.size(), response.nodes().size());
+    assertEquals(edges.size(), response.edges().size());
+    assertTrue(response.warnings().isEmpty());
+    for (LayoutService.RoutedEdge edge : response.edges()) {
+      List<LayoutService.LayoutPoint> points = routePoints(edge.sections().get(0));
+      for (int index = 1; index < points.size(); index++) {
+        LayoutService.LayoutPoint start = points.get(index - 1);
+        LayoutService.LayoutPoint end = points.get(index);
+        assertTrue(
+            Math.abs(start.x() - end.x()) < 0.01 || Math.abs(start.y() - end.y()) < 0.01,
+            edge.id() + " has diagonal segment " + start + " -> " + end);
+        for (LayoutService.LaidOutNode node : response.nodes()) {
+          boolean horizontal = Math.abs(start.y() - end.y()) < 0.01;
+          boolean intersects =
+              horizontal
+                  ? start.y() > node.y() + 0.01
+                      && start.y() < node.y() + node.height() - 0.01
+                      && Math.max(start.x(), end.x()) > node.x() + 0.01
+                      && Math.min(start.x(), end.x()) < node.x() + node.width() - 0.01
+                  : start.x() > node.x() + 0.01
+                      && start.x() < node.x() + node.width() - 0.01
+                      && Math.max(start.y(), end.y()) > node.y() + 0.01
+                      && Math.min(start.y(), end.y()) < node.y() + node.height() - 0.01;
+          assertFalse(intersects, edge.id() + " intersects " + node.id());
+        }
+      }
+    }
+    List<LayoutService.LayoutNode> reversedNodes = new ArrayList<>(nodes);
+    List<LayoutService.LayoutEdge> reversedEdges = new ArrayList<>(edges);
+    java.util.Collections.reverse(reversedNodes);
+    java.util.Collections.reverse(reversedEdges);
+    LayoutService.LayoutResponse shuffled =
+        service.layout(
+            new LayoutService.LayoutRequest(
+                "obstacles",
+                "DEFAULT_LAYERED",
+                false,
+                List.of(),
+                Map.of(),
+                reversedNodes,
+                reversedEdges));
+    assertEquals(geometrySignature(response), geometrySignature(shuffled));
+    assertEquals(
+        response.edges().stream()
+            .sorted(java.util.Comparator.comparing(LayoutService.RoutedEdge::id))
+            .toList(),
+        shuffled.edges().stream()
+            .sorted(java.util.Comparator.comparing(LayoutService.RoutedEdge::id))
+            .toList());
   }
 
   /**

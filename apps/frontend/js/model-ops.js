@@ -17,6 +17,7 @@ import {
   syncActiveViewFromVisibleGraph,
 } from "./graph-store.js";
 import { materializeActiveView, viewNeedsAutoLayout } from "./view-materializer.js";
+import { nodeSizeForDiagram } from "./graph-editor/g6-style.js";
 import {
   iconAnchorBoundsFromNodeRect,
   measureIconNodeSize,
@@ -70,7 +71,6 @@ import {
   isModelingLevel,
   isArtifactLevel,
   modelingArtifactKey,
-  modelingDefaultLayoutStrategy,
   modelingLevelListLabel,
   transformationForLevel,
 } from "./modeling-config-data.js";
@@ -430,42 +430,23 @@ function mergePersistedViewIntoBaseModel(view) {
   return base;
 }
 
-function persistedRelationshipIdsForView() {
-  const fromBase = Array.isArray(state.baseModel?.graph?.relationships)
-    ? state.baseModel.graph.relationships
-    : [];
-  const ids = fromBase.map((relationship) => String(relationship?.id || "").trim()).filter(Boolean);
-  if (ids.length) {
-    return new Set(ids);
-  }
-  return new Set(
-    [...state.graph.relationshipsById.entries()]
-      .filter(([, relationship]) => !relationship?.visualOnly)
-      .map(([relationshipId]) => relationshipId),
-  );
-}
-
-function isPersistableViewEdge(relationshipId, persistedIds) {
-  const id = String(relationshipId || "").trim();
-  if (!id || id.startsWith("containment-")) {
-    return false;
-  }
-  const relationship = state.graph.relationshipsById.get(id);
-  if (relationship?.visualOnly) {
-    return false;
-  }
-  return persistedIds.has(id);
-}
-
 function serializeViewForPersistence(view) {
   const copy = structuredClone(view);
   delete copy._lazyContent;
-  const persistedIds = persistedRelationshipIdsForView();
-  if (Array.isArray(copy.edges)) {
-    copy.edges = copy.edges.filter((edge) =>
-      isPersistableViewEdge(edge.relationshipId || edge.id, persistedIds),
-    );
-  }
+  // Derived references are presentation edges too. Keep their endpoints in the view so
+  // backend layout sees the same graph as the renderer, without changing semantic XMI.
+  copy.edges = (copy.edges || []).flatMap((edge) => {
+    const relationship = state.graph.relationshipsById.get(edge.relationshipId || edge.id);
+    if (!relationship) return [];
+    return [
+      {
+        ...edge,
+        sourceElementId: relationship.sourceElementId,
+        targetElementId: relationship.targetElementId,
+        label: relationship.kind,
+      },
+    ];
+  });
   return copy;
 }
 
@@ -474,15 +455,20 @@ function viewPatchOperations(payload) {
   if (!Array.isArray(state.baseModel?.views)) {
     operations.push({ op: "add", path: "/views", value: [] });
   }
-  operations.push({ op: "add", path: "/views/-", value: payload });
+  const index = (state.baseModel?.views || []).findIndex((view) => view.id === payload.id);
+  operations.push(
+    index >= 0
+      ? { op: "replace", path: `/views/${index}`, value: payload }
+      : { op: "add", path: "/views/-", value: payload },
+  );
   return operations;
 }
 
-async function persistViewForBackendLayout(view) {
+async function persistViewForBackendLayout(view, { refresh = false } = {}) {
   if (!state.modelId || !view?.id) {
     return false;
   }
-  if (storedModelHasView(view.id)) {
+  if (storedModelHasView(view.id) && !refresh) {
     return true;
   }
   const payload = serializeViewForPersistence(view);
@@ -1803,7 +1789,6 @@ async function runAutoLayoutCurrentDiagram({
   busy = true,
   rethrow = false,
   force = true,
-  strategy = "",
   skipClientLayout = true,
 } = {}) {
   if (!isModelingType()) {
@@ -1840,6 +1825,29 @@ async function runAutoLayoutCurrentDiagram({
     ) {
       return;
     }
+    const nodesById = new Map(state.diagram.nodes.map((node) => [node.id, node]));
+    for (const viewNode of view.nodes) {
+      const node = nodesById.get(viewNode.elementId);
+      if (!node) continue;
+      const size = nodeSizeForDiagram(state.activeType, node);
+      const measured = measureIconNodeSize(node.label || node.id, { width: size.width });
+      const anchor = iconAnchorBoundsFromNodeRect(
+        0,
+        0,
+        size.width,
+        measured.height,
+        false,
+        node.label,
+      );
+      viewNode.width = size.width;
+      viewNode.height = measured.height;
+      viewNode.layoutPortInsets = {
+        top: anchor.top + 8,
+        bottom: measured.height - anchor.bottom + 8,
+      };
+    }
+    // Refresh even an existing view: it may omit derived edges or use obsolete dimensions.
+    await persistViewForBackendLayout(view, { refresh: true });
     if (progress) {
       showGenerationProgress({
         kicker: "Auto Layout in Progress",
@@ -1860,13 +1868,8 @@ async function runAutoLayoutCurrentDiagram({
       await waitForCanvasPaint(1);
     }
     const level = MODEL_TYPES[state.activeType].apiType;
-    const selectedStrategy = String(
-      strategy || view.layoutStrategy || modelingDefaultLayoutStrategy(),
-    );
     const response = await api(
-      `/${level}/${state.modelId}/views/${encodeURIComponent(
-        view.id,
-      )}/layout?force=${force}&strategy=${encodeURIComponent(selectedStrategy)}`,
+      `/${level}/${state.modelId}/views/${encodeURIComponent(view.id)}/layout?force=${force}`,
       { method: "POST" },
     );
     await yieldToMain();

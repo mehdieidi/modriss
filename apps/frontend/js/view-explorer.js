@@ -14,12 +14,7 @@ import {
   syncActiveViewFromVisibleGraph,
 } from "./graph-store.js";
 import { materializeActiveView, viewNeedsAutoLayout } from "./view-materializer.js";
-import {
-  isModelingLevel,
-  modelingDefaultLayoutStrategy,
-  modelingLayoutStrategies,
-  modelingLevelConfig,
-} from "./modeling-config-data.js";
+import { isModelingLevel, modelingLevelConfig } from "./modeling-config-data.js";
 import { syncMobileDockState } from "./mobile-ui.js";
 import { isMobileViewport } from "./responsive.js";
 import {
@@ -43,20 +38,11 @@ let host = null;
 let bound = false;
 let treeBound = false;
 let viewMenuOpen = false;
-let layoutMenuOpen = false;
 let inspectMenuOpen = false;
 let treeBodyScrollTop = 0;
 let modelTreeMode = "elements";
 let modelTreeFilter = "";
 let lastMobileViewport = null;
-
-function layoutStrategies() {
-  return modelingLayoutStrategies();
-}
-
-function defaultLayoutStrategy() {
-  return modelingDefaultLayoutStrategy();
-}
 
 function safeArray(value) {
   return Array.isArray(value) ? value : [];
@@ -83,85 +69,11 @@ async function runManualAutoLayout() {
   try {
     const { autoLayoutCurrentDiagram } = await import("./model-ops.js");
     await autoLayoutCurrentDiagram({
-      strategy: selectedLayoutStrategy(),
       force: true,
     });
   } catch (error) {
     console.warn("Auto layout failed", error);
   }
-}
-
-function emptyLayoutStrategyConfig() {
-  return {
-    id: "",
-    label: "Layout",
-    title: "Layout strategies unavailable until modeling config loads.",
-  };
-}
-
-function selectedLayoutStrategy() {
-  const strategies = layoutStrategies();
-  const view = activeView();
-  const stored = window.localStorage.getItem(`modriss.layoutStrategy.${state.activeType}`);
-  const fallback = defaultLayoutStrategy();
-  if (!strategies.length) {
-    return String(view?.layoutStrategy || stored || fallback || "").toUpperCase();
-  }
-  const value = String(view?.layoutStrategy || stored || fallback).toUpperCase();
-  return strategies.some((strategy) => strategy.id === value) ? value : fallback;
-}
-
-function selectedLayoutStrategyConfig() {
-  const strategies = layoutStrategies();
-  if (!strategies.length) {
-    return emptyLayoutStrategyConfig();
-  }
-  const selected = selectedLayoutStrategy();
-  return strategies.find((strategy) => strategy.id === selected) || strategies[0];
-}
-
-function layoutStrategyMenuMarkup() {
-  const strategies = layoutStrategies();
-  if (!strategies.length) {
-    return `<div class="workbench-view-option workbench-layout-option is-disabled" aria-disabled="true">
-      <span class="workbench-view-option-label">No layout strategies in config</span>
-    </div>`;
-  }
-  const selected = selectedLayoutStrategy();
-  return strategies
-    .map(
-      (strategy) =>
-        `<button class="workbench-view-option workbench-layout-option${
-          strategy.id === selected ? " is-active" : ""
-        }"
-               type="button"
-               role="option"
-               aria-selected="${strategy.id === selected ? "true" : "false"}"
-               data-layout-strategy="${escapeHtml(strategy.id)}"
-               title="${escapeHtml(strategy.title)}">
-         <span class="workbench-view-option-label">${escapeHtml(strategy.label)}</span>
-         <span class="workbench-view-option-kind">${escapeHtml(strategy.title)}</span>
-       </button>`,
-    )
-    .join("");
-}
-
-function setLayoutStrategy(strategyId) {
-  const strategies = layoutStrategies();
-  if (!strategies.length) {
-    return;
-  }
-  const fallback = defaultLayoutStrategy();
-  const strategy = String(strategyId || fallback).toUpperCase();
-  const selected = layoutStrategies().some((item) => item.id === strategy) ? strategy : fallback;
-  const view = activeView();
-  if (view) {
-    view.layoutStrategy = selected;
-  }
-  window.localStorage.setItem(`modriss.layoutStrategy.${state.activeType}`, selected);
-  layoutMenuOpen = false;
-  renderViewWorkbench();
-  setStatus("Layout strategy selected. Run Auto Layout to apply it.");
 }
 
 function viewMatchesLevel(view) {
@@ -667,30 +579,10 @@ export function renderViewWorkbench() {
         <div class="workbench-tool-cluster workbench-arrange-cluster" aria-label="Arrange active view">
           <span class="workbench-control-label">Arrange</span>
           <div class="workbench-btn-group">
-            <div class="workbench-layout-select-wrap${layoutMenuOpen ? " is-open" : ""}">
-              <button class="sidebar-select workbench-view-select workbench-layout-select"
-                      id="layoutStrategySelect"
-                      type="button"
-                      title="${escapeHtml(selectedLayoutStrategyConfig().title)}"
-                      aria-haspopup="listbox"
-                      aria-expanded="${layoutMenuOpen ? "true" : "false"}">
-                <span class="workbench-view-select-label">${escapeHtml(
-                  selectedLayoutStrategyConfig().label,
-                )}</span>
-              </button>
-              <span class="workbench-view-select-caret workbench-layout-select-caret"
-                    aria-hidden="true"></span>
-              <div class="workbench-view-menu workbench-layout-menu${layoutMenuOpen ? "" : " hidden"}"
-                   id="layoutStrategyMenu"
-                   role="listbox"
-                   aria-label="Auto layout strategies">
-                ${layoutStrategyMenuMarkup()}
-              </div>
-            </div>
             <button class="sidebar-inline-action model-layout-btn"
                     id="workbenchAutoLayoutBtn"
                     type="button"
-                    title="Arrange current view automatically">Apply</button>
+                    title="Organize nodes and connections automatically">Auto Layout</button>
           </div>
         </div>
       </div>
@@ -975,15 +867,6 @@ function bindWorkbenchEvents() {
     const target = event.target instanceof Element ? event.target : null;
     if (target?.closest("#activeViewSelect")) {
       viewMenuOpen = !viewMenuOpen;
-      layoutMenuOpen = false;
-      inspectMenuOpen = false;
-      renderViewWorkbench();
-      event.stopPropagation();
-      return;
-    }
-    if (target?.closest("#layoutStrategySelect")) {
-      layoutMenuOpen = !layoutMenuOpen;
-      viewMenuOpen = false;
       inspectMenuOpen = false;
       renderViewWorkbench();
       event.stopPropagation();
@@ -999,11 +882,6 @@ function bindWorkbenchEvents() {
       void openWorkbenchView(selectedView);
       return;
     }
-    const selectedLayout = target?.closest("[data-layout-strategy]")?.dataset?.layoutStrategy;
-    if (selectedLayout) {
-      setLayoutStrategy(selectedLayout);
-      return;
-    }
     if (target?.closest("#workbenchAutoLayoutBtn")) {
       runManualAutoLayout();
       return;
@@ -1015,7 +893,6 @@ function bindWorkbenchEvents() {
     if (target?.closest("#inspectMenuToggle")) {
       inspectMenuOpen = !inspectMenuOpen;
       viewMenuOpen = false;
-      layoutMenuOpen = false;
       renderViewWorkbench();
       event.stopPropagation();
       return;
@@ -1053,19 +930,14 @@ function bindWorkbenchEvents() {
       viewMenuOpen = false;
       renderViewWorkbench();
     }
-    if (!target?.closest(".workbench-layout-select-wrap") && layoutMenuOpen) {
-      layoutMenuOpen = false;
-      renderViewWorkbench();
-    }
     if (!target?.closest(".workbench-inspect-menu-wrap") && inspectMenuOpen) {
       inspectMenuOpen = false;
       renderViewWorkbench();
     }
   });
   document.addEventListener("keydown", (event) => {
-    if (event.key === "Escape" && (viewMenuOpen || layoutMenuOpen || inspectMenuOpen)) {
+    if (event.key === "Escape" && (viewMenuOpen || inspectMenuOpen)) {
       viewMenuOpen = false;
-      layoutMenuOpen = false;
       inspectMenuOpen = false;
       renderViewWorkbench();
     }

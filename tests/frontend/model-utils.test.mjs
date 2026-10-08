@@ -822,3 +822,48 @@ test("keeps explicit view canvas selections exact instead of expanding Ecore sub
     ["requirement-1"],
   );
 });
+
+test("retains saved routes for view-only edges whose semantic endpoints still exist", async () => {
+  const config = {
+    levelOrder: ["cim"],
+    levels: {
+      cim: {
+        apiType: "CIM",
+        rootTemplate: { eClass: "CIMModel" },
+        relationshipSemantics: { containmentKind: "CONTAINS", containmentKinds: ["CONTAINS"] },
+        workbench: { defaultViewDefinitionId: "requirements" },
+        viewDefinitions: [{ id: "requirements", viewType: "REQUIREMENTS", palette: ["Requirement"] }],
+        elements: [
+          { type: "CIMModel", references: [{ name: "requirements", targetType: "Requirement", containment: true, many: true }] },
+          { type: "Requirement" },
+        ],
+      },
+    },
+  };
+  state.modelingConfig.config = config;
+  initializeModelingRuntimeState(config);
+  state.activeType = "cim";
+  const route = {
+    relationshipId: "derived-reference",
+    sourceElementId: "a",
+    targetElementId: "b",
+    sourceAnchor: { side: "right", offsetY: 24 },
+    targetAnchor: { side: "left", offsetY: 32 },
+    pinPoints: [{ x: 200, y: 24 }, { x: 200, y: 232 }],
+  };
+  const model = {
+    eClass: "CIMModel",
+    requirements: [{ eClass: "Requirement", id: "a" }, { eClass: "Requirement", id: "b" }],
+    views: [{
+      id: "saved-overview",
+      name: "Saved Overview",
+      kind: "CUSTOM",
+      nodes: [{ elementId: "a", x: 0, y: 0 }, { elementId: "b", x: 300, y: 200 }],
+      edges: [route, { relationshipId: "deleted-reference", sourceElementId: "a", targetElementId: "deleted" }],
+    }],
+  };
+  const { installGraphAndViews } = await import("../../apps/frontend/js/graph-store.js");
+  const installed = installGraphAndViews("cim", model, "layout-model");
+  assert.equal(installed.graph.relationshipsById.has(route.relationshipId), false);
+  assert.deepEqual(installed.views.byId.get("saved-overview").edges, [route]);
+});

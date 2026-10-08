@@ -159,8 +159,7 @@ select[multiple] option {
   --modeling-bar-h: 40px;
 }
 
-.workspace:has(.workbench-view-select-wrap.is-open),
-.workspace:has(.workbench-layout-select-wrap.is-open) {
+.workspace:has(.workbench-view-select-wrap.is-open) {
   overflow: visible;
 }
 

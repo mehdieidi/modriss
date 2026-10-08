@@ -6,7 +6,6 @@ import io.mehdieidi.modriss.platform.kernel.PlatformException;
 import io.mehdieidi.modriss.platform.model.domain.ModelRecord;
 import io.mehdieidi.modriss.platform.modeling.layout.LayoutService;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -35,26 +34,8 @@ public final class StoredViewLayoutService {
   /** Default non-CIM node height used when a view node has no positive height. */
   private static final double DEFAULT_NODE_HEIGHT = 112.0d;
 
-  /** Canonical west-side input port id used by automatic layout. */
-  private static final String INPUT_PORT_ID = "flow-in";
-
-  /** Canonical east-side output port id used by automatic layout. */
-  private static final String OUTPUT_PORT_ID = "flow-out";
-
-  /** Default rendered size for canonical layout ports. */
-  private static final double LAYOUT_PORT_SIZE = 10.0d;
-
-  /** Horizontal distance from a node anchor before an edge enters a routing corridor. */
-  private static final double ROUTE_STUB = 56.0d;
-
-  /** Distance between candidate edge corridors while avoiding previously routed edges. */
-  private static final double ROUTE_LANE_STEP = 34.0d;
-
-  /** Maximum number of nearby alternative corridors considered for one edge. */
-  private static final int MAX_ROUTE_ATTEMPTS = 32;
-
   /** Version of the persisted node/edge coordinate contract used by the canvas renderer. */
-  private static final int LAYOUT_GEOMETRY_VERSION = 2;
+  private static final int LAYOUT_GEOMETRY_VERSION = 3;
 
   /** Model service used to load and persist model JSON. */
   private final ModelService models;
@@ -82,7 +63,7 @@ public final class StoredViewLayoutService {
    * @param modelId model identifier
    * @param viewId view identifier
    * @param force whether to reapply layout even if already applied
-   * @param layoutStrategy requested strategy name
+   * @param layoutStrategy legacy strategy hint; all values use the canonical layered layout
    * @return stored-view layout response
    */
   public StoredViewLayoutResponse layout(
@@ -102,12 +83,11 @@ public final class StoredViewLayoutService {
       return response(stored, view, false, List.of());
     }
 
-    String strategy =
-        normalizeStrategy(layoutStrategy, text(view, "layoutStrategy", "SPACIOUS_LAYERED"));
-    LayoutService.LayoutRequest request = buildRequest(level, model, view, strategy);
+    String strategy = "LAYERED";
+    LayoutService.LayoutRequest request = buildRequest(level, model, view);
     LayoutService.LayoutResponse result = layouts.layout(request);
     verifyComplete(request, result);
-    applyLayout(model, view, request, result, strategy);
+    applyLayout(view, request, result, strategy);
     ModelRecord updated =
         models.update(user, level, modelId, stored.name(), model, stored.revision());
     ObjectNode persistedView =
@@ -121,11 +101,10 @@ public final class StoredViewLayoutService {
    * @param level model level
    * @param model model JSON
    * @param view view JSON object
-   * @param layoutStrategy normalized layout strategy
    * @return layout service request
    */
   private LayoutService.LayoutRequest buildRequest(
-      ModelLevel level, ObjectNode model, ObjectNode view, String layoutStrategy) {
+      ModelLevel level, ObjectNode model, ObjectNode view) {
     Map<String, JsonNode> elements = indexById(model.path("graph").path("elements"), "id");
     Map<String, JsonNode> relationships =
         indexById(model.path("graph").path("relationships"), "id");
@@ -135,6 +114,7 @@ public final class StoredViewLayoutService {
     double defaultHeight = level == ModelLevel.CIM ? CIM_NODE_HEIGHT : DEFAULT_NODE_HEIGHT;
 
     List<LayoutService.LayoutNode> nodes = new ArrayList<>();
+    Map<String, Object> portInsets = new LinkedHashMap<>();
     Set<String> nodeIds = new HashSet<>();
     for (JsonNode viewNode : view.path("nodes")) {
       String id = text(viewNode, "elementId", text(viewNode, "id", ""));
@@ -142,6 +122,17 @@ public final class StoredViewLayoutService {
         continue;
       }
       JsonNode element = elements.get(id);
+      if (element == null) {
+        throw new PlatformException(409, "Stored view references missing element '" + id + "'.");
+      }
+      JsonNode insets = viewNode.path("layoutPortInsets");
+      if (insets.isObject()) {
+        portInsets.put(
+            id,
+            Map.of(
+                "top", positive(insets.path("top").asDouble(8), 8),
+                "bottom", positive(insets.path("bottom").asDouble(8), 8)));
+      }
       nodes.add(
           new LayoutService.LayoutNode(
               id,
@@ -150,9 +141,7 @@ public final class StoredViewLayoutService {
               positive(viewNode.path("height").asDouble(defaultHeight), defaultHeight),
               finite(viewNode.get("x")),
               finite(viewNode.get("y")),
-              canonicalPorts(
-                  positive(viewNode.path("width").asDouble(defaultWidth), defaultWidth),
-                  positive(viewNode.path("height").asDouble(defaultHeight), defaultHeight))));
+              List.of()));
     }
 
     List<LayoutService.LayoutEdge> edges = new ArrayList<>();
@@ -167,7 +156,12 @@ public final class StoredViewLayoutService {
       }
       JsonNode relationship = relationships.get(id);
       if (relationship == null) {
-        continue;
+        // The frontend derives edges from Ecore references. Their endpoints belong to
+        // view presentation, while the references themselves stay in semantic model data.
+        if (!viewEdge.hasNonNull("sourceElementId") || !viewEdge.hasNonNull("targetElementId")) {
+          continue;
+        }
+        relationship = viewEdge;
       }
       String sourceId = endpoint(relationship, "sourceElementId", "sourceId", "source");
       String targetId = endpoint(relationship, "targetElementId", "targetId", "target");
@@ -184,24 +178,18 @@ public final class StoredViewLayoutService {
       edges.add(
           new LayoutService.LayoutEdge(
               id,
-              text(relationship, "kind", ""),
+              text(relationship, "kind", text(relationship, "label", "")),
               sourceId,
               targetId,
-              OUTPUT_PORT_ID,
-              INPUT_PORT_ID));
-    }
-    Map<String, Object> options = new LinkedHashMap<>(layoutOptions(layoutStrategy));
-    List<List<String>> semanticDashboardColumns =
-        textColumns(view.path("semanticDashboardColumns"));
-    if (!semanticDashboardColumns.isEmpty()) {
-      options.put("semanticDashboardColumns", semanticDashboardColumns);
+              null,
+              null));
     }
     return new LayoutService.LayoutRequest(
         text(view, "id", ""),
         text(view, "layoutProfile", "DEFAULT_LAYERED"),
         false,
         List.of(),
-        options,
+        Map.of("portInsetsByNodeId", portInsets),
         nodes,
         edges);
   }
@@ -210,14 +198,12 @@ public final class StoredViewLayoutService {
    * Writes computed node positions and deterministic orthogonal edge pins back into the stored
    * view.
    *
-   * @param model model JSON being updated
    * @param view view JSON object being updated
    * @param request layout request
    * @param result layout response
    * @param strategy normalized layout strategy
    */
   private void applyLayout(
-      ObjectNode model,
       ObjectNode view,
       LayoutService.LayoutRequest request,
       LayoutService.LayoutResponse result,
@@ -229,11 +215,12 @@ public final class StoredViewLayoutService {
             node ->
                 nodesById.put(
                     node.id(),
-                    new NodeBox(node.id(), node.x(), node.y(), node.width(), node.height())));
-    Map<String, JsonNode> elements = indexById(model.path("graph").path("elements"), "id");
-    if (shouldUseDenseDashboardGrid(view, request)) {
-      applyDenseDashboardGrid(nodesById, elements, request);
-    }
+                    new NodeBox(
+                        node.id(),
+                        Math.round(node.x()),
+                        Math.round(node.y()),
+                        node.width(),
+                        node.height())));
     for (JsonNode node : view.path("nodes")) {
       if (!(node instanceof ObjectNode objectNode)) {
         continue;
@@ -253,21 +240,6 @@ public final class StoredViewLayoutService {
     result.edges().forEach(edge -> edgesById.put(edge.id(), edge));
     Map<String, LayoutService.LayoutEdge> requestsById = new HashMap<>();
     request.edges().forEach(edge -> requestsById.put(edge.id(), edge));
-    Map<String, EdgeRoute> routesById = new HashMap<>();
-    List<EdgeRoute> routes = new ArrayList<>();
-    // Route against the final node positions. In particular, dashboard views may have been
-    // moved into semantic columns after ELK returned, so ELK's original bend points are stale.
-    for (LayoutService.LayoutEdge edgeRequest : request.edges()) {
-      NodeBox source = nodesById.get(edgeRequest.sourceNodeId());
-      NodeBox target = nodesById.get(edgeRequest.targetNodeId());
-      if (source == null || target == null) {
-        continue;
-      }
-      routes.add(orthogonalRoute(edgeRequest, source, target));
-    }
-    spreadAnchors(nodesById, routes);
-    assignSeparatedPinPoints(nodesById, routes);
-    routes.forEach(route -> routesById.put(route.id, route));
     for (JsonNode edge : view.path("edges")) {
       if (!(edge instanceof ObjectNode objectEdge)) {
         continue;
@@ -282,474 +254,11 @@ public final class StoredViewLayoutService {
       if (source == null || target == null) {
         continue;
       }
-      EdgeRoute routed = routesById.get(id);
-      if (routed == null) {
-        continue;
-      }
-      writeAnchor(objectEdge, "sourceAnchor", routed.sourceAnchor);
-      writeAnchor(objectEdge, "targetAnchor", routed.targetAnchor);
-      ArrayNode pinPoints = objectEdge.putArray("pinPoints");
-      routed.pinPoints.forEach(
-          point -> {
-            ObjectNode pin = pinPoints.addObject();
-            pin.put("x", Math.round(point.x));
-            pin.put("y", Math.round(point.y));
-          });
+      writeLayoutServiceEdge(objectEdge, edgesById.get(id), source, target);
     }
     view.put("autoLayoutApplied", true);
     view.put("layoutStrategy", strategy);
     view.put("layoutGeometryVersion", LAYOUT_GEOMETRY_VERSION);
-  }
-
-  /**
-   * Creates an orthogonal route between two positioned node boxes.
-   *
-   * @param edge edge request
-   * @param source source node box
-   * @param target target node box
-   * @return edge route
-   */
-  private EdgeRoute orthogonalRoute(LayoutService.LayoutEdge edge, NodeBox source, NodeBox target) {
-    if (source.id.equals(target.id)) {
-      Anchor sourceAnchor = new Anchor("right", source.height / 2.0d);
-      Anchor targetAnchor = new Anchor("left", source.height / 2.0d);
-      return new EdgeRoute(
-          edge.id(), source.id, target.id, sourceAnchor, targetAnchor, new ArrayList<>());
-    }
-
-    Anchor sourceAnchor = new Anchor("right", source.height / 2.0d);
-    Anchor targetAnchor = new Anchor("left", target.height / 2.0d);
-    return new EdgeRoute(
-        edge.id(), source.id, target.id, sourceAnchor, targetAnchor, new ArrayList<>());
-  }
-
-  /**
-   * Detects large dashboard-like views that benefit from deterministic semantic columns after ELK
-   * sizing.
-   *
-   * @param view stored view JSON
-   * @param request layout request
-   * @return {@code true} when dense grid post-processing should run
-   */
-  private boolean shouldUseDenseDashboardGrid(
-      ObjectNode view, LayoutService.LayoutRequest request) {
-    if (!Boolean.TRUE.equals(request.options().get("semanticDashboardGrid"))) {
-      return false;
-    }
-    if (dashboardColumns(request).isEmpty()) {
-      return false;
-    }
-    String profile = text(view, "layoutProfile", request.profile()).toUpperCase();
-    String kind = text(view, "kind", "").toUpperCase();
-    return request.nodes().size() >= 36
-        && (profile.contains("DASHBOARD") || kind.contains("DASHBOARD"));
-  }
-
-  /**
-   * Repositions large dashboard views into fixed semantic columns.
-   *
-   * @param nodesById positioned nodes keyed by id
-   * @param elements graph elements keyed by id
-   * @param request layout request
-   */
-  private void applyDenseDashboardGrid(
-      Map<String, NodeBox> nodesById,
-      Map<String, JsonNode> elements,
-      LayoutService.LayoutRequest request) {
-    List<List<String>> columns = dashboardColumns(request);
-    if (columns.isEmpty()) {
-      return;
-    }
-    Map<String, Integer> columnByType = new HashMap<>();
-    for (int index = 0; index < columns.size(); index++) {
-      for (String type : columns.get(index)) {
-        columnByType.put(type, index);
-      }
-    }
-    List<List<NodeBox>> buckets = new ArrayList<>();
-    for (int index = 0; index < columns.size(); index++) {
-      buckets.add(new ArrayList<>());
-    }
-    List<NodeBox> overflow = new ArrayList<>();
-    for (LayoutService.LayoutNode node : request.nodes()) {
-      NodeBox box = nodesById.get(node.id());
-      if (box == null) {
-        continue;
-      }
-      String type =
-          text(elements.get(node.id()), "eClass", text(elements.get(node.id()), "type", ""));
-      Integer column = columnByType.get(type);
-      if (column == null) {
-        overflow.add(box);
-      } else {
-        buckets.get(column).add(box);
-      }
-    }
-    if (!overflow.isEmpty()) {
-      buckets.get(buckets.size() - 1).addAll(overflow);
-    }
-    for (List<NodeBox> bucket : buckets) {
-      bucket.sort(
-          Comparator.comparing(
-              box ->
-                  text(elements.get(box.id), "name", text(elements.get(box.id), "label", box.id))));
-    }
-    double columnSpacing = 430.0d;
-    double rowSpacing = 178.0d;
-    double top = 80.0d;
-    double left = 80.0d;
-    for (int column = 0; column < buckets.size(); column++) {
-      List<NodeBox> bucket = buckets.get(column);
-      double y = top;
-      if (bucket.size() < maxBucketSize(buckets)) {
-        y += (maxBucketSize(buckets) - bucket.size()) * rowSpacing / 2.0d;
-      }
-      for (NodeBox box : bucket) {
-        nodesById.put(
-            box.id, new NodeBox(box.id, left + column * columnSpacing, y, box.width, box.height));
-        y += rowSpacing;
-      }
-    }
-  }
-
-  /**
-   * Returns the largest semantic-column bucket size.
-   *
-   * @param buckets semantic buckets
-   * @return maximum bucket size
-   */
-  private int maxBucketSize(List<List<NodeBox>> buckets) {
-    return buckets.stream().mapToInt(List::size).max().orElse(1);
-  }
-
-  /**
-   * Spreads edge anchor offsets so parallel routes do not all attach to the same point.
-   *
-   * @param nodesById positioned nodes keyed by id
-   * @param routes mutable edge routes
-   */
-  private void spreadAnchors(Map<String, NodeBox> nodesById, List<EdgeRoute> routes) {
-    for (NodeBox node : nodesById.values()) {
-      spreadAnchorsFor(node, routes, true);
-      spreadAnchorsFor(node, routes, false);
-    }
-    routes.forEach(
-        route -> {
-          NodeBox source = nodesById.get(route.sourceNodeId);
-          NodeBox target = nodesById.get(route.targetNodeId);
-          if (source == null || target == null || route.pinPoints.isEmpty()) {
-            return;
-          }
-          Point start = pointForAnchor(source, route.sourceAnchor);
-          Point end = pointForAnchor(target, route.targetAnchor);
-          route.pinPoints.get(0).y = start.y;
-          route.pinPoints.get(route.pinPoints.size() - 1).y = end.y;
-        });
-  }
-
-  /**
-   * Assigns deterministic pin points while preventing routed edge segments from overlapping.
-   *
-   * @param nodesById positioned nodes keyed by id
-   * @param routes mutable edge routes
-   */
-  private void assignSeparatedPinPoints(Map<String, NodeBox> nodesById, List<EdgeRoute> routes) {
-    List<RouteSegment> occupiedSegments = new ArrayList<>();
-    List<EdgeRoute> ordered = new ArrayList<>(routes);
-    ordered.sort(Comparator.comparing(route -> route.id));
-    for (EdgeRoute route : ordered) {
-      NodeBox source = nodesById.get(route.sourceNodeId);
-      NodeBox target = nodesById.get(route.targetNodeId);
-      if (source == null || target == null) {
-        continue;
-      }
-      List<Point> selected = null;
-      for (int attempt = 0; attempt < MAX_ROUTE_ATTEMPTS; attempt++) {
-        List<Point> candidate = candidatePath(route, source, target, attempt);
-        if (!overlapsExistingSegments(candidate, occupiedSegments)) {
-          selected = candidate;
-          break;
-        }
-      }
-      if (selected == null) {
-        selected = candidatePath(route, source, target, MAX_ROUTE_ATTEMPTS);
-      }
-      route.pinPoints.clear();
-      route.pinPoints.addAll(selected.subList(1, selected.size() - 1));
-      occupiedSegments.addAll(segments(route.id, selected));
-    }
-  }
-
-  /**
-   * Builds a candidate orthogonal path through a deterministic edge corridor.
-   *
-   * @param route edge route
-   * @param source source node
-   * @param target target node
-   * @param attempt candidate attempt
-   * @return full path including endpoints
-   */
-  private List<Point> candidatePath(EdgeRoute route, NodeBox source, NodeBox target, int attempt) {
-    Point start = pointForAnchor(source, route.sourceAnchor);
-    Point end = pointForAnchor(target, route.targetAnchor);
-    int lane = lane(attempt / 2);
-    boolean verticalFirst = attempt % 2 == 1;
-    double jitter = stableJitter(route.id);
-    if (source.id.equals(target.id)) {
-      double loopX =
-          source.x + source.width + ROUTE_STUB + Math.abs(lane) * ROUTE_LANE_STEP + jitter;
-      double loopY = source.y - ROUTE_STUB - Math.max(0, lane) * ROUTE_LANE_STEP - jitter;
-      return compactPath(
-          List.of(
-              start,
-              new Point(loopX, start.y),
-              new Point(loopX, loopY),
-              new Point(end.x, loopY),
-              end));
-    }
-    double corridorY = corridorY(source, target, start, end, lane, jitter);
-    double detour = ROUTE_STUB + Math.abs(lane) * ROUTE_LANE_STEP + jitter;
-    double sourceX = start.x + detour;
-    double targetX = end.x - detour;
-    if (same(start.x, end.x)) {
-      sourceX = start.x + (lane < 0 ? -detour : detour);
-      targetX = sourceX;
-    }
-    if (verticalFirst) {
-      if (same(start.x, end.x)) {
-        return compactPath(
-            List.of(
-                start,
-                new Point(start.x, corridorY),
-                new Point(sourceX, corridorY),
-                new Point(sourceX, end.y),
-                end));
-      }
-      return compactPath(
-          List.of(
-              start,
-              new Point(start.x, corridorY),
-              new Point(targetX, corridorY),
-              new Point(targetX, end.y),
-              end));
-    }
-    return compactPath(
-        List.of(
-            start,
-            new Point(sourceX, start.y),
-            new Point(sourceX, corridorY),
-            new Point(targetX, corridorY),
-            new Point(targetX, end.y),
-            end));
-  }
-
-  /**
-   * Computes a horizontal corridor y coordinate for a route candidate.
-   *
-   * @param source source node
-   * @param target target node
-   * @param start start point
-   * @param end end point
-   * @param lane signed lane index
-   * @param jitter stable route jitter
-   * @return corridor y
-   */
-  private double corridorY(
-      NodeBox source, NodeBox target, Point start, Point end, int lane, double jitter) {
-    if (Math.abs(start.y - end.y) > 80.0d) {
-      return Math.round((start.y + end.y) / 2.0d + lane * ROUTE_LANE_STEP + jitter);
-    }
-    double top = Math.min(source.y, target.y);
-    double bottom = Math.max(source.y + source.height, target.y + target.height);
-    if (lane == 0 || lane > 0) {
-      return Math.round(top - ROUTE_STUB - Math.max(0, lane - 1) * ROUTE_LANE_STEP - jitter);
-    }
-    return Math.round(bottom + ROUTE_STUB + Math.abs(lane + 1) * ROUTE_LANE_STEP + jitter);
-  }
-
-  /**
-   * Removes duplicate and unnecessary collinear points from a path.
-   *
-   * @param points path points
-   * @return compact path
-   */
-  private List<Point> compactPath(List<Point> points) {
-    List<Point> result = new ArrayList<>();
-    for (Point point : points) {
-      Point rounded = new Point(Math.round(point.x), Math.round(point.y));
-      if (!result.isEmpty() && samePoint(result.get(result.size() - 1), rounded)) {
-        continue;
-      }
-      result.add(rounded);
-      while (result.size() >= 3 && collinearLastThree(result)) {
-        Point last = result.remove(result.size() - 1);
-        result.remove(result.size() - 1);
-        result.add(last);
-      }
-    }
-    return result;
-  }
-
-  /**
-   * Returns whether the last three points in a path are collinear.
-   *
-   * @param points path points
-   * @return {@code true} when the middle point can be removed
-   */
-  private boolean collinearLastThree(List<Point> points) {
-    int size = points.size();
-    Point first = points.get(size - 3);
-    Point middle = points.get(size - 2);
-    Point last = points.get(size - 1);
-    return (same(first.x, middle.x) && same(middle.x, last.x))
-        || (same(first.y, middle.y) && same(middle.y, last.y));
-  }
-
-  /**
-   * Checks whether a candidate path overlaps any already occupied edge segment.
-   *
-   * @param candidate candidate path
-   * @param occupiedSegments occupied edge segments
-   * @return {@code true} when a non-point overlap exists
-   */
-  private boolean overlapsExistingSegments(
-      List<Point> candidate, List<RouteSegment> occupiedSegments) {
-    for (RouteSegment candidateSegment : segments("", candidate)) {
-      for (RouteSegment occupiedSegment : occupiedSegments) {
-        if (candidateSegment.overlaps(occupiedSegment)) {
-          return true;
-        }
-      }
-    }
-    return false;
-  }
-
-  /**
-   * Converts a path into horizontal and vertical segments.
-   *
-   * @param edgeId edge id
-   * @param points path points
-   * @return axis-aligned segments
-   */
-  private List<RouteSegment> segments(String edgeId, List<Point> points) {
-    List<RouteSegment> result = new ArrayList<>();
-    for (int index = 1; index < points.size(); index++) {
-      Point start = points.get(index - 1);
-      Point end = points.get(index);
-      if (same(start.x, end.x)) {
-        result.add(RouteSegment.vertical(edgeId, start.x, start.y, end.y));
-      } else if (same(start.y, end.y)) {
-        result.add(RouteSegment.horizontal(edgeId, start.y, start.x, end.x));
-      }
-    }
-    return result;
-  }
-
-  /**
-   * Maps attempt number to the sequence 0, 1, -1, 2, -2, ...
-   *
-   * @param attempt candidate attempt
-   * @return signed lane index
-   */
-  private int lane(int attempt) {
-    if (attempt == 0) {
-      return 0;
-    }
-    int distance = (attempt + 1) / 2;
-    return attempt % 2 == 1 ? distance : -distance;
-  }
-
-  /**
-   * Computes a small deterministic integer jitter for an edge id.
-   *
-   * @param edgeId edge id
-   * @return jitter in layout units
-   */
-  private double stableJitter(String edgeId) {
-    int hash = 0;
-    for (char character : edgeId.toCharArray()) {
-      hash = (hash * 31 + character) % 997;
-    }
-    return hash % 9;
-  }
-
-  /**
-   * Spreads anchors on one side of a node for either source or target endpoints.
-   *
-   * @param node positioned node box
-   * @param routes mutable edge routes
-   * @param sourceEndpoint {@code true} to spread source anchors
-   */
-  private void spreadAnchorsFor(NodeBox node, List<EdgeRoute> routes, boolean sourceEndpoint) {
-    Map<String, List<EdgeRoute>> bySide = new HashMap<>();
-    for (EdgeRoute route : routes) {
-      boolean matches =
-          sourceEndpoint ? node.id.equals(route.sourceNodeId) : node.id.equals(route.targetNodeId);
-      if (!matches) {
-        continue;
-      }
-      Anchor anchor = sourceEndpoint ? route.sourceAnchor : route.targetAnchor;
-      bySide.computeIfAbsent(anchor.side, ignored -> new ArrayList<>()).add(route);
-    }
-    bySide
-        .values()
-        .forEach(
-            sideRoutes -> {
-              if (sideRoutes.size() < 2) {
-                return;
-              }
-              sideRoutes.sort(
-                  Comparator.comparing(
-                          (EdgeRoute route) ->
-                              sourceEndpoint ? route.targetNodeId : route.sourceNodeId)
-                      .thenComparing(route -> route.id));
-              double step =
-                  Math.max(
-                      14.0d,
-                      Math.min(30.0d, (node.height - 20.0d) / Math.max(1, sideRoutes.size() - 1)));
-              double start = Math.max(10.0d, (node.height - step * (sideRoutes.size() - 1)) / 2.0d);
-              for (int index = 0; index < sideRoutes.size(); index++) {
-                EdgeRoute route = sideRoutes.get(index);
-                Anchor anchor = sourceEndpoint ? route.sourceAnchor : route.targetAnchor;
-                anchor.offsetY =
-                    Math.max(10.0d, Math.min(node.height - 10.0d, start + index * step));
-              }
-            });
-  }
-
-  /**
-   * Converts an anchor offset to an absolute point on a node.
-   *
-   * @param node positioned node
-   * @param anchor anchor to resolve
-   * @return absolute point
-   */
-  private Point pointForAnchor(NodeBox node, Anchor anchor) {
-    return new Point(
-        "right".equals(anchor.side) ? node.x + node.width : node.x,
-        node.y + Math.max(8.0d, Math.min(node.height - 8.0d, anchor.offsetY)));
-  }
-
-  /**
-   * Checks whether two points have the same rounded coordinates.
-   *
-   * @param left left point
-   * @param right right point
-   * @return {@code true} when both rounded coordinates match
-   */
-  private boolean samePoint(Point left, Point right) {
-    return same(left.x, right.x) && same(left.y, right.y);
-  }
-
-  /**
-   * Checks whether two layout coordinates are effectively identical.
-   *
-   * @param left left coordinate
-   * @param right right coordinate
-   * @return {@code true} when the coordinates are close enough to share a rendered pixel
-   */
-  private boolean same(double left, double right) {
-    return Math.abs(left - right) < 0.5d;
   }
 
   /**
@@ -793,139 +302,10 @@ public final class StoredViewLayoutService {
   private void writeAnchorFromPoint(
       ObjectNode edge, String field, NodeBox node, double pointX, double pointY) {
     String side = pointX >= node.x + node.width / 2.0d ? "right" : "left";
-    double offsetY = Math.max(8.0d, Math.min(node.height - 8.0d, pointY - node.y));
-    writeAnchor(edge, field, new Anchor(side, offsetY));
-  }
-
-  /**
-   * Writes an anchor object to an edge JSON object.
-   *
-   * @param edge edge JSON object
-   * @param field target field name
-   * @param anchor anchor to write
-   */
-  private void writeAnchor(ObjectNode edge, String field, Anchor anchor) {
-    ObjectNode anchorNode = edge.putObject(field);
-    anchorNode.put("side", anchor.side);
-    anchorNode.put("offsetY", Math.round(anchor.offsetY));
-  }
-
-  /**
-   * Creates canonical input/output ports with fixed sides and approximate middle-side positions.
-   *
-   * @param width node width
-   * @param height node height
-   * @return immutable canonical port list
-   */
-  private List<LayoutService.LayoutPort> canonicalPorts(double width, double height) {
-    double y = Math.max(8.0d, Math.min(height - 8.0d, height / 2.0d)) - LAYOUT_PORT_SIZE / 2.0d;
-    return List.of(
-        new LayoutService.LayoutPort(
-            INPUT_PORT_ID, "in", LAYOUT_PORT_SIZE, LAYOUT_PORT_SIZE, 0.0d, y),
-        new LayoutService.LayoutPort(
-            OUTPUT_PORT_ID,
-            "out",
-            LAYOUT_PORT_SIZE,
-            LAYOUT_PORT_SIZE,
-            Math.max(0.0d, width - LAYOUT_PORT_SIZE),
-            y));
-  }
-
-  /**
-   * Expands a normalized strategy into concrete layout options.
-   *
-   * @param strategy normalized strategy name
-   * @return layout option map
-   */
-  private Map<String, Object> layoutOptions(String strategy) {
-    return switch (strategy) {
-      case "BALANCED_LAYERED" ->
-          Map.of(
-              "layoutStrategy",
-              strategy,
-              "nodeSpacing",
-              230,
-              "layerSpacing",
-              360,
-              "nodePlacementStrategy",
-              "NETWORK_SIMPLEX");
-      case "VERTICAL_FLOW" ->
-          Map.of(
-              "layoutStrategy",
-              strategy,
-              "direction",
-              "DOWN",
-              "nodeSpacing",
-              240,
-              "layerSpacing",
-              360,
-              "nodePlacementStrategy",
-              "BRANDES_KOEPF");
-      case "RELAXED_SPLINES" ->
-          Map.of(
-              "layoutStrategy",
-              strategy,
-              "edgeRouting",
-              "SPLINES",
-              "nodeSpacing",
-              260,
-              "layerSpacing",
-              400,
-              "nodePlacementStrategy",
-              "BRANDES_KOEPF");
-      case "TREE" ->
-          Map.of(
-              "layoutStrategy",
-              strategy,
-              "direction",
-              "DOWN",
-              "edgeRouting",
-              "POLYLINE",
-              "nodeSpacing",
-              250,
-              "layerSpacing",
-              380);
-      case "RADIAL" ->
-          Map.of("layoutStrategy", strategy, "edgeRouting", "SPLINES", "nodeSpacing", 260);
-      case "FORCE" ->
-          Map.of("layoutStrategy", strategy, "edgeRouting", "SPLINES", "nodeSpacing", 280);
-      default ->
-          Map.of(
-              "layoutStrategy",
-              "SPACIOUS_LAYERED",
-              "semanticDashboardGrid",
-              true,
-              "nodeSpacing",
-              300,
-              "layerSpacing",
-              460,
-              "nodePlacementStrategy",
-              "BRANDES_KOEPF");
-    };
-  }
-
-  /**
-   * Normalizes strategy aliases and defaults unsupported values.
-   *
-   * @param requested requested strategy
-   * @param fallback fallback strategy
-   * @return normalized strategy name
-   */
-  private String normalizeStrategy(String requested, String fallback) {
-    String value =
-        (requested == null || requested.isBlank() ? fallback : requested)
-            .trim()
-            .toUpperCase()
-            .replace('-', '_');
-    return switch (value) {
-      case "BALANCED", "BALANCED_LAYERED" -> "BALANCED_LAYERED";
-      case "VERTICAL", "VERTICAL_FLOW" -> "VERTICAL_FLOW";
-      case "RELAXED", "RELAXED_SPLINES", "SPLINES" -> "RELAXED_SPLINES";
-      case "TREE", "TREE_FLOW" -> "TREE";
-      case "RADIAL" -> "RADIAL";
-      case "FORCE", "FORCE_DIRECTED" -> "FORCE";
-      default -> "SPACIOUS_LAYERED";
-    };
+    double offsetY = Math.round(pointY) - node.y;
+    ObjectNode anchor = edge.putObject(field);
+    anchor.put("side", side);
+    anchor.put("offsetY", Math.round(offsetY));
   }
 
   /**
@@ -1050,61 +430,6 @@ public final class StoredViewLayoutService {
   }
 
   /**
-   * Converts a JSON array of string arrays to dashboard column definitions.
-   *
-   * @param values JSON column array
-   * @return non-empty semantic dashboard columns
-   */
-  private List<List<String>> textColumns(JsonNode values) {
-    List<List<String>> result = new ArrayList<>();
-    if (!values.isArray()) {
-      return result;
-    }
-    values.forEach(
-        column -> {
-          List<String> types = new ArrayList<>();
-          if (column.isArray()) {
-            column.forEach(
-                value -> {
-                  if (value.isTextual() && !value.asText().isBlank()) {
-                    types.add(value.asText());
-                  }
-                });
-          }
-          if (!types.isEmpty()) {
-            result.add(types);
-          }
-        });
-    return result;
-  }
-
-  /**
-   * Reads semantic dashboard columns from layout request options.
-   *
-   * @param request layout request
-   * @return configured columns or an empty list
-   */
-  @SuppressWarnings("unchecked")
-  private List<List<String>> dashboardColumns(LayoutService.LayoutRequest request) {
-    Object rawColumns = request.options().get("semanticDashboardColumns");
-    if (!(rawColumns instanceof List<?> columns)) {
-      return List.of();
-    }
-    List<List<String>> result = new ArrayList<>();
-    for (Object rawColumn : columns) {
-      if (!(rawColumn instanceof List<?> column)) {
-        continue;
-      }
-      List<String> types =
-          column.stream().map(String::valueOf).filter(value -> !value.isBlank()).toList();
-      if (!types.isEmpty()) {
-        result.add(types);
-      }
-    }
-    return result;
-  }
-
-  /**
    * Resolves a relationship endpoint from preferred, secondary, or nested reference fields.
    *
    * @param relationship relationship JSON
@@ -1205,173 +530,4 @@ public final class StoredViewLayoutService {
    * @param height node height
    */
   private record NodeBox(String id, double x, double y, double width, double height) {}
-
-  /** Edge endpoint anchor expressed as a side plus vertical offset. */
-  private static final class Anchor {
-
-    /** Node side where the edge attaches. */
-    private final String side;
-
-    /** Vertical offset from the top of the node. */
-    private double offsetY;
-
-    /**
-     * Creates an anchor.
-     *
-     * @param side node side
-     * @param offsetY vertical offset
-     */
-    private Anchor(String side, double offsetY) {
-      this.side = side;
-      this.offsetY = offsetY;
-    }
-  }
-
-  /** Mutable route point used while adjusting pins. */
-  private static final class Point {
-
-    /** X coordinate. */
-    private final double x;
-
-    /** Y coordinate. */
-    private double y;
-
-    /**
-     * Creates a route point.
-     *
-     * @param x x coordinate
-     * @param y y coordinate
-     */
-    private Point(double x, double y) {
-      this.x = x;
-      this.y = y;
-    }
-  }
-
-  /** Mutable orthogonal route plus anchor metadata before it is written to stored view JSON. */
-  private static final class EdgeRoute {
-
-    /** Edge identifier. */
-    private final String id;
-
-    /** Source node identifier. */
-    private final String sourceNodeId;
-
-    /** Target node identifier. */
-    private final String targetNodeId;
-
-    /** Source anchor. */
-    private final Anchor sourceAnchor;
-
-    /** Target anchor. */
-    private final Anchor targetAnchor;
-
-    /** Mutable pin points for the route. */
-    private final List<Point> pinPoints;
-
-    /**
-     * Creates an edge route.
-     *
-     * @param id edge identifier
-     * @param sourceNodeId source node identifier
-     * @param targetNodeId target node identifier
-     * @param sourceAnchor source anchor
-     * @param targetAnchor target anchor
-     * @param pinPoints route pin points
-     */
-    private EdgeRoute(
-        String id,
-        String sourceNodeId,
-        String targetNodeId,
-        Anchor sourceAnchor,
-        Anchor targetAnchor,
-        List<Point> pinPoints) {
-      this.id = id;
-      this.sourceNodeId = sourceNodeId;
-      this.targetNodeId = targetNodeId;
-      this.sourceAnchor = sourceAnchor;
-      this.targetAnchor = targetAnchor;
-      this.pinPoints = pinPoints;
-    }
-  }
-
-  /** Axis-aligned edge route segment claimed by a routed edge. */
-  private static final class RouteSegment {
-
-    /** Edge that owns the segment. */
-    private final String edgeId;
-
-    /** Whether this segment is vertical. */
-    private final boolean vertical;
-
-    /** Constant x for vertical segments, constant y for horizontal segments. */
-    private final double constant;
-
-    /** Normalized start of the varying interval. */
-    private final double start;
-
-    /** Normalized end of the varying interval. */
-    private final double end;
-
-    /**
-     * Creates a route segment.
-     *
-     * @param edgeId owner edge id
-     * @param vertical whether the segment is vertical
-     * @param constant constant coordinate
-     * @param first first varying coordinate
-     * @param second second varying coordinate
-     */
-    private RouteSegment(
-        String edgeId, boolean vertical, double constant, double first, double second) {
-      this.edgeId = edgeId;
-      this.vertical = vertical;
-      this.constant = constant;
-      this.start = Math.min(first, second);
-      this.end = Math.max(first, second);
-    }
-
-    /**
-     * Creates a vertical segment.
-     *
-     * @param edgeId owner edge id
-     * @param x x coordinate
-     * @param firstY first y coordinate
-     * @param secondY second y coordinate
-     * @return vertical segment
-     */
-    private static RouteSegment vertical(String edgeId, double x, double firstY, double secondY) {
-      return new RouteSegment(edgeId, true, x, firstY, secondY);
-    }
-
-    /**
-     * Creates a horizontal segment.
-     *
-     * @param edgeId owner edge id
-     * @param y y coordinate
-     * @param firstX first x coordinate
-     * @param secondX second x coordinate
-     * @return horizontal segment
-     */
-    private static RouteSegment horizontal(String edgeId, double y, double firstX, double secondX) {
-      return new RouteSegment(edgeId, false, y, firstX, secondX);
-    }
-
-    /**
-     * Checks whether this segment shares a non-zero rendered length with another segment.
-     *
-     * @param other other segment
-     * @return {@code true} when the segments sit on top of each other
-     */
-    private boolean overlaps(RouteSegment other) {
-      if (edgeId.equals(other.edgeId) || vertical != other.vertical) {
-        return false;
-      }
-      if (Math.abs(constant - other.constant) >= 0.5d) {
-        return false;
-      }
-      double overlap = Math.min(end, other.end) - Math.max(start, other.start);
-      return overlap > 1.0d;
-    }
-  }
 }

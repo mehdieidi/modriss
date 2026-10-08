@@ -2,8 +2,6 @@ package io.mehdieidi.modriss.platform.model.application;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.mehdieidi.modriss.platform.kernel.ModelLevel;
@@ -61,14 +59,13 @@ class StoredViewLayoutServiceTest {
             context.user(), ModelLevel.CIM, created.id(), "view-test", false, "SPACIOUS_LAYERED");
     assertTrue(first.layoutApplied());
     assertTrue(first.view().path("autoLayoutApplied").asBoolean());
-    assertEquals(2, first.view().path("layoutGeometryVersion").asInt());
+    assertEquals(3, first.view().path("layoutGeometryVersion").asInt());
     assertTrue(first.view().path("nodes").findValuesAsString("x").size() >= 2);
     JsonNode edge = first.view().path("edges").path(0);
     assertEquals("right", edge.path("sourceAnchor").path("side").asText());
     assertEquals("left", edge.path("targetAnchor").path("side").asText());
     assertTrue(edge.path("sourceAnchor").path("offsetY").isNumber());
     assertTrue(edge.path("targetAnchor").path("offsetY").isNumber());
-    assertTrue(edge.path("pinPoints").size() >= 2);
     assertOrthogonalPins(edge);
     assertEquals(created.revision() + 1, first.revision());
 
@@ -81,13 +78,12 @@ class StoredViewLayoutServiceTest {
   }
 
   /**
-   * Verifies that large dashboard views do not force every selected algorithm through the same
-   * semantic grid post-processing.
+   * Verifies that dashboard geometry is deterministic and legacy strategies migrate to LAYERED.
    *
    * @throws Exception when temporary repository setup fails
    */
   @Test
-  void dashboardViewKeepsSelectedAlgorithmGeometry() throws Exception {
+  void dashboardPreservesElkGeometryAndMigratesLegacyStrategies() throws Exception {
     PlatformTestFixtures.ServiceStack services = PlatformTestFixtures.createServices(tempDir);
     StoredViewLayoutService service =
         new StoredViewLayoutService(services.models(), new LayoutService());
@@ -131,12 +127,13 @@ class StoredViewLayoutServiceTest {
         service.layout(
             context.user(), ModelLevel.CIM, created.id(), "dashboard-view", true, "RADIAL");
 
-    assertEquals("SPACIOUS_LAYERED", spacious.view().path("layoutStrategy").asText());
-    assertEquals("TREE", tree.view().path("layoutStrategy").asText());
-    assertEquals("RADIAL", radial.view().path("layoutStrategy").asText());
+    assertEquals("LAYERED", spacious.view().path("layoutStrategy").asText());
+    assertEquals("LAYERED", tree.view().path("layoutStrategy").asText());
+    assertEquals("LAYERED", radial.view().path("layoutStrategy").asText());
     assertOrthogonalPins(spacious.view().path("edges").path(0));
-    assertNotEquals(nodeGeometrySignature(spacious.view()), nodeGeometrySignature(tree.view()));
-    assertNotEquals(nodeGeometrySignature(spacious.view()), nodeGeometrySignature(radial.view()));
+    assertStoredViewEdgesDoNotOverlap(model, spacious.view());
+    assertEquals(nodeGeometrySignature(spacious.view()), nodeGeometrySignature(tree.view()));
+    assertEquals(nodeGeometrySignature(spacious.view()), nodeGeometrySignature(radial.view()));
   }
 
   /**
@@ -176,6 +173,61 @@ class StoredViewLayoutServiceTest {
             context.user(), ModelLevel.CIM, created.id(), "view-test", false, "SPACIOUS_LAYERED");
     assertTrue(response.layoutApplied());
     assertTrue(response.view().path("autoLayoutApplied").asBoolean());
+  }
+
+  /** Derived Ecore references participate in layout without becoming semantic graph records. */
+  @Test
+  void routesDerivedReferencesWithViewEndpoints() throws Exception {
+    PlatformTestFixtures.ServiceStack services = PlatformTestFixtures.createServices(tempDir);
+    PlatformTestFixtures.AuthenticatedContext context =
+        PlatformTestFixtures.registerOwner(
+            services, "derived-layout@example.com", "Derived Layout", "Derived Layout Project");
+    ObjectNode model =
+        (ObjectNode)
+            services
+                .models()
+                .importModel(ModelLevel.CIM, "cim.xmi", PlatformTestFixtures.climateCimXmi(), "xmi")
+                .modelJson()
+                .deepCopy();
+    addView(model);
+    ObjectNode view = (ObjectNode) model.path("views").path(0);
+    ObjectNode edge = view.withArray("edges").addObject();
+    edge.put("relationshipId", "semantic-ref-test");
+    edge.put("sourceElementId", view.path("nodes").path(0).path("elementId").asText());
+    edge.put("targetElementId", view.path("nodes").path(1).path("elementId").asText());
+    edge.put("label", "SUPPORTS");
+    edge.put("visible", true);
+    ModelRecord created =
+        services
+            .models()
+            .create(
+                context.user(),
+                ModelLevel.CIM,
+                context.project().id(),
+                "derived-layout-cim",
+                model);
+    StoredViewLayoutService.StoredViewLayoutResponse response =
+        new StoredViewLayoutService(services.models(), new LayoutService())
+            .layout(context.user(), ModelLevel.CIM, created.id(), "view-test", true, "LAYERED");
+    JsonNode routed = response.view().path("edges").path(1);
+    assertTrue(routed.path("sourceAnchor").path("offsetY").isNumber());
+    assertTrue(routed.path("targetAnchor").path("offsetY").isNumber());
+    assertTrue(routed.path("pinPoints").isArray());
+    assertFalse(
+        response
+            .view()
+            .path("edges")
+            .path(0)
+            .path("sourceAnchor")
+            .equals(routed.path("sourceAnchor")),
+        "Parallel references need distinct attachment points");
+    assertEquals(
+        model.path("graph"),
+        services
+            .models()
+            .get(context.user(), ModelLevel.CIM, created.id())
+            .modelJson()
+            .path("graph"));
   }
 
   /**
@@ -279,13 +331,13 @@ class StoredViewLayoutServiceTest {
    */
   private void assertOrthogonalPins(JsonNode edge) {
     JsonNode pins = edge.path("pinPoints");
-    JsonNode first = pins.path(0);
-    JsonNode second = pins.path(1);
-    assertNotNull(first);
-    assertNotNull(second);
-    assertTrue(
-        first.path("x").asInt() == second.path("x").asInt()
-            || first.path("y").asInt() == second.path("y").asInt());
+    for (int index = 1; index < pins.size(); index++) {
+      JsonNode first = pins.path(index - 1);
+      JsonNode second = pins.path(index);
+      assertTrue(
+          first.path("x").asInt() == second.path("x").asInt()
+              || first.path("y").asInt() == second.path("y").asInt());
+    }
   }
 
   /**

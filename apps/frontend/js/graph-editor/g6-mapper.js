@@ -1,4 +1,5 @@
 import { state } from "../state.js";
+import { declutterEdgeLabels } from "./edge-label-layout.js";
 import {
   modelingElementDefinition,
   modelingLevelConfig,
@@ -200,6 +201,7 @@ function routeEndpoint(node, anchor, typeKey, fallbackSide = "right", detailLeve
   if (!node) {
     return null;
   }
+  detailLevel = geometryDetailLevel(node, detailLevel);
   const size = renderedNodeSize(node, typeKey, detailLevel);
   const side = anchor?.side === "left" || anchor?.side === "right" ? anchor.side : fallbackSide;
   const requestedOffsetY = Number(anchor?.offsetY);
@@ -216,6 +218,13 @@ function routeEndpoint(node, anchor, typeKey, fallbackSide = "right", detailLeve
     detailLevel === "low",
     node.label || node.id || "",
   );
+}
+
+function geometryDetailLevel(node, detailLevel) {
+  // A measured layout has fixed geometry. Shrinking its icon at far zoom would detach
+  // the stored routes from their attachment points.
+  const measured = Number.isFinite(Number(node?.width)) && Number.isFinite(Number(node?.height));
+  return measured && detailLevel === "low" ? "normal" : detailLevel;
 }
 
 function renderedNodeSize(node, typeKey, detailLevel) {
@@ -240,6 +249,7 @@ export function mapNodeToG6(
     viewProfile = "",
   } = {},
 ) {
+  detailLevel = geometryDetailLevel(node, detailLevel);
   const size = renderedNodeSize(node, typeKey, detailLevel);
   const definition = cachedElementDefinition(typeKey, node.type);
   const notation = notationFromDefinition(typeKey, node, definition);
@@ -448,5 +458,6 @@ export function mapDiagramToG6({
         nodesById,
       }),
     );
+  declutterEdgeLabels(g6Nodes, g6Edges);
   return { nodes: g6Nodes, edges: g6Edges };
 }

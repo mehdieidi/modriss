@@ -1240,17 +1240,8 @@ paths:
           required: false
           schema:
             type: string
-            enum:
-              [
-                SPACIOUS_LAYERED,
-                BALANCED_LAYERED,
-                RELAXED_SPLINES,
-                VERTICAL_FLOW,
-                TREE,
-                RADIAL,
-                FORCE,
-              ]
-            default: SPACIOUS_LAYERED
+            enum: [LAYERED]
+            default: LAYERED
       responses:
         "200":
           description: Persisted view layout result

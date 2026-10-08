@@ -134,19 +134,9 @@
   scrollbar-width: thin;
 }
 
-.workbench-action-group:has(.workbench-layout-select-wrap.is-open) {
-  position: relative;
-  z-index: 71;
-  overflow: visible;
-}
-
 .workbench-action-group:has(.workbench-inspect-menu-wrap.is-open) {
   position: relative;
   z-index: 71;
-  overflow: visible;
-}
-
-.model-workbench-commandbar:has(.workbench-layout-select-wrap.is-open) {
   overflow: visible;
 }
 
@@ -219,86 +209,10 @@
   color: var(--text-strong);
 }
 
-.workbench-btn-group .workbench-layout-select-wrap {
-  border-left: 1px solid color-mix(in srgb, var(--border) 58%, transparent);
-}
-
-.workbench-btn-group .workbench-layout-select {
-  border: none;
-  border-radius: 0;
-  background: transparent;
-}
-
 .workbench-tool-actions {
   display: inline-flex;
   align-items: center;
   gap: 3px;
-}
-
-.workbench-layout-select-wrap {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  min-width: 0;
-  min-height: var(--workbench-action-h, 28px);
-  overflow: visible;
-}
-
-.workbench-layout-select-wrap.is-open {
-  z-index: 120;
-}
-
-.workbench-layout-select-label {
-  display: none;
-}
-
-.workbench-layout-select {
-  width: 84px;
-  min-width: 84px;
-  max-width: 84px;
-  min-height: var(--workbench-action-h, 28px);
-  padding: 3px 22px 3px 7px;
-  border-radius: 5px;
-  border-color: color-mix(in srgb, var(--border) 58%, transparent);
-  background: color-mix(in srgb, var(--input-bg) 72%, transparent);
-  color: color-mix(in srgb, var(--text) 88%, var(--muted) 12%);
-  font: 600 10px/1.1 var(--font-display);
-  letter-spacing: 0.03em;
-  text-transform: uppercase;
-  box-shadow: inset 0 1px 0 color-mix(in srgb, #fff 4%, transparent);
-}
-
-.workbench-layout-select .workbench-view-select-label {
-  font: inherit;
-}
-
-.workbench-layout-select-caret {
-  right: 11px;
-  width: 7px;
-  height: 7px;
-}
-
-.workbench-layout-menu {
-  left: auto;
-  right: 0;
-  width: 300px;
-  min-width: 300px;
-}
-
-.workbench-layout-option {
-  gap: 4px;
-}
-
-.workbench-layout-option .workbench-view-option-kind {
-  white-space: normal;
-  line-height: 1.25;
-  text-transform: none;
-  letter-spacing: 0.03em;
-}
-
-.workbench-layout-select:hover,
-.workbench-layout-select:focus {
-  border-color: color-mix(in srgb, var(--accent) 48%, var(--border) 52%);
 }
 
 .workbench-context-slot {
@@ -693,13 +607,6 @@
 
   .workbench-view-select {
     max-width: none;
-  }
-
-  .workbench-layout-menu {
-    width: min(300px, calc(100vw - 24px));
-    min-width: 0;
-    left: auto;
-    right: 0;
   }
 
   .workbench-view-menu {

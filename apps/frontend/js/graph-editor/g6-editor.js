@@ -640,7 +640,7 @@ function registerModrissG6Extensions() {
             path.push(["L", x, y]);
           }
         });
-      } else {
+      } else if (Math.abs(source[1] - target[1]) > 0.01) {
         const exitX = source[0] + 42;
         const entryX = target[0] - 42;
         const midX =
@@ -2642,7 +2642,7 @@ export function fitG6CanvasToDiagram(bounds = null, { fit = false, fitArea = nul
   const rect = el.canvasViewport?.getBoundingClientRect?.();
 
   try {
-    const area = defaultCanvasFitArea(rect) || fitArea || getCanvasFitArea(rect);
+    const area = fitArea || getCanvasFitArea(rect) || defaultCanvasFitArea(rect);
     const fitBounds = bounds || (fit ? renderedNodeBounds(nodes) : null);
     const finiteBounds =
       fitBounds &&
@@ -2691,43 +2691,21 @@ export function fitG6CanvasToDiagram(bounds = null, { fit = false, fitArea = nul
       editor.viewportFitToken = (editor.viewportFitToken || 0) + 1;
       const fitToken = editor.viewportFitToken;
       const applyFit = async () => {
-        if (fit && typeof editor.graph.fitView === "function") {
-          const previousZoomRange = editor.graph.getZoomRange?.();
-          try {
-            editor.graph.setZoomRange?.([minScale, maxScale]);
-            await editor.graph.fitView({ when: "always", direction: "both" }, false);
-            if (
-              fitToken === editor.viewportFitToken &&
-              typeof editor.graph.fitCenter === "function"
-            ) {
-              await editor.graph.fitCenter(false);
-            }
-          } finally {
-            const restoreRange = Array.isArray(previousZoomRange)
-              ? previousZoomRange
-              : [FIT_VIEW_MIN_SCALE, FIT_VIEW_MAX_SCALE];
-            editor.graph.setZoomRange?.(restoreRange);
-          }
-          if (fitToken !== editor.viewportFitToken) {
-            return;
-          }
-        } else {
-          if (fit) {
-            await editor.graph.zoomTo?.(scale, false);
-          }
-          if (fitToken !== editor.viewportFitToken) {
-            return;
-          }
-          state.viewport.scale = scale;
-          await waitForViewportFrame();
-          await panCanvasPointToViewportTarget(
-            centerX,
-            centerY,
-            area.centerX,
-            area.centerY,
-            fitToken,
-          );
+        if (fit) {
+          await editor.graph.zoomTo?.(scale, false);
         }
+        if (fitToken !== editor.viewportFitToken) {
+          return;
+        }
+        state.viewport.scale = scale;
+        await waitForViewportFrame();
+        await panCanvasPointToViewportTarget(
+          centerX,
+          centerY,
+          area.centerX,
+          area.centerY,
+          fitToken,
+        );
         if (fitToken !== editor.viewportFitToken) {
           return;
         }

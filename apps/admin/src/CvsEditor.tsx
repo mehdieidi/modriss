@@ -95,7 +95,7 @@ const commonIcons = [
   "extension",
   "placeholder",
 ];
-const layoutHints = ["DEFAULT_LAYERED", "CONTAINER", "PROCESS", "GOVERNANCE", "SPACIOUS_LAYERED", "TREE", "RADIAL"];
+const layoutHints = ["DEFAULT_LAYERED", "CONTAINER", "PROCESS", "GOVERNANCE"];
 const markers = ["", "arrow", "triangle-hollow", "triangle-filled", "diamond-filled", "diamond-hollow"];
 
 const sections: Array<{ id: EditorSection; label: string; icon: ReactNode }> = [

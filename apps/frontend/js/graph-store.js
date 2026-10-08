@@ -1878,6 +1878,7 @@ function mergeGeneratedViewEdges(generatedEdges, existingEdges = []) {
       return edge;
     }
     return {
+      ...clone(existing),
       ...edge,
       visible: existing.visible !== false,
       pinPoints: safeArray(existing.pinPoints).map(clone),
@@ -2186,6 +2187,7 @@ function normalizeView(view, graph, typeKey, modelName, { deferLayout = false } 
         y: Number(node?.y) || 0,
         width: Number.isFinite(Number(node?.width)) ? Number(node.width) : undefined,
         height: Number.isFinite(Number(node?.height)) ? Number(node.height) : undefined,
+        layoutPortInsets: node?.layoutPortInsets ? clone(node.layoutPortInsets) : undefined,
       }))
       .filter((node) => graph.elementsById.has(node.elementId)),
     edges: safeArray(view?.edges)
@@ -2193,7 +2195,12 @@ function normalizeView(view, graph, typeKey, modelName, { deferLayout = false } 
         ...clone(edge),
         relationshipId: String(edge?.relationshipId || edge?.id || ""),
       }))
-      .filter((edge) => graph.relationshipsById.has(edge.relationshipId)),
+      .filter(
+        (edge) =>
+          graph.relationshipsById.has(edge.relationshipId) ||
+          (graph.elementsById.has(edge.sourceElementId) &&
+            graph.elementsById.has(edge.targetElementId)),
+      ),
     hidden: {
       elementIds: safeArray(view?.hidden?.elementIds).map(String),
       relationshipIds: safeArray(view?.hidden?.relationshipIds).map(String),

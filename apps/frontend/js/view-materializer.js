@@ -13,7 +13,7 @@ import {
   modelingLevelConfig,
 } from "./modeling-config-data.js";
 
-export const CURRENT_LAYOUT_GEOMETRY_VERSION = 2;
+export const CURRENT_LAYOUT_GEOMETRY_VERSION = 3;
 
 export function viewNeedsAutoLayout(view) {
   return (
