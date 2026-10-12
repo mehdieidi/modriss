@@ -1,0 +1,66 @@
+[
+  {
+    "id": "AR-R1",
+    "text": "Evaluate v1 exactly according to the ordered table, including unknown facts, inclusive dates and default outcome.",
+    "criteria": [
+      [
+        "AR-AT1",
+        "Suspended plus missing facts returns DENY/SUSPENDED; an otherwise valid request with missing certification returns NEEDS_INFO."
+      ],
+      [
+        "AR-AT2",
+        "Exact validThrough/requestedDate equality remains valid; a malformed date or negative booking count is a request error, not ALLOW."
+      ]
+    ]
+  },
+  {
+    "id": "AR-R2",
+    "text": "Reject malformed typed requests separately from valid NEEDS_INFO decisions.",
+    "criteria": [
+      [
+        "AR-AT2",
+        "Exact validThrough/requestedDate equality remains valid; a malformed date or negative booking count is a request error, not ALLOW."
+      ]
+    ]
+  },
+  {
+    "id": "AR-R3",
+    "text": "Bind each decision to immutable facts/hash and an explicit accepted policy version.",
+    "criteria": [
+      [
+        "AR-AT3",
+        "Inspect a persisted decision and reproduce its outcome from recorded facts and policy version."
+      ]
+    ]
+  },
+  {
+    "id": "AR-R4",
+    "text": "Only the policy owner activates an accepted version; concurrent evaluation records the version actually used.",
+    "criteria": [
+      [
+        "AR-AT4",
+        "Reject unauthorized activation; under a controlled activation/evaluation race, every result identifies exactly the version it used."
+      ]
+    ]
+  },
+  {
+    "id": "AR-R5",
+    "text": "Replaying a request key with the same facts/version returns the same decision; changed facts/version under that key conflicts.",
+    "criteria": [
+      [
+        "AR-AT5",
+        "Replay identical versus changed input under one key; return original decision versus conflict respectively."
+      ]
+    ]
+  },
+  {
+    "id": "AR-Q1",
+    "text": "All independent decision vectors agree with the implementation and the shared metadata latency target is measured over 1000 evaluations.",
+    "criteria": [
+      [
+        "AR-AT6",
+        "Run the full independent vector set and 1000-evaluation workload, retaining mismatches and timing."
+      ]
+    ]
+  }
+]

@@ -1,0 +1,54 @@
+[
+  {
+    "id": "RR-R1",
+    "text": "Require an accepted snapshot before expiry; a missing or ambiguous snapshot leaves the period BLOCKED, not partially expired.",
+    "criteria": [["RR-AT1", "Trigger with no accepted snapshot: BLOCKED and no membership expiry."]]
+  },
+  {
+    "id": "RR-R2",
+    "text": "Apply each valid renewal once, never shorten validity, and isolate unknown-member or conflicting renewal records as discrepancies.",
+    "criteria": [
+      [
+        "RR-AT2",
+        "Reapply SN-01; M-A has one renewal effect, M-X is a discrepancy, and shortening validity is rejected/isolated."
+      ]
+    ]
+  },
+  {
+    "id": "RR-R3",
+    "text": "Expire only eligible memberships under the accepted cutoff; create at most one reminder per member/period/kind.",
+    "criteria": [
+      [
+        "RR-AT3",
+        "At April 2, keep renewed M-A and inclusive-date M-B ACTIVE; expire M-C and produce one reminder despite repeated run invocation."
+      ]
+    ]
+  },
+  {
+    "id": "RR-R4",
+    "text": "Checkpoint bounded pages and resume after failure without skipping members or repeating accepted effects.",
+    "criteria": [
+      [
+        "RR-AT4",
+        "Crash after a page update but before advancing the cursor; resume and compare with an uninterrupted reference run."
+      ]
+    ]
+  },
+  {
+    "id": "RR-R5",
+    "text": "Allow an authorized operator to resolve/replay discrepancies while preserving original run inputs and results.",
+    "criteria": [
+      [
+        "RR-AT5",
+        "Resolve M-X through an authorized correction revision; preserve SN-01 and its original discrepancy evidence."
+      ]
+    ]
+  },
+  {
+    "id": "RR-Q1",
+    "text": "Under nominal conditions, process 2000 memberships within five minutes and account for each input in a result/discrepancy count.",
+    "criteria": [
+      ["RR-AT6", "Reconcile all 2000 records with balanced counts and measured duration."]
+    ]
+  }
+]

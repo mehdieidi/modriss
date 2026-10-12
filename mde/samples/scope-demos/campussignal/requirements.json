@@ -1,0 +1,59 @@
+[
+  {
+    "id": "CS-R1",
+    "text": "Authorized staff publish CLOSED or REOPENED notices with valid building/time fields and stable event IDs.",
+    "criteria": [
+      [
+        "CS-AT1",
+        "Unauthorized publication and missing building/time are rejected; replay of a valid publish retains its event identity."
+      ]
+    ]
+  },
+  {
+    "id": "CS-R2",
+    "text": "Route each accepted notice independently to the feed and delivery consumers. Failure of one does not erase the other's work.",
+    "criteria": [
+      ["CS-AT2", "Fail the delivery consumer; the operations feed still records EV-001 once."]
+    ]
+  },
+  {
+    "id": "CS-R3",
+    "text": "Send only to enabled building subscribers at the final eligibility check; a later preference change cannot retract an already accepted delivery.",
+    "criteria": [
+      [
+        "CS-AT3",
+        "For EV-001 only student-1 is initially eligible; disable before the final check in a controlled test and observe SKIPPED."
+      ]
+    ]
+  },
+  {
+    "id": "CS-R4",
+    "text": "Redelivery of an event or retry after simulator acceptance creates no duplicate simulator effect.",
+    "criteria": [
+      [
+        "CS-AT4",
+        "Timeout after simulator acceptance, then replay; one provider record/reference exists for the delivery key."
+      ]
+    ]
+  },
+  {
+    "id": "CS-R5",
+    "text": "Retain failed notices for authorized replay and expose pending/accepted/failed/skipped states.",
+    "criteria": [
+      [
+        "CS-AT5",
+        "Exhaust retries for one recipient, authorize replay after recovery and inspect a coherent delivery history."
+      ]
+    ]
+  },
+  {
+    "id": "CS-Q1",
+    "text": "For 100 recipients and 10 events, eligible deliveries become accepted within 30 seconds under nominal simulator responses.",
+    "criteria": [
+      [
+        "CS-AT6",
+        "Execute 100-recipient/10-event workload and verify every eligible delivery and elapsed time."
+      ]
+    ]
+  }
+]

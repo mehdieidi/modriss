@@ -1,0 +1,62 @@
+[
+  {
+    "id": "QV-R1",
+    "text": "Apply only snapshots newer than the ticket's stored version; duplicates/older versions have no effect.",
+    "criteria": [
+      [
+        "QV-AT1",
+        "Deliver 1,3,2,3 for T-01; final version is 3 and no counter increments from duplicates/older input."
+      ]
+    ]
+  },
+  {
+    "id": "QV-R2",
+    "text": "Keep list membership and queue/status counts consistent with the latest applied ticket state through a reviewed transaction design.",
+    "criteria": [
+      [
+        "QV-AT2",
+        "Crash during a queue move; after recovery, ticket placement and both queues' counts equal the reference result."
+      ]
+    ]
+  },
+  {
+    "id": "QV-R3",
+    "text": "Expose paged queue/status lists and counts only to authorized supervisors, without mixing view generations.",
+    "criteria": [
+      [
+        "QV-AT3",
+        "A Q-A-only supervisor cannot read Q-B; a cursor from generation 1 cannot silently continue across generation 2."
+      ]
+    ]
+  },
+  {
+    "id": "QV-R4",
+    "text": "Show last processed checkpoint and data freshness; do not label a stale view as current.",
+    "criteria": [
+      [
+        "QV-AT4",
+        "Pause consumption, advance source checkpoint and inspect a visible lag/stale state."
+      ]
+    ]
+  },
+  {
+    "id": "QV-R5",
+    "text": "Rebuild a new generation from an authoritative snapshot plus subsequent events, verify convergence, then switch the active generation explicitly.",
+    "criteria": [
+      [
+        "QV-AT5",
+        "Rebuild from K while later snapshots arrive; compare every ticket/count before controlled activation and preserve rollback generation."
+      ]
+    ]
+  },
+  {
+    "id": "QV-Q1",
+    "text": "For 1000 tickets and a 100-event burst, converge within 30 seconds under nominal conditions and meet the shared query target after convergence.",
+    "criteria": [
+      [
+        "QV-AT6",
+        "Execute the 1000-ticket/100-event workload and independently compare converged records/counts and timings."
+      ]
+    ]
+  }
+]

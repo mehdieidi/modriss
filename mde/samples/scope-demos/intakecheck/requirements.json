@@ -1,0 +1,62 @@
+[
+  {
+    "id": "IC-R1",
+    "text": "A supplier registers/reads only their submissions and uploads only to the issued object key. Reject size/type violations explicitly.",
+    "criteria": [
+      [
+        "IC-AT1",
+        "Supplier B attempts access to A's key/result; deny. Over-limit file registration/upload completion never produces VALID."
+      ]
+    ]
+  },
+  {
+    "id": "IC-R2",
+    "text": "Bind processing to a specific object version/hash; later content replacement cannot alter the meaning of an already completed result.",
+    "criteria": [
+      [
+        "IC-AT2",
+        "Upload version 1, process it, then upload different bytes to the same key; the old result still identifies version 1 and cannot masquerade as the new result."
+      ]
+    ]
+  },
+  {
+    "id": "IC-R3",
+    "text": "Validate headers, row count, required fields, SKU uniqueness and integer price; retain line-specific errors without partial acceptance.",
+    "criteria": [
+      [
+        "IC-AT3",
+        "Run each invalid CSV variant; return the defined header/row/field error and no accepted partial catalogue."
+      ]
+    ]
+  },
+  {
+    "id": "IC-R4",
+    "text": "Repeated object notifications or retry produce one result for the same immutable input.",
+    "criteria": [
+      [
+        "IC-AT4",
+        "Repeat notification for the same version/hash; retain one completed result and stable counts."
+      ]
+    ]
+  },
+  {
+    "id": "IC-R5",
+    "text": "Expose status and authorized result download; distinguish invalid business content from retriable technical failure.",
+    "criteria": [
+      [
+        "IC-AT5",
+        "Fail after writing a temporary report but before status commit; retry yields one consistent published result reference."
+      ]
+    ]
+  },
+  {
+    "id": "IC-Q1",
+    "text": "A 1000-row, at-most-1-MiB nominal file reaches VALID/INVALID within 30 seconds of recorded upload completion.",
+    "criteria": [
+      [
+        "IC-AT6",
+        "Process the maximum accepted fixture and record upload-to-result timing and resource configuration."
+      ]
+    ]
+  }
+]

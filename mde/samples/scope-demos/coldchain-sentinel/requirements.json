@@ -1,0 +1,22 @@
+[
+  {
+    "id": "CC-R1",
+    "text": "This is a fictional information-only slice of the analytical ColdChain process scenario; no medical or physical control.",
+    "criteria": []
+  },
+  {
+    "id": "CC-R2",
+    "text": "Retain occurrence/receipt time and stable reading identity; duplicate/late arrivals follow a reviewed per-shipment sequencing policy.",
+    "criteria": []
+  },
+  {
+    "id": "CC-R3",
+    "text": "Correlate one alert identity with an excursion, record acknowledgement, and retry/escalate without duplicate delivery effects.",
+    "criteria": []
+  },
+  {
+    "id": "CC-R4",
+    "text": "Retain versioned excursion evidence for review; ERP connectivity and provider-exit remain explicit human review decisions.",
+    "criteria": []
+  }
+]

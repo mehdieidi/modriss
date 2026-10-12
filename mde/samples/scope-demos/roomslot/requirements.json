@@ -1,0 +1,66 @@
+[
+  {
+    "id": "RS-R1",
+    "text": "At most one HELD or CONFIRMED reservation owns a slot; competing requests receive one success and explicit conflicts.",
+    "criteria": [
+      [
+        "RS-AT1",
+        "Release 20 concurrent hold requests for the same slot: exactly one live reservation/allocation pair."
+      ]
+    ]
+  },
+  {
+    "id": "RS-R2",
+    "text": "A hold lasts five minutes and can be confirmed only before expiry; a replay returns the original reservation.",
+    "criteria": [
+      [
+        "RS-AT2",
+        "Confirm at 08:04:59, then in an isolated reset at 08:05:00; accept only the first. Replayed confirmation has no extra effect."
+      ]
+    ]
+  },
+  {
+    "id": "RS-R3",
+    "text": "Cancellation or expiry releases a slot at most once and cannot release a newer reservation's allocation.",
+    "criteria": [
+      [
+        "RS-AT3",
+        "Cancel/rebook, then deliver the old hold's expiry event; the new reservation retains the slot."
+      ],
+      [
+        "RS-AT6",
+        "Interrupt an expiry run and resume; expired holds are released once, while confirmed bookings stay allocated."
+      ]
+    ]
+  },
+  {
+    "id": "RS-R4",
+    "text": "Students access only their reservations; staff may close only a currently unallocated slot.",
+    "criteria": [
+      [
+        "RS-AT4",
+        "Another student cannot confirm/cancel the winner; closing an allocated slot conflicts instead of silently evicting them."
+      ]
+    ]
+  },
+  {
+    "id": "RS-R5",
+    "text": "List available slots by room/day with documented freshness; attempt-to-book remains authoritative.",
+    "criteria": [
+      [
+        "RS-AT5",
+        "Query advisory availability, let another user win, then book from the stale view; return conflict and preserve the invariant."
+      ]
+    ]
+  },
+  {
+    "id": "RS-Q1",
+    "text": "With 20 simultaneous contenders for one slot, preserve RS-R1 and meet the shared metadata target for ordinary non-contentious reads.",
+    "criteria": [
+      [
+        "RS-AT1",
+        "Release 20 concurrent hold requests for the same slot: exactly one live reservation/allocation pair."
+      ]
+    ]
+  }
+]

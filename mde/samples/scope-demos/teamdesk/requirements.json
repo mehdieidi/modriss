@@ -1,0 +1,62 @@
+[
+  {
+    "id": "TD-R1",
+    "text": "An active member submits and reads their own requests; disabled membership prevents new business actions.",
+    "criteria": [
+      [
+        "TD-AT1",
+        "Member reads own request; another member's request and a removed member's new submission are denied."
+      ]
+    ]
+  },
+  {
+    "id": "TD-R2",
+    "text": "Coordinators assign/resolve only their organization's work; mutation uses expected versions.",
+    "criteria": [
+      [
+        "TD-AT2",
+        "Concurrent coordinator updates with one version produce one accepted new state; stale mutation conflicts."
+      ]
+    ]
+  },
+  {
+    "id": "TD-R3",
+    "text": "Only organization administrators change membership/settings; no user can grant their own role by editing a payload.",
+    "criteria": [
+      [
+        "TD-AT3",
+        "Body-injected administrator role or another org's administrator identity cannot grant membership privileges."
+      ]
+    ]
+  },
+  {
+    "id": "TD-R4",
+    "text": "Record attributable state changes and preserve configuration separation between local/test and release environments.",
+    "criteria": [
+      [
+        "TD-AT4",
+        "Inspect accepted change attribution and deploy identical candidate code with distinct reviewed test/release configuration."
+      ]
+    ]
+  },
+  {
+    "id": "TD-R5",
+    "text": "For the two-tenant extension, data, indexes, idempotency keys, background work and client caches preserve organization scope even with colliding local IDs.",
+    "criteria": [
+      [
+        "TD-AT5",
+        "With colliding IDs, test detail/list/index/retry/cache paths across both tenants; no cross-scope content or duplicate-key collision."
+      ]
+    ]
+  },
+  {
+    "id": "TD-Q1",
+    "text": "With two organizations of 100 users and 500 requests each, pass every isolation test and measure the shared metadata target.",
+    "criteria": [
+      [
+        "TD-AT6",
+        "Execute two-tenant workload and isolation suite; retain denied responses and database-level checks, not only UI screenshots."
+      ]
+    ]
+  }
+]

@@ -1,0 +1,444 @@
+{
+  "topics": [
+    {
+      "source": ".idea/scope/architecture-patterns/supported-patterns.md",
+      "topic": "HTTP API and function handler",
+      "samples": ["arch-http"]
+    },
+    {
+      "source": ".idea/scope/architecture-patterns/supported-patterns.md",
+      "topic": "CRUD API scaffolding",
+      "samples": ["arch-crud"]
+    },
+    {
+      "source": ".idea/scope/architecture-patterns/supported-patterns.md",
+      "topic": "Queue-based asynchronous worker",
+      "samples": ["arch-queue"]
+    },
+    {
+      "source": ".idea/scope/architecture-patterns/supported-patterns.md",
+      "topic": "Publish/subscribe and event routing",
+      "samples": ["arch-pubsub"]
+    },
+    {
+      "source": ".idea/scope/architecture-patterns/supported-patterns.md",
+      "topic": "Object-storage event processing",
+      "samples": ["arch-objects"]
+    },
+    {
+      "source": ".idea/scope/architecture-patterns/supported-patterns.md",
+      "topic": "Scheduled function and finite background job",
+      "samples": ["arch-schedule"]
+    },
+    {
+      "source": ".idea/scope/architecture-patterns/supported-patterns.md",
+      "topic": "Sequential workflow orchestration",
+      "samples": ["arch-workflow"]
+    },
+    {
+      "source": ".idea/scope/architecture-patterns/supported-patterns.md",
+      "topic": "Managed key/document data store",
+      "samples": ["arch-key-store", "arch-document-store"]
+    },
+    {
+      "source": ".idea/scope/architecture-patterns/supported-patterns.md",
+      "topic": "Authentication and route authorization",
+      "samples": ["arch-auth"]
+    },
+    {
+      "source": ".idea/scope/architecture-patterns/conditional-patterns.md",
+      "topic": "Bounded-context decomposition and microservices",
+      "samples": ["arch-services"]
+    },
+    {
+      "source": ".idea/scope/architecture-patterns/conditional-patterns.md",
+      "topic": "Command/query separation and CQRS",
+      "samples": ["arch-cqrs"]
+    },
+    {
+      "source": ".idea/scope/architecture-patterns/conditional-patterns.md",
+      "topic": "DynamoDB stream consumer and limited CDC",
+      "samples": ["arch-cdc"]
+    },
+    {
+      "source": ".idea/scope/architecture-patterns/conditional-patterns.md",
+      "topic": "Event-driven choreography",
+      "samples": ["arch-choreography"]
+    },
+    {
+      "source": ".idea/scope/architecture-patterns/conditional-patterns.md",
+      "topic": "Saga orchestration and compensation",
+      "samples": ["arch-saga"]
+    },
+    {
+      "source": ".idea/scope/architecture-patterns/conditional-patterns.md",
+      "topic": "Idempotent consumer and retry",
+      "samples": ["arch-idempotency"]
+    },
+    {
+      "source": ".idea/scope/architecture-patterns/conditional-patterns.md",
+      "topic": "API composition and backend for frontend",
+      "samples": ["arch-bff"]
+    },
+    {
+      "source": ".idea/scope/architecture-patterns/conditional-patterns.md",
+      "topic": "Cache-aside, circuit breaker, and bulkhead",
+      "samples": ["arch-cache", "arch-breaker", "arch-bulkhead"]
+    },
+    {
+      "source": ".idea/scope/architecture-patterns/conditional-patterns.md",
+      "topic": "Strangler migration and legacy integration",
+      "samples": ["arch-strangler"]
+    },
+    {
+      "source": ".idea/scope/architecture-patterns/conditional-patterns.md",
+      "topic": "Security and observability patterns beyond infrastructure",
+      "samples": ["arch-security-observability"]
+    },
+    {
+      "source": ".idea/scope/architecture-patterns/patterns-outside-current-path.md",
+      "topic": "Transactional outbox",
+      "samples": ["arch-outbox"]
+    },
+    {
+      "source": ".idea/scope/architecture-patterns/patterns-outside-current-path.md",
+      "topic": "Event sourcing",
+      "samples": ["arch-event-sourcing"]
+    },
+    {
+      "source": ".idea/scope/architecture-patterns/patterns-outside-current-path.md",
+      "topic": "Unsupported API styles as the essential interface",
+      "samples": ["arch-graphql", "arch-websocket", "arch-webhook"]
+    },
+    {
+      "source": ".idea/scope/architecture-patterns/patterns-outside-current-path.md",
+      "topic": "Unsupported primary storage patterns",
+      "samples": ["arch-relational", "arch-graph", "arch-search", "arch-time-series"]
+    },
+    {
+      "source": ".idea/scope/architecture-patterns/patterns-outside-current-path.md",
+      "topic": "Global transaction and exactly-once guarantees",
+      "samples": ["arch-xa", "arch-exactly-once", "arch-global-order"]
+    },
+    {
+      "source": ".idea/scope/architecture-patterns/patterns-outside-current-path.md",
+      "topic": "Full Parallel/Map/Callback workflows and generated compensation",
+      "samples": ["arch-parallel", "arch-callback", "arch-map", "arch-saga"]
+    },
+    {
+      "source": ".idea/scope/architecture-patterns/patterns-outside-current-path.md",
+      "topic": "Offline-first, edge-authoritative, and client-heavy patterns",
+      "samples": ["arch-offline"]
+    },
+    {
+      "source": ".idea/scope/architecture-patterns/patterns-outside-current-path.md",
+      "topic": "Non-AWS and non-serverless deployment patterns",
+      "samples": ["arch-non-aws"]
+    },
+    {
+      "source": ".idea/scope/architecture-patterns/README.md",
+      "topic": "Synchronous HTTP API with function handlers",
+      "samples": ["arch-http"]
+    },
+    {
+      "source": ".idea/scope/architecture-patterns/README.md",
+      "topic": "Queue-based asynchronous worker",
+      "samples": ["arch-queue"]
+    },
+    {
+      "source": ".idea/scope/architecture-patterns/README.md",
+      "topic": "Publish/subscribe and event routing",
+      "samples": ["arch-pubsub"]
+    },
+    {
+      "source": ".idea/scope/architecture-patterns/README.md",
+      "topic": "Object-storage event processing",
+      "samples": ["arch-objects"]
+    },
+    {
+      "source": ".idea/scope/architecture-patterns/README.md",
+      "topic": "Scheduled function and finite background job",
+      "samples": ["arch-schedule"]
+    },
+    {
+      "source": ".idea/scope/architecture-patterns/README.md",
+      "topic": "Sequential workflow orchestration",
+      "samples": ["arch-workflow"]
+    },
+    {
+      "source": ".idea/scope/architecture-patterns/README.md",
+      "topic": "Managed key/document data store",
+      "samples": ["arch-key-store", "arch-document-store"]
+    },
+    {
+      "source": ".idea/scope/architecture-patterns/README.md",
+      "topic": "Authentication resource and route authorization",
+      "samples": ["arch-auth"]
+    },
+    {
+      "source": ".idea/scope/architecture-patterns/README.md",
+      "topic": "Cache-aside, circuit breaker, scatter-gather and bulkhead",
+      "samples": ["arch-cache", "arch-breaker", "arch-scatter", "arch-bulkhead"]
+    },
+    {
+      "source": ".idea/scope/architecture-patterns/README.md",
+      "topic": "Bounded-context decomposition / serverless microservices",
+      "samples": ["arch-services"]
+    },
+    {
+      "source": ".idea/scope/architecture-patterns/README.md",
+      "topic": "CRUD API",
+      "samples": ["arch-crud"]
+    },
+    {
+      "source": ".idea/scope/architecture-patterns/README.md",
+      "topic": "Command/query separation and CQRS",
+      "samples": ["arch-cqrs"]
+    },
+    {
+      "source": ".idea/scope/architecture-patterns/README.md",
+      "topic": "Event-driven choreography",
+      "samples": ["arch-choreography"]
+    },
+    {
+      "source": ".idea/scope/architecture-patterns/README.md",
+      "topic": "Saga orchestration and compensation",
+      "samples": ["arch-saga"]
+    },
+    {
+      "source": ".idea/scope/architecture-patterns/README.md",
+      "topic": "Idempotent consumer and retry",
+      "samples": ["arch-idempotency"]
+    },
+    {
+      "source": ".idea/scope/architecture-patterns/README.md",
+      "topic": "API composition / backend for frontend",
+      "samples": ["arch-bff"]
+    },
+    {
+      "source": ".idea/scope/architecture-patterns/README.md",
+      "topic": "Strangler migration / legacy integration",
+      "samples": ["arch-strangler"]
+    },
+    {
+      "source": ".idea/scope/architecture-patterns/README.md",
+      "topic": "DynamoDB Streams consumer / CDC",
+      "samples": ["arch-cdc"]
+    },
+    {
+      "source": ".idea/scope/architecture-patterns/README.md",
+      "topic": "Transactional outbox",
+      "samples": ["arch-outbox"]
+    },
+    {
+      "source": ".idea/scope/architecture-patterns/README.md",
+      "topic": "Event sourcing",
+      "samples": ["arch-event-sourcing"]
+    },
+    {
+      "source": ".idea/scope/architecture-patterns/README.md",
+      "topic": "GraphQL, WebSocket, or webhook-first API",
+      "samples": ["arch-graphql", "arch-websocket", "arch-webhook"]
+    },
+    {
+      "source": ".idea/scope/architecture-patterns/README.md",
+      "topic": "Relational / graph / search / time-series store as primary persistence",
+      "samples": ["arch-relational", "arch-graph", "arch-search", "arch-time-series"]
+    },
+    {
+      "source": ".idea/scope/architecture-patterns/README.md",
+      "topic": "Distributed transaction, global exactly-once, or consensus pattern",
+      "samples": ["arch-xa", "arch-exactly-once", "arch-global-order"]
+    },
+    {
+      "source": ".idea/scope/architecture-patterns/README.md",
+      "topic": "Offline-first / edge-authoritative or client-heavy patterns",
+      "samples": ["arch-offline"]
+    },
+    {
+      "source": ".idea/scope/architecture-patterns/topologies-and-structures.md",
+      "topic": "One AWS serverless backend, one service/deployment unit",
+      "samples": ["arch-http"]
+    },
+    {
+      "source": ".idea/scope/architecture-patterns/topologies-and-structures.md",
+      "topic": "One service containing multiple bounded functions/modules",
+      "samples": ["arch-modules"]
+    },
+    {
+      "source": ".idea/scope/architecture-patterns/topologies-and-structures.md",
+      "topic": "Hexagonal/clean architecture inside application code",
+      "samples": ["arch-hexagonal"]
+    },
+    {
+      "source": ".idea/scope/architecture-patterns/topologies-and-structures.md",
+      "topic": "Traditional modular monolith (one long-lived application/runtime)",
+      "samples": ["arch-monolith"]
+    },
+    {
+      "source": ".idea/scope/architecture-patterns/topologies-and-structures.md",
+      "topic": "Several bounded serverless services",
+      "samples": ["arch-services"]
+    },
+    {
+      "source": ".idea/scope/architecture-patterns/topologies-and-structures.md",
+      "topic": "Microservices with database per service",
+      "samples": ["arch-database-per-service"]
+    },
+    {
+      "source": ".idea/scope/architecture-patterns/topologies-and-structures.md",
+      "topic": "Shared database across many services",
+      "samples": ["arch-shared-database"]
+    },
+    {
+      "source": ".idea/scope/architecture-patterns/topologies-and-structures.md",
+      "topic": "Synchronous client \u2192 API \u2192 function \u2192 datastore",
+      "samples": ["arch-http"]
+    },
+    {
+      "source": ".idea/scope/architecture-patterns/topologies-and-structures.md",
+      "topic": "Asynchronous submit \u2192 queue \u2192 worker \u2192 status/result API",
+      "samples": ["arch-queue"]
+    },
+    {
+      "source": ".idea/scope/architecture-patterns/topologies-and-structures.md",
+      "topic": "Event bus / pub-sub mesh",
+      "samples": ["arch-event-bus"]
+    },
+    {
+      "source": ".idea/scope/architecture-patterns/topologies-and-structures.md",
+      "topic": "Sequential orchestration topology",
+      "samples": ["arch-workflow"]
+    },
+    {
+      "source": ".idea/scope/architecture-patterns/topologies-and-structures.md",
+      "topic": "CQRS with a distinct read model",
+      "samples": ["arch-cqrs"]
+    },
+    {
+      "source": ".idea/scope/architecture-patterns/topologies-and-structures.md",
+      "topic": "DynamoDB access-pattern-first key/index design",
+      "samples": ["arch-indexes"]
+    },
+    {
+      "source": ".idea/scope/architecture-patterns/topologies-and-structures.md",
+      "topic": "Cache-aside / distributed cache",
+      "samples": ["arch-cache"]
+    },
+    {
+      "source": ".idea/scope/architecture-patterns/topologies-and-structures.md",
+      "topic": "API throttling and function concurrency isolation",
+      "samples": ["arch-throttling"]
+    },
+    {
+      "source": ".idea/scope/architecture-patterns/topologies-and-structures.md",
+      "topic": "Circuit breaker around external dependencies",
+      "samples": ["arch-breaker"]
+    },
+    {
+      "source": ".idea/scope/architecture-patterns/topologies-and-structures.md",
+      "topic": "Read replica or separate read database",
+      "samples": ["arch-read-replica"]
+    },
+    {
+      "source": ".idea/scope/architecture-patterns/topologies-and-structures.md",
+      "topic": "Scheduled finite batch/reconciliation",
+      "samples": ["arch-schedule"]
+    },
+    {
+      "source": ".idea/scope/architecture-patterns/topologies-and-structures.md",
+      "topic": "Continuous event-stream processing / analytics pipeline",
+      "samples": ["arch-stream-analytics"]
+    },
+    {
+      "source": ".idea/scope/architecture-patterns/topologies-and-structures.md",
+      "topic": "Hybrid integration with external systems",
+      "samples": ["arch-hybrid"]
+    },
+    {
+      "source": ".idea/scope/architecture-patterns/topologies-and-structures.md",
+      "topic": "Multi-region active/passive recovery",
+      "samples": ["arch-passive-recovery"]
+    },
+    {
+      "source": ".idea/scope/architecture-patterns/topologies-and-structures.md",
+      "topic": "Multi-region active/active or multi-cloud",
+      "samples": ["arch-active-active"]
+    },
+    {
+      "source": ".idea/scope/architecture-patterns/topologies-and-structures.md",
+      "topic": "Tenant-sharded SaaS / cell-based architecture",
+      "samples": ["arch-cells"]
+    },
+    {
+      "source": ".idea/scope/architecture-patterns/topologies-and-structures.md",
+      "topic": "Offline-first edge/client architecture",
+      "samples": ["arch-offline"]
+    },
+    {
+      "source": ".idea/scope/architecture-patterns/topologies-and-structures.md",
+      "topic": "Kubernetes/ECS/VM or non-AWS server-hosted estate",
+      "samples": ["arch-non-aws"]
+    },
+    {
+      "source": ".idea/scope/architecture-patterns/transactions-and-consistency.md",
+      "topic": "Single-record CRUD operation",
+      "samples": ["arch-crud"]
+    },
+    {
+      "source": ".idea/scope/architecture-patterns/transactions-and-consistency.md",
+      "topic": "Atomic single-item conditional update / optimistic concurrency",
+      "samples": ["arch-optimistic"]
+    },
+    {
+      "source": ".idea/scope/architecture-patterns/transactions-and-consistency.md",
+      "topic": "Multi-item transaction inside one DynamoDB service boundary",
+      "samples": ["arch-local-transaction"]
+    },
+    {
+      "source": ".idea/scope/architecture-patterns/transactions-and-consistency.md",
+      "topic": "Atomicity inside a relational database transaction",
+      "samples": ["arch-relational"]
+    },
+    {
+      "source": ".idea/scope/architecture-patterns/transactions-and-consistency.md",
+      "topic": "Atomic writes across two MODRISS services/databases using XA/2PC",
+      "samples": ["arch-xa"]
+    },
+    {
+      "source": ".idea/scope/architecture-patterns/transactions-and-consistency.md",
+      "topic": "Eventual consistency between service-owned records",
+      "samples": ["arch-eventual"]
+    },
+    {
+      "source": ".idea/scope/architecture-patterns/transactions-and-consistency.md",
+      "topic": "CQRS projection / materialized view",
+      "samples": ["arch-cqrs"]
+    },
+    {
+      "source": ".idea/scope/architecture-patterns/transactions-and-consistency.md",
+      "topic": "Saga across local service transactions",
+      "samples": ["arch-saga"]
+    },
+    {
+      "source": ".idea/scope/architecture-patterns/transactions-and-consistency.md",
+      "topic": "Transactional outbox",
+      "samples": ["arch-outbox"]
+    },
+    {
+      "source": ".idea/scope/architecture-patterns/transactions-and-consistency.md",
+      "topic": "Consumer deduplication / idempotent effect",
+      "samples": ["arch-idempotency"]
+    },
+    {
+      "source": ".idea/scope/architecture-patterns/transactions-and-consistency.md",
+      "topic": "Exactly-once business outcome across service boundaries",
+      "samples": ["arch-exactly-once"]
+    },
+    {
+      "source": ".idea/scope/architecture-patterns/transactions-and-consistency.md",
+      "topic": "Global ordering across independent services/regions",
+      "samples": ["arch-global-order"]
+    }
+  ]
+}

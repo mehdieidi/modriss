@@ -1,0 +1,62 @@
+[
+  {
+    "id": "GD-R1",
+    "text": "Submit an owned application with title, positive amount no greater than 100000 cents and an accessible supporting-document reference.",
+    "criteria": [
+      [
+        "GD-AT1",
+        "Submit a valid application; missing evidence, another applicant's document or amount 100001 is rejected."
+      ]
+    ]
+  },
+  {
+    "id": "GD-R2",
+    "text": "Only the active assigned reviewer can decide; applicants cannot review their own application.",
+    "criteria": [
+      [
+        "GD-AT2",
+        "Applicant/self-reviewer or an unassigned reviewer attempts approval: denied with no accepted decision."
+      ]
+    ]
+  },
+  {
+    "id": "GD-R3",
+    "text": "Record one accepted decision per assignment with reason; repeated completion is harmless and stale assignment completion conflicts.",
+    "criteria": [
+      [
+        "GD-AT3",
+        "Submit the same decision twice, then a conflicting/stale completion: one decision persists and the conflict is explicit."
+      ]
+    ]
+  },
+  {
+    "id": "GD-R4",
+    "text": "Clarification closes the current assignment; resubmission creates a new review opportunity without losing history.",
+    "criteria": [
+      [
+        "GD-AT4",
+        "Request clarification and resubmit; old assignment cannot decide the new review and its history remains visible."
+      ]
+    ]
+  },
+  {
+    "id": "GD-R5",
+    "text": "After 48 hours without completion, escalate to the coordinator; an already completed review must not be escalated as outstanding.",
+    "criteria": [
+      [
+        "GD-AT5",
+        "Complete just before the escalation worker commits; atomic recheck prevents an outstanding escalation for the completed assignment."
+      ]
+    ]
+  },
+  {
+    "id": "GD-Q1",
+    "text": "For 100 cases and 10 reviewers, satisfy the shared metadata target and reconstruct every accepted decision's actor/assignment/evidence.",
+    "criteria": [
+      [
+        "GD-AT6",
+        "Load the 100-case fixture and reconstruct sampled decisions and metadata latency with raw evidence."
+      ]
+    ]
+  }
+]

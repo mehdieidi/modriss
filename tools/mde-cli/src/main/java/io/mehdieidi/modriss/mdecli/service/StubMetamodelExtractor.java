@@ -13,7 +13,8 @@ import java.util.regex.Pattern;
 public final class StubMetamodelExtractor {
 
   private static final Pattern NAMESPACE_PATTERN =
-      Pattern.compile("@namespace\\s*\\(\\s*uri=\"([^\"]+)\"\\s*,\\s*prefix=\"([^\"]+)\"\\s*\\)");
+      Pattern.compile(
+          "@namespace\\s*\\(\\s*uri\\s*=\\s*\"([^\"]+)\"\\s*,\\s*prefix\\s*=\\s*\"([^\"]+)\"\\s*\\)");
   private static final Pattern PACKAGE_PATTERN =
       Pattern.compile("package\\s+([A-Za-z_][A-Za-z0-9_]*)\\s*;");
   private static final Pattern CLASSIFIER_PATTERN =

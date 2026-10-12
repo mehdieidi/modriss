@@ -474,6 +474,21 @@ export function relationshipSemanticCopy(typeKey, relationship, graph = null) {
       delete copy.targetElementId;
     }
   }
+  // Trace IDs can identify elements in another model. Keep those scalar IDs,
+  // and only infer local EMF references when the endpoint exists in this graph.
+  if (type === "TraceLink") {
+    for (const [endpoint, id] of [
+      ["source", sourceId],
+      ["target", targetId],
+    ]) {
+      if (id) {
+        copy[`${endpoint}ElementId`] = id;
+      }
+      if (graph?.elementsById && !refId(relationship?.[endpoint]) && !graph.elementsById.has(id)) {
+        delete copy[endpoint];
+      }
+    }
+  }
   return copy;
 }
 

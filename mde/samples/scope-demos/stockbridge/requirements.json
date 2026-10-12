@@ -1,0 +1,56 @@
+[
+  {
+    "id": "SB-R1",
+    "text": "Accept authenticated schema-v1 snapshots; reject negative/noninteger quantities and unknown required mappings.",
+    "criteria": [
+      ["SB-AT1", "Reject unauthorized and malformed snapshots without queued valid work."]
+    ]
+  },
+  {
+    "id": "SB-R2",
+    "text": "Translate fields deterministically and bind delivery to the source payload hash and version.",
+    "criteria": [
+      [
+        "SB-AT2",
+        "Map quantity 9/version 2 to stockAvailable 9/sourceVersion 2 with the recorded payload hash."
+      ]
+    ]
+  },
+  {
+    "id": "SB-R3",
+    "text": "Preserve the destination's latest source version; an older snapshot must not revert stock.",
+    "criteria": [
+      [
+        "SB-AT3",
+        "Deliver version 2 then 1; destination stays at 2 and the stale exchange is visible."
+      ]
+    ]
+  },
+  {
+    "id": "SB-R4",
+    "text": "Retry timeout-after-commit using a stable exchange ID; the destination returns the original result for an identical replay.",
+    "criteria": [
+      ["SB-AT4", "Timeout after version 3 commit; replay yields one destination effect/reference."]
+    ]
+  },
+  {
+    "id": "SB-R5",
+    "text": "Show pending/failed/stale/delivered exchanges and permit audited operator replay or explicit rejection.",
+    "criteria": [
+      [
+        "SB-AT5",
+        "Permanent schema rejection is inspectable and cannot be marked DELIVERED by clicking retry without correcting its input/contract."
+      ]
+    ]
+  },
+  {
+    "id": "SB-Q1",
+    "text": "With 100 nominal snapshots, all newest-per-SKU values converge within 30 seconds; report failures and elapsed time separately under injected outages.",
+    "criteria": [
+      [
+        "SB-AT6",
+        "Send 100 snapshots and compare newest source versus destination values and convergence time."
+      ]
+    ]
+  }
+]

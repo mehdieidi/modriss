@@ -1,0 +1,1245 @@
+{
+  "schemaVersion": 1,
+  "claimBoundary": "Structural generation demonstrations and explicit scope-decision demonstrations; no implemented pattern guarantees",
+  "cases": [
+    {
+      "code": "A01",
+      "slug": "arch-http",
+      "name": "HTTP API and function handler",
+      "status": "structural",
+      "source": ".idea/scope/architecture-patterns",
+      "demo": "Read and amend a member through authorized HTTP handlers and one owned store.",
+      "features": [],
+      "requiredTypes": {
+        "cim": ["ManualDecision"],
+        "pim": ["ManualDecision"],
+        "psm": ["ManualDecision"]
+      },
+      "requiredCounts": {},
+      "models": {
+        "cim": "arch-http/arch-http.cim.xmi",
+        "pim": "arch-http/arch-http.pim.xmi",
+        "psm": "arch-http/arch-http.awspsm.xmi"
+      },
+      "pipeline": "generated-structure"
+    },
+    {
+      "code": "A02",
+      "slug": "arch-crud",
+      "name": "CRUD API scaffolding",
+      "status": "structural",
+      "source": ".idea/scope/architecture-patterns",
+      "demo": "Expose create/read/update/delete contracts; deletion and version-conflict behavior require code.",
+      "features": [],
+      "requiredTypes": {
+        "cim": ["ManualDecision"],
+        "pim": ["ManualDecision"],
+        "psm": ["ManualDecision"]
+      },
+      "requiredCounts": {},
+      "models": {
+        "cim": "arch-crud/arch-crud.cim.xmi",
+        "pim": "arch-crud/arch-crud.pim.xmi",
+        "psm": "arch-crud/arch-crud.awspsm.xmi"
+      },
+      "pipeline": "generated-structure"
+    },
+    {
+      "code": "A03",
+      "slug": "arch-queue",
+      "name": "Queue-based asynchronous worker",
+      "status": "structural",
+      "source": ".idea/scope/architecture-patterns",
+      "demo": "Accept bounded export jobs and expose status/result separately from queued execution.",
+      "features": [],
+      "requiredTypes": {
+        "cim": ["ManualDecision"],
+        "pim": ["ManualDecision"],
+        "psm": ["ManualDecision"]
+      },
+      "requiredCounts": {},
+      "models": {
+        "cim": "arch-queue/arch-queue.cim.xmi",
+        "pim": "arch-queue/arch-queue.pim.xmi",
+        "psm": "arch-queue/arch-queue.awspsm.xmi"
+      },
+      "pipeline": "generated-structure"
+    },
+    {
+      "code": "A04",
+      "slug": "arch-pubsub",
+      "name": "Publish/subscribe and event routing",
+      "status": "structural",
+      "source": ".idea/scope/architecture-patterns",
+      "demo": "Fan out facility events to independently buffered feed and delivery subscribers.",
+      "features": [],
+      "requiredTypes": {
+        "cim": ["ManualDecision"],
+        "pim": ["ManualDecision"],
+        "psm": ["ManualDecision"]
+      },
+      "requiredCounts": {},
+      "models": {
+        "cim": "arch-pubsub/arch-pubsub.cim.xmi",
+        "pim": "arch-pubsub/arch-pubsub.pim.xmi",
+        "psm": "arch-pubsub/arch-pubsub.awspsm.xmi"
+      },
+      "pipeline": "generated-structure"
+    },
+    {
+      "code": "A05",
+      "slug": "arch-event-bus",
+      "name": "Event bus / pub-sub mesh",
+      "status": "conditional",
+      "source": ".idea/scope/architecture-patterns",
+      "demo": "Route FacilityClosed events by source and detail type to a bounded queue consumer.",
+      "features": [],
+      "requiredTypes": {
+        "cim": ["ManualDecision"],
+        "pim": ["ManualDecision", "EventBus", "EventRoutingRule"],
+        "psm": ["ManualDecision", "EventBridgeBus", "EventBridgeRule"]
+      },
+      "requiredCounts": {},
+      "models": {
+        "cim": "arch-event-bus/arch-event-bus.cim.xmi",
+        "pim": "arch-event-bus/arch-event-bus.pim.xmi",
+        "psm": "arch-event-bus/arch-event-bus.awspsm.xmi"
+      },
+      "pipeline": "generated-structure"
+    },
+    {
+      "code": "A06",
+      "slug": "arch-objects",
+      "name": "Object-storage event processing",
+      "status": "structural",
+      "source": ".idea/scope/architecture-patterns",
+      "demo": "Process exact private CSV object versions after creation notifications.",
+      "features": [],
+      "requiredTypes": {
+        "cim": ["ManualDecision"],
+        "pim": ["ManualDecision"],
+        "psm": ["ManualDecision"]
+      },
+      "requiredCounts": {},
+      "models": {
+        "cim": "arch-objects/arch-objects.cim.xmi",
+        "pim": "arch-objects/arch-objects.pim.xmi",
+        "psm": "arch-objects/arch-objects.awspsm.xmi"
+      },
+      "pipeline": "generated-structure"
+    },
+    {
+      "code": "A07",
+      "slug": "arch-schedule",
+      "name": "Scheduled function and finite background job",
+      "status": "structural",
+      "source": ".idea/scope/architecture-patterns",
+      "demo": "Reconcile one immutable period snapshot with bounded checkpoints at 02:00 UTC.",
+      "features": [],
+      "requiredTypes": {
+        "cim": ["ManualDecision"],
+        "pim": ["ManualDecision"],
+        "psm": ["ManualDecision"]
+      },
+      "requiredCounts": {},
+      "models": {
+        "cim": "arch-schedule/arch-schedule.cim.xmi",
+        "pim": "arch-schedule/arch-schedule.pim.xmi",
+        "psm": "arch-schedule/arch-schedule.awspsm.xmi"
+      },
+      "pipeline": "generated-structure"
+    },
+    {
+      "code": "A08",
+      "slug": "arch-workflow",
+      "name": "Sequential workflow orchestration",
+      "status": "structural",
+      "source": ".idea/scope/architecture-patterns",
+      "demo": "Execute sequential tasks with explicit ALLOW/READY outcomes, wait, retry and failure paths.",
+      "features": [],
+      "requiredTypes": {
+        "cim": ["ManualDecision"],
+        "pim": ["ManualDecision"],
+        "psm": ["ManualDecision"]
+      },
+      "requiredCounts": {},
+      "models": {
+        "cim": "arch-workflow/arch-workflow.cim.xmi",
+        "pim": "arch-workflow/arch-workflow.pim.xmi",
+        "psm": "arch-workflow/arch-workflow.awspsm.xmi"
+      },
+      "pipeline": "generated-structure"
+    },
+    {
+      "code": "A09",
+      "slug": "arch-key-store",
+      "name": "Managed key/document data store",
+      "status": "structural",
+      "source": ".idea/scope/architecture-patterns",
+      "demo": "Represent member identity and history using explicit partition/sort key candidates.",
+      "features": [],
+      "requiredTypes": {
+        "cim": ["ManualDecision"],
+        "pim": ["ManualDecision"],
+        "psm": ["ManualDecision"]
+      },
+      "requiredCounts": {},
+      "models": {
+        "cim": "arch-key-store/arch-key-store.cim.xmi",
+        "pim": "arch-key-store/arch-key-store.pim.xmi",
+        "psm": "arch-key-store/arch-key-store.awspsm.xmi"
+      },
+      "pipeline": "generated-structure"
+    },
+    {
+      "code": "A10",
+      "slug": "arch-document-store",
+      "name": "Managed document store",
+      "status": "structural",
+      "source": ".idea/scope/architecture-patterns",
+      "demo": "Store a bounded document as a DOCUMENT schema/store; this AWS path remains DynamoDB.",
+      "features": [],
+      "requiredTypes": {
+        "cim": ["ManualDecision"],
+        "pim": ["ManualDecision"],
+        "psm": ["ManualDecision"]
+      },
+      "requiredCounts": {},
+      "models": {
+        "cim": "arch-document-store/arch-document-store.cim.xmi",
+        "pim": "arch-document-store/arch-document-store.pim.xmi",
+        "psm": "arch-document-store/arch-document-store.awspsm.xmi"
+      },
+      "pipeline": "generated-structure"
+    },
+    {
+      "code": "A11",
+      "slug": "arch-auth",
+      "name": "Authentication and route authorization",
+      "status": "conditional",
+      "source": ".idea/scope/architecture-patterns",
+      "demo": "Model a user directory, JWT identity and protected routes; enforce member ownership in code.",
+      "features": [],
+      "requiredTypes": {
+        "cim": ["ManualDecision"],
+        "pim": ["ManualDecision", "IdentityProvider"],
+        "psm": ["ManualDecision", "CognitoUserPool", "JwtAuthorizer"]
+      },
+      "requiredCounts": {},
+      "models": {
+        "cim": "arch-auth/arch-auth.cim.xmi",
+        "pim": "arch-auth/arch-auth.pim.xmi",
+        "psm": "arch-auth/arch-auth.awspsm.xmi"
+      },
+      "pipeline": "generated-structure"
+    },
+    {
+      "code": "A12",
+      "slug": "arch-cache",
+      "name": "Cache-aside / distributed cache",
+      "status": "conditional",
+      "source": ".idea/scope/architecture-patterns",
+      "demo": "Read a scoped member cache with 60-second TTL intent; implement invalidation and miss handling manually.",
+      "features": [],
+      "requiredTypes": {
+        "cim": ["ManualDecision"],
+        "pim": ["ManualDecision", "CachePolicy"],
+        "psm": ["ManualDecision"]
+      },
+      "requiredCounts": {
+        "pim": {
+          "DataStore": 2
+        },
+        "psm": {
+          "DynamoDbTable": 2
+        }
+      },
+      "models": {
+        "cim": "arch-cache/arch-cache.cim.xmi",
+        "pim": "arch-cache/arch-cache.pim.xmi",
+        "psm": "arch-cache/arch-cache.awspsm.xmi"
+      },
+      "pipeline": "generated-structure"
+    },
+    {
+      "code": "A13",
+      "slug": "arch-breaker",
+      "name": "Circuit breaker around external dependencies",
+      "status": "conditional",
+      "source": ".idea/scope/architecture-patterns",
+      "demo": "Protect storefront calls with CLOSED/OPEN/HALF_OPEN behavior owned by a custom adapter.",
+      "features": [],
+      "requiredTypes": {
+        "cim": ["ManualDecision"],
+        "pim": ["ManualDecision", "ResiliencePolicy"],
+        "psm": ["ManualDecision"]
+      },
+      "requiredCounts": {},
+      "models": {
+        "cim": "arch-breaker/arch-breaker.cim.xmi",
+        "pim": "arch-breaker/arch-breaker.pim.xmi",
+        "psm": "arch-breaker/arch-breaker.awspsm.xmi"
+      },
+      "pipeline": "generated-structure"
+    },
+    {
+      "code": "A14",
+      "slug": "arch-scatter",
+      "name": "Scatter-gather",
+      "status": "conditional",
+      "source": ".idea/scope/architecture-patterns",
+      "demo": "Gather inventory and storefront results with a bounded timeout and explicit partial-result policy.",
+      "features": [],
+      "requiredTypes": {
+        "cim": ["ManualDecision"],
+        "pim": ["ManualDecision"],
+        "psm": ["ManualDecision"]
+      },
+      "requiredCounts": {},
+      "models": {
+        "cim": "arch-scatter/arch-scatter.cim.xmi",
+        "pim": "arch-scatter/arch-scatter.pim.xmi",
+        "psm": "arch-scatter/arch-scatter.awspsm.xmi"
+      },
+      "pipeline": "generated-structure"
+    },
+    {
+      "code": "A15",
+      "slug": "arch-bulkhead",
+      "name": "Bulkhead isolation",
+      "status": "conditional",
+      "source": ".idea/scope/architecture-patterns",
+      "demo": "Limit the publishing worker to five reserved concurrent executions; downstream isolation needs code.",
+      "features": [],
+      "requiredTypes": {
+        "cim": ["ManualDecision"],
+        "pim": ["ManualDecision", "ConcurrencyPolicy"],
+        "psm": ["ManualDecision"]
+      },
+      "requiredCounts": {},
+      "models": {
+        "cim": "arch-bulkhead/arch-bulkhead.cim.xmi",
+        "pim": "arch-bulkhead/arch-bulkhead.pim.xmi",
+        "psm": "arch-bulkhead/arch-bulkhead.awspsm.xmi"
+      },
+      "pipeline": "generated-structure"
+    },
+    {
+      "code": "A16",
+      "slug": "arch-services",
+      "name": "Bounded-context decomposition and microservices",
+      "status": "conditional",
+      "source": ".idea/scope/architecture-patterns",
+      "demo": "Separate notice ownership from delivery ownership with explicit contracts and release units.",
+      "features": [],
+      "requiredTypes": {
+        "cim": ["ManualDecision"],
+        "pim": ["ManualDecision"],
+        "psm": ["ManualDecision"]
+      },
+      "requiredCounts": {
+        "pim": {
+          "ServerlessService": 2,
+          "DeploymentUnit": 2,
+          "DataStore": 2
+        },
+        "psm": {
+          "SamStack": 2,
+          "DynamoDbTable": 2
+        }
+      },
+      "models": {
+        "cim": "arch-services/arch-services.cim.xmi",
+        "pim": "arch-services/arch-services.pim.xmi",
+        "psm": "arch-services/arch-services.awspsm.xmi"
+      },
+      "pipeline": "generated-structure"
+    },
+    {
+      "code": "A17",
+      "slug": "arch-database-per-service",
+      "name": "Microservices with database per service",
+      "status": "conditional",
+      "source": ".idea/scope/architecture-patterns",
+      "demo": "Delivery owns a separate store; no function writes another service's database.",
+      "features": [],
+      "requiredTypes": {
+        "cim": ["ManualDecision"],
+        "pim": ["ManualDecision"],
+        "psm": ["ManualDecision"]
+      },
+      "requiredCounts": {
+        "pim": {
+          "ServerlessService": 2,
+          "DeploymentUnit": 2,
+          "DataStore": 2
+        },
+        "psm": {
+          "SamStack": 2,
+          "DynamoDbTable": 2
+        }
+      },
+      "models": {
+        "cim": "arch-database-per-service/arch-database-per-service.cim.xmi",
+        "pim": "arch-database-per-service/arch-database-per-service.pim.xmi",
+        "psm": "arch-database-per-service/arch-database-per-service.awspsm.xmi"
+      },
+      "pipeline": "generated-structure"
+    },
+    {
+      "code": "A18",
+      "slug": "arch-cqrs",
+      "name": "Command/query separation and CQRS",
+      "status": "conditional",
+      "source": ".idea/scope/architecture-patterns",
+      "demo": "Keep authoritative ticket snapshots separate from event-fed read views; expose freshness and rebuild policy.",
+      "features": [],
+      "requiredTypes": {
+        "cim": ["ManualDecision"],
+        "pim": ["ManualDecision"],
+        "psm": ["ManualDecision"]
+      },
+      "requiredCounts": {
+        "pim": {
+          "DataStore": 2
+        },
+        "psm": {
+          "DynamoDbTable": 2
+        }
+      },
+      "models": {
+        "cim": "arch-cqrs/arch-cqrs.cim.xmi",
+        "pim": "arch-cqrs/arch-cqrs.pim.xmi",
+        "psm": "arch-cqrs/arch-cqrs.awspsm.xmi"
+      },
+      "pipeline": "generated-structure"
+    },
+    {
+      "code": "A19",
+      "slug": "arch-choreography",
+      "name": "Event-driven choreography",
+      "status": "conditional",
+      "source": ".idea/scope/architecture-patterns",
+      "demo": "Independent delivery reacts to accepted facility facts; reliable publication remains custom.",
+      "features": [],
+      "requiredTypes": {
+        "cim": ["ManualDecision"],
+        "pim": ["ManualDecision"],
+        "psm": ["ManualDecision"]
+      },
+      "requiredCounts": {
+        "pim": {
+          "ServerlessService": 2,
+          "DeploymentUnit": 2,
+          "DataStore": 2
+        },
+        "psm": {
+          "SamStack": 2,
+          "DynamoDbTable": 2
+        }
+      },
+      "models": {
+        "cim": "arch-choreography/arch-choreography.cim.xmi",
+        "pim": "arch-choreography/arch-choreography.pim.xmi",
+        "psm": "arch-choreography/arch-choreography.awspsm.xmi"
+      },
+      "pipeline": "generated-structure"
+    },
+    {
+      "code": "A20",
+      "slug": "arch-saga",
+      "name": "Saga orchestration and compensation",
+      "status": "conditional",
+      "source": ".idea/scope/architecture-patterns",
+      "demo": "After allocation, manifest failure requires idempotent release compensation and visible operator recovery.",
+      "features": [],
+      "requiredTypes": {
+        "cim": ["ManualDecision"],
+        "pim": ["ManualDecision", "CompensationPolicy"],
+        "psm": ["ManualDecision"]
+      },
+      "requiredCounts": {},
+      "models": {
+        "cim": "arch-saga/arch-saga.cim.xmi",
+        "pim": "arch-saga/arch-saga.pim.xmi",
+        "psm": "arch-saga/arch-saga.awspsm.xmi"
+      },
+      "pipeline": "generated-structure"
+    },
+    {
+      "code": "A21",
+      "slug": "arch-idempotency",
+      "name": "Idempotent consumer and retry",
+      "status": "conditional",
+      "source": ".idea/scope/architecture-patterns",
+      "demo": "Persist event key, payload hash and result with the effect; in-memory generated helpers do not meet this requirement.",
+      "features": [],
+      "requiredTypes": {
+        "cim": ["ManualDecision"],
+        "pim": ["ManualDecision"],
+        "psm": ["ManualDecision"]
+      },
+      "requiredCounts": {},
+      "models": {
+        "cim": "arch-idempotency/arch-idempotency.cim.xmi",
+        "pim": "arch-idempotency/arch-idempotency.pim.xmi",
+        "psm": "arch-idempotency/arch-idempotency.awspsm.xmi"
+      },
+      "pipeline": "generated-structure"
+    },
+    {
+      "code": "A22",
+      "slug": "arch-bff",
+      "name": "API composition and backend for frontend",
+      "status": "conditional",
+      "source": ".idea/scope/architecture-patterns",
+      "demo": "Compose a client-facing stock view from two adapter calls with explicit partial failure.",
+      "features": [],
+      "requiredTypes": {
+        "cim": ["ManualDecision"],
+        "pim": ["ManualDecision"],
+        "psm": ["ManualDecision"]
+      },
+      "requiredCounts": {},
+      "models": {
+        "cim": "arch-bff/arch-bff.cim.xmi",
+        "pim": "arch-bff/arch-bff.pim.xmi",
+        "psm": "arch-bff/arch-bff.awspsm.xmi"
+      },
+      "pipeline": "generated-structure"
+    },
+    {
+      "code": "A23",
+      "slug": "arch-strangler",
+      "name": "Strangler migration and legacy integration",
+      "status": "conditional",
+      "source": ".idea/scope/architecture-patterns",
+      "demo": "Move one inventory route at a time using a reviewed ownership/cutover ledger; proxy routing is custom.",
+      "features": [],
+      "requiredTypes": {
+        "cim": ["ManualDecision"],
+        "pim": ["ManualDecision"],
+        "psm": ["ManualDecision"]
+      },
+      "requiredCounts": {},
+      "models": {
+        "cim": "arch-strangler/arch-strangler.cim.xmi",
+        "pim": "arch-strangler/arch-strangler.pim.xmi",
+        "psm": "arch-strangler/arch-strangler.awspsm.xmi"
+      },
+      "pipeline": "generated-structure"
+    },
+    {
+      "code": "A24",
+      "slug": "arch-cdc",
+      "name": "DynamoDB stream consumer and limited CDC",
+      "status": "conditional",
+      "source": ".idea/scope/architecture-patterns",
+      "demo": "Explicitly connect member table changes to a bounded relay function, with reviewed event construction.",
+      "features": [],
+      "requiredTypes": {
+        "cim": ["ManualDecision"],
+        "pim": ["ManualDecision", "DataChangeStream"],
+        "psm": ["ManualDecision", "DynamoDbStreamLambdaEventSourceMapping"]
+      },
+      "requiredCounts": {},
+      "models": {
+        "cim": "arch-cdc/arch-cdc.cim.xmi",
+        "pim": "arch-cdc/arch-cdc.pim.xmi",
+        "psm": "arch-cdc/arch-cdc.awspsm.xmi"
+      },
+      "pipeline": "generated-structure"
+    },
+    {
+      "code": "A25",
+      "slug": "arch-outbox",
+      "name": "Transactional outbox",
+      "status": "outside",
+      "source": ".idea/scope/architecture-patterns",
+      "demo": "Business mutation and outbox append must commit atomically; implement relay, duplicates, cleanup and recovery.",
+      "features": [],
+      "requiredTypes": {
+        "cim": ["ManualDecision"],
+        "pim": ["ManualDecision"]
+      },
+      "requiredCounts": {},
+      "models": {
+        "cim": "arch-outbox/arch-outbox.cim.xmi",
+        "pim": "arch-outbox/arch-outbox.pim.xmi"
+      },
+      "pipeline": "design-review-only"
+    },
+    {
+      "code": "A26",
+      "slug": "arch-event-sourcing",
+      "name": "Event sourcing",
+      "status": "outside",
+      "source": ".idea/scope/architecture-patterns",
+      "demo": "Versioned immutable events are authoritative; replay, rehydration, snapshots and evolution need an extension.",
+      "features": [],
+      "requiredTypes": {
+        "cim": ["ManualDecision"],
+        "pim": ["ManualDecision"]
+      },
+      "requiredCounts": {},
+      "models": {
+        "cim": "arch-event-sourcing/arch-event-sourcing.cim.xmi",
+        "pim": "arch-event-sourcing/arch-event-sourcing.pim.xmi"
+      },
+      "pipeline": "design-review-only"
+    },
+    {
+      "code": "A27",
+      "slug": "arch-graphql",
+      "name": "GraphQL essential interface",
+      "status": "outside",
+      "source": ".idea/scope/architecture-patterns",
+      "demo": "The essential interface needs GraphQL schemas, resolvers and subscription behavior.",
+      "features": [],
+      "requiredTypes": {
+        "cim": ["ManualDecision"],
+        "pim": ["ManualDecision"]
+      },
+      "requiredCounts": {},
+      "models": {
+        "cim": "arch-graphql/arch-graphql.cim.xmi",
+        "pim": "arch-graphql/arch-graphql.pim.xmi"
+      },
+      "pipeline": "design-review-only"
+    },
+    {
+      "code": "A28",
+      "slug": "arch-websocket",
+      "name": "WebSocket essential interface",
+      "status": "outside",
+      "source": ".idea/scope/architecture-patterns",
+      "demo": "Session identity, message routing and reconnect semantics require a WebSocket facade.",
+      "features": [],
+      "requiredTypes": {
+        "cim": ["ManualDecision"],
+        "pim": ["ManualDecision"]
+      },
+      "requiredCounts": {},
+      "models": {
+        "cim": "arch-websocket/arch-websocket.cim.xmi",
+        "pim": "arch-websocket/arch-websocket.pim.xmi"
+      },
+      "pipeline": "design-review-only"
+    },
+    {
+      "code": "A29",
+      "slug": "arch-webhook",
+      "name": "Webhook-first essential interface",
+      "status": "outside",
+      "source": ".idea/scope/architecture-patterns",
+      "demo": "Signed delivery, replay protection and provider retries require reviewed webhook behavior.",
+      "features": [],
+      "requiredTypes": {
+        "cim": ["ManualDecision"],
+        "pim": ["ManualDecision"]
+      },
+      "requiredCounts": {},
+      "models": {
+        "cim": "arch-webhook/arch-webhook.cim.xmi",
+        "pim": "arch-webhook/arch-webhook.pim.xmi"
+      },
+      "pipeline": "design-review-only"
+    },
+    {
+      "code": "A30",
+      "slug": "arch-relational",
+      "name": "Relational primary persistence",
+      "status": "outside",
+      "source": ".idea/scope/architecture-patterns",
+      "demo": "SQL joins and local relational ACID transactions are essential; no SQL lowering exists.",
+      "features": [],
+      "requiredTypes": {
+        "cim": ["ManualDecision"],
+        "pim": ["ManualDecision"]
+      },
+      "requiredCounts": {},
+      "models": {
+        "cim": "arch-relational/arch-relational.cim.xmi",
+        "pim": "arch-relational/arch-relational.pim.xmi"
+      },
+      "pipeline": "design-review-only"
+    },
+    {
+      "code": "A31",
+      "slug": "arch-graph",
+      "name": "Graph primary persistence",
+      "status": "outside",
+      "source": ".idea/scope/architecture-patterns",
+      "demo": "Graph traversal and graph storage are essential; this cannot be replaced silently with DynamoDB.",
+      "features": [],
+      "requiredTypes": {
+        "cim": ["ManualDecision"],
+        "pim": ["ManualDecision"]
+      },
+      "requiredCounts": {},
+      "models": {
+        "cim": "arch-graph/arch-graph.cim.xmi",
+        "pim": "arch-graph/arch-graph.pim.xmi"
+      },
+      "pipeline": "design-review-only"
+    },
+    {
+      "code": "A32",
+      "slug": "arch-search",
+      "name": "Search primary persistence",
+      "status": "outside",
+      "source": ".idea/scope/architecture-patterns",
+      "demo": "Full-text indexing and ranking are essential; search storage requires another implementation.",
+      "features": [],
+      "requiredTypes": {
+        "cim": ["ManualDecision"],
+        "pim": ["ManualDecision"]
+      },
+      "requiredCounts": {},
+      "models": {
+        "cim": "arch-search/arch-search.cim.xmi",
+        "pim": "arch-search/arch-search.pim.xmi"
+      },
+      "pipeline": "design-review-only"
+    },
+    {
+      "code": "A33",
+      "slug": "arch-time-series",
+      "name": "Time-series primary persistence",
+      "status": "outside",
+      "source": ".idea/scope/architecture-patterns",
+      "demo": "Time windows, retention and analytical queries require a time-series implementation.",
+      "features": [],
+      "requiredTypes": {
+        "cim": ["ManualDecision"],
+        "pim": ["ManualDecision"]
+      },
+      "requiredCounts": {},
+      "models": {
+        "cim": "arch-time-series/arch-time-series.cim.xmi",
+        "pim": "arch-time-series/arch-time-series.pim.xmi"
+      },
+      "pipeline": "design-review-only"
+    },
+    {
+      "code": "A34",
+      "slug": "arch-xa",
+      "name": "Cross-service XA/2PC transaction",
+      "status": "outside",
+      "source": ".idea/scope/architecture-patterns",
+      "demo": "Prepare/commit and durable recovery across two service-owned stores require a transaction coordinator.",
+      "features": [],
+      "requiredTypes": {
+        "cim": ["ManualDecision"],
+        "pim": ["ManualDecision"]
+      },
+      "requiredCounts": {
+        "pim": {
+          "ServerlessService": 2,
+          "DeploymentUnit": 2,
+          "DataStore": 2
+        }
+      },
+      "models": {
+        "cim": "arch-xa/arch-xa.cim.xmi",
+        "pim": "arch-xa/arch-xa.pim.xmi"
+      },
+      "pipeline": "design-review-only"
+    },
+    {
+      "code": "A35",
+      "slug": "arch-exactly-once",
+      "name": "Exactly-once business outcome across service boundaries",
+      "status": "outside",
+      "source": ".idea/scope/architecture-patterns",
+      "demo": "A universal exactly-once effect is required across independent consumers; retries alone cannot establish it.",
+      "features": [],
+      "requiredTypes": {
+        "cim": ["ManualDecision"],
+        "pim": ["ManualDecision"]
+      },
+      "requiredCounts": {},
+      "models": {
+        "cim": "arch-exactly-once/arch-exactly-once.cim.xmi",
+        "pim": "arch-exactly-once/arch-exactly-once.pim.xmi"
+      },
+      "pipeline": "design-review-only"
+    },
+    {
+      "code": "A36",
+      "slug": "arch-global-order",
+      "name": "Global ordering across independent services/regions",
+      "status": "outside",
+      "source": ".idea/scope/architecture-patterns",
+      "demo": "One total order across independent services/regions needs an explicit consensus/ordering protocol.",
+      "features": [],
+      "requiredTypes": {
+        "cim": ["ManualDecision"],
+        "pim": ["ManualDecision"]
+      },
+      "requiredCounts": {},
+      "models": {
+        "cim": "arch-global-order/arch-global-order.cim.xmi",
+        "pim": "arch-global-order/arch-global-order.pim.xmi"
+      },
+      "pipeline": "design-review-only"
+    },
+    {
+      "code": "A37",
+      "slug": "arch-parallel",
+      "name": "Full Parallel workflow",
+      "status": "outside",
+      "source": ".idea/scope/architecture-patterns",
+      "demo": "Two executable branches must complete with explicit join and failure semantics.",
+      "features": [],
+      "requiredTypes": {
+        "cim": ["ManualDecision"],
+        "pim": ["ManualDecision", "Workflow"]
+      },
+      "requiredCounts": {},
+      "models": {
+        "cim": "arch-parallel/arch-parallel.cim.xmi",
+        "pim": "arch-parallel/arch-parallel.pim.xmi"
+      },
+      "pipeline": "design-review-only"
+    },
+    {
+      "code": "A38",
+      "slug": "arch-map",
+      "name": "Full Map workflow",
+      "status": "outside",
+      "source": ".idea/scope/architecture-patterns",
+      "demo": "Execute a bounded item processor for each request item; full lowering requires an extension.",
+      "features": [],
+      "requiredTypes": {
+        "cim": ["ManualDecision"],
+        "pim": ["ManualDecision", "Workflow"]
+      },
+      "requiredCounts": {},
+      "models": {
+        "cim": "arch-map/arch-map.cim.xmi",
+        "pim": "arch-map/arch-map.pim.xmi"
+      },
+      "pipeline": "design-review-only"
+    },
+    {
+      "code": "A39",
+      "slug": "arch-callback",
+      "name": "Callback workflow",
+      "status": "outside",
+      "source": ".idea/scope/architecture-patterns",
+      "demo": "Persist a task token and complete only through an authenticated, correlated callback.",
+      "features": [],
+      "requiredTypes": {
+        "cim": ["ManualDecision"],
+        "pim": ["ManualDecision", "CallbackTaskConfig"]
+      },
+      "requiredCounts": {},
+      "models": {
+        "cim": "arch-callback/arch-callback.cim.xmi",
+        "pim": "arch-callback/arch-callback.pim.xmi"
+      },
+      "pipeline": "design-review-only"
+    },
+    {
+      "code": "A40",
+      "slug": "arch-offline",
+      "name": "Offline-first edge/client architecture",
+      "status": "outside",
+      "source": ".idea/scope/architecture-patterns",
+      "demo": "Local replicas, offline authorization and deterministic conflict resolution need a client/edge toolchain.",
+      "features": [],
+      "requiredTypes": {
+        "cim": ["ManualDecision"],
+        "pim": ["ManualDecision"]
+      },
+      "requiredCounts": {},
+      "models": {
+        "cim": "arch-offline/arch-offline.cim.xmi",
+        "pim": "arch-offline/arch-offline.pim.xmi"
+      },
+      "pipeline": "design-review-only"
+    },
+    {
+      "code": "A41",
+      "slug": "arch-non-aws",
+      "name": "Non-AWS and non-serverless deployment patterns",
+      "status": "outside",
+      "source": ".idea/scope/architecture-patterns",
+      "demo": "Deployment to Azure/GCP/on-premises or long-running compute requires another PSM/generator.",
+      "features": [],
+      "requiredTypes": {
+        "cim": ["ManualDecision"],
+        "pim": ["ManualDecision"]
+      },
+      "requiredCounts": {},
+      "models": {
+        "cim": "arch-non-aws/arch-non-aws.cim.xmi",
+        "pim": "arch-non-aws/arch-non-aws.pim.xmi"
+      },
+      "pipeline": "design-review-only"
+    },
+    {
+      "code": "A42",
+      "slug": "arch-monolith",
+      "name": "Traditional modular monolith",
+      "status": "outside",
+      "source": ".idea/scope/architecture-patterns",
+      "demo": "A single long-lived process owns modules; Lambda-per-function output is only an adjacent backend slice.",
+      "features": [],
+      "requiredTypes": {
+        "cim": ["ManualDecision"],
+        "pim": ["ManualDecision"]
+      },
+      "requiredCounts": {},
+      "models": {
+        "cim": "arch-monolith/arch-monolith.cim.xmi",
+        "pim": "arch-monolith/arch-monolith.pim.xmi"
+      },
+      "pipeline": "design-review-only"
+    },
+    {
+      "code": "A43",
+      "slug": "arch-hexagonal",
+      "name": "Hexagonal/clean architecture inside application code",
+      "status": "conditional",
+      "source": ".idea/scope/architecture-patterns",
+      "demo": "Dependency inversion and domain ports/adapters must be implemented in developer-owned Go packages.",
+      "features": [],
+      "requiredTypes": {
+        "cim": ["ManualDecision"],
+        "pim": ["ManualDecision"],
+        "psm": ["ManualDecision"]
+      },
+      "requiredCounts": {},
+      "models": {
+        "cim": "arch-hexagonal/arch-hexagonal.cim.xmi",
+        "pim": "arch-hexagonal/arch-hexagonal.pim.xmi",
+        "psm": "arch-hexagonal/arch-hexagonal.awspsm.xmi"
+      },
+      "pipeline": "generated-structure"
+    },
+    {
+      "code": "A44",
+      "slug": "arch-shared-database",
+      "name": "Shared database across many services",
+      "status": "conditional",
+      "source": ".idea/scope/architecture-patterns",
+      "demo": "Two service functions share a store deliberately; record ownership coupling and migration risk.",
+      "features": [],
+      "requiredTypes": {
+        "cim": ["ManualDecision"],
+        "pim": ["ManualDecision"],
+        "psm": ["ManualDecision"]
+      },
+      "requiredCounts": {
+        "pim": {
+          "ServerlessService": 2,
+          "DeploymentUnit": 2,
+          "DataStore": 1
+        }
+      },
+      "models": {
+        "cim": "arch-shared-database/arch-shared-database.cim.xmi",
+        "pim": "arch-shared-database/arch-shared-database.pim.xmi",
+        "psm": "arch-shared-database/arch-shared-database.awspsm.xmi"
+      },
+      "pipeline": "generated-structure"
+    },
+    {
+      "code": "A45",
+      "slug": "arch-indexes",
+      "name": "DynamoDB access-pattern-first key/index design",
+      "status": "structural",
+      "source": ".idea/scope/architecture-patterns",
+      "demo": "Query members by branch/status using a modeled secondary index; review hot keys and pagination.",
+      "features": [],
+      "requiredTypes": {
+        "cim": ["ManualDecision"],
+        "pim": ["ManualDecision", "IndexCandidate"],
+        "psm": ["ManualDecision", "DynamoDbGlobalSecondaryIndex"]
+      },
+      "requiredCounts": {},
+      "models": {
+        "cim": "arch-indexes/arch-indexes.cim.xmi",
+        "pim": "arch-indexes/arch-indexes.pim.xmi",
+        "psm": "arch-indexes/arch-indexes.awspsm.xmi"
+      },
+      "pipeline": "generated-structure"
+    },
+    {
+      "code": "A46",
+      "slug": "arch-throttling",
+      "name": "API throttling and function concurrency isolation",
+      "status": "conditional",
+      "source": ".idea/scope/architecture-patterns",
+      "demo": "Specify a 10 request/second, 20 burst API limit and five reserved worker executions.",
+      "features": [],
+      "requiredTypes": {
+        "cim": ["ManualDecision"],
+        "pim": ["ManualDecision", "RateLimitPolicy"],
+        "psm": ["ManualDecision"]
+      },
+      "requiredCounts": {},
+      "models": {
+        "cim": "arch-throttling/arch-throttling.cim.xmi",
+        "pim": "arch-throttling/arch-throttling.pim.xmi",
+        "psm": "arch-throttling/arch-throttling.awspsm.xmi"
+      },
+      "pipeline": "generated-structure"
+    },
+    {
+      "code": "A47",
+      "slug": "arch-read-replica",
+      "name": "Read replica or separate read database",
+      "status": "conditional",
+      "source": ".idea/scope/architecture-patterns",
+      "demo": "Query a separate read store with measured lag; replication, failover and refresh are custom.",
+      "features": [],
+      "requiredTypes": {
+        "cim": ["ManualDecision"],
+        "pim": ["ManualDecision"],
+        "psm": ["ManualDecision"]
+      },
+      "requiredCounts": {
+        "pim": {
+          "DataStore": 2
+        },
+        "psm": {
+          "DynamoDbTable": 2
+        }
+      },
+      "models": {
+        "cim": "arch-read-replica/arch-read-replica.cim.xmi",
+        "pim": "arch-read-replica/arch-read-replica.pim.xmi",
+        "psm": "arch-read-replica/arch-read-replica.awspsm.xmi"
+      },
+      "pipeline": "generated-structure"
+    },
+    {
+      "code": "A48",
+      "slug": "arch-stream-analytics",
+      "name": "Continuous event-stream processing / analytics pipeline",
+      "status": "outside",
+      "source": ".idea/scope/architecture-patterns",
+      "demo": "Windows, stream joins, analytical state and backpressure require an external stream-processing platform.",
+      "features": [],
+      "requiredTypes": {
+        "cim": ["ManualDecision"],
+        "pim": ["ManualDecision"]
+      },
+      "requiredCounts": {},
+      "models": {
+        "cim": "arch-stream-analytics/arch-stream-analytics.cim.xmi",
+        "pim": "arch-stream-analytics/arch-stream-analytics.pim.xmi"
+      },
+      "pipeline": "design-review-only"
+    },
+    {
+      "code": "A49",
+      "slug": "arch-hybrid",
+      "name": "Hybrid integration with external systems",
+      "status": "conditional",
+      "source": ".idea/scope/architecture-patterns",
+      "demo": "Keep simulator contracts, credentials, timeouts and reconciliation owned by explicit adapters.",
+      "features": [],
+      "requiredTypes": {
+        "cim": ["ManualDecision"],
+        "pim": ["ManualDecision"],
+        "psm": ["ManualDecision"]
+      },
+      "requiredCounts": {},
+      "models": {
+        "cim": "arch-hybrid/arch-hybrid.cim.xmi",
+        "pim": "arch-hybrid/arch-hybrid.pim.xmi",
+        "psm": "arch-hybrid/arch-hybrid.awspsm.xmi"
+      },
+      "pipeline": "generated-structure"
+    },
+    {
+      "code": "A50",
+      "slug": "arch-passive-recovery",
+      "name": "Multi-region active/passive recovery",
+      "status": "outside",
+      "source": ".idea/scope/architecture-patterns",
+      "demo": "Define recovery-point/time objectives and reviewed promotion/failback; topology is not generated.",
+      "features": [],
+      "requiredTypes": {
+        "cim": ["ManualDecision"],
+        "pim": ["ManualDecision"]
+      },
+      "requiredCounts": {},
+      "models": {
+        "cim": "arch-passive-recovery/arch-passive-recovery.cim.xmi",
+        "pim": "arch-passive-recovery/arch-passive-recovery.pim.xmi"
+      },
+      "pipeline": "design-review-only"
+    },
+    {
+      "code": "A51",
+      "slug": "arch-active-active",
+      "name": "Multi-region active/active or multi-cloud",
+      "status": "outside",
+      "source": ".idea/scope/architecture-patterns",
+      "demo": "Concurrent regional ownership and conflict reconciliation require an explicit custom global topology.",
+      "features": [],
+      "requiredTypes": {
+        "cim": ["ManualDecision"],
+        "pim": ["ManualDecision"]
+      },
+      "requiredCounts": {},
+      "models": {
+        "cim": "arch-active-active/arch-active-active.cim.xmi",
+        "pim": "arch-active-active/arch-active-active.pim.xmi"
+      },
+      "pipeline": "design-review-only"
+    },
+    {
+      "code": "A52",
+      "slug": "arch-cells",
+      "name": "Tenant-sharded SaaS / cell-based architecture",
+      "status": "conditional",
+      "source": ".idea/scope/architecture-patterns",
+      "demo": "Resolve verified tenant identity through a cell-routing catalogue; quotas, movement and isolation need code.",
+      "features": [],
+      "requiredTypes": {
+        "cim": ["ManualDecision"],
+        "pim": ["ManualDecision"],
+        "psm": ["ManualDecision"]
+      },
+      "requiredCounts": {
+        "pim": {
+          "ServerlessService": 2,
+          "DeploymentUnit": 2,
+          "DataStore": 2
+        },
+        "psm": {
+          "SamStack": 2,
+          "DynamoDbTable": 2
+        }
+      },
+      "models": {
+        "cim": "arch-cells/arch-cells.cim.xmi",
+        "pim": "arch-cells/arch-cells.pim.xmi",
+        "psm": "arch-cells/arch-cells.awspsm.xmi"
+      },
+      "pipeline": "generated-structure"
+    },
+    {
+      "code": "A53",
+      "slug": "arch-optimistic",
+      "name": "Atomic single-item conditional update / optimistic concurrency",
+      "status": "conditional",
+      "source": ".idea/scope/architecture-patterns",
+      "demo": "Expected-version mutation either commits exactly once locally or returns a version conflict.",
+      "features": [],
+      "requiredTypes": {
+        "cim": ["ManualDecision"],
+        "pim": ["ManualDecision"],
+        "psm": ["ManualDecision"]
+      },
+      "requiredCounts": {},
+      "models": {
+        "cim": "arch-optimistic/arch-optimistic.cim.xmi",
+        "pim": "arch-optimistic/arch-optimistic.pim.xmi",
+        "psm": "arch-optimistic/arch-optimistic.awspsm.xmi"
+      },
+      "pipeline": "generated-structure"
+    },
+    {
+      "code": "A54",
+      "slug": "arch-local-transaction",
+      "name": "Multi-item transaction inside one DynamoDB service boundary",
+      "status": "conditional",
+      "source": ".idea/scope/architecture-patterns",
+      "demo": "Slot allocation and reservation commit as one local transaction; confirm/expire races need tests.",
+      "features": [],
+      "requiredTypes": {
+        "cim": ["ManualDecision"],
+        "pim": ["ManualDecision"],
+        "psm": ["ManualDecision"]
+      },
+      "requiredCounts": {},
+      "models": {
+        "cim": "arch-local-transaction/arch-local-transaction.cim.xmi",
+        "pim": "arch-local-transaction/arch-local-transaction.pim.xmi",
+        "psm": "arch-local-transaction/arch-local-transaction.awspsm.xmi"
+      },
+      "pipeline": "generated-structure"
+    },
+    {
+      "code": "A55",
+      "slug": "arch-eventual",
+      "name": "Eventual consistency between service-owned records",
+      "status": "conditional",
+      "source": ".idea/scope/architecture-patterns",
+      "demo": "Delivery state converges from notice events with measured lag and owned reconciliation.",
+      "features": [],
+      "requiredTypes": {
+        "cim": ["ManualDecision"],
+        "pim": ["ManualDecision"],
+        "psm": ["ManualDecision"]
+      },
+      "requiredCounts": {
+        "pim": {
+          "ServerlessService": 2,
+          "DeploymentUnit": 2,
+          "DataStore": 2
+        },
+        "psm": {
+          "SamStack": 2,
+          "DynamoDbTable": 2
+        }
+      },
+      "models": {
+        "cim": "arch-eventual/arch-eventual.cim.xmi",
+        "pim": "arch-eventual/arch-eventual.pim.xmi",
+        "psm": "arch-eventual/arch-eventual.awspsm.xmi"
+      },
+      "pipeline": "generated-structure"
+    },
+    {
+      "code": "A56",
+      "slug": "arch-modules",
+      "name": "One service containing multiple bounded functions/modules",
+      "status": "structural",
+      "source": ".idea/scope/architecture-patterns",
+      "demo": "Generate one deployment unit with separate command/query responsibilities; code modularity stays manual.",
+      "features": [],
+      "requiredTypes": {
+        "cim": ["ManualDecision"],
+        "pim": ["ManualDecision"],
+        "psm": ["ManualDecision"]
+      },
+      "requiredCounts": {},
+      "models": {
+        "cim": "arch-modules/arch-modules.cim.xmi",
+        "pim": "arch-modules/arch-modules.pim.xmi",
+        "psm": "arch-modules/arch-modules.awspsm.xmi"
+      },
+      "pipeline": "generated-structure"
+    },
+    {
+      "code": "A57",
+      "slug": "arch-security-observability",
+      "name": "Security and observability patterns beyond infrastructure",
+      "status": "conditional",
+      "source": ".idea/scope/architecture-patterns",
+      "demo": "Trace authorized/denied evidence actions using correlated logs and reviewed recovery telemetry.",
+      "features": [],
+      "requiredTypes": {
+        "cim": ["ManualDecision"],
+        "pim": ["ManualDecision"],
+        "psm": ["ManualDecision"]
+      },
+      "requiredCounts": {},
+      "models": {
+        "cim": "arch-security-observability/arch-security-observability.cim.xmi",
+        "pim": "arch-security-observability/arch-security-observability.pim.xmi",
+        "psm": "arch-security-observability/arch-security-observability.awspsm.xmi"
+      },
+      "pipeline": "generated-structure"
+    }
+  ],
+  "sourceTopicCount": 88
+}

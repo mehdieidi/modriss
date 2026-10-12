@@ -1,0 +1,66 @@
+[
+  {
+    "id": "PD-R1",
+    "text": "Accept valid catalogue lines with quantities 1\u20135 and return one durable order identity per request key.",
+    "criteria": [
+      [
+        "PD-AT1",
+        "Replay a valid order request; reject an unknown SKU, quantity 0 or conflicting key reuse; one valid order persists."
+      ]
+    ]
+  },
+  {
+    "id": "PD-R2",
+    "text": "Process accepted work asynchronously; transition to DISPATCHED only after the simulator confirms a stable dispatch reference.",
+    "criteria": [
+      [
+        "PD-AT2",
+        "Simulator commits then times out; retry with the same dispatch key yields one dispatch reference and eventual DISPATCHED state."
+      ]
+    ]
+  },
+  {
+    "id": "PD-R3",
+    "text": "Cancellation succeeds only while ACCEPTED; a race with preparation commits exactly one permitted transition.",
+    "criteria": [
+      [
+        "PD-AT3",
+        "Race cancellation and preparation; verify one accepted transition and no dispatch of a successfully cancelled order."
+      ]
+    ]
+  },
+  {
+    "id": "PD-R4",
+    "text": "The buyer can read only their orders; a return is accepted for review only within seven days of dispatch, inclusive at the exact cutoff.",
+    "criteria": [
+      [
+        "PD-AT4",
+        "Test return at the seven-day cutoff and one second after; accept only the former. A different buyer cannot inspect or return it."
+      ]
+    ]
+  },
+  {
+    "id": "PD-R5",
+    "text": "Publish stable-ID status events and retain failed dispatch work for authorized retry without a second dispatch effect.",
+    "criteria": [
+      [
+        "PD-AT2",
+        "Simulator commits then times out; retry with the same dispatch key yields one dispatch reference and eventual DISPATCHED state."
+      ],
+      [
+        "PD-AT5",
+        "Redeliver the status event and dispatch message; consumer effects and dispatch reference remain unique."
+      ]
+    ]
+  },
+  {
+    "id": "PD-Q1",
+    "text": "Under nominal simulator responses, 100 accepted orders reach DISPATCHED within two minutes; report queue drain and end-to-end latency.",
+    "criteria": [
+      [
+        "PD-AT6",
+        "Process the 100-order workload with nominal simulator behavior and retain completion/backlog evidence."
+      ]
+    ]
+  }
+]

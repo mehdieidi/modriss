@@ -1,0 +1,4030 @@
+{
+  "validationBoundary": "Structural Ecore/EMF only; no EVL executed",
+  "models": [
+    {
+      "file": "memberledger/memberledger.cim.xmi",
+      "level": "cim",
+      "collection": "scope-demos",
+      "sha256": "41593f1e921a6a77ab1219ff4d835a7e3b319855ad909e7d848c7577f4ae3f5e",
+      "elements": 67,
+      "relationships": 148,
+      "structural": "PASS",
+      "importSaveExportReimport": "PASS",
+      "frontendSaveStructuralAndExport": "PASS",
+      "frontendViewsAndSave": "PASS",
+      "views": [
+        {
+          "name": "MemberLedger CIM demo Main View Main View",
+          "nodes": 48,
+          "edges": 79
+        },
+        {
+          "name": "CIM Overview",
+          "nodes": 28,
+          "edges": 62
+        },
+        {
+          "name": "Goals and Requirements",
+          "nodes": 7,
+          "edges": 6
+        },
+        {
+          "name": "Capability",
+          "nodes": 6,
+          "edges": 3
+        },
+        {
+          "name": "Domain Model",
+          "nodes": 20,
+          "edges": 5
+        },
+        {
+          "name": "Business Process",
+          "nodes": 10,
+          "edges": 3
+        },
+        {
+          "name": "Stakeholder and Actor",
+          "nodes": 37,
+          "edges": 9
+        },
+        {
+          "name": "Aggregate",
+          "nodes": 12,
+          "edges": 3
+        },
+        {
+          "name": "Behavior",
+          "nodes": 29,
+          "edges": 30
+        },
+        {
+          "name": "Policy and Decision",
+          "nodes": 27,
+          "edges": 9
+        },
+        {
+          "name": "Governance and Risk",
+          "nodes": 1,
+          "edges": 0
+        },
+        {
+          "name": "Traceability and Readiness",
+          "nodes": 1,
+          "edges": 0
+        }
+      ]
+    },
+    {
+      "file": "memberledger/memberledger.pim.xmi",
+      "level": "pim",
+      "collection": "scope-demos",
+      "sha256": "4698ce40f72ce63987a287745d59207bdb8634ded62f37b7fa79c4d8c9530aab",
+      "elements": 104,
+      "relationships": 138,
+      "structural": "PASS",
+      "importSaveExportReimport": "PASS",
+      "frontendSaveStructuralAndExport": "PASS",
+      "frontendViewsAndSave": "PASS",
+      "views": [
+        {
+          "name": "MemberLedger PIM demo Main View Main View",
+          "nodes": 21,
+          "edges": 0
+        },
+        {
+          "name": "PIM Overview",
+          "nodes": 4,
+          "edges": 0
+        },
+        {
+          "name": "Service Landscape",
+          "nodes": 1,
+          "edges": 0
+        },
+        {
+          "name": "API Surface",
+          "nodes": 12,
+          "edges": 0
+        },
+        {
+          "name": "Contract Catalog",
+          "nodes": 13,
+          "edges": 0
+        },
+        {
+          "name": "Function and Trigger View",
+          "nodes": 1,
+          "edges": 0
+        },
+        {
+          "name": "Event and Flow View",
+          "nodes": 3,
+          "edges": 0
+        },
+        {
+          "name": "Data and Storage View",
+          "nodes": 12,
+          "edges": 0
+        },
+        {
+          "name": "Policy and Observability View",
+          "nodes": 4,
+          "edges": 0
+        },
+        {
+          "name": "Workflow View",
+          "nodes": 0,
+          "edges": 0
+        },
+        {
+          "name": "Security View",
+          "nodes": 1,
+          "edges": 0
+        },
+        {
+          "name": "Configuration and Secrets View",
+          "nodes": 0,
+          "edges": 0
+        },
+        {
+          "name": "Trace and Readiness Overlay",
+          "nodes": 2,
+          "edges": 0
+        }
+      ]
+    },
+    {
+      "file": "memberledger/memberledger.awspsm.xmi",
+      "level": "psm",
+      "collection": "scope-demos",
+      "sha256": "5e4df502686a3162a74ec755f7df7a8c8eaf061df9147e471e8583715920974a",
+      "elements": 55,
+      "relationships": 79,
+      "structural": "PASS",
+      "importSaveExportReimport": "PASS",
+      "frontendSaveStructuralAndExport": "PASS",
+      "frontendViewsAndSave": "PASS",
+      "views": [
+        {
+          "name": "MemberLedger PSM demo Main View Main View",
+          "nodes": 24,
+          "edges": 46
+        },
+        {
+          "name": "PSM Overview",
+          "nodes": 17,
+          "edges": 19
+        },
+        {
+          "name": "Deployment topology",
+          "nodes": 2,
+          "edges": 1
+        },
+        {
+          "name": "API Gateway surface",
+          "nodes": 7,
+          "edges": 0
+        },
+        {
+          "name": "Lambda compute",
+          "nodes": 6,
+          "edges": 0
+        },
+        {
+          "name": "Events and messaging",
+          "nodes": 0,
+          "edges": 0
+        },
+        {
+          "name": "Step Functions / ASL",
+          "nodes": 0,
+          "edges": 0
+        },
+        {
+          "name": "Data and persistence",
+          "nodes": 1,
+          "edges": 0
+        },
+        {
+          "name": "Security and access",
+          "nodes": 1,
+          "edges": 0
+        },
+        {
+          "name": "Cognito identity",
+          "nodes": 0,
+          "edges": 0
+        },
+        {
+          "name": "VPC networking",
+          "nodes": 0,
+          "edges": 0
+        },
+        {
+          "name": "Observability and operations",
+          "nodes": 6,
+          "edges": 0
+        },
+        {
+          "name": "CloudFormation configuration",
+          "nodes": 1,
+          "edges": 0
+        },
+        {
+          "name": "Traceability and readiness",
+          "nodes": 1,
+          "edges": 0
+        },
+        {
+          "name": "Runtime flows and integrations",
+          "nodes": 7,
+          "edges": 0
+        }
+      ]
+    },
+    {
+      "file": "parceldesk/parceldesk.cim.xmi",
+      "level": "cim",
+      "collection": "scope-demos",
+      "sha256": "ca6f3fd5624687c62f2493f9bbe85393d434b8e6b2bd7cd45dd9d0a312e0481a",
+      "elements": 63,
+      "relationships": 157,
+      "structural": "PASS",
+      "importSaveExportReimport": "PASS",
+      "frontendSaveStructuralAndExport": "PASS",
+      "frontendViewsAndSave": "PASS",
+      "views": [
+        {
+          "name": "ParcelDesk CIM demo Main View Main View",
+          "nodes": 44,
+          "edges": 90
+        },
+        {
+          "name": "CIM Overview",
+          "nodes": 28,
+          "edges": 73
+        },
+        {
+          "name": "Goals and Requirements",
+          "nodes": 7,
+          "edges": 6
+        },
+        {
+          "name": "Capability",
+          "nodes": 5,
+          "edges": 3
+        },
+        {
+          "name": "Domain Model",
+          "nodes": 15,
+          "edges": 5
+        },
+        {
+          "name": "Business Process",
+          "nodes": 11,
+          "edges": 3
+        },
+        {
+          "name": "Stakeholder and Actor",
+          "nodes": 32,
+          "edges": 9
+        },
+        {
+          "name": "Aggregate",
+          "nodes": 15,
+          "edges": 4
+        },
+        {
+          "name": "Behavior",
+          "nodes": 24,
+          "edges": 32
+        },
+        {
+          "name": "Policy and Decision",
+          "nodes": 23,
+          "edges": 20
+        },
+        {
+          "name": "Governance and Risk",
+          "nodes": 1,
+          "edges": 0
+        },
+        {
+          "name": "Traceability and Readiness",
+          "nodes": 1,
+          "edges": 0
+        }
+      ]
+    },
+    {
+      "file": "parceldesk/parceldesk.pim.xmi",
+      "level": "pim",
+      "collection": "scope-demos",
+      "sha256": "67dd8e2502fe55144bcfeb24fb342764f4756f7c3b9875f06ce52249abd04eb7",
+      "elements": 102,
+      "relationships": 162,
+      "structural": "PASS",
+      "importSaveExportReimport": "PASS",
+      "frontendSaveStructuralAndExport": "PASS",
+      "frontendViewsAndSave": "PASS",
+      "views": [
+        {
+          "name": "ParcelDesk PIM demo Main View Main View",
+          "nodes": 22,
+          "edges": 0
+        },
+        {
+          "name": "PIM Overview",
+          "nodes": 6,
+          "edges": 0
+        },
+        {
+          "name": "Service Landscape",
+          "nodes": 1,
+          "edges": 0
+        },
+        {
+          "name": "API Surface",
+          "nodes": 11,
+          "edges": 0
+        },
+        {
+          "name": "Contract Catalog",
+          "nodes": 12,
+          "edges": 0
+        },
+        {
+          "name": "Function and Trigger View",
+          "nodes": 2,
+          "edges": 0
+        },
+        {
+          "name": "Event and Flow View",
+          "nodes": 4,
+          "edges": 0
+        },
+        {
+          "name": "Data and Storage View",
+          "nodes": 11,
+          "edges": 0
+        },
+        {
+          "name": "Policy and Observability View",
+          "nodes": 5,
+          "edges": 0
+        },
+        {
+          "name": "Workflow View",
+          "nodes": 0,
+          "edges": 0
+        },
+        {
+          "name": "Security View",
+          "nodes": 1,
+          "edges": 0
+        },
+        {
+          "name": "Configuration and Secrets View",
+          "nodes": 0,
+          "edges": 0
+        },
+        {
+          "name": "Trace and Readiness Overlay",
+          "nodes": 2,
+          "edges": 0
+        }
+      ]
+    },
+    {
+      "file": "parceldesk/parceldesk.awspsm.xmi",
+      "level": "psm",
+      "collection": "scope-demos",
+      "sha256": "272b49f734f9c15ba9ef78a38dd254e0b774f8a12e6d420a2b94a820fbb4e2d4",
+      "elements": 64,
+      "relationships": 92,
+      "structural": "PASS",
+      "importSaveExportReimport": "PASS",
+      "frontendSaveStructuralAndExport": "PASS",
+      "frontendViewsAndSave": "PASS",
+      "views": [
+        {
+          "name": "ParcelDesk PSM demo Main View Main View",
+          "nodes": 29,
+          "edges": 54
+        },
+        {
+          "name": "PSM Overview",
+          "nodes": 22,
+          "edges": 22
+        },
+        {
+          "name": "Deployment topology",
+          "nodes": 2,
+          "edges": 1
+        },
+        {
+          "name": "API Gateway surface",
+          "nodes": 7,
+          "edges": 0
+        },
+        {
+          "name": "Lambda compute",
+          "nodes": 7,
+          "edges": 0
+        },
+        {
+          "name": "Events and messaging",
+          "nodes": 2,
+          "edges": 0
+        },
+        {
+          "name": "Step Functions / ASL",
+          "nodes": 0,
+          "edges": 0
+        },
+        {
+          "name": "Data and persistence",
+          "nodes": 1,
+          "edges": 0
+        },
+        {
+          "name": "Security and access",
+          "nodes": 2,
+          "edges": 0
+        },
+        {
+          "name": "Cognito identity",
+          "nodes": 0,
+          "edges": 0
+        },
+        {
+          "name": "VPC networking",
+          "nodes": 0,
+          "edges": 0
+        },
+        {
+          "name": "Observability and operations",
+          "nodes": 7,
+          "edges": 0
+        },
+        {
+          "name": "CloudFormation configuration",
+          "nodes": 1,
+          "edges": 0
+        },
+        {
+          "name": "Traceability and readiness",
+          "nodes": 1,
+          "edges": 0
+        },
+        {
+          "name": "Runtime flows and integrations",
+          "nodes": 10,
+          "edges": 0
+        }
+      ]
+    },
+    {
+      "file": "roomslot/roomslot.cim.xmi",
+      "level": "cim",
+      "collection": "scope-demos",
+      "sha256": "22a664a42fdf1ef4f9e9f85f8f6d3b29d0f78493c7b6951f1a6592ba546e8b85",
+      "elements": 62,
+      "relationships": 147,
+      "structural": "PASS",
+      "importSaveExportReimport": "PASS",
+      "frontendSaveStructuralAndExport": "PASS",
+      "frontendViewsAndSave": "PASS",
+      "views": [
+        {
+          "name": "RoomSlot CIM demo Main View Main View",
+          "nodes": 43,
+          "edges": 81
+        },
+        {
+          "name": "CIM Overview",
+          "nodes": 27,
+          "edges": 60
+        },
+        {
+          "name": "Goals and Requirements",
+          "nodes": 7,
+          "edges": 6
+        },
+        {
+          "name": "Capability",
+          "nodes": 6,
+          "edges": 3
+        },
+        {
+          "name": "Domain Model",
+          "nodes": 15,
+          "edges": 4
+        },
+        {
+          "name": "Business Process",
+          "nodes": 12,
+          "edges": 3
+        },
+        {
+          "name": "Stakeholder and Actor",
+          "nodes": 33,
+          "edges": 8
+        },
+        {
+          "name": "Aggregate",
+          "nodes": 13,
+          "edges": 3
+        },
+        {
+          "name": "Behavior",
+          "nodes": 25,
+          "edges": 33
+        },
+        {
+          "name": "Policy and Decision",
+          "nodes": 23,
+          "edges": 12
+        },
+        {
+          "name": "Governance and Risk",
+          "nodes": 1,
+          "edges": 0
+        },
+        {
+          "name": "Traceability and Readiness",
+          "nodes": 1,
+          "edges": 0
+        }
+      ]
+    },
+    {
+      "file": "roomslot/roomslot.pim.xmi",
+      "level": "pim",
+      "collection": "scope-demos",
+      "sha256": "7fae2a54b411376c875894997d2a15f17c31dd46385543941a9d049f29f998ce",
+      "elements": 96,
+      "relationships": 140,
+      "structural": "PASS",
+      "importSaveExportReimport": "PASS",
+      "frontendSaveStructuralAndExport": "PASS",
+      "frontendViewsAndSave": "PASS",
+      "views": [
+        {
+          "name": "RoomSlot PIM demo Main View Main View",
+          "nodes": 21,
+          "edges": 0
+        },
+        {
+          "name": "PIM Overview",
+          "nodes": 4,
+          "edges": 0
+        },
+        {
+          "name": "Service Landscape",
+          "nodes": 1,
+          "edges": 0
+        },
+        {
+          "name": "API Surface",
+          "nodes": 11,
+          "edges": 0
+        },
+        {
+          "name": "Contract Catalog",
+          "nodes": 13,
+          "edges": 0
+        },
+        {
+          "name": "Function and Trigger View",
+          "nodes": 1,
+          "edges": 0
+        },
+        {
+          "name": "Event and Flow View",
+          "nodes": 4,
+          "edges": 0
+        },
+        {
+          "name": "Data and Storage View",
+          "nodes": 11,
+          "edges": 0
+        },
+        {
+          "name": "Policy and Observability View",
+          "nodes": 4,
+          "edges": 0
+        },
+        {
+          "name": "Workflow View",
+          "nodes": 0,
+          "edges": 0
+        },
+        {
+          "name": "Security View",
+          "nodes": 1,
+          "edges": 0
+        },
+        {
+          "name": "Configuration and Secrets View",
+          "nodes": 0,
+          "edges": 0
+        },
+        {
+          "name": "Trace and Readiness Overlay",
+          "nodes": 2,
+          "edges": 0
+        }
+      ]
+    },
+    {
+      "file": "roomslot/roomslot.awspsm.xmi",
+      "level": "psm",
+      "collection": "scope-demos",
+      "sha256": "3f075678fe14503b56ae14e2d0ce552d46d3d7944e6612fad0e6234f4d899a94",
+      "elements": 62,
+      "relationships": 88,
+      "structural": "PASS",
+      "importSaveExportReimport": "PASS",
+      "frontendSaveStructuralAndExport": "PASS",
+      "frontendViewsAndSave": "PASS",
+      "views": [
+        {
+          "name": "RoomSlot PSM demo Main View Main View",
+          "nodes": 25,
+          "edges": 47
+        },
+        {
+          "name": "PSM Overview",
+          "nodes": 19,
+          "edges": 20
+        },
+        {
+          "name": "Deployment topology",
+          "nodes": 2,
+          "edges": 1
+        },
+        {
+          "name": "API Gateway surface",
+          "nodes": 6,
+          "edges": 0
+        },
+        {
+          "name": "Lambda compute",
+          "nodes": 6,
+          "edges": 0
+        },
+        {
+          "name": "Events and messaging",
+          "nodes": 1,
+          "edges": 0
+        },
+        {
+          "name": "Step Functions / ASL",
+          "nodes": 0,
+          "edges": 0
+        },
+        {
+          "name": "Data and persistence",
+          "nodes": 1,
+          "edges": 0
+        },
+        {
+          "name": "Security and access",
+          "nodes": 2,
+          "edges": 0
+        },
+        {
+          "name": "Cognito identity",
+          "nodes": 0,
+          "edges": 0
+        },
+        {
+          "name": "VPC networking",
+          "nodes": 0,
+          "edges": 0
+        },
+        {
+          "name": "Observability and operations",
+          "nodes": 6,
+          "edges": 0
+        },
+        {
+          "name": "CloudFormation configuration",
+          "nodes": 1,
+          "edges": 0
+        },
+        {
+          "name": "Traceability and readiness",
+          "nodes": 1,
+          "edges": 0
+        },
+        {
+          "name": "Runtime flows and integrations",
+          "nodes": 8,
+          "edges": 0
+        }
+      ]
+    },
+    {
+      "file": "grantdesk/grantdesk.cim.xmi",
+      "level": "cim",
+      "collection": "scope-demos",
+      "sha256": "d0f4723a1ac27a7a0c0257209f042dbf0d17cdf91591897493ea8a826a8ee281",
+      "elements": 72,
+      "relationships": 157,
+      "structural": "PASS",
+      "importSaveExportReimport": "PASS",
+      "frontendSaveStructuralAndExport": "PASS",
+      "frontendViewsAndSave": "PASS",
+      "views": [
+        {
+          "name": "GrantDesk CIM demo Main View Main View",
+          "nodes": 49,
+          "edges": 81
+        },
+        {
+          "name": "CIM Overview",
+          "nodes": 28,
+          "edges": 66
+        },
+        {
+          "name": "Goals and Requirements",
+          "nodes": 7,
+          "edges": 6
+        },
+        {
+          "name": "Capability",
+          "nodes": 6,
+          "edges": 3
+        },
+        {
+          "name": "Domain Model",
+          "nodes": 21,
+          "edges": 6
+        },
+        {
+          "name": "Business Process",
+          "nodes": 11,
+          "edges": 3
+        },
+        {
+          "name": "Stakeholder and Actor",
+          "nodes": 37,
+          "edges": 8
+        },
+        {
+          "name": "Aggregate",
+          "nodes": 14,
+          "edges": 4
+        },
+        {
+          "name": "Behavior",
+          "nodes": 29,
+          "edges": 27
+        },
+        {
+          "name": "Policy and Decision",
+          "nodes": 28,
+          "edges": 16
+        },
+        {
+          "name": "Governance and Risk",
+          "nodes": 1,
+          "edges": 0
+        },
+        {
+          "name": "Traceability and Readiness",
+          "nodes": 1,
+          "edges": 0
+        }
+      ]
+    },
+    {
+      "file": "grantdesk/grantdesk.pim.xmi",
+      "level": "pim",
+      "collection": "scope-demos",
+      "sha256": "fcb6b775972f8233a40d771523fdac87b8d4e025cf63e4b0f5d4f81713b6a782",
+      "elements": 108,
+      "relationships": 157,
+      "structural": "PASS",
+      "importSaveExportReimport": "PASS",
+      "frontendSaveStructuralAndExport": "PASS",
+      "frontendViewsAndSave": "PASS",
+      "views": [
+        {
+          "name": "GrantDesk PIM demo Main View Main View",
+          "nodes": 22,
+          "edges": 0
+        },
+        {
+          "name": "PIM Overview",
+          "nodes": 5,
+          "edges": 0
+        },
+        {
+          "name": "Service Landscape",
+          "nodes": 1,
+          "edges": 0
+        },
+        {
+          "name": "API Surface",
+          "nodes": 11,
+          "edges": 0
+        },
+        {
+          "name": "Contract Catalog",
+          "nodes": 12,
+          "edges": 0
+        },
+        {
+          "name": "Function and Trigger View",
+          "nodes": 1,
+          "edges": 0
+        },
+        {
+          "name": "Event and Flow View",
+          "nodes": 3,
+          "edges": 0
+        },
+        {
+          "name": "Data and Storage View",
+          "nodes": 11,
+          "edges": 0
+        },
+        {
+          "name": "Policy and Observability View",
+          "nodes": 5,
+          "edges": 0
+        },
+        {
+          "name": "Workflow View",
+          "nodes": 0,
+          "edges": 0
+        },
+        {
+          "name": "Security View",
+          "nodes": 1,
+          "edges": 0
+        },
+        {
+          "name": "Configuration and Secrets View",
+          "nodes": 0,
+          "edges": 0
+        },
+        {
+          "name": "Trace and Readiness Overlay",
+          "nodes": 2,
+          "edges": 0
+        }
+      ]
+    },
+    {
+      "file": "grantdesk/grantdesk.awspsm.xmi",
+      "level": "psm",
+      "collection": "scope-demos",
+      "sha256": "d564ffdbfa5678c298dd989725ee6869b3d83ca6891e5b9bbbf168c63a9ad070",
+      "elements": 65,
+      "relationships": 91,
+      "structural": "PASS",
+      "importSaveExportReimport": "PASS",
+      "frontendSaveStructuralAndExport": "PASS",
+      "frontendViewsAndSave": "PASS",
+      "views": [
+        {
+          "name": "GrantDesk PSM demo Main View Main View",
+          "nodes": 26,
+          "edges": 48
+        },
+        {
+          "name": "PSM Overview",
+          "nodes": 20,
+          "edges": 20
+        },
+        {
+          "name": "Deployment topology",
+          "nodes": 2,
+          "edges": 1
+        },
+        {
+          "name": "API Gateway surface",
+          "nodes": 6,
+          "edges": 0
+        },
+        {
+          "name": "Lambda compute",
+          "nodes": 6,
+          "edges": 0
+        },
+        {
+          "name": "Events and messaging",
+          "nodes": 1,
+          "edges": 0
+        },
+        {
+          "name": "Step Functions / ASL",
+          "nodes": 0,
+          "edges": 0
+        },
+        {
+          "name": "Data and persistence",
+          "nodes": 2,
+          "edges": 0
+        },
+        {
+          "name": "Security and access",
+          "nodes": 2,
+          "edges": 0
+        },
+        {
+          "name": "Cognito identity",
+          "nodes": 0,
+          "edges": 0
+        },
+        {
+          "name": "VPC networking",
+          "nodes": 0,
+          "edges": 0
+        },
+        {
+          "name": "Observability and operations",
+          "nodes": 6,
+          "edges": 0
+        },
+        {
+          "name": "CloudFormation configuration",
+          "nodes": 1,
+          "edges": 0
+        },
+        {
+          "name": "Traceability and readiness",
+          "nodes": 1,
+          "edges": 0
+        },
+        {
+          "name": "Runtime flows and integrations",
+          "nodes": 9,
+          "edges": 0
+        }
+      ]
+    },
+    {
+      "file": "campussignal/campussignal.cim.xmi",
+      "level": "cim",
+      "collection": "scope-demos",
+      "sha256": "788019017712c1920cd775b6ad53b939cc41a85f72de364c0d537fd5956d13b7",
+      "elements": 70,
+      "relationships": 152,
+      "structural": "PASS",
+      "importSaveExportReimport": "PASS",
+      "frontendSaveStructuralAndExport": "PASS",
+      "frontendViewsAndSave": "PASS",
+      "views": [
+        {
+          "name": "CampusSignal CIM demo Main View Main View",
+          "nodes": 52,
+          "edges": 80
+        },
+        {
+          "name": "CIM Overview",
+          "nodes": 30,
+          "edges": 66
+        },
+        {
+          "name": "Goals and Requirements",
+          "nodes": 7,
+          "edges": 6
+        },
+        {
+          "name": "Capability",
+          "nodes": 6,
+          "edges": 3
+        },
+        {
+          "name": "Domain Model",
+          "nodes": 22,
+          "edges": 8
+        },
+        {
+          "name": "Business Process",
+          "nodes": 10,
+          "edges": 3
+        },
+        {
+          "name": "Stakeholder and Actor",
+          "nodes": 38,
+          "edges": 9
+        },
+        {
+          "name": "Aggregate",
+          "nodes": 15,
+          "edges": 6
+        },
+        {
+          "name": "Behavior",
+          "nodes": 30,
+          "edges": 24
+        },
+        {
+          "name": "Policy and Decision",
+          "nodes": 27,
+          "edges": 12
+        },
+        {
+          "name": "Governance and Risk",
+          "nodes": 1,
+          "edges": 0
+        },
+        {
+          "name": "Traceability and Readiness",
+          "nodes": 1,
+          "edges": 0
+        }
+      ]
+    },
+    {
+      "file": "campussignal/campussignal.pim.xmi",
+      "level": "pim",
+      "collection": "scope-demos",
+      "sha256": "5f8a49c89fafd9355b0628a157b0c8dce37b1fd443fa12d6192742a1de0d5a37",
+      "elements": 100,
+      "relationships": 157,
+      "structural": "PASS",
+      "importSaveExportReimport": "PASS",
+      "frontendSaveStructuralAndExport": "PASS",
+      "frontendViewsAndSave": "PASS",
+      "views": [
+        {
+          "name": "CampusSignal PIM demo Main View Main View",
+          "nodes": 22,
+          "edges": 0
+        },
+        {
+          "name": "PIM Overview",
+          "nodes": 6,
+          "edges": 0
+        },
+        {
+          "name": "Service Landscape",
+          "nodes": 1,
+          "edges": 0
+        },
+        {
+          "name": "API Surface",
+          "nodes": 11,
+          "edges": 0
+        },
+        {
+          "name": "Contract Catalog",
+          "nodes": 12,
+          "edges": 0
+        },
+        {
+          "name": "Function and Trigger View",
+          "nodes": 2,
+          "edges": 0
+        },
+        {
+          "name": "Event and Flow View",
+          "nodes": 4,
+          "edges": 0
+        },
+        {
+          "name": "Data and Storage View",
+          "nodes": 11,
+          "edges": 0
+        },
+        {
+          "name": "Policy and Observability View",
+          "nodes": 5,
+          "edges": 0
+        },
+        {
+          "name": "Workflow View",
+          "nodes": 0,
+          "edges": 0
+        },
+        {
+          "name": "Security View",
+          "nodes": 1,
+          "edges": 0
+        },
+        {
+          "name": "Configuration and Secrets View",
+          "nodes": 0,
+          "edges": 0
+        },
+        {
+          "name": "Trace and Readiness Overlay",
+          "nodes": 2,
+          "edges": 0
+        }
+      ]
+    },
+    {
+      "file": "campussignal/campussignal.awspsm.xmi",
+      "level": "psm",
+      "collection": "scope-demos",
+      "sha256": "b12c76a65f335a847f79e9d5cd4d5738f98e2551b8fe0886c216175ac30bc183",
+      "elements": 70,
+      "relationships": 100,
+      "structural": "PASS",
+      "importSaveExportReimport": "PASS",
+      "frontendSaveStructuralAndExport": "PASS",
+      "frontendViewsAndSave": "PASS",
+      "views": [
+        {
+          "name": "CampusSignal PSM demo Main View Main View",
+          "nodes": 35,
+          "edges": 61
+        },
+        {
+          "name": "PSM Overview",
+          "nodes": 25,
+          "edges": 22
+        },
+        {
+          "name": "Deployment topology",
+          "nodes": 2,
+          "edges": 1
+        },
+        {
+          "name": "API Gateway surface",
+          "nodes": 6,
+          "edges": 0
+        },
+        {
+          "name": "Lambda compute",
+          "nodes": 7,
+          "edges": 0
+        },
+        {
+          "name": "Events and messaging",
+          "nodes": 9,
+          "edges": 2
+        },
+        {
+          "name": "Step Functions / ASL",
+          "nodes": 0,
+          "edges": 0
+        },
+        {
+          "name": "Data and persistence",
+          "nodes": 1,
+          "edges": 0
+        },
+        {
+          "name": "Security and access",
+          "nodes": 4,
+          "edges": 0
+        },
+        {
+          "name": "Cognito identity",
+          "nodes": 0,
+          "edges": 0
+        },
+        {
+          "name": "VPC networking",
+          "nodes": 0,
+          "edges": 0
+        },
+        {
+          "name": "Observability and operations",
+          "nodes": 7,
+          "edges": 0
+        },
+        {
+          "name": "CloudFormation configuration",
+          "nodes": 1,
+          "edges": 0
+        },
+        {
+          "name": "Traceability and readiness",
+          "nodes": 1,
+          "edges": 0
+        },
+        {
+          "name": "Runtime flows and integrations",
+          "nodes": 13,
+          "edges": 0
+        }
+      ]
+    },
+    {
+      "file": "intakecheck/intakecheck.cim.xmi",
+      "level": "cim",
+      "collection": "scope-demos",
+      "sha256": "fedf670d145a1c04307334c2c924d61b10b92693cc191b35d7551bb867e0d3f8",
+      "elements": 65,
+      "relationships": 146,
+      "structural": "PASS",
+      "importSaveExportReimport": "PASS",
+      "frontendSaveStructuralAndExport": "PASS",
+      "frontendViewsAndSave": "PASS",
+      "views": [
+        {
+          "name": "IntakeCheck CIM demo Main View Main View",
+          "nodes": 45,
+          "edges": 77
+        },
+        {
+          "name": "CIM Overview",
+          "nodes": 28,
+          "edges": 61
+        },
+        {
+          "name": "Goals and Requirements",
+          "nodes": 7,
+          "edges": 6
+        },
+        {
+          "name": "Capability",
+          "nodes": 6,
+          "edges": 3
+        },
+        {
+          "name": "Domain Model",
+          "nodes": 17,
+          "edges": 5
+        },
+        {
+          "name": "Business Process",
+          "nodes": 10,
+          "edges": 3
+        },
+        {
+          "name": "Stakeholder and Actor",
+          "nodes": 33,
+          "edges": 8
+        },
+        {
+          "name": "Aggregate",
+          "nodes": 13,
+          "edges": 4
+        },
+        {
+          "name": "Behavior",
+          "nodes": 26,
+          "edges": 27
+        },
+        {
+          "name": "Policy and Decision",
+          "nodes": 24,
+          "edges": 12
+        },
+        {
+          "name": "Governance and Risk",
+          "nodes": 1,
+          "edges": 0
+        },
+        {
+          "name": "Traceability and Readiness",
+          "nodes": 1,
+          "edges": 0
+        }
+      ]
+    },
+    {
+      "file": "intakecheck/intakecheck.pim.xmi",
+      "level": "pim",
+      "collection": "scope-demos",
+      "sha256": "5b2677ac38ae8afcb59a7f30c0875bb768fa70afa68deba1314e6557e27ab51c",
+      "elements": 95,
+      "relationships": 140,
+      "structural": "PASS",
+      "importSaveExportReimport": "PASS",
+      "frontendSaveStructuralAndExport": "PASS",
+      "frontendViewsAndSave": "PASS",
+      "views": [
+        {
+          "name": "IntakeCheck PIM demo Main View Main View",
+          "nodes": 20,
+          "edges": 0
+        },
+        {
+          "name": "PIM Overview",
+          "nodes": 5,
+          "edges": 0
+        },
+        {
+          "name": "Service Landscape",
+          "nodes": 1,
+          "edges": 0
+        },
+        {
+          "name": "API Surface",
+          "nodes": 10,
+          "edges": 0
+        },
+        {
+          "name": "Contract Catalog",
+          "nodes": 11,
+          "edges": 0
+        },
+        {
+          "name": "Function and Trigger View",
+          "nodes": 1,
+          "edges": 0
+        },
+        {
+          "name": "Event and Flow View",
+          "nodes": 3,
+          "edges": 0
+        },
+        {
+          "name": "Data and Storage View",
+          "nodes": 10,
+          "edges": 0
+        },
+        {
+          "name": "Policy and Observability View",
+          "nodes": 5,
+          "edges": 0
+        },
+        {
+          "name": "Workflow View",
+          "nodes": 0,
+          "edges": 0
+        },
+        {
+          "name": "Security View",
+          "nodes": 1,
+          "edges": 0
+        },
+        {
+          "name": "Configuration and Secrets View",
+          "nodes": 0,
+          "edges": 0
+        },
+        {
+          "name": "Trace and Readiness Overlay",
+          "nodes": 2,
+          "edges": 0
+        }
+      ]
+    },
+    {
+      "file": "intakecheck/intakecheck.awspsm.xmi",
+      "level": "psm",
+      "collection": "scope-demos",
+      "sha256": "4636d62fba65dcc104a0fdcc10d54e01a4fe91b88a3f13c5776e43e17a6da7b0",
+      "elements": 58,
+      "relationships": 82,
+      "structural": "PASS",
+      "importSaveExportReimport": "PASS",
+      "frontendSaveStructuralAndExport": "PASS",
+      "frontendViewsAndSave": "PASS",
+      "views": [
+        {
+          "name": "IntakeCheck PSM demo Main View Main View",
+          "nodes": 24,
+          "edges": 45
+        },
+        {
+          "name": "PSM Overview",
+          "nodes": 18,
+          "edges": 19
+        },
+        {
+          "name": "Deployment topology",
+          "nodes": 2,
+          "edges": 1
+        },
+        {
+          "name": "API Gateway surface",
+          "nodes": 6,
+          "edges": 0
+        },
+        {
+          "name": "Lambda compute",
+          "nodes": 6,
+          "edges": 0
+        },
+        {
+          "name": "Events and messaging",
+          "nodes": 0,
+          "edges": 0
+        },
+        {
+          "name": "Step Functions / ASL",
+          "nodes": 0,
+          "edges": 0
+        },
+        {
+          "name": "Data and persistence",
+          "nodes": 2,
+          "edges": 0
+        },
+        {
+          "name": "Security and access",
+          "nodes": 1,
+          "edges": 0
+        },
+        {
+          "name": "Cognito identity",
+          "nodes": 0,
+          "edges": 0
+        },
+        {
+          "name": "VPC networking",
+          "nodes": 0,
+          "edges": 0
+        },
+        {
+          "name": "Observability and operations",
+          "nodes": 6,
+          "edges": 0
+        },
+        {
+          "name": "CloudFormation configuration",
+          "nodes": 1,
+          "edges": 0
+        },
+        {
+          "name": "Traceability and readiness",
+          "nodes": 1,
+          "edges": 0
+        },
+        {
+          "name": "Runtime flows and integrations",
+          "nodes": 8,
+          "edges": 0
+        }
+      ]
+    },
+    {
+      "file": "renewalrun/renewalrun.cim.xmi",
+      "level": "cim",
+      "collection": "scope-demos",
+      "sha256": "25e73f9bf42d0e291224da0cdf403c514258b3b1c4b9ff9e97c7f8d3f19b4aef",
+      "elements": 75,
+      "relationships": 157,
+      "structural": "PASS",
+      "importSaveExportReimport": "PASS",
+      "frontendSaveStructuralAndExport": "PASS",
+      "frontendViewsAndSave": "PASS",
+      "views": [
+        {
+          "name": "RenewalRun CIM demo Main View Main View",
+          "nodes": 55,
+          "edges": 82
+        },
+        {
+          "name": "CIM Overview",
+          "nodes": 31,
+          "edges": 70
+        },
+        {
+          "name": "Goals and Requirements",
+          "nodes": 7,
+          "edges": 6
+        },
+        {
+          "name": "Capability",
+          "nodes": 5,
+          "edges": 3
+        },
+        {
+          "name": "Domain Model",
+          "nodes": 27,
+          "edges": 11
+        },
+        {
+          "name": "Business Process",
+          "nodes": 9,
+          "edges": 3
+        },
+        {
+          "name": "Stakeholder and Actor",
+          "nodes": 39,
+          "edges": 8
+        },
+        {
+          "name": "Aggregate",
+          "nodes": 17,
+          "edges": 8
+        },
+        {
+          "name": "Behavior",
+          "nodes": 33,
+          "edges": 21
+        },
+        {
+          "name": "Policy and Decision",
+          "nodes": 30,
+          "edges": 12
+        },
+        {
+          "name": "Governance and Risk",
+          "nodes": 1,
+          "edges": 0
+        },
+        {
+          "name": "Traceability and Readiness",
+          "nodes": 1,
+          "edges": 0
+        }
+      ]
+    },
+    {
+      "file": "renewalrun/renewalrun.pim.xmi",
+      "level": "pim",
+      "collection": "scope-demos",
+      "sha256": "d06d9ebc7cd5733970dfc31438fb318464df4962f8113fba4e8c0ea86a374091",
+      "elements": 101,
+      "relationships": 146,
+      "structural": "PASS",
+      "importSaveExportReimport": "PASS",
+      "frontendSaveStructuralAndExport": "PASS",
+      "frontendViewsAndSave": "PASS",
+      "views": [
+        {
+          "name": "RenewalRun PIM demo Main View Main View",
+          "nodes": 23,
+          "edges": 0
+        },
+        {
+          "name": "PIM Overview",
+          "nodes": 6,
+          "edges": 0
+        },
+        {
+          "name": "Service Landscape",
+          "nodes": 1,
+          "edges": 0
+        },
+        {
+          "name": "API Surface",
+          "nodes": 12,
+          "edges": 0
+        },
+        {
+          "name": "Contract Catalog",
+          "nodes": 13,
+          "edges": 0
+        },
+        {
+          "name": "Function and Trigger View",
+          "nodes": 2,
+          "edges": 0
+        },
+        {
+          "name": "Event and Flow View",
+          "nodes": 4,
+          "edges": 0
+        },
+        {
+          "name": "Data and Storage View",
+          "nodes": 12,
+          "edges": 0
+        },
+        {
+          "name": "Policy and Observability View",
+          "nodes": 5,
+          "edges": 0
+        },
+        {
+          "name": "Workflow View",
+          "nodes": 0,
+          "edges": 0
+        },
+        {
+          "name": "Security View",
+          "nodes": 1,
+          "edges": 0
+        },
+        {
+          "name": "Configuration and Secrets View",
+          "nodes": 0,
+          "edges": 0
+        },
+        {
+          "name": "Trace and Readiness Overlay",
+          "nodes": 2,
+          "edges": 0
+        }
+      ]
+    },
+    {
+      "file": "renewalrun/renewalrun.awspsm.xmi",
+      "level": "psm",
+      "collection": "scope-demos",
+      "sha256": "a8427c132ad2c35862a27078c364736df9eacc43df2f6693d9785a32fb0e6246",
+      "elements": 67,
+      "relationships": 93,
+      "structural": "PASS",
+      "importSaveExportReimport": "PASS",
+      "frontendSaveStructuralAndExport": "PASS",
+      "frontendViewsAndSave": "PASS",
+      "views": [
+        {
+          "name": "RenewalRun PSM demo Main View Main View",
+          "nodes": 27,
+          "edges": 49
+        },
+        {
+          "name": "PSM Overview",
+          "nodes": 21,
+          "edges": 20
+        },
+        {
+          "name": "Deployment topology",
+          "nodes": 2,
+          "edges": 1
+        },
+        {
+          "name": "API Gateway surface",
+          "nodes": 6,
+          "edges": 0
+        },
+        {
+          "name": "Lambda compute",
+          "nodes": 6,
+          "edges": 0
+        },
+        {
+          "name": "Events and messaging",
+          "nodes": 1,
+          "edges": 0
+        },
+        {
+          "name": "Step Functions / ASL",
+          "nodes": 0,
+          "edges": 0
+        },
+        {
+          "name": "Data and persistence",
+          "nodes": 2,
+          "edges": 0
+        },
+        {
+          "name": "Security and access",
+          "nodes": 3,
+          "edges": 0
+        },
+        {
+          "name": "Cognito identity",
+          "nodes": 0,
+          "edges": 0
+        },
+        {
+          "name": "VPC networking",
+          "nodes": 0,
+          "edges": 0
+        },
+        {
+          "name": "Observability and operations",
+          "nodes": 6,
+          "edges": 0
+        },
+        {
+          "name": "CloudFormation configuration",
+          "nodes": 1,
+          "edges": 0
+        },
+        {
+          "name": "Traceability and readiness",
+          "nodes": 1,
+          "edges": 0
+        },
+        {
+          "name": "Runtime flows and integrations",
+          "nodes": 9,
+          "edges": 0
+        }
+      ]
+    },
+    {
+      "file": "stockbridge/stockbridge.cim.xmi",
+      "level": "cim",
+      "collection": "scope-demos",
+      "sha256": "b06d4c6f25958fad8625c325617518be1472f4ec2c916b278310ba233437e451",
+      "elements": 53,
+      "relationships": 124,
+      "structural": "PASS",
+      "importSaveExportReimport": "PASS",
+      "frontendSaveStructuralAndExport": "PASS",
+      "frontendViewsAndSave": "PASS",
+      "views": [
+        {
+          "name": "StockBridge CIM demo Main View Main View",
+          "nodes": 36,
+          "edges": 65
+        },
+        {
+          "name": "CIM Overview",
+          "nodes": 23,
+          "edges": 47
+        },
+        {
+          "name": "Goals and Requirements",
+          "nodes": 7,
+          "edges": 6
+        },
+        {
+          "name": "Capability",
+          "nodes": 4,
+          "edges": 3
+        },
+        {
+          "name": "Domain Model",
+          "nodes": 9,
+          "edges": 2
+        },
+        {
+          "name": "Business Process",
+          "nodes": 7,
+          "edges": 3
+        },
+        {
+          "name": "Stakeholder and Actor",
+          "nodes": 26,
+          "edges": 7
+        },
+        {
+          "name": "Aggregate",
+          "nodes": 10,
+          "edges": 2
+        },
+        {
+          "name": "Behavior",
+          "nodes": 16,
+          "edges": 24
+        },
+        {
+          "name": "Policy and Decision",
+          "nodes": 17,
+          "edges": 8
+        },
+        {
+          "name": "Governance and Risk",
+          "nodes": 1,
+          "edges": 0
+        },
+        {
+          "name": "Traceability and Readiness",
+          "nodes": 1,
+          "edges": 0
+        }
+      ]
+    },
+    {
+      "file": "stockbridge/stockbridge.pim.xmi",
+      "level": "pim",
+      "collection": "scope-demos",
+      "sha256": "80baefad52c56033c0c004a7de5f5e4f6b701e02a6e818bdbed34f9551470ce4",
+      "elements": 81,
+      "relationships": 119,
+      "structural": "PASS",
+      "importSaveExportReimport": "PASS",
+      "frontendSaveStructuralAndExport": "PASS",
+      "frontendViewsAndSave": "PASS",
+      "views": [
+        {
+          "name": "StockBridge PIM demo Main View Main View",
+          "nodes": 20,
+          "edges": 0
+        },
+        {
+          "name": "PIM Overview",
+          "nodes": 7,
+          "edges": 0
+        },
+        {
+          "name": "Service Landscape",
+          "nodes": 1,
+          "edges": 0
+        },
+        {
+          "name": "API Surface",
+          "nodes": 8,
+          "edges": 0
+        },
+        {
+          "name": "Contract Catalog",
+          "nodes": 9,
+          "edges": 0
+        },
+        {
+          "name": "Function and Trigger View",
+          "nodes": 3,
+          "edges": 0
+        },
+        {
+          "name": "Event and Flow View",
+          "nodes": 5,
+          "edges": 0
+        },
+        {
+          "name": "Data and Storage View",
+          "nodes": 8,
+          "edges": 0
+        },
+        {
+          "name": "Policy and Observability View",
+          "nodes": 5,
+          "edges": 0
+        },
+        {
+          "name": "Workflow View",
+          "nodes": 0,
+          "edges": 0
+        },
+        {
+          "name": "Security View",
+          "nodes": 1,
+          "edges": 0
+        },
+        {
+          "name": "Configuration and Secrets View",
+          "nodes": 0,
+          "edges": 0
+        },
+        {
+          "name": "Trace and Readiness Overlay",
+          "nodes": 2,
+          "edges": 0
+        }
+      ]
+    },
+    {
+      "file": "stockbridge/stockbridge.awspsm.xmi",
+      "level": "psm",
+      "collection": "scope-demos",
+      "sha256": "c82bd131602e82237ace789e923e04ee1d3aa1a70aff78a48e8392754c3fbe5f",
+      "elements": 54,
+      "relationships": 74,
+      "structural": "PASS",
+      "importSaveExportReimport": "PASS",
+      "frontendSaveStructuralAndExport": "PASS",
+      "frontendViewsAndSave": "PASS",
+      "views": [
+        {
+          "name": "StockBridge PSM demo Main View Main View",
+          "nodes": 24,
+          "edges": 41
+        },
+        {
+          "name": "PSM Overview",
+          "nodes": 19,
+          "edges": 16
+        },
+        {
+          "name": "Deployment topology",
+          "nodes": 2,
+          "edges": 1
+        },
+        {
+          "name": "API Gateway surface",
+          "nodes": 5,
+          "edges": 0
+        },
+        {
+          "name": "Lambda compute",
+          "nodes": 5,
+          "edges": 0
+        },
+        {
+          "name": "Events and messaging",
+          "nodes": 2,
+          "edges": 0
+        },
+        {
+          "name": "Step Functions / ASL",
+          "nodes": 0,
+          "edges": 0
+        },
+        {
+          "name": "Data and persistence",
+          "nodes": 1,
+          "edges": 0
+        },
+        {
+          "name": "Security and access",
+          "nodes": 3,
+          "edges": 0
+        },
+        {
+          "name": "Cognito identity",
+          "nodes": 0,
+          "edges": 0
+        },
+        {
+          "name": "VPC networking",
+          "nodes": 0,
+          "edges": 0
+        },
+        {
+          "name": "Observability and operations",
+          "nodes": 5,
+          "edges": 0
+        },
+        {
+          "name": "CloudFormation configuration",
+          "nodes": 1,
+          "edges": 0
+        },
+        {
+          "name": "Traceability and readiness",
+          "nodes": 1,
+          "edges": 0
+        },
+        {
+          "name": "Runtime flows and integrations",
+          "nodes": 8,
+          "edges": 0
+        }
+      ]
+    },
+    {
+      "file": "facilitywatch/facilitywatch.cim.xmi",
+      "level": "cim",
+      "collection": "scope-demos",
+      "sha256": "2beffd780fb4a82d32c91d2157fd135b488a1868bc769e3a9a4f7edfd8138a74",
+      "elements": 69,
+      "relationships": 155,
+      "structural": "PASS",
+      "importSaveExportReimport": "PASS",
+      "frontendSaveStructuralAndExport": "PASS",
+      "frontendViewsAndSave": "PASS",
+      "views": [
+        {
+          "name": "FacilityWatch CIM demo Main View Main View",
+          "nodes": 51,
+          "edges": 84
+        },
+        {
+          "name": "CIM Overview",
+          "nodes": 28,
+          "edges": 68
+        },
+        {
+          "name": "Goals and Requirements",
+          "nodes": 7,
+          "edges": 6
+        },
+        {
+          "name": "Capability",
+          "nodes": 5,
+          "edges": 3
+        },
+        {
+          "name": "Domain Model",
+          "nodes": 22,
+          "edges": 5
+        },
+        {
+          "name": "Business Process",
+          "nodes": 10,
+          "edges": 3
+        },
+        {
+          "name": "Stakeholder and Actor",
+          "nodes": 39,
+          "edges": 9
+        },
+        {
+          "name": "Aggregate",
+          "nodes": 14,
+          "edges": 3
+        },
+        {
+          "name": "Behavior",
+          "nodes": 30,
+          "edges": 28
+        },
+        {
+          "name": "Policy and Decision",
+          "nodes": 30,
+          "edges": 16
+        },
+        {
+          "name": "Governance and Risk",
+          "nodes": 1,
+          "edges": 0
+        },
+        {
+          "name": "Traceability and Readiness",
+          "nodes": 1,
+          "edges": 0
+        }
+      ]
+    },
+    {
+      "file": "facilitywatch/facilitywatch.pim.xmi",
+      "level": "pim",
+      "collection": "scope-demos",
+      "sha256": "566609286dcf5c0be9a37ae64811c8b080f92bcdb1e9617c648074022477c1a2",
+      "elements": 110,
+      "relationships": 173,
+      "structural": "PASS",
+      "importSaveExportReimport": "PASS",
+      "frontendSaveStructuralAndExport": "PASS",
+      "frontendViewsAndSave": "PASS",
+      "views": [
+        {
+          "name": "FacilityWatch PIM demo Main View Main View",
+          "nodes": 23,
+          "edges": 0
+        },
+        {
+          "name": "PIM Overview",
+          "nodes": 6,
+          "edges": 0
+        },
+        {
+          "name": "Service Landscape",
+          "nodes": 1,
+          "edges": 0
+        },
+        {
+          "name": "API Surface",
+          "nodes": 12,
+          "edges": 0
+        },
+        {
+          "name": "Contract Catalog",
+          "nodes": 13,
+          "edges": 0
+        },
+        {
+          "name": "Function and Trigger View",
+          "nodes": 2,
+          "edges": 0
+        },
+        {
+          "name": "Event and Flow View",
+          "nodes": 4,
+          "edges": 0
+        },
+        {
+          "name": "Data and Storage View",
+          "nodes": 12,
+          "edges": 0
+        },
+        {
+          "name": "Policy and Observability View",
+          "nodes": 5,
+          "edges": 0
+        },
+        {
+          "name": "Workflow View",
+          "nodes": 0,
+          "edges": 0
+        },
+        {
+          "name": "Security View",
+          "nodes": 1,
+          "edges": 0
+        },
+        {
+          "name": "Configuration and Secrets View",
+          "nodes": 0,
+          "edges": 0
+        },
+        {
+          "name": "Trace and Readiness Overlay",
+          "nodes": 2,
+          "edges": 0
+        }
+      ]
+    },
+    {
+      "file": "facilitywatch/facilitywatch.awspsm.xmi",
+      "level": "psm",
+      "collection": "scope-demos",
+      "sha256": "f918b07bc55cd97f791b7565b7b6360d7467fa28cd96193be6e142df4032ba78",
+      "elements": 77,
+      "relationships": 111,
+      "structural": "PASS",
+      "importSaveExportReimport": "PASS",
+      "frontendSaveStructuralAndExport": "PASS",
+      "frontendViewsAndSave": "PASS",
+      "views": [
+        {
+          "name": "FacilityWatch PSM demo Main View Main View",
+          "nodes": 33,
+          "edges": 62
+        },
+        {
+          "name": "PSM Overview",
+          "nodes": 26,
+          "edges": 26
+        },
+        {
+          "name": "Deployment topology",
+          "nodes": 2,
+          "edges": 1
+        },
+        {
+          "name": "API Gateway surface",
+          "nodes": 7,
+          "edges": 0
+        },
+        {
+          "name": "Lambda compute",
+          "nodes": 8,
+          "edges": 0
+        },
+        {
+          "name": "Events and messaging",
+          "nodes": 3,
+          "edges": 0
+        },
+        {
+          "name": "Step Functions / ASL",
+          "nodes": 0,
+          "edges": 0
+        },
+        {
+          "name": "Data and persistence",
+          "nodes": 1,
+          "edges": 0
+        },
+        {
+          "name": "Security and access",
+          "nodes": 3,
+          "edges": 0
+        },
+        {
+          "name": "Cognito identity",
+          "nodes": 0,
+          "edges": 0
+        },
+        {
+          "name": "VPC networking",
+          "nodes": 0,
+          "edges": 0
+        },
+        {
+          "name": "Observability and operations",
+          "nodes": 8,
+          "edges": 0
+        },
+        {
+          "name": "CloudFormation configuration",
+          "nodes": 1,
+          "edges": 0
+        },
+        {
+          "name": "Traceability and readiness",
+          "nodes": 1,
+          "edges": 0
+        },
+        {
+          "name": "Runtime flows and integrations",
+          "nodes": 12,
+          "edges": 0
+        }
+      ]
+    },
+    {
+      "file": "queueview/queueview.cim.xmi",
+      "level": "cim",
+      "collection": "scope-demos",
+      "sha256": "696ee50fec35ce38fafa0f0aaf59d15872a4a52c90fdb12724be40eba9e3dee9",
+      "elements": 68,
+      "relationships": 153,
+      "structural": "PASS",
+      "importSaveExportReimport": "PASS",
+      "frontendSaveStructuralAndExport": "PASS",
+      "frontendViewsAndSave": "PASS",
+      "views": [
+        {
+          "name": "QueueView CIM demo Main View Main View",
+          "nodes": 49,
+          "edges": 83
+        },
+        {
+          "name": "CIM Overview",
+          "nodes": 29,
+          "edges": 67
+        },
+        {
+          "name": "Goals and Requirements",
+          "nodes": 7,
+          "edges": 6
+        },
+        {
+          "name": "Capability",
+          "nodes": 5,
+          "edges": 3
+        },
+        {
+          "name": "Domain Model",
+          "nodes": 20,
+          "edges": 7
+        },
+        {
+          "name": "Business Process",
+          "nodes": 9,
+          "edges": 3
+        },
+        {
+          "name": "Stakeholder and Actor",
+          "nodes": 36,
+          "edges": 9
+        },
+        {
+          "name": "Aggregate",
+          "nodes": 14,
+          "edges": 5
+        },
+        {
+          "name": "Behavior",
+          "nodes": 28,
+          "edges": 27
+        },
+        {
+          "name": "Policy and Decision",
+          "nodes": 27,
+          "edges": 12
+        },
+        {
+          "name": "Governance and Risk",
+          "nodes": 1,
+          "edges": 0
+        },
+        {
+          "name": "Traceability and Readiness",
+          "nodes": 1,
+          "edges": 0
+        }
+      ]
+    },
+    {
+      "file": "queueview/queueview.pim.xmi",
+      "level": "pim",
+      "collection": "scope-demos",
+      "sha256": "7a6f14ac43c60c701439286a321939e4421fdde0703664c2b1d81b5c49daa505",
+      "elements": 108,
+      "relationships": 156,
+      "structural": "PASS",
+      "importSaveExportReimport": "PASS",
+      "frontendSaveStructuralAndExport": "PASS",
+      "frontendViewsAndSave": "PASS",
+      "views": [
+        {
+          "name": "QueueView PIM demo Main View Main View",
+          "nodes": 23,
+          "edges": 0
+        },
+        {
+          "name": "PIM Overview",
+          "nodes": 6,
+          "edges": 0
+        },
+        {
+          "name": "Service Landscape",
+          "nodes": 1,
+          "edges": 0
+        },
+        {
+          "name": "API Surface",
+          "nodes": 12,
+          "edges": 0
+        },
+        {
+          "name": "Contract Catalog",
+          "nodes": 13,
+          "edges": 0
+        },
+        {
+          "name": "Function and Trigger View",
+          "nodes": 2,
+          "edges": 0
+        },
+        {
+          "name": "Event and Flow View",
+          "nodes": 4,
+          "edges": 0
+        },
+        {
+          "name": "Data and Storage View",
+          "nodes": 12,
+          "edges": 0
+        },
+        {
+          "name": "Policy and Observability View",
+          "nodes": 5,
+          "edges": 0
+        },
+        {
+          "name": "Workflow View",
+          "nodes": 0,
+          "edges": 0
+        },
+        {
+          "name": "Security View",
+          "nodes": 1,
+          "edges": 0
+        },
+        {
+          "name": "Configuration and Secrets View",
+          "nodes": 0,
+          "edges": 0
+        },
+        {
+          "name": "Trace and Readiness Overlay",
+          "nodes": 2,
+          "edges": 0
+        }
+      ]
+    },
+    {
+      "file": "queueview/queueview.awspsm.xmi",
+      "level": "psm",
+      "collection": "scope-demos",
+      "sha256": "39c2454aaa4b364cfd8a0debba8a542107128c2e5e7e98a1fd0ef00011eefb47",
+      "elements": 64,
+      "relationships": 92,
+      "structural": "PASS",
+      "importSaveExportReimport": "PASS",
+      "frontendSaveStructuralAndExport": "PASS",
+      "frontendViewsAndSave": "PASS",
+      "views": [
+        {
+          "name": "QueueView PSM demo Main View Main View",
+          "nodes": 29,
+          "edges": 54
+        },
+        {
+          "name": "PSM Overview",
+          "nodes": 22,
+          "edges": 22
+        },
+        {
+          "name": "Deployment topology",
+          "nodes": 2,
+          "edges": 1
+        },
+        {
+          "name": "API Gateway surface",
+          "nodes": 7,
+          "edges": 0
+        },
+        {
+          "name": "Lambda compute",
+          "nodes": 7,
+          "edges": 0
+        },
+        {
+          "name": "Events and messaging",
+          "nodes": 2,
+          "edges": 0
+        },
+        {
+          "name": "Step Functions / ASL",
+          "nodes": 0,
+          "edges": 0
+        },
+        {
+          "name": "Data and persistence",
+          "nodes": 1,
+          "edges": 0
+        },
+        {
+          "name": "Security and access",
+          "nodes": 2,
+          "edges": 0
+        },
+        {
+          "name": "Cognito identity",
+          "nodes": 0,
+          "edges": 0
+        },
+        {
+          "name": "VPC networking",
+          "nodes": 0,
+          "edges": 0
+        },
+        {
+          "name": "Observability and operations",
+          "nodes": 7,
+          "edges": 0
+        },
+        {
+          "name": "CloudFormation configuration",
+          "nodes": 1,
+          "edges": 0
+        },
+        {
+          "name": "Traceability and readiness",
+          "nodes": 1,
+          "edges": 0
+        },
+        {
+          "name": "Runtime flows and integrations",
+          "nodes": 10,
+          "edges": 0
+        }
+      ]
+    },
+    {
+      "file": "workspaceflow/workspaceflow.cim.xmi",
+      "level": "cim",
+      "collection": "scope-demos",
+      "sha256": "f9a0725bb590a7b72a0e0e71f28b2673f09a179abe60d18881763cfdcdb0231d",
+      "elements": 54,
+      "relationships": 115,
+      "structural": "PASS",
+      "importSaveExportReimport": "PASS",
+      "frontendSaveStructuralAndExport": "PASS",
+      "frontendViewsAndSave": "PASS",
+      "views": [
+        {
+          "name": "WorkspaceFlow CIM demo Main View Main View",
+          "nodes": 36,
+          "edges": 57
+        },
+        {
+          "name": "CIM Overview",
+          "nodes": 24,
+          "edges": 46
+        },
+        {
+          "name": "Goals and Requirements",
+          "nodes": 7,
+          "edges": 6
+        },
+        {
+          "name": "Capability",
+          "nodes": 5,
+          "edges": 3
+        },
+        {
+          "name": "Domain Model",
+          "nodes": 12,
+          "edges": 3
+        },
+        {
+          "name": "Business Process",
+          "nodes": 8,
+          "edges": 3
+        },
+        {
+          "name": "Stakeholder and Actor",
+          "nodes": 25,
+          "edges": 5
+        },
+        {
+          "name": "Aggregate",
+          "nodes": 11,
+          "edges": 2
+        },
+        {
+          "name": "Behavior",
+          "nodes": 18,
+          "edges": 18
+        },
+        {
+          "name": "Policy and Decision",
+          "nodes": 18,
+          "edges": 8
+        },
+        {
+          "name": "Governance and Risk",
+          "nodes": 1,
+          "edges": 0
+        },
+        {
+          "name": "Traceability and Readiness",
+          "nodes": 1,
+          "edges": 0
+        }
+      ]
+    },
+    {
+      "file": "workspaceflow/workspaceflow.pim.xmi",
+      "level": "pim",
+      "collection": "scope-demos",
+      "sha256": "c7f885607b8851b267874fd4aad3a00f07dea1c14c6ba148e86cf073ccbfadd6",
+      "elements": 85,
+      "relationships": 154,
+      "structural": "PASS",
+      "importSaveExportReimport": "PASS",
+      "frontendSaveStructuralAndExport": "PASS",
+      "frontendViewsAndSave": "PASS",
+      "views": [
+        {
+          "name": "WorkspaceFlow PIM demo Main View Main View",
+          "nodes": 18,
+          "edges": 0
+        },
+        {
+          "name": "PIM Overview",
+          "nodes": 5,
+          "edges": 0
+        },
+        {
+          "name": "Service Landscape",
+          "nodes": 1,
+          "edges": 0
+        },
+        {
+          "name": "API Surface",
+          "nodes": 8,
+          "edges": 0
+        },
+        {
+          "name": "Contract Catalog",
+          "nodes": 9,
+          "edges": 0
+        },
+        {
+          "name": "Function and Trigger View",
+          "nodes": 1,
+          "edges": 0
+        },
+        {
+          "name": "Event and Flow View",
+          "nodes": 3,
+          "edges": 0
+        },
+        {
+          "name": "Data and Storage View",
+          "nodes": 8,
+          "edges": 0
+        },
+        {
+          "name": "Policy and Observability View",
+          "nodes": 5,
+          "edges": 0
+        },
+        {
+          "name": "Workflow View",
+          "nodes": 1,
+          "edges": 0
+        },
+        {
+          "name": "Security View",
+          "nodes": 1,
+          "edges": 0
+        },
+        {
+          "name": "Configuration and Secrets View",
+          "nodes": 0,
+          "edges": 0
+        },
+        {
+          "name": "Trace and Readiness Overlay",
+          "nodes": 2,
+          "edges": 0
+        }
+      ]
+    },
+    {
+      "file": "workspaceflow/workspaceflow.awspsm.xmi",
+      "level": "psm",
+      "collection": "scope-demos",
+      "sha256": "c09a763f851407e6a5d5a7e283a29a295572fc222e11474af43854698cbbac0b",
+      "elements": 80,
+      "relationships": 122,
+      "structural": "PASS",
+      "importSaveExportReimport": "PASS",
+      "frontendSaveStructuralAndExport": "PASS",
+      "frontendViewsAndSave": "PASS",
+      "views": [
+        {
+          "name": "WorkspaceFlow PSM demo Main View Main View",
+          "nodes": 26,
+          "edges": 49
+        },
+        {
+          "name": "PSM Overview",
+          "nodes": 22,
+          "edges": 23
+        },
+        {
+          "name": "Deployment topology",
+          "nodes": 2,
+          "edges": 1
+        },
+        {
+          "name": "API Gateway surface",
+          "nodes": 4,
+          "edges": 0
+        },
+        {
+          "name": "Lambda compute",
+          "nodes": 7,
+          "edges": 0
+        },
+        {
+          "name": "Events and messaging",
+          "nodes": 0,
+          "edges": 0
+        },
+        {
+          "name": "Step Functions / ASL",
+          "nodes": 1,
+          "edges": 0
+        },
+        {
+          "name": "Data and persistence",
+          "nodes": 2,
+          "edges": 0
+        },
+        {
+          "name": "Security and access",
+          "nodes": 2,
+          "edges": 0
+        },
+        {
+          "name": "Cognito identity",
+          "nodes": 0,
+          "edges": 0
+        },
+        {
+          "name": "VPC networking",
+          "nodes": 0,
+          "edges": 0
+        },
+        {
+          "name": "Observability and operations",
+          "nodes": 7,
+          "edges": 0
+        },
+        {
+          "name": "CloudFormation configuration",
+          "nodes": 1,
+          "edges": 0
+        },
+        {
+          "name": "Traceability and readiness",
+          "nodes": 1,
+          "edges": 0
+        },
+        {
+          "name": "Runtime flows and integrations",
+          "nodes": 10,
+          "edges": 0
+        }
+      ]
+    },
+    {
+      "file": "accessrules/accessrules.cim.xmi",
+      "level": "cim",
+      "collection": "scope-demos",
+      "sha256": "c5c705c176b6676fa1434292190b7a75252b8b039937b46e6ac7e483b4307a3c",
+      "elements": 74,
+      "relationships": 137,
+      "structural": "PASS",
+      "importSaveExportReimport": "PASS",
+      "frontendSaveStructuralAndExport": "PASS",
+      "frontendViewsAndSave": "PASS",
+      "views": [
+        {
+          "name": "AccessRules CIM demo Main View Main View",
+          "nodes": 47,
+          "edges": 61
+        },
+        {
+          "name": "CIM Overview",
+          "nodes": 26,
+          "edges": 51
+        },
+        {
+          "name": "Goals and Requirements",
+          "nodes": 7,
+          "edges": 6
+        },
+        {
+          "name": "Capability",
+          "nodes": 6,
+          "edges": 3
+        },
+        {
+          "name": "Domain Model",
+          "nodes": 21,
+          "edges": 7
+        },
+        {
+          "name": "Business Process",
+          "nodes": 8,
+          "edges": 3
+        },
+        {
+          "name": "Stakeholder and Actor",
+          "nodes": 33,
+          "edges": 6
+        },
+        {
+          "name": "Aggregate",
+          "nodes": 12,
+          "edges": 5
+        },
+        {
+          "name": "Behavior",
+          "nodes": 26,
+          "edges": 16
+        },
+        {
+          "name": "Policy and Decision",
+          "nodes": 25,
+          "edges": 8
+        },
+        {
+          "name": "Governance and Risk",
+          "nodes": 1,
+          "edges": 0
+        },
+        {
+          "name": "Traceability and Readiness",
+          "nodes": 1,
+          "edges": 0
+        }
+      ]
+    },
+    {
+      "file": "accessrules/accessrules.pim.xmi",
+      "level": "pim",
+      "collection": "scope-demos",
+      "sha256": "ef1fb24e6b7a309ae25a7ba1913ff09d3778f935da0b9daab294e3066ea128da",
+      "elements": 97,
+      "relationships": 119,
+      "structural": "PASS",
+      "importSaveExportReimport": "PASS",
+      "frontendSaveStructuralAndExport": "PASS",
+      "frontendViewsAndSave": "PASS",
+      "views": [
+        {
+          "name": "AccessRules PIM demo Main View Main View",
+          "nodes": 18,
+          "edges": 0
+        },
+        {
+          "name": "PIM Overview",
+          "nodes": 6,
+          "edges": 0
+        },
+        {
+          "name": "Service Landscape",
+          "nodes": 1,
+          "edges": 0
+        },
+        {
+          "name": "API Surface",
+          "nodes": 8,
+          "edges": 0
+        },
+        {
+          "name": "Contract Catalog",
+          "nodes": 8,
+          "edges": 0
+        },
+        {
+          "name": "Function and Trigger View",
+          "nodes": 1,
+          "edges": 0
+        },
+        {
+          "name": "Event and Flow View",
+          "nodes": 2,
+          "edges": 0
+        },
+        {
+          "name": "Data and Storage View",
+          "nodes": 8,
+          "edges": 0
+        },
+        {
+          "name": "Policy and Observability View",
+          "nodes": 6,
+          "edges": 0
+        },
+        {
+          "name": "Workflow View",
+          "nodes": 0,
+          "edges": 0
+        },
+        {
+          "name": "Security View",
+          "nodes": 1,
+          "edges": 0
+        },
+        {
+          "name": "Configuration and Secrets View",
+          "nodes": 0,
+          "edges": 0
+        },
+        {
+          "name": "Trace and Readiness Overlay",
+          "nodes": 2,
+          "edges": 0
+        }
+      ]
+    },
+    {
+      "file": "accessrules/accessrules.awspsm.xmi",
+      "level": "psm",
+      "collection": "scope-demos",
+      "sha256": "cab48752afb1648dda71095af7cde2852894a4426a705d8de72bd1adcb5e4616",
+      "elements": 37,
+      "relationships": 49,
+      "structural": "PASS",
+      "importSaveExportReimport": "PASS",
+      "frontendSaveStructuralAndExport": "PASS",
+      "frontendViewsAndSave": "PASS",
+      "views": [
+        {
+          "name": "AccessRules PSM demo Main View Main View",
+          "nodes": 15,
+          "edges": 25
+        },
+        {
+          "name": "PSM Overview",
+          "nodes": 11,
+          "edges": 10
+        },
+        {
+          "name": "Deployment topology",
+          "nodes": 2,
+          "edges": 1
+        },
+        {
+          "name": "API Gateway surface",
+          "nodes": 4,
+          "edges": 0
+        },
+        {
+          "name": "Lambda compute",
+          "nodes": 3,
+          "edges": 0
+        },
+        {
+          "name": "Events and messaging",
+          "nodes": 0,
+          "edges": 0
+        },
+        {
+          "name": "Step Functions / ASL",
+          "nodes": 0,
+          "edges": 0
+        },
+        {
+          "name": "Data and persistence",
+          "nodes": 1,
+          "edges": 0
+        },
+        {
+          "name": "Security and access",
+          "nodes": 1,
+          "edges": 0
+        },
+        {
+          "name": "Cognito identity",
+          "nodes": 0,
+          "edges": 0
+        },
+        {
+          "name": "VPC networking",
+          "nodes": 0,
+          "edges": 0
+        },
+        {
+          "name": "Observability and operations",
+          "nodes": 3,
+          "edges": 0
+        },
+        {
+          "name": "CloudFormation configuration",
+          "nodes": 1,
+          "edges": 0
+        },
+        {
+          "name": "Traceability and readiness",
+          "nodes": 1,
+          "edges": 0
+        },
+        {
+          "name": "Runtime flows and integrations",
+          "nodes": 4,
+          "edges": 0
+        }
+      ]
+    },
+    {
+      "file": "teamdesk/teamdesk.cim.xmi",
+      "level": "cim",
+      "collection": "scope-demos",
+      "sha256": "34339be86a92a06900a07f492724902b804ec58e42eff471f635ffd2177c6de6",
+      "elements": 73,
+      "relationships": 181,
+      "structural": "PASS",
+      "importSaveExportReimport": "PASS",
+      "frontendSaveStructuralAndExport": "PASS",
+      "frontendViewsAndSave": "PASS",
+      "views": [
+        {
+          "name": "TeamDesk CIM demo Main View Main View",
+          "nodes": 53,
+          "edges": 106
+        },
+        {
+          "name": "CIM Overview",
+          "nodes": 34,
+          "edges": 90
+        },
+        {
+          "name": "Goals and Requirements",
+          "nodes": 7,
+          "edges": 6
+        },
+        {
+          "name": "Capability",
+          "nodes": 7,
+          "edges": 3
+        },
+        {
+          "name": "Domain Model",
+          "nodes": 20,
+          "edges": 8
+        },
+        {
+          "name": "Business Process",
+          "nodes": 14,
+          "edges": 3
+        },
+        {
+          "name": "Stakeholder and Actor",
+          "nodes": 39,
+          "edges": 12
+        },
+        {
+          "name": "Aggregate",
+          "nodes": 18,
+          "edges": 6
+        },
+        {
+          "name": "Behavior",
+          "nodes": 32,
+          "edges": 35
+        },
+        {
+          "name": "Policy and Decision",
+          "nodes": 28,
+          "edges": 24
+        },
+        {
+          "name": "Governance and Risk",
+          "nodes": 1,
+          "edges": 0
+        },
+        {
+          "name": "Traceability and Readiness",
+          "nodes": 1,
+          "edges": 0
+        }
+      ]
+    },
+    {
+      "file": "teamdesk/teamdesk.pim.xmi",
+      "level": "pim",
+      "collection": "scope-demos",
+      "sha256": "19f8c6bd3be653052bf61bcb8ffd802b12b3347a3e210508064e95320cd207f9",
+      "elements": 121,
+      "relationships": 182,
+      "structural": "PASS",
+      "importSaveExportReimport": "PASS",
+      "frontendSaveStructuralAndExport": "PASS",
+      "frontendViewsAndSave": "PASS",
+      "views": [
+        {
+          "name": "TeamDesk PIM demo Main View Main View",
+          "nodes": 24,
+          "edges": 0
+        },
+        {
+          "name": "PIM Overview",
+          "nodes": 5,
+          "edges": 0
+        },
+        {
+          "name": "Service Landscape",
+          "nodes": 1,
+          "edges": 0
+        },
+        {
+          "name": "API Surface",
+          "nodes": 14,
+          "edges": 0
+        },
+        {
+          "name": "Contract Catalog",
+          "nodes": 15,
+          "edges": 0
+        },
+        {
+          "name": "Function and Trigger View",
+          "nodes": 1,
+          "edges": 0
+        },
+        {
+          "name": "Event and Flow View",
+          "nodes": 3,
+          "edges": 0
+        },
+        {
+          "name": "Data and Storage View",
+          "nodes": 14,
+          "edges": 0
+        },
+        {
+          "name": "Policy and Observability View",
+          "nodes": 5,
+          "edges": 0
+        },
+        {
+          "name": "Workflow View",
+          "nodes": 0,
+          "edges": 0
+        },
+        {
+          "name": "Security View",
+          "nodes": 1,
+          "edges": 0
+        },
+        {
+          "name": "Configuration and Secrets View",
+          "nodes": 0,
+          "edges": 0
+        },
+        {
+          "name": "Trace and Readiness Overlay",
+          "nodes": 2,
+          "edges": 0
+        }
+      ]
+    },
+    {
+      "file": "teamdesk/teamdesk.awspsm.xmi",
+      "level": "psm",
+      "collection": "scope-demos",
+      "sha256": "ddc4df1b96fdb59662f2562a1a1492b56c17ac6bdb5be2bc4756dfc9b0716c4c",
+      "elements": 67,
+      "relationships": 99,
+      "structural": "PASS",
+      "importSaveExportReimport": "PASS",
+      "frontendSaveStructuralAndExport": "PASS",
+      "frontendViewsAndSave": "PASS",
+      "views": [
+        {
+          "name": "TeamDesk PSM demo Main View Main View",
+          "nodes": 30,
+          "edges": 60
+        },
+        {
+          "name": "PSM Overview",
+          "nodes": 21,
+          "edges": 25
+        },
+        {
+          "name": "Deployment topology",
+          "nodes": 2,
+          "edges": 1
+        },
+        {
+          "name": "API Gateway surface",
+          "nodes": 9,
+          "edges": 0
+        },
+        {
+          "name": "Lambda compute",
+          "nodes": 8,
+          "edges": 0
+        },
+        {
+          "name": "Events and messaging",
+          "nodes": 0,
+          "edges": 0
+        },
+        {
+          "name": "Step Functions / ASL",
+          "nodes": 0,
+          "edges": 0
+        },
+        {
+          "name": "Data and persistence",
+          "nodes": 1,
+          "edges": 0
+        },
+        {
+          "name": "Security and access",
+          "nodes": 1,
+          "edges": 0
+        },
+        {
+          "name": "Cognito identity",
+          "nodes": 0,
+          "edges": 0
+        },
+        {
+          "name": "VPC networking",
+          "nodes": 0,
+          "edges": 0
+        },
+        {
+          "name": "Observability and operations",
+          "nodes": 8,
+          "edges": 0
+        },
+        {
+          "name": "CloudFormation configuration",
+          "nodes": 1,
+          "edges": 0
+        },
+        {
+          "name": "Traceability and readiness",
+          "nodes": 1,
+          "edges": 0
+        },
+        {
+          "name": "Runtime flows and integrations",
+          "nodes": 9,
+          "edges": 0
+        }
+      ]
+    },
+    {
+      "file": "evidenceroom/evidenceroom.cim.xmi",
+      "level": "cim",
+      "collection": "scope-demos",
+      "sha256": "13ef15cebb887c6ca18cb24867e185f11a2d58d5854e24262c6f9f29361ecb66",
+      "elements": 86,
+      "relationships": 194,
+      "structural": "PASS",
+      "importSaveExportReimport": "PASS",
+      "frontendSaveStructuralAndExport": "PASS",
+      "frontendViewsAndSave": "PASS",
+      "views": [
+        {
+          "name": "EvidenceRoom CIM demo Main View Main View",
+          "nodes": 62,
+          "edges": 106
+        },
+        {
+          "name": "CIM Overview",
+          "nodes": 33,
+          "edges": 82
+        },
+        {
+          "name": "Goals and Requirements",
+          "nodes": 7,
+          "edges": 6
+        },
+        {
+          "name": "Capability",
+          "nodes": 7,
+          "edges": 3
+        },
+        {
+          "name": "Domain Model",
+          "nodes": 29,
+          "edges": 8
+        },
+        {
+          "name": "Business Process",
+          "nodes": 14,
+          "edges": 3
+        },
+        {
+          "name": "Stakeholder and Actor",
+          "nodes": 49,
+          "edges": 11
+        },
+        {
+          "name": "Aggregate",
+          "nodes": 17,
+          "edges": 5
+        },
+        {
+          "name": "Behavior",
+          "nodes": 40,
+          "edges": 40
+        },
+        {
+          "name": "Policy and Decision",
+          "nodes": 38,
+          "edges": 20
+        },
+        {
+          "name": "Governance and Risk",
+          "nodes": 1,
+          "edges": 0
+        },
+        {
+          "name": "Traceability and Readiness",
+          "nodes": 1,
+          "edges": 0
+        }
+      ]
+    },
+    {
+      "file": "evidenceroom/evidenceroom.pim.xmi",
+      "level": "pim",
+      "collection": "scope-demos",
+      "sha256": "6f24cd4af58095c008038bd55e308fa57ec165350785fead5959257a3679c41b",
+      "elements": 139,
+      "relationships": 203,
+      "structural": "PASS",
+      "importSaveExportReimport": "PASS",
+      "frontendSaveStructuralAndExport": "PASS",
+      "frontendViewsAndSave": "PASS",
+      "views": [
+        {
+          "name": "EvidenceRoom PIM demo Main View Main View",
+          "nodes": 27,
+          "edges": 0
+        },
+        {
+          "name": "PIM Overview",
+          "nodes": 5,
+          "edges": 0
+        },
+        {
+          "name": "Service Landscape",
+          "nodes": 1,
+          "edges": 0
+        },
+        {
+          "name": "API Surface",
+          "nodes": 15,
+          "edges": 0
+        },
+        {
+          "name": "Contract Catalog",
+          "nodes": 17,
+          "edges": 0
+        },
+        {
+          "name": "Function and Trigger View",
+          "nodes": 1,
+          "edges": 0
+        },
+        {
+          "name": "Event and Flow View",
+          "nodes": 4,
+          "edges": 0
+        },
+        {
+          "name": "Data and Storage View",
+          "nodes": 15,
+          "edges": 0
+        },
+        {
+          "name": "Policy and Observability View",
+          "nodes": 5,
+          "edges": 0
+        },
+        {
+          "name": "Workflow View",
+          "nodes": 0,
+          "edges": 0
+        },
+        {
+          "name": "Security View",
+          "nodes": 1,
+          "edges": 0
+        },
+        {
+          "name": "Configuration and Secrets View",
+          "nodes": 0,
+          "edges": 0
+        },
+        {
+          "name": "Trace and Readiness Overlay",
+          "nodes": 2,
+          "edges": 0
+        }
+      ]
+    },
+    {
+      "file": "evidenceroom/evidenceroom.awspsm.xmi",
+      "level": "psm",
+      "collection": "scope-demos",
+      "sha256": "4a29af571375ddb946556ef150e9c333fb33de13ed2f24950a1050722f9bb5e2",
+      "elements": 77,
+      "relationships": 111,
+      "structural": "PASS",
+      "importSaveExportReimport": "PASS",
+      "frontendSaveStructuralAndExport": "PASS",
+      "frontendViewsAndSave": "PASS",
+      "views": [
+        {
+          "name": "EvidenceRoom PSM demo Main View Main View",
+          "nodes": 32,
+          "edges": 62
+        },
+        {
+          "name": "PSM Overview",
+          "nodes": 24,
+          "edges": 26
+        },
+        {
+          "name": "Deployment topology",
+          "nodes": 2,
+          "edges": 1
+        },
+        {
+          "name": "API Gateway surface",
+          "nodes": 8,
+          "edges": 0
+        },
+        {
+          "name": "Lambda compute",
+          "nodes": 8,
+          "edges": 0
+        },
+        {
+          "name": "Events and messaging",
+          "nodes": 1,
+          "edges": 0
+        },
+        {
+          "name": "Step Functions / ASL",
+          "nodes": 0,
+          "edges": 0
+        },
+        {
+          "name": "Data and persistence",
+          "nodes": 2,
+          "edges": 0
+        },
+        {
+          "name": "Security and access",
+          "nodes": 2,
+          "edges": 0
+        },
+        {
+          "name": "Cognito identity",
+          "nodes": 0,
+          "edges": 0
+        },
+        {
+          "name": "VPC networking",
+          "nodes": 0,
+          "edges": 0
+        },
+        {
+          "name": "Observability and operations",
+          "nodes": 8,
+          "edges": 0
+        },
+        {
+          "name": "CloudFormation configuration",
+          "nodes": 1,
+          "edges": 0
+        },
+        {
+          "name": "Traceability and readiness",
+          "nodes": 1,
+          "edges": 0
+        },
+        {
+          "name": "Runtime flows and integrations",
+          "nodes": 11,
+          "edges": 0
+        }
+      ]
+    },
+    {
+      "file": "exportqueue/exportqueue.cim.xmi",
+      "level": "cim",
+      "collection": "scope-demos",
+      "sha256": "da4cc605160ff460da577482c9f749ee970bcbbc0df0fc02fe71062570b85fb9",
+      "elements": 60,
+      "relationships": 141,
+      "structural": "PASS",
+      "importSaveExportReimport": "PASS",
+      "frontendSaveStructuralAndExport": "PASS",
+      "frontendViewsAndSave": "PASS",
+      "views": [
+        {
+          "name": "ExportQueue CIM demo Main View Main View",
+          "nodes": 41,
+          "edges": 77
+        },
+        {
+          "name": "CIM Overview",
+          "nodes": 26,
+          "edges": 59
+        },
+        {
+          "name": "Goals and Requirements",
+          "nodes": 7,
+          "edges": 6
+        },
+        {
+          "name": "Capability",
+          "nodes": 5,
+          "edges": 3
+        },
+        {
+          "name": "Domain Model",
+          "nodes": 15,
+          "edges": 4
+        },
+        {
+          "name": "Business Process",
+          "nodes": 9,
+          "edges": 3
+        },
+        {
+          "name": "Stakeholder and Actor",
+          "nodes": 30,
+          "edges": 7
+        },
+        {
+          "name": "Aggregate",
+          "nodes": 12,
+          "edges": 3
+        },
+        {
+          "name": "Behavior",
+          "nodes": 23,
+          "edges": 30
+        },
+        {
+          "name": "Policy and Decision",
+          "nodes": 23,
+          "edges": 12
+        },
+        {
+          "name": "Governance and Risk",
+          "nodes": 1,
+          "edges": 0
+        },
+        {
+          "name": "Traceability and Readiness",
+          "nodes": 1,
+          "edges": 0
+        }
+      ]
+    },
+    {
+      "file": "exportqueue/exportqueue.pim.xmi",
+      "level": "pim",
+      "collection": "scope-demos",
+      "sha256": "0f0c94777dbebdc74612f8b6e31bf41c1e50a7cd498d0de0f7aae0d61acc2c55",
+      "elements": 96,
+      "relationships": 142,
+      "structural": "PASS",
+      "importSaveExportReimport": "PASS",
+      "frontendSaveStructuralAndExport": "PASS",
+      "frontendViewsAndSave": "PASS",
+      "views": [
+        {
+          "name": "ExportQueue PIM demo Main View Main View",
+          "nodes": 20,
+          "edges": 0
+        },
+        {
+          "name": "PIM Overview",
+          "nodes": 5,
+          "edges": 0
+        },
+        {
+          "name": "Service Landscape",
+          "nodes": 1,
+          "edges": 0
+        },
+        {
+          "name": "API Surface",
+          "nodes": 10,
+          "edges": 0
+        },
+        {
+          "name": "Contract Catalog",
+          "nodes": 11,
+          "edges": 0
+        },
+        {
+          "name": "Function and Trigger View",
+          "nodes": 1,
+          "edges": 0
+        },
+        {
+          "name": "Event and Flow View",
+          "nodes": 3,
+          "edges": 0
+        },
+        {
+          "name": "Data and Storage View",
+          "nodes": 10,
+          "edges": 0
+        },
+        {
+          "name": "Policy and Observability View",
+          "nodes": 5,
+          "edges": 0
+        },
+        {
+          "name": "Workflow View",
+          "nodes": 0,
+          "edges": 0
+        },
+        {
+          "name": "Security View",
+          "nodes": 1,
+          "edges": 0
+        },
+        {
+          "name": "Configuration and Secrets View",
+          "nodes": 0,
+          "edges": 0
+        },
+        {
+          "name": "Trace and Readiness Overlay",
+          "nodes": 2,
+          "edges": 0
+        }
+      ]
+    },
+    {
+      "file": "exportqueue/exportqueue.awspsm.xmi",
+      "level": "psm",
+      "collection": "scope-demos",
+      "sha256": "14a4d064893ab28a5c120dc6e04b006fb765b972b5d1c0d6c518b8307e3647d3",
+      "elements": 59,
+      "relationships": 83,
+      "structural": "PASS",
+      "importSaveExportReimport": "PASS",
+      "frontendSaveStructuralAndExport": "PASS",
+      "frontendViewsAndSave": "PASS",
+      "views": [
+        {
+          "name": "ExportQueue PSM demo Main View Main View",
+          "nodes": 26,
+          "edges": 47
+        },
+        {
+          "name": "PSM Overview",
+          "nodes": 20,
+          "edges": 19
+        },
+        {
+          "name": "Deployment topology",
+          "nodes": 2,
+          "edges": 1
+        },
+        {
+          "name": "API Gateway surface",
+          "nodes": 6,
+          "edges": 0
+        },
+        {
+          "name": "Lambda compute",
+          "nodes": 6,
+          "edges": 0
+        },
+        {
+          "name": "Events and messaging",
+          "nodes": 2,
+          "edges": 0
+        },
+        {
+          "name": "Step Functions / ASL",
+          "nodes": 0,
+          "edges": 0
+        },
+        {
+          "name": "Data and persistence",
+          "nodes": 2,
+          "edges": 0
+        },
+        {
+          "name": "Security and access",
+          "nodes": 1,
+          "edges": 0
+        },
+        {
+          "name": "Cognito identity",
+          "nodes": 0,
+          "edges": 0
+        },
+        {
+          "name": "VPC networking",
+          "nodes": 0,
+          "edges": 0
+        },
+        {
+          "name": "Observability and operations",
+          "nodes": 6,
+          "edges": 0
+        },
+        {
+          "name": "CloudFormation configuration",
+          "nodes": 1,
+          "edges": 0
+        },
+        {
+          "name": "Traceability and readiness",
+          "nodes": 1,
+          "edges": 0
+        },
+        {
+          "name": "Runtime flows and integrations",
+          "nodes": 10,
+          "edges": 0
+        }
+      ]
+    },
+    {
+      "file": "coldchain-sentinel/coldchain-sentinel.cim.xmi",
+      "level": "cim",
+      "collection": "scope-demos",
+      "sha256": "34dede430b19f11a8b58652d451d7551568c0c1dc2b26d7f47684fd3bb780617",
+      "elements": 61,
+      "relationships": 137,
+      "structural": "PASS",
+      "importSaveExportReimport": "PASS",
+      "frontendSaveStructuralAndExport": "PASS",
+      "frontendViewsAndSave": "PASS",
+      "views": [
+        {
+          "name": "ColdChain Sentinel CIM demo Main View Main View",
+          "nodes": 48,
+          "edges": 74
+        },
+        {
+          "name": "CIM Overview",
+          "nodes": 26,
+          "edges": 58
+        },
+        {
+          "name": "Goals and Requirements",
+          "nodes": 5,
+          "edges": 4
+        },
+        {
+          "name": "Capability",
+          "nodes": 5,
+          "edges": 3
+        },
+        {
+          "name": "Domain Model",
+          "nodes": 20,
+          "edges": 6
+        },
+        {
+          "name": "Business Process",
+          "nodes": 9,
+          "edges": 3
+        },
+        {
+          "name": "Stakeholder and Actor",
+          "nodes": 35,
+          "edges": 9
+        },
+        {
+          "name": "Aggregate",
+          "nodes": 14,
+          "edges": 4
+        },
+        {
+          "name": "Behavior",
+          "nodes": 27,
+          "edges": 24
+        },
+        {
+          "name": "Policy and Decision",
+          "nodes": 26,
+          "edges": 12
+        },
+        {
+          "name": "Governance and Risk",
+          "nodes": 1,
+          "edges": 0
+        },
+        {
+          "name": "Traceability and Readiness",
+          "nodes": 1,
+          "edges": 0
+        }
+      ]
+    },
+    {
+      "file": "coldchain-sentinel/coldchain-sentinel.pim.xmi",
+      "level": "pim",
+      "collection": "scope-demos",
+      "sha256": "3565de7842dc44272f68430b9e62ec387ead3dd28ce73c64b6b0ab20bc94274b",
+      "elements": 116,
+      "relationships": 196,
+      "structural": "PASS",
+      "importSaveExportReimport": "PASS",
+      "frontendSaveStructuralAndExport": "PASS",
+      "frontendViewsAndSave": "PASS",
+      "views": [
+        {
+          "name": "ColdChain Sentinel PIM demo Main View Main View",
+          "nodes": 23,
+          "edges": 0
+        },
+        {
+          "name": "PIM Overview",
+          "nodes": 7,
+          "edges": 0
+        },
+        {
+          "name": "Service Landscape",
+          "nodes": 1,
+          "edges": 0
+        },
+        {
+          "name": "API Surface",
+          "nodes": 11,
+          "edges": 0
+        },
+        {
+          "name": "Contract Catalog",
+          "nodes": 12,
+          "edges": 0
+        },
+        {
+          "name": "Function and Trigger View",
+          "nodes": 3,
+          "edges": 0
+        },
+        {
+          "name": "Event and Flow View",
+          "nodes": 5,
+          "edges": 0
+        },
+        {
+          "name": "Data and Storage View",
+          "nodes": 11,
+          "edges": 0
+        },
+        {
+          "name": "Policy and Observability View",
+          "nodes": 5,
+          "edges": 0
+        },
+        {
+          "name": "Workflow View",
+          "nodes": 0,
+          "edges": 0
+        },
+        {
+          "name": "Security View",
+          "nodes": 1,
+          "edges": 0
+        },
+        {
+          "name": "Configuration and Secrets View",
+          "nodes": 0,
+          "edges": 0
+        },
+        {
+          "name": "Trace and Readiness Overlay",
+          "nodes": 2,
+          "edges": 0
+        }
+      ]
+    },
+    {
+      "file": "coldchain-sentinel/coldchain-sentinel.awspsm.xmi",
+      "level": "psm",
+      "collection": "scope-demos",
+      "sha256": "a5fd6119d6742e0c9ec9fecfa343f4af328ab83e42ed33614e97444e360ccc74",
+      "elements": 95,
+      "relationships": 135,
+      "structural": "PASS",
+      "importSaveExportReimport": "PASS",
+      "frontendSaveStructuralAndExport": "PASS",
+      "frontendViewsAndSave": "PASS",
+      "views": [
+        {
+          "name": "ColdChain Sentinel PSM demo Main View Main View",
+          "nodes": 45,
+          "edges": 78
+        },
+        {
+          "name": "PSM Overview",
+          "nodes": 35,
+          "edges": 29
+        },
+        {
+          "name": "Deployment topology",
+          "nodes": 2,
+          "edges": 1
+        },
+        {
+          "name": "API Gateway surface",
+          "nodes": 6,
+          "edges": 0
+        },
+        {
+          "name": "Lambda compute",
+          "nodes": 9,
+          "edges": 0
+        },
+        {
+          "name": "Events and messaging",
+          "nodes": 12,
+          "edges": 2
+        },
+        {
+          "name": "Step Functions / ASL",
+          "nodes": 0,
+          "edges": 0
+        },
+        {
+          "name": "Data and persistence",
+          "nodes": 2,
+          "edges": 0
+        },
+        {
+          "name": "Security and access",
+          "nodes": 6,
+          "edges": 0
+        },
+        {
+          "name": "Cognito identity",
+          "nodes": 0,
+          "edges": 0
+        },
+        {
+          "name": "VPC networking",
+          "nodes": 0,
+          "edges": 0
+        },
+        {
+          "name": "Observability and operations",
+          "nodes": 9,
+          "edges": 0
+        },
+        {
+          "name": "CloudFormation configuration",
+          "nodes": 1,
+          "edges": 0
+        },
+        {
+          "name": "Traceability and readiness",
+          "nodes": 1,
+          "edges": 0
+        },
+        {
+          "name": "Runtime flows and integrations",
+          "nodes": 19,
+          "edges": 0
+        }
+      ]
+    }
+  ],
+  "verifiedModelCount": 48,
+  "pipeline": [
+    {
+      "slug": "memberledger",
+      "collection": "scope-demos",
+      "cimToPim": "PASS",
+      "generationInput": "Authored AWS PSM",
+      "refinedPimToPsm": "PASS",
+      "refinedPsmToArtifacts": "PASS",
+      "generatedFiles": 89
+    },
+    {
+      "slug": "parceldesk",
+      "collection": "scope-demos",
+      "cimToPim": "PASS",
+      "generationInput": "Authored AWS PSM",
+      "refinedPimToPsm": "PASS",
+      "refinedPsmToArtifacts": "PASS",
+      "generatedFiles": 95
+    },
+    {
+      "slug": "roomslot",
+      "collection": "scope-demos",
+      "cimToPim": "PASS",
+      "generationInput": "Authored AWS PSM",
+      "refinedPimToPsm": "PASS",
+      "refinedPsmToArtifacts": "PASS",
+      "generatedFiles": 89
+    },
+    {
+      "slug": "grantdesk",
+      "collection": "scope-demos",
+      "cimToPim": "PASS",
+      "generationInput": "Authored AWS PSM",
+      "refinedPimToPsm": "PASS",
+      "refinedPsmToArtifacts": "PASS",
+      "generatedFiles": 89
+    },
+    {
+      "slug": "campussignal",
+      "collection": "scope-demos",
+      "cimToPim": "PASS",
+      "generationInput": "Authored AWS PSM",
+      "refinedPimToPsm": "PASS",
+      "refinedPsmToArtifacts": "PASS",
+      "generatedFiles": 98
+    },
+    {
+      "slug": "intakecheck",
+      "collection": "scope-demos",
+      "cimToPim": "PASS",
+      "generationInput": "Authored AWS PSM",
+      "refinedPimToPsm": "PASS",
+      "refinedPsmToArtifacts": "PASS",
+      "generatedFiles": 89
+    },
+    {
+      "slug": "renewalrun",
+      "collection": "scope-demos",
+      "cimToPim": "PASS",
+      "generationInput": "Authored AWS PSM",
+      "refinedPimToPsm": "PASS",
+      "refinedPsmToArtifacts": "PASS",
+      "generatedFiles": 89
+    },
+    {
+      "slug": "stockbridge",
+      "collection": "scope-demos",
+      "cimToPim": "PASS",
+      "generationInput": "Authored AWS PSM",
+      "refinedPimToPsm": "PASS",
+      "refinedPsmToArtifacts": "PASS",
+      "generatedFiles": 87
+    },
+    {
+      "slug": "facilitywatch",
+      "collection": "scope-demos",
+      "cimToPim": "PASS",
+      "generationInput": "Authored AWS PSM",
+      "refinedPimToPsm": "PASS",
+      "refinedPsmToArtifacts": "PASS",
+      "generatedFiles": 99
+    },
+    {
+      "slug": "queueview",
+      "collection": "scope-demos",
+      "cimToPim": "PASS",
+      "generationInput": "Authored AWS PSM",
+      "refinedPimToPsm": "PASS",
+      "refinedPsmToArtifacts": "PASS",
+      "generatedFiles": 95
+    },
+    {
+      "slug": "workspaceflow",
+      "collection": "scope-demos",
+      "cimToPim": "PASS",
+      "generationInput": "Authored AWS PSM",
+      "refinedPimToPsm": "PASS",
+      "refinedPsmToArtifacts": "PASS",
+      "generatedFiles": 96
+    },
+    {
+      "slug": "accessrules",
+      "collection": "scope-demos",
+      "cimToPim": "PASS",
+      "generationInput": "Authored AWS PSM",
+      "refinedPimToPsm": "PASS",
+      "refinedPsmToArtifacts": "PASS",
+      "generatedFiles": 77
+    },
+    {
+      "slug": "teamdesk",
+      "collection": "scope-demos",
+      "cimToPim": "PASS",
+      "generationInput": "Authored AWS PSM",
+      "refinedPimToPsm": "PASS",
+      "refinedPsmToArtifacts": "PASS",
+      "generatedFiles": 97
+    },
+    {
+      "slug": "evidenceroom",
+      "collection": "scope-demos",
+      "cimToPim": "PASS",
+      "generationInput": "Authored AWS PSM",
+      "refinedPimToPsm": "PASS",
+      "refinedPsmToArtifacts": "PASS",
+      "generatedFiles": 97
+    },
+    {
+      "slug": "exportqueue",
+      "collection": "scope-demos",
+      "cimToPim": "PASS",
+      "generationInput": "Authored AWS PSM",
+      "refinedPimToPsm": "PASS",
+      "refinedPsmToArtifacts": "PASS",
+      "generatedFiles": 91
+    },
+    {
+      "slug": "coldchain-sentinel",
+      "collection": "scope-demos",
+      "cimToPim": "PASS",
+      "generationInput": "Authored AWS PSM",
+      "refinedPimToPsm": "PASS",
+      "refinedPsmToArtifacts": "PASS",
+      "generatedFiles": 108
+    }
+  ],
+  "metamodels": {
+    "cim": "0af7c6bfde75287b405d71b02a2942a9e52c7730c60612eebda6a5152110a39c",
+    "pim": "1a2b0b0138bf8add8349ecc1c38b2d3b237390f334c74f2c492f35edec78ca68",
+    "psm": "da5fcc78faaffc5f2587f02fd0f28282d7529361cdd5ff4bfe8467d9911eb0eb"
+  },
+  "limitations": "Frontend graph/view/layout/save modules exercised headlessly; no live browser upload, deployment, EVL or business acceptance scenarios executed."
+}

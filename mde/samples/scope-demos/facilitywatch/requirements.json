@@ -1,0 +1,62 @@
+[
+  {
+    "id": "FW-R1",
+    "text": "Accept only a registered source's room, valid finite numeric temperature and well-formed timestamp/sequence; preserve occurrence and receipt times separately.",
+    "criteria": [
+      [
+        "FW-AT1",
+        "Wrong-room credentials, NaN-like/non-numeric values and malformed sequences are rejected without changing state."
+      ]
+    ]
+  },
+  {
+    "id": "FW-R2",
+    "text": "Apply duplicate/out-of-order/gap policy deterministically per room; emit at most one OPEN incident while one remains unresolved.",
+    "criteria": [
+      [
+        "FW-AT2",
+        "Replay/lower sequences and concurrent duplicates do not increment twice; a gap resets the consecutive run."
+      ]
+    ]
+  },
+  {
+    "id": "FW-R3",
+    "text": "Open an incident after three consecutive accepted high observations and retain their identifying evidence.",
+    "criteria": [
+      [
+        "FW-AT3",
+        "ROOM-A opens one incident with three trigger references; ROOM-B remains without one."
+      ]
+    ]
+  },
+  {
+    "id": "FW-R4",
+    "text": "Only assigned technicians or a supervisor may acknowledge/resolve; resolution requires a nonblank action note.",
+    "criteria": [
+      [
+        "FW-AT4",
+        "Unassigned technician or blank resolution fails; authorized resolution retains actor/action/time."
+      ]
+    ]
+  },
+  {
+    "id": "FW-R5",
+    "text": "Mark a room STALE after five minutes without an accepted observation; stale is a data-quality state, not a claim about physical safety.",
+    "criteria": [
+      [
+        "FW-AT5",
+        "Advance beyond five minutes with no sample: STALE; a valid newer observation clears data staleness."
+      ]
+    ]
+  },
+  {
+    "id": "FW-Q1",
+    "text": "With 20 rooms reporting once per second for five minutes, process nominal incident triggers within 30 seconds and retain correct per-room state.",
+    "criteria": [
+      [
+        "FW-AT6",
+        "Execute the stated 6000-observation workload and compare final state with an independent deterministic reference calculation."
+      ]
+    ]
+  }
+]

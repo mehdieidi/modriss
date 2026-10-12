@@ -1,0 +1,62 @@
+[
+  {
+    "id": "WF-R1",
+    "text": "A request for 1\u201330 seats and a nonblank course code is accepted once per business key; the instructor sees only their requests.",
+    "criteria": [
+      [
+        "WF-AT1",
+        "Repeated REQ-A yields one business request; invalid seats or another instructor's status query are rejected."
+      ]
+    ]
+  },
+  {
+    "id": "WF-R2",
+    "text": "Allocation and manifest tasks execute in order with stable per-request identities; task retry cannot create a second workspace/manifest.",
+    "criteria": [
+      [
+        "WF-AT2",
+        "Retry allocation after commit; one workspace and one manifest identity remain bound to the request."
+      ]
+    ]
+  },
+  {
+    "id": "WF-R3",
+    "text": "Explicit evaluator outcomes select accepted branches; unknown outcomes use a reviewed failure default rather than accidental success.",
+    "criteria": [
+      [
+        "WF-AT3",
+        "Execute ALLOW, DENY, READY, FAILED and unknown outcomes; the graph follows documented branches/default."
+      ]
+    ]
+  },
+  {
+    "id": "WF-R4",
+    "text": "Retain the original request and each required task result; terminal success requires successful readiness verification.",
+    "criteria": [
+      [
+        "WF-AT4",
+        "Inspect each task input/history; instructor/course/allocated workspace remain present and success follows verification only."
+      ]
+    ]
+  },
+  {
+    "id": "WF-R5",
+    "text": "A failed execution is visible with its last completed task and can be resumed/retried through an authorized, idempotent recovery design.",
+    "criteria": [
+      [
+        "WF-AT5",
+        "Recover a failed manifest step; reuse allocation and retain both failed and recovery execution references."
+      ]
+    ]
+  },
+  {
+    "id": "WF-Q1",
+    "text": "With a five-second configured wait, 20 nominal requests complete within 60 seconds each; record actual task/execution history.",
+    "criteria": [
+      [
+        "WF-AT6",
+        "Execute 20 requests with the configured wait and retain measured histories/latencies."
+      ]
+    ]
+  }
+]

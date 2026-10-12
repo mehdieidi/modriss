@@ -1,0 +1,66 @@
+[
+  {
+    "id": "ML-R1",
+    "text": "Register once per subject; a replay with the same request key returns the original member ID. Conflicting reuse of a key or an existing subject is rejected.",
+    "criteria": [
+      [
+        "ML-AT1",
+        "Send the same registration twice and concurrently: one member ID and one registration change; conflicting payload with that key is rejected."
+      ]
+    ]
+  },
+  {
+    "id": "ML-R2",
+    "text": "A member reads/updates only their own permitted fields; only staff can change branch/status.",
+    "criteria": [
+      [
+        "ML-AT2",
+        "`user-002` requests M-001 and attempts to set their own status: denied, with stored records unchanged."
+      ]
+    ]
+  },
+  {
+    "id": "ML-R3",
+    "text": "Every amendment requires the expected version. Of two conflicting updates based on version 1, at most one succeeds.",
+    "criteria": [
+      [
+        "ML-AT3",
+        "Two writers submit expected version 1: one new version 2 and its matching change record; the loser receives a conflict."
+      ]
+    ]
+  },
+  {
+    "id": "ML-R4",
+    "text": "List by branch and status with an opaque continuation token; limit a page to 25 records.",
+    "criteria": [
+      [
+        "ML-AT4",
+        "Page a fixed 61-record branch/status set: 25, 25 and 11 records, with no missing/duplicate IDs."
+      ]
+    ]
+  },
+  {
+    "id": "ML-R5",
+    "text": "Atomically retain a change record with every accepted mutation; rejected operations produce no misleading accepted-change record.",
+    "criteria": [
+      [
+        "ML-AT3",
+        "Two writers submit expected version 1: one new version 2 and its matching change record; the loser receives a conflict."
+      ],
+      [
+        "ML-AT5",
+        "Inject failure before committing the mutation/history transaction: neither half persists; retry creates one coherent change."
+      ]
+    ]
+  },
+  {
+    "id": "ML-Q1",
+    "text": "At 500 synthetic members, meet the shared metadata-API target and return complete paged results under a quiescent dataset.",
+    "criteria": [
+      [
+        "ML-AT6",
+        "Measure the shared load profile; retain latency distribution, configuration and failures rather than only a pass label."
+      ]
+    ]
+  }
+]

@@ -1,0 +1,62 @@
+[
+  {
+    "id": "EQ-R1",
+    "text": "Return acceptance only after the job and recoverable dispatch intent are durable; identical request replay returns the original job.",
+    "criteria": [
+      [
+        "EQ-AT1",
+        "Commit acceptance then fail message publication; recovery publishes the intent and one job remains. Different content under the same key conflicts."
+      ]
+    ]
+  },
+  {
+    "id": "EQ-R2",
+    "text": "Process the immutable selected snapshot, create correct CSV and publish one result reference per job despite redelivery.",
+    "criteria": [
+      [
+        "EQ-AT2",
+        "Redeliver a work message and compare row count/order/escaping with reference output; one published result reference exists."
+      ]
+    ]
+  },
+  {
+    "id": "EQ-R3",
+    "text": "Apply the explicit cancellation/success race policy; CANCELLED jobs expose no downloadable result.",
+    "criteria": [
+      [
+        "EQ-AT3",
+        "Race cancellation with final publication; exactly one terminal winner exists and CANCELLED never exposes a result."
+      ]
+    ]
+  },
+  {
+    "id": "EQ-R4",
+    "text": "Enforce owner authorization for status/cancel/download and reject filters that exceed the 1000-row bound.",
+    "criteria": [
+      [
+        "EQ-AT4",
+        "Another owner cannot inspect/cancel/download; over-1000-row selection is rejected before successful acceptance."
+      ]
+    ]
+  },
+  {
+    "id": "EQ-R5",
+    "text": "Distinguish retriable attempts from terminal failure and expose enough state for an authorized replay/recovery decision.",
+    "criteria": [
+      [
+        "EQ-AT5",
+        "Fail after temporary object creation; retry safely resolves or replaces it and records attempt/final state without false success."
+      ]
+    ]
+  },
+  {
+    "id": "EQ-Q1",
+    "text": "With 50 jobs of 1000 rows and five configured concurrent workers, complete nominal jobs within five minutes; measure backlog and result correctness.",
+    "criteria": [
+      [
+        "EQ-AT6",
+        "Run 50 maximum-size jobs at configured concurrency, compare every CSV and retain completion/backlog measurements."
+      ]
+    ]
+  }
+]

@@ -1,0 +1,62 @@
+[
+  {
+    "id": "ER-R1",
+    "text": "Record a submitted object's version/hash and owner; retrieval verifies the expected identity/hash and reports mismatch rather than returning it as verified evidence.",
+    "criteria": [
+      [
+        "ER-AT1",
+        "Alter the returned test object's bytes; retrieval reports hash mismatch. A new object version does not change the old review binding."
+      ]
+    ]
+  },
+  {
+    "id": "ER-R2",
+    "text": "A contributor cannot review their own evidence; accept/reject records identify the exact reviewed version and reason.",
+    "criteria": [
+      [
+        "ER-AT2",
+        "Self-review fails; independent review records exact version/outcome/reason and cannot be overwritten by a duplicate conflict."
+      ]
+    ]
+  },
+  {
+    "id": "ER-R3",
+    "text": "Only authorized roles retrieve content/provenance and place/release holds; access attempts and accepted actions are distinguishable in audit records.",
+    "criteria": [
+      [
+        "ER-AT3",
+        "Unauthorized retrieval/hold release is denied and auditable without logging content or secrets."
+      ]
+    ]
+  },
+  {
+    "id": "ER-R4",
+    "text": "Delete study content only after retentionUntil and with no active hold; hold acceptance and deletion authorization serialize against the same evidence state.",
+    "criteria": [
+      [
+        "ER-AT4",
+        "Test before/at retentionUntil, active/released hold, and a concurrent hold/deletion-authorization race; only the accepted serialized outcome occurs."
+      ]
+    ]
+  },
+  {
+    "id": "ER-R5",
+    "text": "Preserve a content-free disposition tombstone and custody record for retained study evidence; no success is recorded before deletion is confirmed.",
+    "criteria": [
+      [
+        "ER-AT5",
+        "Inject physical deletion failure; no completed disposition is reported until successful retry confirms deletion."
+      ]
+    ]
+  },
+  {
+    "id": "ER-Q1",
+    "text": "For 100 evidence files, reconstruct every review/version/hash chain and run an exhaustive retention/hold decision table.",
+    "criteria": [
+      [
+        "ER-AT6",
+        "Reconstruct all 100 evidence chains and execute the full retention/hold matrix independently of the implementation."
+      ]
+    ]
+  }
+]

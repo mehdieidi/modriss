@@ -1,0 +1,214 @@
+{
+  "schemaVersion": 1,
+  "claimBoundary": "Importable structural model demonstrations; not deployed applications or empirical case evidence",
+  "cases": [
+    {
+      "code": "C01",
+      "slug": "memberledger",
+      "name": "MemberLedger",
+      "source": ".idea/scope/01-registries-and-administration/case-study/README.md",
+      "demo": "Inspect the Member aggregate, role-specific commands, version conflict policy and attributable MemberChange history.",
+      "features": [],
+      "models": {
+        "cim": "memberledger/memberledger.cim.xmi",
+        "pim": "memberledger/memberledger.pim.xmi",
+        "psm": "memberledger/memberledger.awspsm.xmi"
+      }
+    },
+    {
+      "code": "C02",
+      "slug": "parceldesk",
+      "name": "ParcelDesk",
+      "source": ".idea/scope/02-orders-and-fulfillment/case-study/README.md",
+      "demo": "Follow OrderAccepted through the dispatch queue, worker, simulator adapter and OrderDispatched; inspect DLQ and cancellation/return policies.",
+      "features": ["queue"],
+      "models": {
+        "cim": "parceldesk/parceldesk.cim.xmi",
+        "pim": "parceldesk/parceldesk.pim.xmi",
+        "psm": "parceldesk/parceldesk.awspsm.xmi"
+      }
+    },
+    {
+      "code": "C03",
+      "slug": "roomslot",
+      "name": "RoomSlot",
+      "source": ".idea/scope/03-reservations-and-allocation/case-study/README.md",
+      "demo": "Inspect the slot consistency boundary and exact confirm/expiry cutoff, then follow the expiry schedule to its task.",
+      "features": ["schedule"],
+      "models": {
+        "cim": "roomslot/roomslot.cim.xmi",
+        "pim": "roomslot/roomslot.pim.xmi",
+        "psm": "roomslot/roomslot.awspsm.xmi"
+      }
+    },
+    {
+      "code": "C04",
+      "slug": "grantdesk",
+      "name": "GrantDesk",
+      "source": ".idea/scope/04-casework-and-approvals/case-study/README.md",
+      "demo": "Show the CIM human review task, assignment/decision contracts, evidence storage and overdue schedule. PIM/PSM use persisted commands for human completion.",
+      "features": ["objects", "schedule", "human"],
+      "models": {
+        "cim": "grantdesk/grantdesk.cim.xmi",
+        "pim": "grantdesk/grantdesk.pim.xmi",
+        "psm": "grantdesk/grantdesk.awspsm.xmi"
+      }
+    },
+    {
+      "code": "C05",
+      "slug": "campussignal",
+      "name": "CampusSignal",
+      "source": ".idea/scope/05-notifications-and-distribution/case-study/README.md",
+      "demo": "Show the topic with two independently buffered subscribers and a delivery simulator; contrast feed success with delivery retry.",
+      "features": ["queue", "fanout"],
+      "models": {
+        "cim": "campussignal/campussignal.cim.xmi",
+        "pim": "campussignal/campussignal.pim.xmi",
+        "psm": "campussignal/campussignal.awspsm.xmi"
+      }
+    },
+    {
+      "code": "C06",
+      "slug": "intakecheck",
+      "name": "IntakeCheck",
+      "source": ".idea/scope/06-documents-and-file-processing/case-study/README.md",
+      "demo": "Follow the versioned object upload notification into ValidateCsv and inspect metadata, authorized result retrieval and immutable input identity.",
+      "features": ["objects", "object_event"],
+      "models": {
+        "cim": "intakecheck/intakecheck.cim.xmi",
+        "pim": "intakecheck/intakecheck.pim.xmi",
+        "psm": "intakecheck/intakecheck.awspsm.xmi"
+      }
+    },
+    {
+      "code": "C07",
+      "slug": "renewalrun",
+      "name": "RenewalRun",
+      "source": ".idea/scope/07-schedules-and-reconciliation/case-study/README.md",
+      "demo": "Inspect the 02:00 UTC schedule, immutable snapshot, run/checkpoint data and blocked-period/duplicate-effect policies.",
+      "features": ["objects", "schedule"],
+      "models": {
+        "cim": "renewalrun/renewalrun.cim.xmi",
+        "pim": "renewalrun/renewalrun.pim.xmi",
+        "psm": "renewalrun/renewalrun.awspsm.xmi"
+      }
+    },
+    {
+      "code": "C08",
+      "slug": "stockbridge",
+      "name": "StockBridge",
+      "source": ".idea/scope/08-partner-and-legacy-integration/case-study/README.md",
+      "demo": "Compare source/destination contract fields, queue/adapter references and source-version ordering. Both external endpoints are local simulators.",
+      "features": ["queue"],
+      "models": {
+        "cim": "stockbridge/stockbridge.cim.xmi",
+        "pim": "stockbridge/stockbridge.pim.xmi",
+        "psm": "stockbridge/stockbridge.awspsm.xmi"
+      }
+    },
+    {
+      "code": "C09",
+      "slug": "facilitywatch",
+      "name": "FacilityWatch",
+      "source": ".idea/scope/09-telemetry-and-incidents/case-study/README.md",
+      "demo": "Follow ingestion through the queue and sustained-threshold worker, inspect sequencing/evidence policy, then the separate staleness schedule.",
+      "features": ["queue", "schedule"],
+      "models": {
+        "cim": "facilitywatch/facilitywatch.cim.xmi",
+        "pim": "facilitywatch/facilitywatch.pim.xmi",
+        "psm": "facilitywatch/facilitywatch.awspsm.xmi"
+      }
+    },
+    {
+      "code": "C10",
+      "slug": "queueview",
+      "name": "QueueView",
+      "source": ".idea/scope/10-read-models-and-projections/case-study/README.md",
+      "demo": "Inspect READ_MODEL schemas, versioned projection and queue/status access pattern; trace rebuild/cutover and count consistency.",
+      "features": ["queue", "projection"],
+      "models": {
+        "cim": "queueview/queueview.cim.xmi",
+        "pim": "queueview/queueview.pim.xmi",
+        "psm": "queueview/queueview.awspsm.xmi"
+      }
+    },
+    {
+      "code": "C11",
+      "slug": "workspaceflow",
+      "name": "WorkspaceFlow",
+      "source": ".idea/scope/11-business-orchestration/case-study/README.md",
+      "demo": "Follow the function-backed sequential workflow, ALLOW/READY choices, failure defaults, five-second wait and concrete ASL states.",
+      "features": ["objects", "workflow"],
+      "models": {
+        "cim": "workspaceflow/workspaceflow.cim.xmi",
+        "pim": "workspaceflow/workspaceflow.pim.xmi",
+        "psm": "workspaceflow/workspaceflow.awspsm.xmi"
+      }
+    },
+    {
+      "code": "C12",
+      "slug": "accessrules",
+      "name": "AccessRules",
+      "source": ".idea/scope/12-policy-and-eligibility/case-study/README.md",
+      "demo": "Inspect the ordered FIRST-match decision table and explicit default, immutable policy-version binding and evaluator function. Rule metadata does not execute itself.",
+      "features": ["decision"],
+      "models": {
+        "cim": "accessrules/accessrules.cim.xmi",
+        "pim": "accessrules/accessrules.pim.xmi",
+        "psm": "accessrules/accessrules.awspsm.xmi"
+      }
+    },
+    {
+      "code": "C13",
+      "slug": "teamdesk",
+      "name": "TeamDesk",
+      "source": ".idea/scope/13-departmental-and-saas-backends/case-study/README.md",
+      "demo": "Inspect explicit organization ownership, two-tenant composite identity/key design and role-specific operations; compare health-only operator access.",
+      "features": ["tenant"],
+      "models": {
+        "cim": "teamdesk/teamdesk.cim.xmi",
+        "pim": "teamdesk/teamdesk.pim.xmi",
+        "psm": "teamdesk/teamdesk.awspsm.xmi"
+      }
+    },
+    {
+      "code": "C14",
+      "slug": "evidenceroom",
+      "name": "EvidenceRoom",
+      "source": ".idea/scope/14-evidence-and-governance/case-study/README.md",
+      "demo": "Inspect independent review, version/hash provenance, holds and serialized disposition policy, then the private bucket and scheduled deletion task.",
+      "features": ["objects", "schedule", "human"],
+      "models": {
+        "cim": "evidenceroom/evidenceroom.cim.xmi",
+        "pim": "evidenceroom/evidenceroom.pim.xmi",
+        "psm": "evidenceroom/evidenceroom.awspsm.xmi"
+      }
+    },
+    {
+      "code": "C15",
+      "slug": "exportqueue",
+      "name": "ExportQueue",
+      "source": ".idea/scope/15-asynchronous-jobs/case-study/README.md",
+      "demo": "Follow durable acceptance into queue/DLQ, bounded worker and private result store; inspect cancellation/success race and partial-batch configuration.",
+      "features": ["queue", "objects"],
+      "models": {
+        "cim": "exportqueue/exportqueue.cim.xmi",
+        "pim": "exportqueue/exportqueue.pim.xmi",
+        "psm": "exportqueue/exportqueue.awspsm.xmi"
+      }
+    },
+    {
+      "code": "E01",
+      "slug": "coldchain-sentinel",
+      "name": "ColdChain Sentinel",
+      "source": ".idea/scope/one evaluation/coldchain-sentinel/coverage-summary.json",
+      "demo": "Show the analytical scenario's ingestion, detection, alert fan-out, acknowledgement/escalation and retained evidence. Thresholds/connectivity are review decisions, not asserted domain facts.",
+      "features": ["queue", "fanout", "objects", "schedule"],
+      "models": {
+        "cim": "coldchain-sentinel/coldchain-sentinel.cim.xmi",
+        "pim": "coldchain-sentinel/coldchain-sentinel.pim.xmi",
+        "psm": "coldchain-sentinel/coldchain-sentinel.awspsm.xmi"
+      }
+    }
+  ]
+}

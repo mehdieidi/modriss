@@ -110,6 +110,32 @@ test("does not reuse a semantic id for expanded one-target relationships", () =>
   assert.equal("semanticObjectId" in copy, false);
 });
 
+test("preserves external trace IDs without inferring unresolved EMF references", () => {
+  const previous = state.modelingConfig.config.levels.pim;
+  state.modelingConfig.config.levels.pim = {
+    ...previous,
+    semanticEdgeObjectRules: [{ eClass: "TraceLink", sourceFeature: "source", targetFeature: "target" }],
+  };
+  try {
+    const graph = { elementsById: new Map([["local-function", { eClass: "Function", id: "local-function" }]]) };
+    const copy = relationshipSemanticCopy("pim", {
+      eClass: "TraceLink", id: "cross-model-trace", sourceElementId: "external-cim-command",
+      targetElementId: "local-function", target: "local-function",
+    }, graph);
+    assert.equal(copy.sourceElementId, "external-cim-command");
+    assert.equal(copy.targetElementId, "local-function");
+    assert.equal(copy.target, "local-function");
+    assert.equal("source" in copy, false);
+    const local = relationshipSemanticCopy("pim", {
+      eClass: "TraceLink", id: "local-trace", sourceElementId: "local-function", targetElementId: "local-function",
+    }, graph);
+    assert.equal(local.source, "local-function");
+    assert.equal(local.target, "local-function");
+  } finally {
+    state.modelingConfig.config.levels.pim = previous;
+  }
+});
+
 test("classifies configured relationship elements as semantic root relationships", () => {
   const cimConfig = {
     apiType: "CIM",
