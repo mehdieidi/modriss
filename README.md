@@ -92,6 +92,13 @@ end-to-end case study.
 See the [quickstart](docs/public-docs/docs/getting-started/quickstart.md) and
 [local-development guide](docs/public-docs/docs/getting-started/local-development.md).
 
+To study the framework independently, run `npm --prefix apps/academy run dev` and open
+<http://127.0.0.1:8085>. [MODRISS Framework Study](apps/academy/README.md) provides a DSML
+metamodel reference, an interactive CIM-to-artifact dependency workspace, correspondence prediction
+exercises, transformation and generation definitions, semantic-rule documentation,
+study modules, and recorded makerspace case-study models. It requires Node.js and Python and runs without
+the backend or database.
+
 ## Assistant and validation boundary
 
 The LLM-based assistant is disabled by default. Enable it only after configuring a supported
