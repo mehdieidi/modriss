@@ -1,4 +1,4 @@
-@namespace(uri="https://modriss.org/cim/domain-data/1.0", prefix="cimdomain")
+@namespace(uri = "https://modriss.org/cim/domain-data/1.0", prefix = "cimdomain")
 package cimdomain;
 
 import "../shared/kernel.ecore";
@@ -8,131 +8,130 @@ import "cim-behavior.ecore";
 import "cim-governance.ecore";
 
 abstract class DomainConcept extends kernel.TraceableElement {
-  attr String glossaryDefinition;
-  attr String examples;
-  attr String businessOwner;
+	attr String glossaryDefinition;
+	attr String examples;
+	attr String businessOwner;
 
-  ref DomainRelationship[*]#source outgoingRelationships;
-  ref DomainRelationship[*]#target incomingRelationships;
+	ref DomainRelationship[*]#source outgoingRelationships;
+	ref DomainRelationship[*]#target incomingRelationships;
 }
 
 class DomainEntity extends DomainConcept {
-  attr String identityDescription;
-  attr String lifecycleDescription;
-  attr Boolean auditRelevant;
-  attr cimtypes.IdentityStrategy[1] identityStrategy;
+	attr String                       identityDescription;
+	attr String                       lifecycleDescription;
+	attr Boolean                      auditRelevant;
+	attr cimtypes.IdentityStrategy[1] identityStrategy;
 
-  val LifecycleStateDefinition[*] lifecycleStates;
-  val BusinessInvariant[*] invariants;
+	val LifecycleStateDefinition[*] lifecycleStates;
+	val BusinessInvariant[*]        invariants;
 
-  ref InformationItem[+] identityAttributes;
-  ref InformationItem[1] primaryIdentityAttribute;
-  ref InformationItem[*] attributes;
-  ref cimorg.BusinessCapability[?]#managesEntities owningCapability;
+	ref InformationItem[+]                           identityAttributes;
+	ref InformationItem[1]                           primaryIdentityAttribute;
+	ref InformationItem[*]                           attributes;
+	ref cimorg.BusinessCapability[?]#managesEntities owningCapability;
 }
 
 class ValueObject extends DomainConcept {
-  attr cimtypes.PrimitiveBusinessType valueType;
-  attr Boolean immutable;
+	attr cimtypes.PrimitiveBusinessType valueType;
+	attr Boolean                        immutable;
 
-  ref InformationItem[*] attributes;
-  ref InformationItem[*] equalityAttributes;
+	ref InformationItem[*] attributes;
+	ref InformationItem[*] equalityAttributes;
 }
 
 class DomainRelationship extends kernel.SemanticRelationship {
-  attr String sourceRole;
-  attr String targetRole;
-  attr Boolean ownership;
-  attr Boolean navigableFromSource;
-  attr Boolean navigableFromTarget;
-  attr cimtypes.DomainRelationshipType relationshipType;
+	attr String                          sourceRole;
+	attr String                          targetRole;
+	attr Boolean                         ownership;
+	attr Boolean                         navigableFromSource;
+	attr Boolean                         navigableFromTarget;
+	attr cimtypes.DomainRelationshipType relationshipType;
 
-  val kernel.Multiplicity[1] sourceMultiplicity;
-  val kernel.Multiplicity[1] targetMultiplicity;
+	val kernel.Multiplicity[1] sourceMultiplicity;
+	val kernel.Multiplicity[1] targetMultiplicity;
 
-  ref DomainConcept[1]#outgoingRelationships source;
-  ref DomainConcept[1]#incomingRelationships target;
+	ref DomainConcept[1]#outgoingRelationships source;
+	ref DomainConcept[1]#incomingRelationships target;
 }
 
 class AggregateCandidate extends DomainConcept {
-  attr String consistencyBoundaryRationale;
-  attr String conflictResolutionPolicy;
-  attr String idempotencyBusinessKey;
-  attr Boolean strongConsistencyRequired;
-  attr cimtypes.ConsistencyExpectation consistencyExpectation;
+	attr String                          consistencyBoundaryRationale;
+	attr String                          conflictResolutionPolicy;
+	attr String                          idempotencyBusinessKey;
+	attr Boolean                         strongConsistencyRequired;
+	attr cimtypes.ConsistencyExpectation consistencyExpectation;
 
-  val BusinessInvariant[*] invariants;
+	val BusinessInvariant[*] invariants;
 
-  ref DomainEntity[1] root;
-  ref DomainEntity[+] members;
-  ref cimorg.BoundedContextCandidate[?] context;
-  ref cimbehavior.Command[*] handledCommands;
-  ref cimbehavior.BusinessEvent[*] emittedEvents;
+	ref DomainEntity[1]                   root;
+	ref DomainEntity[+]                   members;
+	ref cimorg.BoundedContextCandidate[?] context;
+	ref cimbehavior.Command[*]            handledCommands;
+	ref cimbehavior.BusinessEvent[*]      emittedEvents;
 }
 
 class LifecycleStateDefinition extends kernel.TraceableElement {
-  attr String[1] stateName;
-  attr Boolean initial;
-  attr Boolean terminal;
-  attr String entryCondition;
-  attr String exitCondition;
+	attr String[1] stateName;
+	attr Boolean   initial;
+	attr Boolean   terminal;
+	attr String    entryCondition;
+	attr String    exitCondition;
 }
 
 class BusinessInvariant extends kernel.TraceableElement {
-  attr String naturalLanguageStatement;
-  attr String expression;
-  attr kernel.Severity violationSeverity;
-  attr kernel.ExpressionLanguage expressionLanguage;
+	attr String                    naturalLanguageStatement;
+	attr String                    expression;
+	attr kernel.Severity           violationSeverity;
+	attr kernel.ExpressionLanguage expressionLanguage;
 
-  val kernel.Expression[?] expressionModel;
+	val kernel.Expression[?] expressionModel;
 
-  ref DomainConcept[*] constrainedConcepts;
+	ref DomainConcept[*] constrainedConcepts;
 }
 
 class InformationItem extends kernel.TraceableElement {
-  attr String businessName;
-  attr Boolean required;
-  attr Boolean collection;
-  attr String example;
-  attr String[*] allowedValues;
-  attr String formatHint;
-  attr String minValue;
-  attr String maxValue;
-  attr Integer minLength;
-  attr Integer maxLength;
-  attr String pattern;
-  attr String unit;
-  attr String businessValidationRule;
-  attr Boolean ~derived;
-  attr String derivationRule;
-  attr String sourceOfTruth;
-  attr Boolean externallyShared;
-  attr Boolean auditRelevant;
-  attr Boolean searchRelevant;
-  attr Boolean reportingRelevant;
-  attr Boolean retentionRelevant;
-  attr cimtypes.PrimitiveBusinessType[1] type;
+	attr String                            businessName;
+	attr Boolean                           required;
+	attr Boolean                           collection;
+	attr String                            example;
+	attr String[*]                         allowedValues;
+	attr String                            formatHint;
+	attr String                            minValue;
+	attr String                            maxValue;
+	attr Integer                           minLength;
+	attr Integer                           maxLength;
+	attr String                            pattern;
+	attr String                            unit;
+	attr String                            businessValidationRule;
+	attr Boolean                           ~derived;
+	attr String                            derivationRule;
+	attr String                            sourceOfTruth;
+	attr Boolean                           externallyShared;
+	attr Boolean                           auditRelevant;
+	attr Boolean                           searchRelevant;
+	attr Boolean                           reportingRelevant;
+	attr Boolean                           retentionRelevant;
+	attr cimtypes.PrimitiveBusinessType[1] type;
 
-  val kernel.Multiplicity[?] cardinality;
-  val InformationItem[*]#parent subItems;
+	val kernel.Multiplicity[?]    cardinality;
+	val InformationItem[*]#parent subItems;
 
-  readonly transient ref InformationItem[?]#subItems parent;
-
-  ref DataClassification[?] classification;
-  ref cimgov.PrivacyConstraint[*]#dataItems privacyConstraints;
-  ref cimgov.ComplianceConstraint[*] complianceConstraints;
+	readonly transient ref InformationItem[?]#subItems parent;
+	ref DataClassification[?]                          classification;
+	ref cimgov.PrivacyConstraint[*]#dataItems          privacyConstraints;
+	ref cimgov.ComplianceConstraint[*]                 complianceConstraints;
 }
 
 class DataClassification extends kernel.TraceableElement {
-  attr String confidentialityLevel;
-  attr String regulatoryCategory;
-  attr Boolean encryptionExpected;
-  attr Boolean maskingExpected;
-  attr Boolean minimizationRequired;
-  attr Boolean consentRequired;
-  attr Boolean auditAccessRequired;
-  attr Boolean deletionRightApplies;
-  attr String classificationRationale;
-  attr cimtypes.DataKind[1] kind;
-  attr cimtypes.Identifiability identifiability;
+	attr String                   confidentialityLevel;
+	attr String                   regulatoryCategory;
+	attr Boolean                  encryptionExpected;
+	attr Boolean                  maskingExpected;
+	attr Boolean                  minimizationRequired;
+	attr Boolean                  consentRequired;
+	attr Boolean                  auditAccessRequired;
+	attr Boolean                  deletionRightApplies;
+	attr String                   classificationRationale;
+	attr cimtypes.DataKind[1]     kind;
+	attr cimtypes.Identifiability identifiability;
 }

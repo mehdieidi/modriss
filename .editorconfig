@@ -11,6 +11,11 @@ indent_size = 2
 [*.java]
 indent_size = 4
 
+[*.emf]
+indent_style = tab
+indent_size = 4
+tab_width = 4
+
 [*.md]
 trim_trailing_whitespace = false
 

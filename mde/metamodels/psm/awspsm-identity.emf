@@ -1,4 +1,4 @@
-@namespace(uri="https://modriss.org/awspsm/identity/1.0", prefix="awspsmidentity")
+@namespace(uri = "https://modriss.org/awspsm/identity/1.0", prefix = "awspsmidentity")
 package awspsmidentity;
 
 import "../shared/kernel.ecore";
@@ -7,132 +7,132 @@ import "awspsm-core.ecore";
 import "awspsm-security.ecore";
 
 class CognitoUserPool extends awspsmcore.AwsResource {
-  attr String userPoolName;
-  attr String mfaRationale;
-  attr String[*] usernameAttributes;
-  attr String[*] aliasAttributes;
-  attr String[*] autoVerifiedAttributes;
-  attr String accountRecoverySettingJson;
-  attr String adminCreateUserConfigJson;
-  attr String emailConfigurationJson;
-  attr String smsConfigurationJson;
-  attr String lambdaConfigJson;
-  attr String policiesJson;
-  attr String schemaJson;
-  attr Boolean deletionProtection;
-  attr awspsmenums.CognitoMfaConfiguration mfaConfiguration;
-  attr awspsmenums.Decision[1] mfaDecision;
+	attr String                              userPoolName;
+	attr String                              mfaRationale;
+	attr String[*]                           usernameAttributes;
+	attr String[*]                           aliasAttributes;
+	attr String[*]                           autoVerifiedAttributes;
+	attr String                              accountRecoverySettingJson;
+	attr String                              adminCreateUserConfigJson;
+	attr String                              emailConfigurationJson;
+	attr String                              smsConfigurationJson;
+	attr String                              lambdaConfigJson;
+	attr String                              policiesJson;
+	attr String                              schemaJson;
+	attr Boolean                             deletionProtection;
+	attr awspsmenums.CognitoMfaConfiguration mfaConfiguration;
+	attr awspsmenums.Decision[1]             mfaDecision;
 
-  val CognitoAccountRecoverySetting[?] accountRecoverySetting;
-  val CognitoEmailConfiguration[?] emailConfiguration;
-  val CognitoLambdaConfig[?] lambdaConfig;
-  val CognitoPasswordPolicy[?] passwordPolicy;
-  val CognitoSchemaAttribute[*] schemaAttributes;
+	val CognitoAccountRecoverySetting[?] accountRecoverySetting;
+	val CognitoEmailConfiguration[?]     emailConfiguration;
+	val CognitoLambdaConfig[?]           lambdaConfig;
+	val CognitoPasswordPolicy[?]         passwordPolicy;
+	val CognitoSchemaAttribute[*]        schemaAttributes;
 
-  ref CognitoUserPoolClient[*]#userPool clients;
-  ref CognitoUserPoolGroup[*]#userPool groups;
-  ref CognitoUserPoolDomain[?]#userPool domain;
+	ref CognitoUserPoolClient[*]#userPool clients;
+	ref CognitoUserPoolGroup[*]#userPool  groups;
+	ref CognitoUserPoolDomain[?]#userPool domain;
 }
 
 class CognitoPasswordPolicy extends kernel.TraceableElement {
-  attr Integer minimumLength;
-  attr Boolean requireUppercase;
-  attr Boolean requireLowercase;
-  attr Boolean requireNumbers;
-  attr Boolean requireSymbols;
-  attr Integer temporaryPasswordValidityDays;
+	attr Integer minimumLength;
+	attr Boolean requireUppercase;
+	attr Boolean requireLowercase;
+	attr Boolean requireNumbers;
+	attr Boolean requireSymbols;
+	attr Integer temporaryPasswordValidityDays;
 }
 
 class CognitoSchemaAttribute extends kernel.TraceableElement {
-  attr String[1] attributeName;
-  attr String[1] attributeDataType;
-  attr Boolean required;
-  attr Boolean mutable;
-  attr String developerOnlyAttribute;
-  attr String minLength;
-  attr String maxLength;
-  attr String minimum;
-  attr String maximum;
+	attr String[1] attributeName;
+	attr String[1] attributeDataType;
+	attr Boolean   required;
+	attr Boolean   mutable;
+	attr String    developerOnlyAttribute;
+	attr String    minLength;
+	attr String    maxLength;
+	attr String    minimum;
+	attr String    maximum;
 }
 
 class CognitoEmailConfiguration extends kernel.TraceableElement {
-  attr String emailSendingAccount;
-  attr String from;
-  attr String replyToEmailAddress;
-  attr String sourceArn;
-  attr String configurationSet;
+	attr String emailSendingAccount;
+	attr String from;
+	attr String replyToEmailAddress;
+	attr String sourceArn;
+	attr String configurationSet;
 }
 
 class CognitoAccountRecoverySetting extends kernel.TraceableElement {
-  val CognitoRecoveryMechanism[*] recoveryMechanisms;
+	val CognitoRecoveryMechanism[*] recoveryMechanisms;
 }
 
 class CognitoRecoveryMechanism extends kernel.TraceableElement {
-  attr String[1] name;
-  attr Integer[1] priority;
+	attr String[1]  name;
+	attr Integer[1] priority;
 }
 
 class CognitoLambdaConfig extends kernel.TraceableElement {
-  ref awspsmcore.AwsResource[?] preSignUp;
-  ref awspsmcore.AwsResource[?] postConfirmation;
-  ref awspsmcore.AwsResource[?] preAuthentication;
-  ref awspsmcore.AwsResource[?] postAuthentication;
-  ref awspsmcore.AwsResource[?] customMessage;
-  ref awspsmcore.AwsResource[?] defineAuthChallenge;
-  ref awspsmcore.AwsResource[?] createAuthChallenge;
-  ref awspsmcore.AwsResource[?] verifyAuthChallengeResponse;
-  ref awspsmcore.AwsResource[?] preTokenGeneration;
-  ref awspsmcore.AwsResource[?] userMigration;
+	ref awspsmcore.AwsResource[?] preSignUp;
+	ref awspsmcore.AwsResource[?] postConfirmation;
+	ref awspsmcore.AwsResource[?] preAuthentication;
+	ref awspsmcore.AwsResource[?] postAuthentication;
+	ref awspsmcore.AwsResource[?] customMessage;
+	ref awspsmcore.AwsResource[?] defineAuthChallenge;
+	ref awspsmcore.AwsResource[?] createAuthChallenge;
+	ref awspsmcore.AwsResource[?] verifyAuthChallengeResponse;
+	ref awspsmcore.AwsResource[?] preTokenGeneration;
+	ref awspsmcore.AwsResource[?] userMigration;
 }
 
 class CognitoUserPoolClient extends awspsmcore.AwsResource {
-  attr String clientName;
-  attr Boolean generateSecret;
-  attr String[*] explicitAuthFlows;
-  attr String[*] supportedIdentityProviders;
-  attr String[*] callbackUrls;
-  attr String[*] logoutUrls;
-  attr String[*] allowedOAuthFlows;
-  attr String[*] allowedOAuthScopes;
-  attr Boolean allowedOAuthFlowsUserPoolClient;
-  attr Integer accessTokenValidity;
-  attr Integer idTokenValidity;
-  attr Integer refreshTokenValidity;
-  attr String tokenValidityUnitsJson;
-  attr String preventUserExistenceErrors;
+	attr String    clientName;
+	attr Boolean   generateSecret;
+	attr String[*] explicitAuthFlows;
+	attr String[*] supportedIdentityProviders;
+	attr String[*] callbackUrls;
+	attr String[*] logoutUrls;
+	attr String[*] allowedOAuthFlows;
+	attr String[*] allowedOAuthScopes;
+	attr Boolean   allowedOAuthFlowsUserPoolClient;
+	attr Integer   accessTokenValidity;
+	attr Integer   idTokenValidity;
+	attr Integer   refreshTokenValidity;
+	attr String    tokenValidityUnitsJson;
+	attr String    preventUserExistenceErrors;
 
-  val CognitoOAuthConfiguration[?] oauthConfiguration;
+	val CognitoOAuthConfiguration[?] oauthConfiguration;
 
-  ref CognitoUserPool[1]#clients userPool;
+	ref CognitoUserPool[1]#clients userPool;
 }
 
 class CognitoOAuthConfiguration extends kernel.TraceableElement {
-  attr String[*] callbackUrls;
-  attr String[*] logoutUrls;
-  attr String[*] allowedOAuthFlows;
-  attr String[*] allowedOAuthScopes;
-  attr Boolean allowedOAuthFlowsUserPoolClient;
-  attr String[*] supportedIdentityProviders;
+	attr String[*] callbackUrls;
+	attr String[*] logoutUrls;
+	attr String[*] allowedOAuthFlows;
+	attr String[*] allowedOAuthScopes;
+	attr Boolean   allowedOAuthFlowsUserPoolClient;
+	attr String[*] supportedIdentityProviders;
 }
 
 class CognitoUserPoolGroup extends awspsmcore.AwsResource {
-  attr String groupName;
-  attr String descriptionText;
-  attr Integer precedence;
+	attr String  groupName;
+	attr String  descriptionText;
+	attr Integer precedence;
 
-  ref CognitoUserPool[1]#groups userPool;
-  ref awspsmsecurity.IamRole[?] role;
+	ref CognitoUserPool[1]#groups userPool;
+	ref awspsmsecurity.IamRole[?] role;
 }
 
 class CognitoUserPoolDomain extends awspsmcore.AwsResource {
-  attr String[1] domain;
-  attr String certificateArn;
+	attr String[1] domain;
+	attr String    certificateArn;
 
-  ref CognitoUserPool[1]#domain userPool;
+	ref CognitoUserPool[1]#domain userPool;
 }
 
 class CognitoIdentityPool extends awspsmcore.AwsResource {
-  attr String identityPoolName;
-  attr Boolean allowUnauthenticatedIdentities;
-  attr String cognitoIdentityProvidersJson;
+	attr String  identityPoolName;
+	attr Boolean allowUnauthenticatedIdentities;
+	attr String  cognitoIdentityProvidersJson;
 }

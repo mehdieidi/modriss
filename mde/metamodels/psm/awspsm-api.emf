@@ -1,4 +1,4 @@
-@namespace(uri="https://modriss.org/awspsm/api/1.0", prefix="awspsmapi")
+@namespace(uri = "https://modriss.org/awspsm/api/1.0", prefix = "awspsmapi")
 package awspsmapi;
 
 import "../shared/kernel.ecore";
@@ -11,281 +11,280 @@ import "awspsm-workflow.ecore";
 import "awspsm-identity.ecore";
 
 abstract class ApiGatewayApi extends awspsmcore.AwsResource {
-  attr String apiName;
-  attr String descriptionText;
-  attr Boolean accessLogsEnabled;
-  attr Boolean tracingEnabled;
-  attr Boolean metricsEnabled;
-  attr Boolean corsEnabled;
-  attr String definitionUri;
-  attr String definitionBody;
-  attr String openApiVersion;
-  attr String apiPolicyJson;
+	attr String  apiName;
+	attr String  descriptionText;
+	attr Boolean accessLogsEnabled;
+	attr Boolean tracingEnabled;
+	attr Boolean metricsEnabled;
+	attr Boolean corsEnabled;
+	attr String  definitionUri;
+	attr String  definitionBody;
+	attr String  openApiVersion;
+	attr String  apiPolicyJson;
 
-  val awspsmcore.CorsConfiguration[?] cors;
-  val ApiGatewayTracingConfig[?] tracingConfig;
-  val ApiGatewayAccessLogSetting[?] accessLogSetting;
-  val awspsmsecurity.IamPolicyDocument[?] apiPolicy;
+	val awspsmcore.CorsConfiguration[?]     cors;
+	val ApiGatewayTracingConfig[?]          tracingConfig;
+	val ApiGatewayAccessLogSetting[?]       accessLogSetting;
+	val awspsmsecurity.IamPolicyDocument[?] apiPolicy;
 
-  ref awspsmobservability.CloudWatchLogGroup[?] accessLogGroup;
-  val ApiGatewayRoute[*]#api routes;
-  val ApiGatewayStage[*]#api stages;
-  val ApiGatewayAuthorizer[*]#api authorizers;
-  ref ApiGatewayDomainName[?]#api apiDomainName;
-  ref WafWebAclAssociation[?] wafAssociation;
+	ref awspsmobservability.CloudWatchLogGroup[?] accessLogGroup;
+
+	val ApiGatewayRoute[*]#api      routes;
+	val ApiGatewayStage[*]#api      stages;
+	val ApiGatewayAuthorizer[*]#api authorizers;
+
+	ref ApiGatewayDomainName[?]#api apiDomainName;
+	ref WafWebAclAssociation[?]     wafAssociation;
 }
 
 class HttpApi extends ApiGatewayApi {
-  attr String protocolType;
-  attr Boolean disableExecuteApiEndpoint;
-  attr Integer minimumCompressionSize;
-  attr Boolean failOnWarnings;
+	attr String  protocolType;
+	attr Boolean disableExecuteApiEndpoint;
+	attr Integer minimumCompressionSize;
+	attr Boolean failOnWarnings;
 }
 
 class RestApi extends ApiGatewayApi {
-  attr Integer minimumCompressionSize;
-  attr Boolean failOnWarnings;
-  attr Boolean apiKeyRequiredByDefault;
-  attr awspsmenums.ApiGatewayEndpointType endpointType;
+	attr Integer                            minimumCompressionSize;
+	attr Boolean                            failOnWarnings;
+	attr Boolean                            apiKeyRequiredByDefault;
+	attr awspsmenums.ApiGatewayEndpointType endpointType;
 
-  val RestApiResource[*]#api resources;
+	val RestApiResource[*]#api resources;
 }
 
 class WebSocketApi extends ApiGatewayApi {
-  attr String[1] routeSelectionExpression;
+	attr String[1] routeSelectionExpression;
 }
 
 abstract class ApiGatewayRoute extends awspsmcore.AwsResource {
-  attr String operationName;
-  attr Boolean apiKeyRequired;
-  attr String[*] authorizationScopes;
-  attr String requestParametersJson;
-  attr String requestModelsJson;
-  attr String responseModelsJson;
-  attr String routeSettingsJson;
-  attr Integer timeoutInMillis;
-  attr awspsmenums.ApiGatewayAuthorizationType[1] authorizationType;
+	attr String                                     operationName;
+	attr Boolean                                    apiKeyRequired;
+	attr String[*]                                  authorizationScopes;
+	attr String                                     requestParametersJson;
+	attr String                                     requestModelsJson;
+	attr String                                     responseModelsJson;
+	attr String                                     routeSettingsJson;
+	attr Integer                                    timeoutInMillis;
+	attr awspsmenums.ApiGatewayAuthorizationType[1] authorizationType;
 
-  val ApiGatewayRequestModel[*] requestModels;
-  val ApiGatewayResponseModel[*] responseModels;
-  val ApiGatewayRouteSetting[?] routeSettings;
+	val ApiGatewayRequestModel[*]  requestModels;
+	val ApiGatewayResponseModel[*] responseModels;
+	val ApiGatewayRouteSetting[?]  routeSettings;
 
-  readonly transient ref ApiGatewayApi[1]#routes api;
-  ref ApiGatewayIntegration[1] integration;
-  ref ApiGatewayAuthorizer[?] authorizer;
+	readonly transient ref ApiGatewayApi[1]#routes api;
+	ref ApiGatewayIntegration[1]                   integration;
+	ref ApiGatewayAuthorizer[?]                    authorizer;
 }
 
 class HttpApiRoute extends ApiGatewayRoute {
-  attr String[1] path;
-  attr String routeKey;
-  attr awspsmenums.ApiGatewayHttpMethod[1] method;
+	attr String[1]                           path;
+	attr String                              routeKey;
+	attr awspsmenums.ApiGatewayHttpMethod[1] method;
 }
 
 class RestApiRoute extends ApiGatewayRoute {
-  attr String[1] path;
-  attr String restApiResourcePath;
-  attr awspsmenums.ApiGatewayHttpMethod[1] method;
+	attr String[1]                           path;
+	attr String                              restApiResourcePath;
+	attr awspsmenums.ApiGatewayHttpMethod[1] method;
 }
 
 class RestApiResource extends awspsmcore.AwsResource {
-  attr String[1] pathPart;
-  attr String fullPath;
+	attr String[1] pathPart;
+	attr String    fullPath;
 
-  readonly transient ref RestApi[1]#resources api;
-  ref RestApiResource[?] parentResource;
+	readonly transient ref RestApi[1]#resources api;
+	ref RestApiResource[?]                      parentResource;
 }
 
 class RestApiMethod extends ApiGatewayRoute {
-  attr awspsmenums.ApiGatewayHttpMethod[1] method;
+	attr awspsmenums.ApiGatewayHttpMethod[1] method;
 
-  ref RestApiResource[1] resource;
-  ref ApiGatewayRequestValidator[?] requestValidator;
+	ref RestApiResource[1]            resource;
+	ref ApiGatewayRequestValidator[?] requestValidator;
 }
 
 class WebSocketRoute extends ApiGatewayRoute {
-  attr String[1] routeKey;
+	attr String[1] routeKey;
 }
 
 class ApiGatewayRequestModel extends kernel.TraceableElement {
-  attr String[1] modelName;
-  attr String contentType;
-  attr String schemaJson;
+	attr String[1] modelName;
+	attr String    contentType;
+	attr String    schemaJson;
 
-  ref awspsmcore.AwsResource[?] schemaResource;
+	ref awspsmcore.AwsResource[?] schemaResource;
 }
 
 class ApiGatewayResponseModel extends kernel.TraceableElement {
-  attr String[1] statusCode;
-  attr String contentType;
-  attr String schemaJson;
+	attr String[1] statusCode;
+	attr String    contentType;
+	attr String    schemaJson;
 
-  ref awspsmcore.AwsResource[?] schemaResource;
+	ref awspsmcore.AwsResource[?] schemaResource;
 }
 
 class ApiGatewayRequestValidator extends awspsmcore.AwsResource {
-  attr String validatorName;
-  attr Boolean validateRequestBody;
-  attr Boolean validateRequestParameters;
+	attr String  validatorName;
+	attr Boolean validateRequestBody;
+	attr Boolean validateRequestParameters;
 
-  ref RestApi[1] api;
+	ref RestApi[1] api;
 }
 
 class ApiGatewayRouteSetting extends kernel.TraceableElement {
-  attr Boolean detailedMetricsEnabled;
-  attr Boolean dataTraceEnabled;
-  attr String loggingLevel;
-  attr Integer throttlingBurstLimit;
-  attr Double throttlingRateLimit;
+	attr Boolean detailedMetricsEnabled;
+	attr Boolean dataTraceEnabled;
+	attr String  loggingLevel;
+	attr Integer throttlingBurstLimit;
+	attr Double  throttlingRateLimit;
 }
 
 class ApiGatewayAccessLogSetting extends kernel.TraceableElement {
-  attr String format;
-  attr String destinationArn;
+	attr String format;
+	attr String destinationArn;
 
-  ref awspsmobservability.CloudWatchLogGroup[?] destinationLogGroup;
+	ref awspsmobservability.CloudWatchLogGroup[?] destinationLogGroup;
 }
 
 class ApiGatewayIntegration extends awspsmcore.AwsResource {
-  attr String integrationUri;
-  attr String integrationMethod;
-  attr String payloadFormatVersion;
-  attr String credentialsArn;
-  attr Integer timeoutInMillis;
-  attr String passthroughBehavior;
-  attr String requestTemplatesJson;
-  attr String responseParametersJson;
-  attr awspsmenums.ApiGatewayIntegrationType[1] integrationType;
+	attr String                                   integrationUri;
+	attr String                                   integrationMethod;
+	attr String                                   payloadFormatVersion;
+	attr String                                   credentialsArn;
+	attr Integer                                  timeoutInMillis;
+	attr String                                   passthroughBehavior;
+	attr String                                   requestTemplatesJson;
+	attr String                                   responseParametersJson;
+	attr awspsmenums.ApiGatewayIntegrationType[1] integrationType;
 
-  val ApiGatewayIntegrationResponseParameter[*] responseParameters;
-  val ApiGatewayIntegrationRequestTemplate[*] requestTemplates;
+	val ApiGatewayIntegrationResponseParameter[*] responseParameters;
+	val ApiGatewayIntegrationRequestTemplate[*]   requestTemplates;
 
-  ref awspsmcompute.AwsLambdaFunction[?] lambdaTarget;
-  ref awspsmworkflow.StepFunctionStateMachine[?] stateMachineTarget;
-  ref awspsmsecurity.IamRole[?] credentialsRole;
+	ref awspsmcompute.AwsLambdaFunction[?]         lambdaTarget;
+	ref awspsmworkflow.StepFunctionStateMachine[?] stateMachineTarget;
+	ref awspsmsecurity.IamRole[?]                  credentialsRole;
 }
 
 class ApiGatewayIntegrationRequestTemplate extends kernel.TraceableElement {
-  attr String[1] contentType;
-  attr String template;
+	attr String[1] contentType;
+	attr String    template;
 }
 
 class ApiGatewayIntegrationResponseParameter extends kernel.TraceableElement {
-  attr String[1] parameterName;
+	attr String[1] parameterName;
 
-  val awspsmcore.ValueExpression[1] value;
+	val awspsmcore.ValueExpression[1] value;
 }
 
 abstract class ApiGatewayStage extends awspsmcore.AwsResource, awspsmcore.WafAssociableResource {
-  attr String[1] stageName;
-  attr Boolean autoDeploy;
-  attr Boolean accessLogEnabled;
-  attr String accessLogFormat;
-  attr Boolean metricsEnabled;
-  attr Boolean dataTraceEnabled;
-  attr String loggingLevel;
-  attr Integer throttlingBurstLimit;
-  attr Double throttlingRateLimit;
-  attr String variablesJson;
+	attr String[1] stageName;
+	attr Boolean   autoDeploy;
+	attr Boolean   accessLogEnabled;
+	attr String    accessLogFormat;
+	attr Boolean   metricsEnabled;
+	attr Boolean   dataTraceEnabled;
+	attr String    loggingLevel;
+	attr Integer   throttlingBurstLimit;
+	attr Double    throttlingRateLimit;
+	attr String    variablesJson;
 
-  val ApiGatewayAccessLogSetting[?] accessLogSetting;
-  val ApiGatewayRouteSetting[?] defaultRouteSettings;
+	val ApiGatewayAccessLogSetting[?] accessLogSetting;
+	val ApiGatewayRouteSetting[?]     defaultRouteSettings;
 
-  readonly transient ref ApiGatewayApi[1]#stages api;
-  ref awspsmobservability.CloudWatchLogGroup[?] accessLogGroup;
+	readonly transient ref ApiGatewayApi[1]#stages api;
+	ref awspsmobservability.CloudWatchLogGroup[?]  accessLogGroup;
 }
 
-class HttpApiStage extends ApiGatewayStage {
-}
+class HttpApiStage extends ApiGatewayStage {}
 
 class RestApiStage extends ApiGatewayStage {
-  ref ApiGatewayDeployment[?] deployment;
+	ref ApiGatewayDeployment[?] deployment;
 }
 
-class WebSocketStage extends ApiGatewayStage {
-}
+class WebSocketStage extends ApiGatewayStage {}
 
 abstract class ApiGatewayAuthorizer extends awspsmcore.AwsResource {
-  attr String authorizerName;
-  attr String identitySource;
-  attr Integer authorizerResultTtlInSeconds;
-  attr awspsmenums.ApiGatewayAuthorizationType[1] authorizationType;
+	attr String                                     authorizerName;
+	attr String                                     identitySource;
+	attr Integer                                    authorizerResultTtlInSeconds;
+	attr awspsmenums.ApiGatewayAuthorizationType[1] authorizationType;
 
-  readonly transient ref ApiGatewayApi[1]#authorizers api;
+	readonly transient ref ApiGatewayApi[1]#authorizers api;
 }
 
 class JwtAuthorizer extends ApiGatewayAuthorizer {
-  attr String issuer;
-  attr String[*] audience;
+	attr String    issuer;
+	attr String[*] audience;
 }
 
 class CognitoAuthorizer extends ApiGatewayAuthorizer {
-  ref awspsmidentity.CognitoUserPool[1] userPool;
-  ref awspsmidentity.CognitoUserPoolClient[*] clients;
+	ref awspsmidentity.CognitoUserPool[1]       userPool;
+	ref awspsmidentity.CognitoUserPoolClient[*] clients;
 }
 
 class LambdaAuthorizer extends ApiGatewayAuthorizer {
-  attr String authorizerPayloadFormatVersion;
-  attr Boolean enableSimpleResponses;
+	attr String  authorizerPayloadFormatVersion;
+	attr Boolean enableSimpleResponses;
 
-  ref awspsmcompute.AwsLambdaFunction[1] function;
+	ref awspsmcompute.AwsLambdaFunction[1] function;
 }
 
 class ApiGatewayDomainName extends awspsmcore.AwsResource {
-  attr String[1] domainName;
-  attr String certificateArn;
-  attr String securityPolicy;
-  attr awspsmenums.ApiGatewayEndpointType endpointType;
+	attr String[1]                          domainName;
+	attr String                             certificateArn;
+	attr String                             securityPolicy;
+	attr awspsmenums.ApiGatewayEndpointType endpointType;
 
-  ref ApiGatewayApi[?]#apiDomainName api;
-  ref ApiGatewayBasePathMapping[*]#domainName mappings;
+	ref ApiGatewayApi[?]#apiDomainName          api;
+	ref ApiGatewayBasePathMapping[*]#domainName mappings;
 }
 
 class ApiGatewayBasePathMapping extends awspsmcore.AwsResource {
-  attr String basePath;
+	attr String basePath;
 
-  ref ApiGatewayDomainName[1]#mappings domainName;
-  ref ApiGatewayApi[1] api;
-  ref ApiGatewayStage[?] stage;
+	ref ApiGatewayDomainName[1]#mappings domainName;
+	ref ApiGatewayApi[1]                 api;
+	ref ApiGatewayStage[?]               stage;
 }
 
 class ApiGatewayApiKey extends awspsmcore.AwsResource {
-  attr String apiKeyName;
-  attr Boolean enabled;
-  attr String value;
-  attr String descriptionText;
+	attr String  apiKeyName;
+	attr Boolean enabled;
+	attr String  value;
+	attr String  descriptionText;
 
-  ref RestApiStage[*] stages;
+	ref RestApiStage[*] stages;
 }
 
 class ApiGatewayUsagePlan extends awspsmcore.AwsResource {
-  attr String usagePlanName;
-  attr String descriptionText;
-  attr Integer throttleBurstLimit;
-  attr Double throttleRateLimit;
-  attr Integer quotaLimit;
-  attr String quotaPeriod;
+	attr String  usagePlanName;
+	attr String  descriptionText;
+	attr Integer throttleBurstLimit;
+	attr Double  throttleRateLimit;
+	attr Integer quotaLimit;
+	attr String  quotaPeriod;
 
-  ref RestApiStage[*] apiStages;
+	ref RestApiStage[*] apiStages;
 }
 
 class ApiGatewayUsagePlanKey extends awspsmcore.AwsResource {
-  attr String keyType;
+	attr String keyType;
 
-  ref ApiGatewayApiKey[1] apiKey;
-  ref ApiGatewayUsagePlan[1] usagePlan;
+	ref ApiGatewayApiKey[1]    apiKey;
+	ref ApiGatewayUsagePlan[1] usagePlan;
 }
 
 class ApiGatewayDeployment extends awspsmcore.AwsResource {
-  attr String descriptionText;
+	attr String descriptionText;
 
-  ref RestApi[1] api;
+	ref RestApi[1] api;
 }
 
-class ApiGatewayTracingConfig extends awspsmcore.TracingConfig {
-}
+class ApiGatewayTracingConfig extends awspsmcore.TracingConfig {}
 
 class WafWebAclAssociation extends awspsmcore.AwsResource {
-  attr String[1] webAclArn;
+	attr String[1] webAclArn;
 
-  ref awspsmcore.WafAssociableResource[1] protectedResource;
+	ref awspsmcore.WafAssociableResource[1] protectedResource;
 }

@@ -1,4 +1,4 @@
-@namespace(uri="https://modriss.org/awspsm/integrations/1.0", prefix="awspsmintegrations")
+@namespace(uri = "https://modriss.org/awspsm/integrations/1.0", prefix = "awspsmintegrations")
 package awspsmintegrations;
 
 import "../shared/kernel.ecore";
@@ -12,62 +12,62 @@ import "awspsm-security.ecore";
 import "awspsm-workflow.ecore";
 
 abstract class AwsRelationshipView extends kernel.TraceableElement {
-  attr Boolean generated;
+	attr Boolean generated;
 
-  ref awspsmcore.AwsResource[1] source;
-  ref awspsmcore.AwsResource[1] target;
+	ref awspsmcore.AwsResource[1] source;
+	ref awspsmcore.AwsResource[1] target;
 }
 
 class ApiGatewayLambdaIntegrationView extends AwsRelationshipView {
-  ref awspsmapi.ApiGatewayRoute[1] route;
-  ref awspsmcompute.AwsLambdaFunction[1] function;
-  ref awspsmapi.ApiGatewayIntegration[1] integration;
-  ref awspsmcompute.LambdaPermission[?] permission;
+	ref awspsmapi.ApiGatewayRoute[1]       route;
+	ref awspsmcompute.AwsLambdaFunction[1] function;
+	ref awspsmapi.ApiGatewayIntegration[1] integration;
+	ref awspsmcompute.LambdaPermission[?]  permission;
 }
 
 class EventBridgeLambdaTargetView extends AwsRelationshipView {
-  ref awspsmevents.EventBridgeRule[1] rule;
-  ref awspsmevents.EventBridgeTarget[1] targetRow;
-  ref awspsmcompute.AwsLambdaFunction[1] function;
-  ref awspsmcompute.LambdaPermission[?] permission;
+	ref awspsmevents.EventBridgeRule[1]    rule;
+	ref awspsmevents.EventBridgeTarget[1]  targetRow;
+	ref awspsmcompute.AwsLambdaFunction[1] function;
+	ref awspsmcompute.LambdaPermission[?]  permission;
 }
 
 class SnsLambdaSubscriptionView extends AwsRelationshipView {
-  ref awspsmmessaging.SnsTopic[1] topic;
-  ref awspsmcompute.AwsLambdaFunction[1] function;
-  ref awspsmmessaging.SnsSubscription[1] subscription;
-  ref awspsmcompute.LambdaPermission[?] permission;
+	ref awspsmmessaging.SnsTopic[1]        topic;
+	ref awspsmcompute.AwsLambdaFunction[1] function;
+	ref awspsmmessaging.SnsSubscription[1] subscription;
+	ref awspsmcompute.LambdaPermission[?]  permission;
 }
 
 class SqsLambdaEventSourceView extends AwsRelationshipView {
-  ref awspsmmessaging.SqsQueue[1] queue;
-  ref awspsmcompute.AwsLambdaFunction[1] function;
-  ref awspsmcompute.SqsLambdaEventSourceMapping[1] mapping;
+	ref awspsmmessaging.SqsQueue[1]                  queue;
+	ref awspsmcompute.AwsLambdaFunction[1]           function;
+	ref awspsmcompute.SqsLambdaEventSourceMapping[1] mapping;
 }
 
 class StepFunctionEventBridgeTargetView extends AwsRelationshipView {
-  ref awspsmevents.EventBridgeRule[1] rule;
-  ref awspsmworkflow.StepFunctionStateMachine[1] stateMachine;
-  ref awspsmevents.EventBridgeTarget[1] targetRow;
+	ref awspsmevents.EventBridgeRule[1]            rule;
+	ref awspsmworkflow.StepFunctionStateMachine[1] stateMachine;
+	ref awspsmevents.EventBridgeTarget[1]          targetRow;
 }
 
 class S3LambdaNotificationView extends AwsRelationshipView {
-  ref awspsmstorage.S3Bucket[1] bucket;
-  ref awspsmcompute.AwsLambdaFunction[1] function;
-  ref awspsmstorage.S3NotificationRule[1] rule;
-  ref awspsmcompute.LambdaPermission[1] permission;
+	ref awspsmstorage.S3Bucket[1]           bucket;
+	ref awspsmcompute.AwsLambdaFunction[1]  function;
+	ref awspsmstorage.S3NotificationRule[1] rule;
+	ref awspsmcompute.LambdaPermission[1]   permission;
 }
 
 class S3QueueNotificationView extends AwsRelationshipView {
-  ref awspsmstorage.S3Bucket[1] bucket;
-  ref awspsmmessaging.SqsQueue[1] queue;
-  ref awspsmstorage.S3NotificationRule[1] rule;
-  ref awspsmmessaging.SqsQueuePolicy[?] queuePolicy;
+	ref awspsmstorage.S3Bucket[1]           bucket;
+	ref awspsmmessaging.SqsQueue[1]         queue;
+	ref awspsmstorage.S3NotificationRule[1] rule;
+	ref awspsmmessaging.SqsQueuePolicy[?]   queuePolicy;
 }
 
 class S3TopicNotificationView extends AwsRelationshipView {
-  ref awspsmstorage.S3Bucket[1] bucket;
-  ref awspsmmessaging.SnsTopic[1] topic;
-  ref awspsmstorage.S3NotificationRule[1] rule;
-  ref awspsmmessaging.SnsTopicPolicy[?] topicPolicy;
+	ref awspsmstorage.S3Bucket[1]           bucket;
+	ref awspsmmessaging.SnsTopic[1]         topic;
+	ref awspsmstorage.S3NotificationRule[1] rule;
+	ref awspsmmessaging.SnsTopicPolicy[?]   topicPolicy;
 }

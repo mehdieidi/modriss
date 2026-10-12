@@ -1,4 +1,4 @@
-@namespace(uri="https://modriss.org/awspsm/observability/1.0", prefix="awspsmobservability")
+@namespace(uri = "https://modriss.org/awspsm/observability/1.0", prefix = "awspsmobservability")
 package awspsmobservability;
 
 import "../shared/kernel.ecore";
@@ -7,86 +7,86 @@ import "awspsm-core.ecore";
 import "awspsm-security.ecore";
 
 class CloudWatchLogGroup extends awspsmcore.AwsResource {
-  attr String logGroupName;
-  attr Integer retentionDays;
-  attr String dataProtectionPolicyJson;
-  attr awspsmenums.LogGroupClass logGroupClass;
+	attr String                    logGroupName;
+	attr Integer                   retentionDays;
+	attr String                    dataProtectionPolicyJson;
+	attr awspsmenums.LogGroupClass logGroupClass;
 
-  ref awspsmsecurity.KmsKey[?] kmsKey;
-  ref CloudWatchMetricFilter[*]#logGroup metricFilters;
-  ref CloudWatchLogSubscriptionFilter[*]#logGroup subscriptionFilters;
+	ref awspsmsecurity.KmsKey[?]                    kmsKey;
+	ref CloudWatchMetricFilter[*]#logGroup          metricFilters;
+	ref CloudWatchLogSubscriptionFilter[*]#logGroup subscriptionFilters;
 }
 
 class CloudWatchMetricFilter extends awspsmcore.AwsResource {
-  attr String[1] filterPattern;
-  attr String metricTransformationsJson;
+	attr String[1] filterPattern;
+	attr String    metricTransformationsJson;
 
-  val CloudWatchMetricTransformation[*] metricTransformations;
+	val CloudWatchMetricTransformation[*] metricTransformations;
 
-  ref CloudWatchLogGroup[1]#metricFilters logGroup;
+	ref CloudWatchLogGroup[1]#metricFilters logGroup;
 }
 
 class CloudWatchMetricTransformation extends kernel.TraceableElement {
-  attr String[1] metricName;
-  attr String[1] metricNamespace;
-  attr String defaultValue;
-  attr String unit;
+	attr String[1] metricName;
+	attr String[1] metricNamespace;
+	attr String    defaultValue;
+	attr String    unit;
 
-  val awspsmcore.ValueExpression[1] metricValue;
-  val MetricDimension[*] dimensions;
+	val awspsmcore.ValueExpression[1] metricValue;
+	val MetricDimension[*]            dimensions;
 }
 
 class CloudWatchLogSubscriptionFilter extends awspsmcore.AwsResource {
-  attr String[1] filterPattern;
-  attr String destinationArn;
-  attr String roleArn;
+	attr String[1] filterPattern;
+	attr String    destinationArn;
+	attr String    roleArn;
 
-  ref CloudWatchLogGroup[1]#subscriptionFilters logGroup;
-  ref awspsmcore.AwsResource[?] destinationResource;
-  ref awspsmsecurity.IamRole[?] role;
+	ref CloudWatchLogGroup[1]#subscriptionFilters logGroup;
+	ref awspsmcore.AwsResource[?]                 destinationResource;
+	ref awspsmsecurity.IamRole[?]                 role;
 }
 
 class CloudWatchAlarm extends awspsmcore.AwsResource {
-  attr String alarmName;
-  attr String alarmDescription;
-  attr String[1] namespace;
-  attr String[1] metricName;
-  attr String statistic;
-  attr String extendedStatistic;
-  attr Integer period;
-  attr Integer evaluationPeriods;
-  attr Integer datapointsToAlarm;
-  attr Double[?] threshold;
-  attr awspsmenums.CloudWatchComparisonOperator comparisonOperator;
-  attr String treatMissingData;
-  attr String[*] alarmActionArns;
-  attr String[*] okActionArns;
-  attr String[*] insufficientDataActionArns;
+	attr String                                   alarmName;
+	attr String                                   alarmDescription;
+	attr String[1]                                namespace;
+	attr String[1]                                metricName;
+	attr String                                   statistic;
+	attr String                                   extendedStatistic;
+	attr Integer                                  period;
+	attr Integer                                  evaluationPeriods;
+	attr Integer                                  datapointsToAlarm;
+	attr Double[?]                                threshold;
+	attr awspsmenums.CloudWatchComparisonOperator comparisonOperator;
+	attr String                                   treatMissingData;
+	attr String[*]                                alarmActionArns;
+	attr String[*]                                okActionArns;
+	attr String[*]                                insufficientDataActionArns;
 
-  val MetricDimension[*] dimensions;
+	val MetricDimension[*] dimensions;
 
-  ref awspsmcore.AwsResource[*] alarmActionResources;
-  ref awspsmcore.AwsResource[*] okActionResources;
-  ref awspsmcore.AwsResource[*] insufficientDataActionResources;
-  ref awspsmcore.AwsResource[?] monitoredResource;
+	ref awspsmcore.AwsResource[*] alarmActionResources;
+	ref awspsmcore.AwsResource[*] okActionResources;
+	ref awspsmcore.AwsResource[*] insufficientDataActionResources;
+	ref awspsmcore.AwsResource[?] monitoredResource;
 }
 
 class MetricDimension extends kernel.TraceableElement {
-  attr String[1] dimensionName;
+	attr String[1] dimensionName;
 
-  val awspsmcore.ValueExpression[1] value;
+	val awspsmcore.ValueExpression[1] value;
 }
 
 class CloudWatchCompositeAlarm extends awspsmcore.AwsResource {
-  attr String[1] alarmRule;
-  attr String[*] alarmActionArns;
-  attr String[*] okActionArns;
+	attr String[1] alarmRule;
+	attr String[*] alarmActionArns;
+	attr String[*] okActionArns;
 
-  ref awspsmcore.AwsResource[*] alarmActionResources;
-  ref awspsmcore.AwsResource[*] okActionResources;
+	ref awspsmcore.AwsResource[*] alarmActionResources;
+	ref awspsmcore.AwsResource[*] okActionResources;
 }
 
 class CloudWatchDashboard extends awspsmcore.AwsResource {
-  attr String[1] dashboardName;
-  attr String[1] dashboardBodyJson;
+	attr String[1] dashboardName;
+	attr String[1] dashboardBodyJson;
 }

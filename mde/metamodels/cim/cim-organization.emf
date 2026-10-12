@@ -1,4 +1,4 @@
-@namespace(uri="https://modriss.org/cim/organization/1.0", prefix="cimorg")
+@namespace(uri = "https://modriss.org/cim/organization/1.0", prefix = "cimorg")
 package cimorg;
 
 import "../shared/kernel.ecore";
@@ -9,155 +9,155 @@ import "cim-process-policy.ecore";
 import "cim-governance.ecore";
 
 class Requirement extends kernel.TraceableElement {
-  attr Boolean mandatory;
-  attr Boolean productionBlocking;
-  attr String fitCriterion;
-  attr cimtypes.RequirementType requirementType;
-  attr cimtypes.RequirementSourceType sourceType;
-  attr kernel.Priority priority;
+	attr Boolean                        mandatory;
+	attr Boolean                        productionBlocking;
+	attr String                         fitCriterion;
+	attr cimtypes.RequirementType       requirementType;
+	attr cimtypes.RequirementSourceType sourceType;
+	attr kernel.Priority                priority;
 
-  val AcceptanceCriterion[*] acceptanceCriteria;
+	val AcceptanceCriterion[*] acceptanceCriteria;
 
-  ref BusinessGoal[*] supportsGoals;
-  ref kernel.ModelElement[*] constrains;
-  ref Requirement[*] dependsOn;
-  ref Requirement[*] conflictsWith;
+	ref BusinessGoal[*]        supportsGoals;
+	ref kernel.ModelElement[*] constrains;
+	ref Requirement[*]         dependsOn;
+	ref Requirement[*]         conflictsWith;
 }
 
 class RequirementRelationship extends kernel.SemanticRelationship {
-  attr String rationale;
-  attr Boolean blocking;
-  attr cimtypes.RequirementRelationshipKind[1] kind;
+	attr String                                  rationale;
+	attr Boolean                                 blocking;
+	attr cimtypes.RequirementRelationshipKind[1] kind;
 
-  ref Requirement[1] source;
-  ref Requirement[1] target;
+	ref Requirement[1] source;
+	ref Requirement[1] target;
 }
 
 class AcceptanceCriterion extends kernel.TraceableElement {
-  attr String givenContext;
-  attr String whenAction;
-  attr String thenOutcome;
-  attr String measurableTarget;
-  attr Boolean automatableTestCandidate;
+	attr String  givenContext;
+	attr String  whenAction;
+	attr String  thenOutcome;
+	attr String  measurableTarget;
+	attr Boolean automatableTestCandidate;
 }
 
 class BusinessGoal extends kernel.TraceableElement {
-  attr String successCriterion;
-  attr String timeHorizon;
-  attr String businessValue;
-  attr String failureConsequence;
-  attr kernel.Priority priority;
+	attr String          successCriterion;
+	attr String          timeHorizon;
+	attr String          businessValue;
+	attr String          failureConsequence;
+	attr kernel.Priority priority;
 
-  ref KPI[*]#measures measuredBy;
-  ref BusinessCapability[*] refinedBy;
-  ref Stakeholder[*]#ownsGoals owners;
+	ref KPI[*]#measures          measuredBy;
+	ref BusinessCapability[*]    refinedBy;
+	ref Stakeholder[*]#ownsGoals owners;
 }
 
 class KPI extends kernel.TraceableElement {
-  attr String metricName;
-  attr String metricDefinition;
-  attr String operator;
-  attr String targetValue;
-  attr String unit;
-  attr String measurementFrequency;
-  attr String dataSource;
-  attr String acceptanceThreshold;
+	attr String metricName;
+	attr String metricDefinition;
+	attr String operator;
+	attr String targetValue;
+	attr String unit;
+	attr String measurementFrequency;
+	attr String dataSource;
+	attr String acceptanceThreshold;
 
-  ref BusinessGoal[?]#measuredBy measures;
+	ref BusinessGoal[?]#measuredBy measures;
 }
 
 class Stakeholder extends kernel.TraceableElement {
-  attr String stakeholderType;
-  attr String concern;
-  attr String influenceLevel;
-  attr String contactRole;
+	attr String stakeholderType;
+	attr String concern;
+	attr String influenceLevel;
+	attr String contactRole;
 
-  ref BusinessGoal[*]#owners ownsGoals;
-  ref Requirement[*] providesRequirements;
+	ref BusinessGoal[*]#owners ownsGoals;
+	ref Requirement[*]         providesRequirements;
 }
 
 class Actor extends kernel.TraceableElement {
-  attr String organizationBoundary;
-  attr String authenticationExpectation;
-  attr String authorizationExpectation;
-  attr cimtypes.InteractionExpectation interactionExpectation;
-  attr cimtypes.ActorType actorType;
-  attr cimtypes.TrustLevel trustLevel;
+	attr String                          organizationBoundary;
+	attr String                          authenticationExpectation;
+	attr String                          authorizationExpectation;
+	attr cimtypes.InteractionExpectation interactionExpectation;
+	attr cimtypes.ActorType              actorType;
+	attr cimtypes.TrustLevel             trustLevel;
 
-  ref Role[*]#assignedTo playsRoles;
-  ref cimbehavior.Command[*]#issuedBy issuesCommands;
-  ref cimbehavior.Query[*]#issuedBy issuesQueries;
-  ref cimbehavior.BusinessEvent[*] observesEvents;
+	ref Role[*]#assignedTo              playsRoles;
+	ref cimbehavior.Command[*]#issuedBy issuesCommands;
+	ref cimbehavior.Query[*]#issuedBy   issuesQueries;
+	ref cimbehavior.BusinessEvent[*]    observesEvents;
 }
 
 class Role extends kernel.TraceableElement {
-  attr String responsibility;
-  attr String businessPermissionSummary;
-  attr Boolean privileged;
+	attr String  responsibility;
+	attr String  businessPermissionSummary;
+	attr Boolean privileged;
 
-  ref Actor[*]#playsRoles assignedTo;
+	ref Actor[*]#playsRoles assignedTo;
 }
 
 class ExternalSystem extends Actor {
-  attr String owningOrganization;
-  attr String businessPurpose;
-  attr String trustRationale;
-  attr String contractualSla;
-  attr Boolean storesBusinessData;
-  attr Boolean sendsBusinessEvents;
-  attr Boolean receivesBusinessEvents;
+	attr String  owningOrganization;
+	attr String  businessPurpose;
+	attr String  trustRationale;
+	attr String  contractualSla;
+	attr Boolean storesBusinessData;
+	attr Boolean sendsBusinessEvents;
+	attr Boolean receivesBusinessEvents;
 
-  ref cimdomain.InformationItem[*] exchangedInformation;
-  ref cimbehavior.BusinessEvent[*]#causedByExternalSystems producedEvents;
-  ref cimbehavior.BusinessEvent[*]#consumedByExternalSystems consumedEvents;
+	ref cimdomain.InformationItem[*]                           exchangedInformation;
+	ref cimbehavior.BusinessEvent[*]#causedByExternalSystems   producedEvents;
+	ref cimbehavior.BusinessEvent[*]#consumedByExternalSystems consumedEvents;
 }
 
 class BusinessCapability extends kernel.TraceableElement {
-  attr String maturity;
-  attr String responsibility;
-  attr String ownerName;
-  attr cimtypes.CapabilityCriticality criticality;
+	attr String                         maturity;
+	attr String                         responsibility;
+	attr String                         ownerName;
+	attr cimtypes.CapabilityCriticality criticality;
 
-  ref Actor[?] owner;
-  ref BusinessGoal[*] supports;
-  ref Requirement[*] realizesRequirements;
-  ref cimbehavior.Command[*]#targetCapability containsCommands;
-  ref cimbehavior.Query[*]#targetCapability containsQueries;
-  ref cimbehavior.BusinessEvent[*] containsEvents;
-  ref cimdomain.DomainEntity[*]#owningCapability managesEntities;
-  ref cimprocess.BusinessProcess[*]#owningCapability ownsProcesses;
-  ref cimgov.NonFunctionalRequirement[*] constrainedBy;
+	ref Actor[?]                                       owner;
+	ref BusinessGoal[*]                                supports;
+	ref Requirement[*]                                 realizesRequirements;
+	ref cimbehavior.Command[*]#targetCapability        containsCommands;
+	ref cimbehavior.Query[*]#targetCapability          containsQueries;
+	ref cimbehavior.BusinessEvent[*]                   containsEvents;
+	ref cimdomain.DomainEntity[*]#owningCapability     managesEntities;
+	ref cimprocess.BusinessProcess[*]#owningCapability ownsProcesses;
+	ref cimgov.NonFunctionalRequirement[*]             constrainedBy;
 }
 
 class CapabilityDependency extends kernel.SemanticRelationship {
-  attr String dependencyReason;
-  attr Boolean criticalPath;
+	attr String  dependencyReason;
+	attr Boolean criticalPath;
 
-  ref BusinessCapability[1] source;
-  ref BusinessCapability[1] target;
+	ref BusinessCapability[1] source;
+	ref BusinessCapability[1] target;
 }
 
 class BoundedContextCandidate extends kernel.TraceableElement {
-  attr String languageBoundary;
-  attr String ownershipBoundary;
-  attr Boolean externalIntegrationBoundary;
+	attr String  languageBoundary;
+	attr String  ownershipBoundary;
+	attr Boolean externalIntegrationBoundary;
 
-  val UbiquitousLanguageTerm[*]#context glossaryTerms;
+	val UbiquitousLanguageTerm[*]#context glossaryTerms;
 
-  ref BusinessCapability[*] capabilities;
-  ref cimdomain.DomainEntity[*] entities;
-  ref cimbehavior.Command[*] commands;
-  ref cimbehavior.Query[*] queries;
-  ref cimbehavior.BusinessEvent[*] events;
-  ref cimprocess.Policy[*] policies;
+	ref BusinessCapability[*]        capabilities;
+	ref cimdomain.DomainEntity[*]    entities;
+	ref cimbehavior.Command[*]       commands;
+	ref cimbehavior.Query[*]         queries;
+	ref cimbehavior.BusinessEvent[*] events;
+	ref cimprocess.Policy[*]         policies;
 }
 
 class UbiquitousLanguageTerm extends kernel.TraceableElement {
-  attr String[1] term;
-  attr String definition;
-  attr String synonyms;
-  attr String forbiddenSynonyms;
-  attr String exampleUsage;
+	attr String[1] term;
+	attr String    definition;
+	attr String    synonyms;
+	attr String    forbiddenSynonyms;
+	attr String    exampleUsage;
 
-  readonly transient ref BoundedContextCandidate[1]#glossaryTerms context;
+	readonly transient ref BoundedContextCandidate[1]#glossaryTerms context;
 }

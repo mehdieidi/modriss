@@ -1,4 +1,4 @@
-@namespace(uri="https://modriss.org/pim/data/1.0", prefix="data")
+@namespace(uri = "https://modriss.org/pim/data/1.0", prefix = "data")
 package data;
 
 import "../shared/kernel.ecore";
@@ -8,141 +8,135 @@ import "pim-policy.ecore";
 import "pim-deployment.ecore";
 
 abstract class StorageElement extends kernel.TraceableElement, kernel.DeployableElement, kernel.FlowEndpoint, kernel.PolicyTarget, kernel.ProtectedResource, kernel.DataAccessTarget, kernel.ConfigurableElement {
-  attr Boolean persistent;
-  attr Boolean encrypted;
-  attr Boolean containsPersonalData;
+	attr Boolean persistent;
+	attr Boolean encrypted;
+	attr Boolean containsPersonalData;
 
-  readonly transient ref deployment.ServerlessService[1]#stores service;
-
-  ref policy.RetentionPolicy[?] retentionPolicy;
-  ref policy.BackupPolicy[?] backupPolicy;
-  ref policy.DataProtectionPolicy[*] dataProtectionPolicies;
+	readonly transient ref deployment.ServerlessService[1]#stores service;
+	ref policy.RetentionPolicy[?]                                 retentionPolicy;
+	ref policy.BackupPolicy[?]                                    backupPolicy;
+	ref policy.DataProtectionPolicy[*]                            dataProtectionPolicies;
 }
 
 class DataStore extends StorageElement, kernel.RoutingTarget, kernel.SubscriptionTarget {
-  attr Boolean transactional;
-  attr Boolean readOptimized;
-  attr Boolean writeOptimized;
-  attr Boolean appendOnly;
-  attr Boolean changeStreamRequired;
-  attr Boolean pointInTimeRecoveryRequired;
-  attr String expectedDataVolume;
-  attr String expectedAccessRate;
-  attr pimtypes.StoreKind[1] storeKind;
-  attr pimtypes.ConsistencyNeed[1] consistencyNeed;
+	attr Boolean                     transactional;
+	attr Boolean                     readOptimized;
+	attr Boolean                     writeOptimized;
+	attr Boolean                     appendOnly;
+	attr Boolean                     changeStreamRequired;
+	attr Boolean                     pointInTimeRecoveryRequired;
+	attr String                      expectedDataVolume;
+	attr String                      expectedAccessRate;
+	attr pimtypes.StoreKind[1]       storeKind;
+	attr pimtypes.ConsistencyNeed[1] consistencyNeed;
 
-  val DataModel[*]#dataStore ownedDataModels;
-  val AccessPattern[*]#dataStore accessPatterns;
-  val IndexCandidate[*]#dataStore indexCandidates;
-  val DataChangeStream[?]#dataStore changeStream;
+	val DataModel[*]#dataStore        ownedDataModels;
+	val AccessPattern[*]#dataStore    accessPatterns;
+	val IndexCandidate[*]#dataStore   indexCandidates;
+	val DataChangeStream[?]#dataStore changeStream;
 }
 
 class DataChangeStream extends kernel.TraceableElement, kernel.DeployableElement, kernel.InvocationSource, kernel.EventCarrier, kernel.FlowEndpoint, kernel.PolicyTarget {
-  attr Boolean enabled;
-  attr pimtypes.OrderingRequirement orderingRequirement;
-  attr pimtypes.DeliverySemantics deliverySemantics;
+	attr Boolean                      enabled;
+	attr pimtypes.OrderingRequirement orderingRequirement;
+	attr pimtypes.DeliverySemantics   deliverySemantics;
 
-  readonly transient ref DataStore[1]#changeStream dataStore;
-
-  ref contracts.EventType[*] emittedEvents;
+	readonly transient ref DataStore[1]#changeStream dataStore;
+	ref contracts.EventType[*]                       emittedEvents;
 }
 
 class ObjectStore extends StorageElement, kernel.InvocationSource, kernel.RoutingTarget, kernel.SubscriptionTarget, kernel.EventCarrier {
-  attr String[*] objectTypes;
-  attr Boolean versioningRequired;
-  attr Boolean lifecyclePolicyRequired;
-  attr Boolean eventNotificationRequired;
-  attr String maxObjectSize;
+	attr String[*] objectTypes;
+	attr Boolean   versioningRequired;
+	attr Boolean   lifecyclePolicyRequired;
+	attr Boolean   eventNotificationRequired;
+	attr String    maxObjectSize;
 
-  val ObjectNotificationRule[*]#objectStore notificationRules;
+	val ObjectNotificationRule[*]#objectStore notificationRules;
 
-  ref contracts.Schema[*] objectMetadataSchemas;
-  ref contracts.EventType[*] emittedEvents;
+	ref contracts.Schema[*]    objectMetadataSchemas;
+	ref contracts.EventType[*] emittedEvents;
 }
 
 class ObjectNotificationRule extends kernel.TraceableElement {
-  attr String[*] eventTypes;
-  attr String filterPrefix;
-  attr String filterSuffix;
+	attr String[*] eventTypes;
+	attr String    filterPrefix;
+	attr String    filterSuffix;
 
-  readonly transient ref ObjectStore[1]#notificationRules objectStore;
-
-  ref contracts.EventType[*] emittedEvents;
-  ref kernel.RoutingTarget[*] targets;
+	readonly transient ref ObjectStore[1]#notificationRules objectStore;
+	ref contracts.EventType[*]                              emittedEvents;
+	ref kernel.RoutingTarget[*]                             targets;
 }
 
 class DataModel extends kernel.TraceableElement, kernel.FlowEndpoint, kernel.PolicyTarget {
-  attr String aggregateRef;
-  attr String ownershipBoundary;
-  attr Boolean sourceOfTruth;
-  attr Boolean readModel;
-  attr Boolean auditRequired;
-  attr pimtypes.SchemaKind[1] dataModelKind;
+	attr String                 aggregateRef;
+	attr String                 ownershipBoundary;
+	attr Boolean                sourceOfTruth;
+	attr Boolean                readModel;
+	attr Boolean                auditRequired;
+	attr pimtypes.SchemaKind[1] dataModelKind;
 
-  val DataField[*]#dataModel storageFields;
+	val DataField[*]#dataModel storageFields;
 
-  readonly transient ref DataStore[1]#ownedDataModels dataStore;
-
-  ref contracts.Schema[1] schema;
-  ref AccessPattern[*] accessPatterns;
+	readonly transient ref DataStore[1]#ownedDataModels dataStore;
+	ref contracts.Schema[1]                             schema;
+	ref AccessPattern[*]                                accessPatterns;
 }
 
 class DataField extends kernel.TraceableElement {
-  attr Boolean identifier;
-  attr Boolean partitionKeyCandidate;
-  attr Boolean sortKeyCandidate;
-  attr Boolean indexedCandidate;
-  attr Boolean required;
-  attr Boolean personalData;
-  attr Boolean sensitiveData;
-  attr String classification;
-  attr String storageName;
-  attr pimtypes.FieldType[1] fieldType;
+	attr Boolean               identifier;
+	attr Boolean               partitionKeyCandidate;
+	attr Boolean               sortKeyCandidate;
+	attr Boolean               indexedCandidate;
+	attr Boolean               required;
+	attr Boolean               personalData;
+	attr Boolean               sensitiveData;
+	attr String                classification;
+	attr String                storageName;
+	attr pimtypes.FieldType[1] fieldType;
 
-  readonly transient ref DataModel[1]#storageFields dataModel;
+	readonly transient ref DataModel[1]#storageFields dataModel;
 }
 
 class AccessPattern extends kernel.TraceableElement {
-  attr String patternName;
-  attr String queryBy;
-  attr String sortBy;
-  attr String filterBy;
-  attr String projection;
-  attr Boolean highCardinality;
-  attr Boolean highFrequency;
-  attr Boolean stronglyConsistentReadRequired;
-  attr Boolean transactionalWriteRequired;
-  attr Integer expectedItemsReturned;
-  attr String latencyTargetMs;
-  attr pimtypes.DataAccessMode[1] operation;
-  attr pimtypes.AccessPatternKind accessPatternKind;
+	attr String                     patternName;
+	attr String                     queryBy;
+	attr String                     sortBy;
+	attr String                     filterBy;
+	attr String                     projection;
+	attr Boolean                    highCardinality;
+	attr Boolean                    highFrequency;
+	attr Boolean                    stronglyConsistentReadRequired;
+	attr Boolean                    transactionalWriteRequired;
+	attr Integer                    expectedItemsReturned;
+	attr String                     latencyTargetMs;
+	attr pimtypes.DataAccessMode[1] operation;
+	attr pimtypes.AccessPatternKind accessPatternKind;
 
-  readonly transient ref DataStore[1]#accessPatterns dataStore;
-
-  ref kernel.FunctionTarget[*] usedByFunctions;
-  ref kernel.RouteEndpoint[*] exposedByRoutes;
+	readonly transient ref DataStore[1]#accessPatterns dataStore;
+	ref kernel.FunctionTarget[*]                       usedByFunctions;
+	ref kernel.RouteEndpoint[*]                        exposedByRoutes;
 }
 
 class IndexCandidate extends kernel.TraceableElement {
-  attr String indexPurpose;
-  attr String partitionKeyField;
-  attr String sortKeyField;
-  attr String[*] projectionFields;
-  attr Boolean ~unique;
-  attr Boolean requiredForProduction;
+	attr String    indexPurpose;
+	attr String    partitionKeyField;
+	attr String    sortKeyField;
+	attr String[*] projectionFields;
+	attr Boolean   ~unique;
+	attr Boolean   requiredForProduction;
 
-  readonly transient ref DataStore[1]#indexCandidates dataStore;
-
-  ref AccessPattern[*] supportsAccessPatterns;
+	readonly transient ref DataStore[1]#indexCandidates dataStore;
+	ref AccessPattern[*]                                supportsAccessPatterns;
 }
 
 class DataAccess extends kernel.TraceableElement {
-  attr Boolean transactional;
-  attr String purpose;
-  attr pimtypes.DataAccessMode[1] mode;
+	attr Boolean                    transactional;
+	attr String                     purpose;
+	attr pimtypes.DataAccessMode[1] mode;
 
-  ref kernel.FunctionTarget[1] function;
-  ref StorageElement[1] store;
-  ref DataModel[*] dataModels;
-  ref AccessPattern[*] accessPatterns;
+	ref kernel.FunctionTarget[1] function;
+	ref StorageElement[1]        store;
+	ref DataModel[*]             dataModels;
+	ref AccessPattern[*]         accessPatterns;
 }

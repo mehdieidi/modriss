@@ -1,4 +1,4 @@
-@namespace(uri="https://modriss.org/pim/external/1.0", prefix="external")
+@namespace(uri = "https://modriss.org/pim/external/1.0", prefix = "external")
 package external;
 
 import "../shared/kernel.ecore";
@@ -8,27 +8,26 @@ import "pim-config.ecore";
 import "pim-deployment.ecore";
 
 class ExternalEndpoint extends kernel.TraceableElement, kernel.ExternalCallTarget, kernel.PolicyTarget, kernel.ProtectedResource {
-  attr String externalSystemName;
-  attr String protocolFamily;
-  attr String endpointDescription;
-  attr Boolean privateNetworkRequired;
-  attr Boolean credentialsRequired;
-  attr Boolean rateLimitedByProvider;
-  attr String expectedSla;
-  attr String endpointUri;
-  attr String authorizationEndpoint;
+	attr String  externalSystemName;
+	attr String  protocolFamily;
+	attr String  endpointDescription;
+	attr Boolean privateNetworkRequired;
+	attr Boolean credentialsRequired;
+	attr Boolean rateLimitedByProvider;
+	attr String  expectedSla;
+	attr String  endpointUri;
+	attr String  authorizationEndpoint;
 }
 
 class ExternalAdapter extends kernel.TraceableElement, kernel.DeployableElement, kernel.FlowEndpoint, kernel.InvocationTarget, kernel.FunctionTarget, kernel.SubscriptionTarget, kernel.RoutingTarget, kernel.ExternalCallTarget, kernel.ProtectedResource, kernel.PolicyTarget, kernel.ConfigurableElement {
-  attr String responsibility;
+	attr String responsibility;
 
-  val config.CredentialRequirement[*] credentials;
+	val config.CredentialRequirement[*] credentials;
 
-  readonly transient ref deployment.ServerlessService[1]#adapters service;
-
-  ref ExternalEndpoint[1] endpoint;
-  ref kernel.FunctionTarget[*] adapterFunctions;
-  ref policy.ResiliencePolicy[?] resilience;
-  ref policy.ObservabilityConfig[?] observability;
-  ref policy.IdempotencyPolicy[?] idempotency;
+	readonly transient ref deployment.ServerlessService[1]#adapters service;
+	ref ExternalEndpoint[1]                                         endpoint;
+	ref kernel.FunctionTarget[*]                                    adapterFunctions;
+	ref policy.ResiliencePolicy[?]                                  resilience;
+	ref policy.ObservabilityConfig[?]                               observability;
+	ref policy.IdempotencyPolicy[?]                                 idempotency;
 }

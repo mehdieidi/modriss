@@ -1,4 +1,4 @@
-@namespace(uri="https://modriss.org/cim/governance/1.0", prefix="cimgov")
+@namespace(uri = "https://modriss.org/cim/governance/1.0", prefix = "cimgov")
 package cimgov;
 
 import "../shared/kernel.ecore";
@@ -8,68 +8,68 @@ import "cim-domain-data.ecore";
 import "cim-behavior.ecore";
 
 class NonFunctionalRequirement extends cimorg.Requirement {
-  attr String metric;
-  attr String target;
-  attr String measurementMethod;
-  attr String environmentAssumption;
-  attr cimtypes.QualityType qualityType;
+	attr String               metric;
+	attr String               target;
+	attr String               measurementMethod;
+	attr String               environmentAssumption;
+	attr cimtypes.QualityType qualityType;
 
-  val QualityScenario[*] scenarios;
+	val QualityScenario[*] scenarios;
 
-  ref kernel.ModelElement[+] constrainedElements;
+	ref kernel.ModelElement[+] constrainedElements;
 }
 
 class QualityScenario extends kernel.TraceableElement {
-  attr String source;
-  attr String stimulus;
-  attr String environment;
-  attr String artifact;
-  attr String response;
-  attr String responseMeasure;
-  attr cimtypes.QualityType qualityType;
+	attr String               source;
+	attr String               stimulus;
+	attr String               environment;
+	attr String               artifact;
+	attr String               response;
+	attr String               responseMeasure;
+	attr cimtypes.QualityType qualityType;
 }
 
 class SecurityConstraint extends NonFunctionalRequirement {
-  attr String authenticationNeed;
-  attr String authorizationRule;
-  attr Boolean segregationOfDutiesRequired;
-  attr Boolean nonRepudiationRequired;
-  attr Boolean auditAccessRequired;
-  attr String threatRationale;
+	attr String  authenticationNeed;
+	attr String  authorizationRule;
+	attr Boolean segregationOfDutiesRequired;
+	attr Boolean nonRepudiationRequired;
+	attr Boolean auditAccessRequired;
+	attr String  threatRationale;
 
-  ref cimorg.Actor[*] constrainedActors;
-  ref cimbehavior.Command[*] constrainedCommands;
-  ref cimbehavior.Query[*] constrainedQueries;
-  ref cimdomain.InformationItem[*] constrainedInformation;
+	ref cimorg.Actor[*]              constrainedActors;
+	ref cimbehavior.Command[*]       constrainedCommands;
+	ref cimbehavior.Query[*]         constrainedQueries;
+	ref cimdomain.InformationItem[*] constrainedInformation;
 }
 
 class PrivacyConstraint extends NonFunctionalRequirement {
-  attr String law;
-  attr String jurisdiction;
-  attr String dataSubjectType;
-  attr String purpose;
-  attr String retentionPeriod;
-  attr Boolean consentRequired;
-  attr Boolean deletionRequired;
-  attr Boolean portabilityRequired;
-  attr Boolean rectificationRequired;
-  attr Boolean dataResidencyRequired;
-  attr String allowedResidencyArea;
-  attr Boolean crossBorderTransferAllowed;
-  attr String minimizationRule;
-  attr cimtypes.LegalBasis legalBasis;
+	attr String              law;
+	attr String              jurisdiction;
+	attr String              dataSubjectType;
+	attr String              purpose;
+	attr String              retentionPeriod;
+	attr Boolean             consentRequired;
+	attr Boolean             deletionRequired;
+	attr Boolean             portabilityRequired;
+	attr Boolean             rectificationRequired;
+	attr Boolean             dataResidencyRequired;
+	attr String              allowedResidencyArea;
+	attr Boolean             crossBorderTransferAllowed;
+	attr String              minimizationRule;
+	attr cimtypes.LegalBasis legalBasis;
 
-  ref cimdomain.InformationItem[+]#privacyConstraints dataItems;
-  ref cimorg.Actor[*] dataSubjects;
+	ref cimdomain.InformationItem[+]#privacyConstraints dataItems;
+	ref cimorg.Actor[*]                                 dataSubjects;
 }
 
 class ComplianceConstraint extends NonFunctionalRequirement {
-  attr String regulation;
-  attr String controlId;
-  attr String controlObjective;
-  attr String evidenceRequired;
-  attr String auditFrequency;
-  attr Boolean externalAuditRequired;
+	attr String  regulation;
+	attr String  controlId;
+	attr String  controlObjective;
+	attr String  evidenceRequired;
+	attr String  auditFrequency;
+	attr Boolean externalAuditRequired;
 
-  ref kernel.ModelElement[*] scopedElements;
+	ref kernel.ModelElement[*] scopedElements;
 }

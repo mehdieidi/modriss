@@ -180,6 +180,10 @@ Contributions are welcome where they support the research and engineering goals 
 across its metamodel, validation rules, transformations, visual notation, API behavior, samples,
 and documentation.
 
+Format the Emfatic metamodels with `python scripts/format-emf.py` from the project root.
+Use `--check` to check without writing or `--diff` to preview changes. See the
+[Emfatic formatter guide](scripts/README-emf-formatting.md) for rules and options.
+
 ## License
 
 MODRISS is released under the [MIT License](LICENSE). Copyright © 2026 Mehdi Eidi.

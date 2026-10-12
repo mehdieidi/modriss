@@ -32,6 +32,12 @@ docker compose up --build         # full stack smoke test
 Pre-commit runs format check only. Run `python scripts/lint.py` and `python scripts/verify.py` manually
 before opening a PR.
 
+`scripts/format.py` delegates `.emf` files to `scripts/format-emf.py`, including in
+`--check` mode. Its generic whitespace normalizer skips `.emf` files so it preserves
+the metamodel formatter's layout and literal/comment contents. For metamodels only,
+run `python scripts/format-emf.py`; see the
+[Emfatic formatter guide](scripts/README-emf-formatting.md).
+
 ## Pull Requests
 
 - Keep PRs focused; link related issues when applicable.

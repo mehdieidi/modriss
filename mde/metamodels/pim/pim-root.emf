@@ -1,4 +1,4 @@
-@namespace(uri="https://modriss.org/pim/1.0", prefix="pim")
+@namespace(uri = "https://modriss.org/pim/1.0", prefix = "pim")
 package pim;
 
 import "pim-types.ecore";
@@ -16,40 +16,31 @@ import "pim-config.ecore";
 import "../shared/kernel.ecore";
 
 class PIMModel extends kernel.TraceableElement {
-  attr String domainName;
-  attr pimtypes.ArchitectureStyle[1] architectureStyle;
-  attr String defaultCorrelationIdName;
+	attr String                        domainName;
+	attr pimtypes.ArchitectureStyle[1] architectureStyle;
+	attr String                        defaultCorrelationIdName;
 
-  val deployment.ServerlessService[*] services;
-  val deployment.ServiceElementMembership[*] serviceMemberships;
-  val deployment.DeploymentUnit[*] deploymentUnits;
-  val deployment.Environment[*] environments;
-  val deployment.ImplementationProfile[?] implementationProfile;
-  val deployment.PlatformCapability[*] platformCapabilities;
-  val deployment.PlatformMappingAssessment[*] platformMappingAssessments;
-
-  val contracts.Schema[*] schemas;
-  val contracts.EventType[*] eventTypes;
-
-  val policy.BusinessRule[*] businessRules;
-  val policy.DecisionModel[*] decisionModels;
-  val policy.ArchitecturePolicy[*] policies;
-
-  val integration.Flow[*] flows;
-
-  val data.DataAccess[*] dataAccesses;
-
-  val workflow.HumanTask[*] humanTasks;
-  val workflow.EscalationPolicy[*] escalationPolicies;
-
-  val external.ExternalEndpoint[*] externalEndpoints;
-
-  val security.IdentityProvider[*] identityProviders;
-  val security.Principal[*] principals;
-
-  val config.ConfigurationSet[*] configurations;
-  val config.Secret[*] secrets;
-
-  val kernel.TraceModel[?] traceModel;
-  val kernel.ProductionReadinessAssessment[?] readiness;
+	val deployment.ServerlessService[*]         services;
+	val deployment.ServiceElementMembership[*]  serviceMemberships;
+	val deployment.DeploymentUnit[*]            deploymentUnits;
+	val deployment.Environment[*]               environments;
+	val deployment.ImplementationProfile[?]     implementationProfile;
+	val deployment.PlatformCapability[*]        platformCapabilities;
+	val deployment.PlatformMappingAssessment[*] platformMappingAssessments;
+	val contracts.Schema[*]                     schemas;
+	val contracts.EventType[*]                  eventTypes;
+	val policy.BusinessRule[*]                  businessRules;
+	val policy.DecisionModel[*]                 decisionModels;
+	val policy.ArchitecturePolicy[*]            policies;
+	val integration.Flow[*]                     flows;
+	val data.DataAccess[*]                      dataAccesses;
+	val workflow.HumanTask[*]                   humanTasks;
+	val workflow.EscalationPolicy[*]            escalationPolicies;
+	val external.ExternalEndpoint[*]            externalEndpoints;
+	val security.IdentityProvider[*]            identityProviders;
+	val security.Principal[*]                   principals;
+	val config.ConfigurationSet[*]              configurations;
+	val config.Secret[*]                        secrets;
+	val kernel.TraceModel[?]                    traceModel;
+	val kernel.ProductionReadinessAssessment[?] readiness;
 }

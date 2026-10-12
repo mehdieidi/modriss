@@ -1,4 +1,4 @@
-@namespace(uri="https://modriss.org/awspsm/1.0", prefix="awspsm")
+@namespace(uri = "https://modriss.org/awspsm/1.0", prefix = "awspsm")
 package awspsm;
 
 import "../shared/kernel.ecore";
@@ -17,24 +17,24 @@ import "awspsm-events.ecore";
 import "awspsm-integrations.ecore";
 
 class AwsPsmModel extends kernel.TraceableElement {
-  attr String accountStrategy;
-  attr String regionStrategy;
-  attr String defaultRegion;
-  attr String namingConvention;
-  attr String taggingStrategy;
-  attr Boolean productionMode;
-  attr awspsmenums.AwsPartition[1] partition;
+	attr String                      accountStrategy;
+	attr String                      regionStrategy;
+	attr String                      defaultRegion;
+	attr String                      namingConvention;
+	attr String                      taggingStrategy;
+	attr Boolean                     productionMode;
+	attr awspsmenums.AwsPartition[1] partition;
 
-  val awspsmcore.AwsStage[+] stages;
-  val awspsmcore.SamStack[+] stacks;
-  val awspsmcore.SamGlobals[?] samGlobals;
-  val awspsmcore.AwsNamingPolicy[?] namingPolicy;
-  val awspsmcore.AwsTaggingPolicy[?] taggingPolicy;
-  val awspsmcore.AwsSecurityBaseline[?] securityBaseline;
-  val kernel.TraceModel[?] traceModel;
-  val kernel.ProductionReadinessAssessment[?] readiness;
-  val kernel.StructuredDocument[*] documents;
-  val awspsmintegrations.AwsRelationshipView[*] relationshipViews;
+	val awspsmcore.AwsStage[+]                    stages;
+	val awspsmcore.SamStack[+]                    stacks;
+	val awspsmcore.SamGlobals[?]                  samGlobals;
+	val awspsmcore.AwsNamingPolicy[?]             namingPolicy;
+	val awspsmcore.AwsTaggingPolicy[?]            taggingPolicy;
+	val awspsmcore.AwsSecurityBaseline[?]         securityBaseline;
+	val kernel.TraceModel[?]                      traceModel;
+	val kernel.ProductionReadinessAssessment[?]   readiness;
+	val kernel.StructuredDocument[*]              documents;
+	val awspsmintegrations.AwsRelationshipView[*] relationshipViews;
 
-  readonly transient volatile derived ref awspsmcore.AwsResource[*] allResources;
+	readonly transient volatile derived ref awspsmcore.AwsResource[*] allResources;
 }

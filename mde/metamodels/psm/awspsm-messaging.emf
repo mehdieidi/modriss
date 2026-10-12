@@ -1,4 +1,4 @@
-@namespace(uri="https://modriss.org/awspsm/messaging/1.0", prefix="awspsmmessaging")
+@namespace(uri = "https://modriss.org/awspsm/messaging/1.0", prefix = "awspsmmessaging")
 package awspsmmessaging;
 
 import "../shared/kernel.ecore";
@@ -7,84 +7,84 @@ import "awspsm-core.ecore";
 import "awspsm-security.ecore";
 
 class SqsQueue extends awspsmcore.AwsResource, awspsmcore.S3NotificationDestination {
-  attr String queueName;
-  attr Boolean contentBasedDeduplication;
-  attr String deduplicationScope;
-  attr String fifoThroughputLimit;
-  attr Integer delaySeconds;
-  attr Integer maximumMessageSize;
-  attr Integer messageRetentionPeriodSeconds;
-  attr Integer receiveMessageWaitTimeSeconds;
-  attr Integer visibilityTimeoutSeconds;
-  attr Integer kmsDataKeyReusePeriodSeconds;
-  attr Boolean sqsManagedSseEnabled;
-  attr awspsmenums.SqsQueueType[1] queueType;
+	attr String                      queueName;
+	attr Boolean                     contentBasedDeduplication;
+	attr String                      deduplicationScope;
+	attr String                      fifoThroughputLimit;
+	attr Integer                     delaySeconds;
+	attr Integer                     maximumMessageSize;
+	attr Integer                     messageRetentionPeriodSeconds;
+	attr Integer                     receiveMessageWaitTimeSeconds;
+	attr Integer                     visibilityTimeoutSeconds;
+	attr Integer                     kmsDataKeyReusePeriodSeconds;
+	attr Boolean                     sqsManagedSseEnabled;
+	attr awspsmenums.SqsQueueType[1] queueType;
 
-  val SqsRedrivePolicy[?] redrivePolicy;
-  val SqsRedriveAllowPolicy[?] redriveAllowPolicy;
+	val SqsRedrivePolicy[?]      redrivePolicy;
+	val SqsRedriveAllowPolicy[?] redriveAllowPolicy;
 
-  ref awspsmsecurity.KmsKey[?] kmsKey;
-  ref SqsQueuePolicy[*]#queues queuePolicies;
+	ref awspsmsecurity.KmsKey[?] kmsKey;
+	ref SqsQueuePolicy[*]#queues queuePolicies;
 }
 
 class SqsRedrivePolicy extends kernel.TraceableElement {
-  attr Integer[1] maxReceiveCount;
+	attr Integer[1] maxReceiveCount;
 
-  ref SqsQueue[1] deadLetterQueue;
+	ref SqsQueue[1] deadLetterQueue;
 }
 
 class SqsRedriveAllowPolicy extends kernel.TraceableElement {
-  attr String redrivePermission;
+	attr String redrivePermission;
 
-  ref SqsQueue[*] sourceQueues;
+	ref SqsQueue[*] sourceQueues;
 }
 
 class SqsQueuePolicy extends awspsmcore.AwsResource {
-  attr String policyDocumentJson;
+	attr String policyDocumentJson;
 
-  val awspsmsecurity.IamPolicyDocument[?] policyDocument;
+	val awspsmsecurity.IamPolicyDocument[?] policyDocument;
 
-  ref SqsQueue[+]#queuePolicies queues;
+	ref SqsQueue[+]#queuePolicies queues;
 }
 
 class SnsTopic extends awspsmcore.AwsResource, awspsmcore.S3NotificationDestination {
-  attr String topicName;
-  attr Boolean fifoTopic;
-  attr Boolean contentBasedDeduplication;
-  attr String displayName;
-  attr String dataProtectionPolicyJson;
-  attr String deliveryStatusLoggingJson;
+	attr String  topicName;
+	attr Boolean fifoTopic;
+	attr Boolean contentBasedDeduplication;
+	attr String  displayName;
+	attr String  dataProtectionPolicyJson;
+	attr String  deliveryStatusLoggingJson;
 
-  ref awspsmsecurity.KmsKey[?] kmsKey;
-  ref SnsSubscription[*]#topic subscriptions;
-  ref SnsTopicPolicy[*]#topics topicPolicies;
+	ref awspsmsecurity.KmsKey[?] kmsKey;
+	ref SnsSubscription[*]#topic subscriptions;
+	ref SnsTopicPolicy[*]#topics topicPolicies;
 }
 
 class SnsSubscription extends awspsmcore.AwsResource {
-  attr String endpoint;
-  attr Boolean rawMessageDelivery;
-  attr String deliveryPolicyJson;
-  attr String replayPolicyJson;
-  attr awspsmenums.SnsFilterPolicyScope filterPolicyScope;
-  attr awspsmenums.SnsProtocol[1] protocol;
+	attr String                           endpoint;
+	attr Boolean                          rawMessageDelivery;
+	attr String                           deliveryPolicyJson;
+	attr String                           replayPolicyJson;
+	attr awspsmenums.SnsFilterPolicyScope filterPolicyScope;
+	attr awspsmenums.SnsProtocol[1]       protocol;
 
-  val SnsFilterRule[*] filterRules;
+	val SnsFilterRule[*] filterRules;
 
-  ref SnsTopic[1]#subscriptions topic;
-  ref awspsmcore.AwsResource[?] endpointResource;
-  ref SqsQueue[?] deadLetterQueue;
+	ref SnsTopic[1]#subscriptions topic;
+	ref awspsmcore.AwsResource[?] endpointResource;
+	ref SqsQueue[?]               deadLetterQueue;
 }
 
 class SnsFilterRule extends kernel.TraceableElement {
-  attr String[1] fieldPath;
-  attr String[1] operator;
-  attr String[*] values;
+	attr String[1] fieldPath;
+	attr String[1] operator;
+	attr String[*] values;
 }
 
 class SnsTopicPolicy extends awspsmcore.AwsResource {
-  attr String policyDocumentJson;
+	attr String policyDocumentJson;
 
-  val awspsmsecurity.IamPolicyDocument[?] policyDocument;
+	val awspsmsecurity.IamPolicyDocument[?] policyDocument;
 
-  ref SnsTopic[+]#topicPolicies topics;
+	ref SnsTopic[+]#topicPolicies topics;
 }

@@ -1,4 +1,4 @@
-@namespace(uri="https://modriss.org/awspsm/events/1.0", prefix="awspsmevents")
+@namespace(uri = "https://modriss.org/awspsm/events/1.0", prefix = "awspsmevents")
 package awspsmevents;
 
 import "../shared/kernel.ecore";
@@ -9,181 +9,179 @@ import "awspsm-messaging.ecore";
 import "awspsm-compute.ecore";
 
 class EventBridgeBus extends awspsmcore.AwsResource {
-  attr String busName;
-  attr String eventSourceName;
+	attr String busName;
+	attr String eventSourceName;
 
-  ref EventBridgeRule[*]#bus rules;
-  ref EventBridgeArchive[*]#eventSourceBus archives;
-  ref EventBridgeBusPolicy[*]#bus policies;
+	ref EventBridgeRule[*]#bus               rules;
+	ref EventBridgeArchive[*]#eventSourceBus archives;
+	ref EventBridgeBusPolicy[*]#bus          policies;
 }
 
 class EventBridgeBusPolicy extends awspsmcore.AwsResource {
-  attr String statementId;
-  attr String policyJson;
+	attr String statementId;
+	attr String policyJson;
 
-  val awspsmsecurity.IamPolicyDocument[?] policyDocument;
+	val awspsmsecurity.IamPolicyDocument[?] policyDocument;
 
-  ref EventBridgeBus[1]#policies bus;
+	ref EventBridgeBus[1]#policies bus;
 }
 
 class EventBridgeRule extends awspsmcore.AwsResource {
-  attr String ruleName;
-  attr String descriptionText;
-  attr String eventPatternJson;
-  attr String scheduleExpression;
-  attr String state;
+	attr String ruleName;
+	attr String descriptionText;
+	attr String eventPatternJson;
+	attr String scheduleExpression;
+	attr String state;
 
-  val EventPattern[?] eventPattern;
-  val EventBridgeTarget[+] targets;
+	val EventPattern[?]      eventPattern;
+	val EventBridgeTarget[+] targets;
 
-  ref EventBridgeBus[?]#rules bus;
+	ref EventBridgeBus[?]#rules bus;
 }
 
 class EventPattern extends kernel.TraceableElement {
-  attr String[*] sources;
-  attr String[*] detailTypes;
-  attr String account;
-  attr String region;
-  attr String detailJson;
+	attr String[*] sources;
+	attr String[*] detailTypes;
+	attr String    account;
+	attr String    region;
+	attr String    detailJson;
 }
 
 class EventBridgeTarget extends kernel.TraceableElement {
-  attr String[1] targetId;
-  attr String arnExpression;
-  attr String inputPath;
-  attr String roleArn;
-  attr awspsmenums.EventBridgeTargetKind[1] targetKind;
+	attr String[1]                            targetId;
+	attr String                               arnExpression;
+	attr String                               inputPath;
+	attr String                               roleArn;
+	attr awspsmenums.EventBridgeTargetKind[1] targetKind;
 
-  val awspsmcore.ValueExpression[?] input;
-  val EventBridgeTargetParameters[?] parameters;
-  val AwsRetryPolicy[?] retryPolicy;
-  val EventBridgeInputTransformer[?] inputTransformer;
+	val awspsmcore.ValueExpression[?]  input;
+	val EventBridgeTargetParameters[?] parameters;
+	val AwsRetryPolicy[?]              retryPolicy;
+	val EventBridgeInputTransformer[?] inputTransformer;
 
-  ref awspsmcore.AwsResource[?] targetResource;
-  ref awspsmsecurity.IamRole[?] role;
-  ref awspsmmessaging.SqsQueue[?] deadLetterQueue;
+	ref awspsmcore.AwsResource[?]   targetResource;
+	ref awspsmsecurity.IamRole[?]   role;
+	ref awspsmmessaging.SqsQueue[?] deadLetterQueue;
 }
 
-abstract class EventBridgeTargetParameters extends kernel.TraceableElement {
-}
+abstract class EventBridgeTargetParameters extends kernel.TraceableElement {}
 
 class EventBridgeSqsTargetParameters extends EventBridgeTargetParameters {
-  attr String messageGroupId;
+	attr String messageGroupId;
 }
 
 class EventBridgeHttpTargetParameters extends EventBridgeTargetParameters {
-  val HttpParameter[*] headerParameters;
-  val HttpParameter[*] queryStringParameters;
-  val HttpParameter[*] pathParameterValues;
+	val HttpParameter[*] headerParameters;
+	val HttpParameter[*] queryStringParameters;
+	val HttpParameter[*] pathParameterValues;
 }
 
 class HttpParameter extends kernel.TraceableElement {
-  attr String key;
-  attr String value;
+	attr String key;
+	attr String value;
 }
 
 class EventBridgeBatchTargetParameters extends EventBridgeTargetParameters {
-  attr String jobDefinition;
-  attr String jobName;
-  attr Integer arraySize;
-  attr Integer jobAttempts;
+	attr String  jobDefinition;
+	attr String  jobName;
+	attr Integer arraySize;
+	attr Integer jobAttempts;
 }
 
 class EventBridgeInputTransformer extends kernel.TraceableElement {
-  attr String inputPathsMapJson;
-  attr String inputTemplate;
+	attr String inputPathsMapJson;
+	attr String inputTemplate;
 }
 
 class EventBridgeArchive extends awspsmcore.AwsResource {
-  attr String archiveName;
-  attr String eventPatternJson;
-  attr Integer retentionDays;
+	attr String  archiveName;
+	attr String  eventPatternJson;
+	attr Integer retentionDays;
 
-  ref EventBridgeBus[1]#archives eventSourceBus;
+	ref EventBridgeBus[1]#archives eventSourceBus;
 }
 
 class EventBridgeSchedule extends awspsmcore.AwsResource {
-  attr String scheduleName;
-  attr String[1] scheduleExpression;
-  attr String scheduleExpressionTimezone;
-  attr String flexibleTimeWindowJson;
-  attr String state;
-  attr String descriptionText;
+	attr String    scheduleName;
+	attr String[1] scheduleExpression;
+	attr String    scheduleExpressionTimezone;
+	attr String    flexibleTimeWindowJson;
+	attr String    state;
+	attr String    descriptionText;
 
-  val EventBridgeFlexibleTimeWindow[?] flexibleTimeWindow;
-  val EventBridgeTarget[1] target;
+	val EventBridgeFlexibleTimeWindow[?] flexibleTimeWindow;
+	val EventBridgeTarget[1]             target;
 
-  ref awspsmsecurity.IamRole[1] role;
+	ref awspsmsecurity.IamRole[1] role;
 }
 
 class EventBridgeFlexibleTimeWindow extends kernel.TraceableElement {
-  attr String mode;
-  attr Integer maximumWindowInMinutes;
+	attr String  mode;
+	attr Integer maximumWindowInMinutes;
 }
 
 class EventBridgePipe extends awspsmcore.AwsResource {
-  attr String pipeName;
-  attr String sourceArn;
-  attr String targetArn;
-  attr String filterCriteriaJson;
-  attr String enrichmentArn;
-  attr String sourceParametersJson;
-  attr String targetParametersJson;
-  attr String desiredState;
+	attr String pipeName;
+	attr String sourceArn;
+	attr String targetArn;
+	attr String filterCriteriaJson;
+	attr String enrichmentArn;
+	attr String sourceParametersJson;
+	attr String targetParametersJson;
+	attr String desiredState;
 
-  ref awspsmcore.AwsResource[?] sourceResource;
-  ref awspsmcore.AwsResource[?] targetResource;
-  ref awspsmcompute.AwsLambdaFunction[?] enrichmentFunction;
-  ref awspsmsecurity.IamRole[1] role;
+	ref awspsmcore.AwsResource[?]          sourceResource;
+	ref awspsmcore.AwsResource[?]          targetResource;
+	ref awspsmcompute.AwsLambdaFunction[?] enrichmentFunction;
+	ref awspsmsecurity.IamRole[1]          role;
 }
 
-abstract class EventBridgeAuthParameters extends kernel.TraceableElement {
-}
+abstract class EventBridgeAuthParameters extends kernel.TraceableElement {}
 
 class EventBridgeApiKeyAuthParameters extends EventBridgeAuthParameters {
-  attr String[1] apiKeyName;
+	attr String[1] apiKeyName;
 
-  val awspsmcore.ValueExpression[1] apiKeyValue;
+	val awspsmcore.ValueExpression[1] apiKeyValue;
 }
 
 class EventBridgeBasicAuthParameters extends EventBridgeAuthParameters {
-  val awspsmcore.ValueExpression[1] username;
-  val awspsmcore.ValueExpression[1] password;
+	val awspsmcore.ValueExpression[1] username;
+	val awspsmcore.ValueExpression[1] password;
 }
 
 class EventBridgeOAuthParameters extends EventBridgeAuthParameters {
-  attr String[1] authorizationEndpoint;
-  attr awspsmenums.EventBridgeHttpMethod[1] httpMethod;
+	attr String[1]                            authorizationEndpoint;
+	attr awspsmenums.EventBridgeHttpMethod[1] httpMethod;
 
-  val awspsmcore.ValueExpression[1] clientId;
-  val awspsmcore.ValueExpression[1] clientSecret;
-  val EventBridgeHttpParameters[?] oauthHttpParameters;
+	val awspsmcore.ValueExpression[1] clientId;
+	val awspsmcore.ValueExpression[1] clientSecret;
+	val EventBridgeHttpParameters[?]  oauthHttpParameters;
 }
 
 class EventBridgeHttpParameters extends kernel.TraceableElement {
-  val HttpParameter[*] headerParameters;
-  val HttpParameter[*] queryStringParameters;
-  val HttpParameter[*] bodyParameters;
+	val HttpParameter[*] headerParameters;
+	val HttpParameter[*] queryStringParameters;
+	val HttpParameter[*] bodyParameters;
 }
 
 class EventBridgeConnection extends awspsmcore.AwsResource {
-  attr String connectionName;
-  attr awspsmenums.EventBridgeConnectionAuthorizationType[1] authorizationType;
+	attr String                                                connectionName;
+	attr awspsmenums.EventBridgeConnectionAuthorizationType[1] authorizationType;
 
-  val EventBridgeAuthParameters[1] authParameters;
-  val EventBridgeHttpParameters[?] invocationHttpParameters;
+	val EventBridgeAuthParameters[1] authParameters;
+	val EventBridgeHttpParameters[?] invocationHttpParameters;
 }
 
 class EventBridgeApiDestination extends awspsmcore.AwsResource {
-  attr String destinationName;
-  attr String invocationEndpoint;
-  attr awspsmenums.EventBridgeHttpMethod[1] httpMethod;
-  attr Integer invocationRateLimitPerSecond;
+	attr String                               destinationName;
+	attr String                               invocationEndpoint;
+	attr awspsmenums.EventBridgeHttpMethod[1] httpMethod;
+	attr Integer                              invocationRateLimitPerSecond;
 
-  ref EventBridgeConnection[1] connection;
+	ref EventBridgeConnection[1] connection;
 }
 
 class AwsRetryPolicy extends kernel.TraceableElement {
-  attr Integer maximumRetryAttempts;
-  attr Integer maximumEventAgeInSeconds;
+	attr Integer maximumRetryAttempts;
+	attr Integer maximumEventAgeInSeconds;
 }

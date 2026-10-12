@@ -1,4 +1,4 @@
-@namespace(uri="https://modriss.org/awspsm/compute/1.0", prefix="awspsmcompute")
+@namespace(uri = "https://modriss.org/awspsm/compute/1.0", prefix = "awspsmcompute")
 package awspsmcompute;
 
 import "../shared/kernel.ecore";
@@ -11,226 +11,228 @@ import "awspsm-messaging.ecore";
 import "awspsm-storage.ecore";
 
 class AwsLambdaFunction extends awspsmcore.AwsResource, awspsmcore.S3NotificationDestination {
-  attr String functionName;
-  attr String descriptionText;
-  attr Integer memorySizeMb;
-  attr Integer timeoutSeconds;
-  attr Integer ephemeralStorageMb;
-  attr Integer reservedConcurrentExecutions;
-  attr String autoPublishAlias;
-  attr Boolean publishVersion;
-  attr awspsmenums.Decision codeSigningDecision;
-  attr awspsmenums.LambdaArchitecture architecture;
-  attr awspsmenums.PackageType packageType;
-  attr awspsmenums.LambdaRecursiveLoopMode recursiveLoopMode;
-  attr awspsmenums.LambdaSnapStartApplyOn snapStartApplyOn;
-  attr awspsmenums.LambdaRuntimeManagementMode runtimeManagementMode;
+	attr String                                  functionName;
+	attr String                                  descriptionText;
+	attr Integer                                 memorySizeMb;
+	attr Integer                                 timeoutSeconds;
+	attr Integer                                 ephemeralStorageMb;
+	attr Integer                                 reservedConcurrentExecutions;
+	attr String                                  autoPublishAlias;
+	attr Boolean                                 publishVersion;
+	attr awspsmenums.Decision                    codeSigningDecision;
+	attr awspsmenums.LambdaArchitecture          architecture;
+	attr awspsmenums.PackageType                 packageType;
+	attr awspsmenums.LambdaRecursiveLoopMode     recursiveLoopMode;
+	attr awspsmenums.LambdaSnapStartApplyOn      snapStartApplyOn;
+	attr awspsmenums.LambdaRuntimeManagementMode runtimeManagementMode;
 
-  val LambdaCodeConfig[1] code;
-  val LambdaEnvironmentVariable[*] environment;
-  val LambdaDeadLetterConfig[?] deadLetterConfig;
-  val LambdaTracingConfig[?] tracing;
-  val LambdaLoggingConfig[?] logging;
-  val LambdaFileSystemConfig[*] fileSystemConfigs;
-  val SamFunctionEvent[*]#targetFunction samEvents;
-  val awspsmnetworking.VpcAttachmentConfig[?] vpcConfig;
+	val LambdaCodeConfig[1]                     code;
+	val LambdaEnvironmentVariable[*]            environment;
+	val LambdaDeadLetterConfig[?]               deadLetterConfig;
+	val LambdaTracingConfig[?]                  tracing;
+	val LambdaLoggingConfig[?]                  logging;
+	val LambdaFileSystemConfig[*]               fileSystemConfigs;
+	val SamFunctionEvent[*]#targetFunction      samEvents;
+	val awspsmnetworking.VpcAttachmentConfig[?] vpcConfig;
 
-  ref LambdaLayerVersion[*] layers;
-  val LambdaPermission[*]#function permissions;
-  val LambdaVersion[*]#function versions;
-  val LambdaAlias[*]#function aliases;
-  val LambdaEventInvokeConfig[*]#function eventInvokeConfigs;
-  val LambdaEventSourceMapping[*]#function eventSourceMappings;
-  ref awspsmobservability.CloudWatchLogGroup[1] logGroup;
-  ref awspsmsecurity.IamRole[1] role;
-  ref awspsmsecurity.KmsKey[?] kmsKey;
-  val LambdaFunctionUrl[?]#function functionUrl;
-  ref CodeSigningConfig[?] codeSigningConfig;
+	ref LambdaLayerVersion[*] layers;
+
+	val LambdaPermission[*]#function         permissions;
+	val LambdaVersion[*]#function            versions;
+	val LambdaAlias[*]#function              aliases;
+	val LambdaEventInvokeConfig[*]#function  eventInvokeConfigs;
+	val LambdaEventSourceMapping[*]#function eventSourceMappings;
+
+	ref awspsmobservability.CloudWatchLogGroup[1] logGroup;
+	ref awspsmsecurity.IamRole[1]                 role;
+	ref awspsmsecurity.KmsKey[?]                  kmsKey;
+
+	val LambdaFunctionUrl[?]#function functionUrl;
+
+	ref CodeSigningConfig[?] codeSigningConfig;
 }
 
-abstract class LambdaCodeConfig extends kernel.TraceableElement {
-}
+abstract class LambdaCodeConfig extends kernel.TraceableElement {}
 
 class LambdaZipCodeConfig extends LambdaCodeConfig {
-  attr String codeUri;
-  attr String s3Bucket;
-  attr String s3Key;
-  attr String s3ObjectVersion;
-  attr String inlineZipFile;
-  attr String runtimeIdentifier;
-  attr String handler;
+	attr String codeUri;
+	attr String s3Bucket;
+	attr String s3Key;
+	attr String s3ObjectVersion;
+	attr String inlineZipFile;
+	attr String runtimeIdentifier;
+	attr String handler;
 }
 
 class LambdaImageCodeConfig extends LambdaCodeConfig {
-  attr String[1] imageUri;
+	attr String[1] imageUri;
 
-  val LambdaImageConfig[?] imageConfig;
+	val LambdaImageConfig[?] imageConfig;
 }
 
 class LambdaImageConfig extends kernel.TraceableElement {
-  attr String[*] command;
-  attr String[*] entryPoint;
-  attr String workingDirectory;
+	attr String[*] command;
+	attr String[*] entryPoint;
+	attr String    workingDirectory;
 }
 
 class LambdaEnvironmentVariable extends kernel.TraceableElement {
-  attr String[1] variableName;
-  attr Boolean stageSpecific;
+	attr String[1] variableName;
+	attr Boolean   stageSpecific;
 
-  val awspsmcore.ValueExpression[1] value;
+	val awspsmcore.ValueExpression[1] value;
 }
 
 abstract class LambdaInvocationBinding extends kernel.TraceableElement {
-  attr Boolean enabled;
+	attr Boolean enabled;
 }
 
 class SamFunctionEvent extends LambdaInvocationBinding {
-  attr String[1] eventName;
-  attr String[1] eventType;
+	attr String[1] eventName;
+	attr String[1] eventType;
 
-  val awspsmcore.NativeProperty[*] properties;
+	val awspsmcore.NativeProperty[*] properties;
 
-  readonly transient ref AwsLambdaFunction[1]#samEvents targetFunction;
+	readonly transient ref AwsLambdaFunction[1]#samEvents targetFunction;
 }
 
 abstract class LambdaEventSourceMapping extends awspsmcore.AwsResource {
-  attr Integer batchSize;
-  attr Integer maximumBatchingWindowSeconds;
-  attr String startingPositionTimestamp;
-  attr Boolean bisectBatchOnFunctionError;
-  attr Integer maximumRecordAgeInSeconds;
-  attr Integer maximumRetryAttempts;
-  attr Integer parallelizationFactor;
-  attr Integer tumblingWindowInSeconds;
-  attr String[*] functionResponseTypes;
-  attr String filterCriteriaJson;
-  attr Boolean reportBatchItemFailures;
-  attr Integer maximumConcurrency;
-  attr String metricsConfig;
-  attr awspsmenums.StartingPosition startingPosition;
+	attr Integer                      batchSize;
+	attr Integer                      maximumBatchingWindowSeconds;
+	attr String                       startingPositionTimestamp;
+	attr Boolean                      bisectBatchOnFunctionError;
+	attr Integer                      maximumRecordAgeInSeconds;
+	attr Integer                      maximumRetryAttempts;
+	attr Integer                      parallelizationFactor;
+	attr Integer                      tumblingWindowInSeconds;
+	attr String[*]                    functionResponseTypes;
+	attr String                       filterCriteriaJson;
+	attr Boolean                      reportBatchItemFailures;
+	attr Integer                      maximumConcurrency;
+	attr String                       metricsConfig;
+	attr awspsmenums.StartingPosition startingPosition;
 
-  val LambdaDestinationConfig[?] destinationConfig;
+	val LambdaDestinationConfig[?] destinationConfig;
 
-  readonly transient ref AwsLambdaFunction[1]#eventSourceMappings function;
+	readonly transient ref AwsLambdaFunction[1]#eventSourceMappings function;
 }
 
 class SqsLambdaEventSourceMapping extends LambdaEventSourceMapping {
-  attr awspsmenums.Decision partialBatchFailureHandlingDecision;
-  attr String partialBatchFailureHandlingRationale;
+	attr awspsmenums.Decision partialBatchFailureHandlingDecision;
+	attr String               partialBatchFailureHandlingRationale;
 
-  ref awspsmmessaging.SqsQueue[1] queue;
+	ref awspsmmessaging.SqsQueue[1] queue;
 }
 
 class DynamoDbStreamLambdaEventSourceMapping extends LambdaEventSourceMapping {
-  ref awspsmstorage.DynamoDbTable[1] table;
+	ref awspsmstorage.DynamoDbTable[1] table;
 }
 
 class GenericLambdaEventSourceMapping extends LambdaEventSourceMapping {
-  attr awspsmenums.LambdaEventSourceKind[1] sourceKind;
-  attr String[1] sourceArnExpression;
+	attr awspsmenums.LambdaEventSourceKind[1] sourceKind;
+	attr String[1]                            sourceArnExpression;
 
-  ref awspsmcore.AwsResource[?] eventSourceResource;
+	ref awspsmcore.AwsResource[?] eventSourceResource;
 }
 
 class LambdaDeadLetterConfig extends kernel.TraceableElement {
-  ref awspsmmessaging.SqsQueue[?] targetQueue;
-  ref awspsmmessaging.SnsTopic[?] targetTopic;
+	ref awspsmmessaging.SqsQueue[?] targetQueue;
+	ref awspsmmessaging.SnsTopic[?] targetTopic;
 }
 
 class LambdaEventInvokeConfig extends awspsmcore.AwsResource {
-  attr Integer maximumRetryAttempts;
-  attr Integer maximumEventAgeInSeconds;
+	attr Integer maximumRetryAttempts;
+	attr Integer maximumEventAgeInSeconds;
 
-  val LambdaDestinationConfig[?] destinationConfig;
+	val LambdaDestinationConfig[?] destinationConfig;
 
-  readonly transient ref AwsLambdaFunction[1]#eventInvokeConfigs function;
-  ref LambdaAlias[?] qualifierAlias;
+	readonly transient ref AwsLambdaFunction[1]#eventInvokeConfigs function;
+	ref LambdaAlias[?]                                             qualifierAlias;
 }
 
 class LambdaDestinationConfig extends kernel.TraceableElement {
-  ref awspsmcore.AwsResource[?] onSuccess;
-  ref awspsmcore.AwsResource[?] onFailure;
+	ref awspsmcore.AwsResource[?] onSuccess;
+	ref awspsmcore.AwsResource[?] onFailure;
 }
 
 class LambdaTracingConfig extends awspsmcore.TracingConfig {
-  attr awspsmenums.LambdaTracingMode[1] mode;
+	attr awspsmenums.LambdaTracingMode[1] mode;
 }
 
 class LambdaLoggingConfig extends kernel.TraceableElement {
-  attr String applicationLogLevel;
-  attr String systemLogLevel;
-  attr String logFormat;
-  attr String logGroupName;
+	attr String applicationLogLevel;
+	attr String systemLogLevel;
+	attr String logFormat;
+	attr String logGroupName;
 }
 
 class LambdaLayerVersion extends awspsmcore.AwsResource {
-  attr String layerName;
-  attr String contentUri;
-  attr String[*] compatibleRuntimes;
-  attr String licenseInfo;
-  attr awspsmenums.LambdaArchitecture[*] compatibleArchitectures;
+	attr String                            layerName;
+	attr String                            contentUri;
+	attr String[*]                         compatibleRuntimes;
+	attr String                            licenseInfo;
+	attr awspsmenums.LambdaArchitecture[*] compatibleArchitectures;
 }
 
 class LambdaLayerPermission extends awspsmcore.AwsResource {
-  attr String action;
-  attr String principal;
-  attr String organizationId;
+	attr String action;
+	attr String principal;
+	attr String organizationId;
 
-  ref LambdaLayerVersion[1] layerVersion;
+	ref LambdaLayerVersion[1] layerVersion;
 }
 
 class LambdaVersion extends awspsmcore.AwsResource {
-  attr String versionDescription;
+	attr String versionDescription;
 
-  val LambdaProvisionedConcurrencyConfig[?] provisionedConcurrencyConfig;
+	val LambdaProvisionedConcurrencyConfig[?] provisionedConcurrencyConfig;
 
-  readonly transient ref AwsLambdaFunction[1]#versions function;
+	readonly transient ref AwsLambdaFunction[1]#versions function;
 }
 
 class LambdaAlias extends awspsmcore.AwsResource {
-  attr String[1] aliasName;
-  attr String functionVersion;
-  attr String routingConfig;
+	attr String[1] aliasName;
+	attr String    functionVersion;
+	attr String    routingConfig;
 
-  val LambdaProvisionedConcurrencyConfig[?] provisionedConcurrencyConfig;
+	val LambdaProvisionedConcurrencyConfig[?] provisionedConcurrencyConfig;
 
-  readonly transient ref AwsLambdaFunction[1]#aliases function;
-  ref LambdaVersion[?] version;
+	readonly transient ref AwsLambdaFunction[1]#aliases function;
+	ref LambdaVersion[?]                                version;
 }
 
 class LambdaProvisionedConcurrencyConfig extends kernel.TraceableElement {
-  attr Integer[1] provisionedConcurrentExecutions;
+	attr Integer[1] provisionedConcurrentExecutions;
 }
 
 class LambdaPermission extends awspsmcore.AwsResource {
-  attr String[1] action;
-  attr String[1] principal;
-  attr String sourceArn;
-  attr String sourceAccount;
-  attr awspsmenums.LambdaFunctionUrlAuthType functionUrlAuthType;
+	attr String[1]                             action;
+	attr String[1]                             principal;
+	attr String                                sourceArn;
+	attr String                                sourceAccount;
+	attr awspsmenums.LambdaFunctionUrlAuthType functionUrlAuthType;
 
-  readonly transient ref AwsLambdaFunction[1]#permissions function;
+	readonly transient ref AwsLambdaFunction[1]#permissions function;
 }
 
 class LambdaFunctionUrl extends awspsmcore.AwsResource {
-  attr awspsmenums.LambdaFunctionUrlAuthType[1] authType;
-  attr awspsmenums.LambdaInvokeMode invokeMode;
+	attr awspsmenums.LambdaFunctionUrlAuthType[1] authType;
+	attr awspsmenums.LambdaInvokeMode             invokeMode;
 
-  val LambdaUrlCorsConfiguration[?] cors;
+	val LambdaUrlCorsConfiguration[?] cors;
 
-  readonly transient ref AwsLambdaFunction[1]#functionUrl function;
+	readonly transient ref AwsLambdaFunction[1]#functionUrl function;
 }
 
-class LambdaUrlCorsConfiguration extends awspsmcore.CorsConfiguration {
-}
+class LambdaUrlCorsConfiguration extends awspsmcore.CorsConfiguration {}
 
 class LambdaFileSystemConfig extends kernel.TraceableElement {
-  attr String[1] arn;
-  attr String[1] localMountPath;
+	attr String[1] arn;
+	attr String[1] localMountPath;
 }
 
 class CodeSigningConfig extends awspsmcore.AwsResource {
-  attr String allowedPublishers;
-  attr String codeSigningPolicies;
-  attr String descriptionText;
+	attr String allowedPublishers;
+	attr String codeSigningPolicies;
+	attr String descriptionText;
 }

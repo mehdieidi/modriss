@@ -1,4 +1,4 @@
-@namespace(uri="https://modriss.org/cim/process-policy/1.0", prefix="cimprocess")
+@namespace(uri = "https://modriss.org/cim/process-policy/1.0", prefix = "cimprocess")
 package cimprocess;
 
 import "../shared/kernel.ecore";
@@ -8,160 +8,158 @@ import "cim-domain-data.ecore";
 import "cim-behavior.ecore";
 
 class BusinessProcess extends kernel.TraceableElement {
-  attr String businessTriggerDescription;
-  attr Boolean longRunning;
-  attr Boolean humanApprovalPossible;
-  attr Boolean compensationExpected;
-  attr String completionCriterion;
-  attr cimtypes.ProcessKind processKind;
-  attr cimtypes.CapabilityCriticality criticality;
+	attr String                         businessTriggerDescription;
+	attr Boolean                        longRunning;
+	attr Boolean                        humanApprovalPossible;
+	attr Boolean                        compensationExpected;
+	attr String                         completionCriterion;
+	attr cimtypes.ProcessKind           processKind;
+	attr cimtypes.CapabilityCriticality criticality;
 
-  val ProcessStep[+] steps;
-  val ProcessTransition[*] transitions;
-  val ExceptionScenario[*] exceptions;
-  val TemporalConstraint[*] temporalConstraints;
+	val ProcessStep[+]        steps;
+	val ProcessTransition[*]  transitions;
+	val ExceptionScenario[*]  exceptions;
+	val TemporalConstraint[*] temporalConstraints;
 
-  ref cimorg.BusinessCapability[?]#ownsProcesses owningCapability;
-  ref cimorg.Actor[?] triggeringActor;
-  ref cimbehavior.BusinessEvent[?] triggeringEvent;
-  ref cimbehavior.Command[?] triggeringCommand;
-  ref cimbehavior.Condition[*] preconditions;
-  ref cimbehavior.Condition[*] postconditions;
-  ref kernel.ModelElement[?] trigger;
+	ref cimorg.BusinessCapability[?]#ownsProcesses owningCapability;
+	ref cimorg.Actor[?]                            triggeringActor;
+	ref cimbehavior.BusinessEvent[?]               triggeringEvent;
+	ref cimbehavior.Command[?]                     triggeringCommand;
+	ref cimbehavior.Condition[*]                   preconditions;
+	ref cimbehavior.Condition[*]                   postconditions;
+	ref kernel.ModelElement[?]                     trigger;
 }
 
 abstract class ProcessStep extends kernel.TraceableElement {
-  attr Integer orderIndex;
-  attr Boolean optional;
-  attr Boolean repeatable;
-  attr String responsibility;
-  attr cimtypes.StepKind stepKind;
+	attr Integer           orderIndex;
+	attr Boolean           optional;
+	attr Boolean           repeatable;
+	attr String            responsibility;
+	attr cimtypes.StepKind stepKind;
 
-  ref cimorg.Role[*] responsibleRoles;
+	ref cimorg.Role[*] responsibleRoles;
 }
 
-class StartStep extends ProcessStep {
-}
+class StartStep extends ProcessStep {}
 
-class EndStep extends ProcessStep {
-}
+class EndStep extends ProcessStep {}
 
 class CommandStep extends ProcessStep {
-  ref cimbehavior.Command[1] command;
+	ref cimbehavior.Command[1] command;
 }
 
 class QueryStep extends ProcessStep {
-  ref cimbehavior.Query[1] query;
+	ref cimbehavior.Query[1] query;
 }
 
 class EventStep extends ProcessStep {
-  ref cimbehavior.BusinessEvent[1] event;
+	ref cimbehavior.BusinessEvent[1] event;
 }
 
 class PolicyStep extends ProcessStep {
-  ref Policy[1] policy;
+	ref Policy[1] policy;
 }
 
 class HumanTaskStep extends ProcessStep {
-  attr String taskDescription;
-  attr String completionEvidence;
+	attr String taskDescription;
+	attr String completionEvidence;
 }
 
 class ExternalInteractionStep extends ProcessStep {
-  attr String interactionPurpose;
+	attr String interactionPurpose;
 
-  ref cimorg.ExternalSystem[1] externalSystem;
-  ref cimdomain.InformationItem[*] exchangedInformation;
+	ref cimorg.ExternalSystem[1]     externalSystem;
+	ref cimdomain.InformationItem[*] exchangedInformation;
 }
 
 class DecisionStep extends ProcessStep {
-  ref cimbehavior.Condition[?] condition;
-  ref DecisionTable[?] decisionTable;
+	ref cimbehavior.Condition[?] condition;
+	ref DecisionTable[?]         decisionTable;
 }
 
 class WaitStep extends ProcessStep {
-  attr String waitReason;
-  attr String durationExpression;
+	attr String waitReason;
+	attr String durationExpression;
 
-  val kernel.Expression[?] durationExpressionModel;
+	val kernel.Expression[?] durationExpressionModel;
 }
 
 class ProcessTransition extends kernel.SemanticRelationship {
-  attr String label;
-  attr String conditionExpression;
-  attr Integer orderIndex;
-  attr String probabilityHint;
+	attr String  label;
+	attr String  conditionExpression;
+	attr Integer orderIndex;
+	attr String  probabilityHint;
 
-  val kernel.Expression[?] condition;
+	val kernel.Expression[?] condition;
 
-  ref ProcessStep[1] source;
-  ref ProcessStep[1] target;
-  ref cimbehavior.Condition[?] conditionRef;
+	ref ProcessStep[1]           source;
+	ref ProcessStep[1]           target;
+	ref cimbehavior.Condition[?] conditionRef;
 }
 
 class Policy extends kernel.TraceableElement {
-  attr String naturalLanguageRule;
-  attr String expression;
-  attr Boolean auditRequired;
-  attr cimtypes.PolicyType policyType;
-  attr kernel.ExpressionLanguage expressionLanguage;
-  attr kernel.ConstraintStrength enforcementStrength;
-  attr kernel.Severity violationSeverity;
+	attr String                    naturalLanguageRule;
+	attr String                    expression;
+	attr Boolean                   auditRequired;
+	attr cimtypes.PolicyType       policyType;
+	attr kernel.ExpressionLanguage expressionLanguage;
+	attr kernel.ConstraintStrength enforcementStrength;
+	attr kernel.Severity           violationSeverity;
 
-  val kernel.Expression[?] expressionModel;
+	val kernel.Expression[?] expressionModel;
 
-  ref cimbehavior.BusinessEvent[*]#consumedByPolicies triggeredBy;
-  ref cimbehavior.Command[*] guards;
-  ref cimbehavior.Query[*] constrainsQueries;
-  ref cimbehavior.Command[*] emitsCommands;
-  ref cimbehavior.BusinessEvent[*]#causedByPolicies emitsEvents;
-  ref DecisionTable[?] decisionTable;
+	ref cimbehavior.BusinessEvent[*]#consumedByPolicies triggeredBy;
+	ref cimbehavior.Command[*]                          guards;
+	ref cimbehavior.Query[*]                            constrainsQueries;
+	ref cimbehavior.Command[*]                          emitsCommands;
+	ref cimbehavior.BusinessEvent[*]#causedByPolicies   emitsEvents;
+	ref DecisionTable[?]                                decisionTable;
 }
 
 class DecisionTable extends kernel.TraceableElement {
-  attr String hitPolicy;
-  attr String defaultOutcome;
-  attr Boolean complete;
+	attr String  hitPolicy;
+	attr String  defaultOutcome;
+	attr Boolean complete;
 
-  val DecisionRule[+] rules;
+	val DecisionRule[+] rules;
 
-  ref cimdomain.InformationItem[*] inputs;
-  ref cimdomain.InformationItem[*] outputs;
+	ref cimdomain.InformationItem[*] inputs;
+	ref cimdomain.InformationItem[*] outputs;
 }
 
 class DecisionRule extends kernel.TraceableElement {
-  attr Integer priorityOrder;
-  attr String condition;
-  attr String outcome;
+	attr Integer priorityOrder;
+	attr String  condition;
+	attr String  outcome;
 
-  val kernel.Expression[?] conditionExpression;
-  val kernel.Expression[?] outcomeExpression;
+	val kernel.Expression[?] conditionExpression;
+	val kernel.Expression[?] outcomeExpression;
 
-  ref cimbehavior.Command[*] resultingCommands;
-  ref cimbehavior.BusinessEvent[*] resultingEvents;
+	ref cimbehavior.Command[*]       resultingCommands;
+	ref cimbehavior.BusinessEvent[*] resultingEvents;
 }
 
 class ExceptionScenario extends kernel.TraceableElement {
-  attr String scenario;
-  attr String businessImpact;
-  attr Boolean expected;
-  attr Boolean recoverable;
-  attr String recoveryAction;
-  attr Boolean compensationRequired;
+	attr String  scenario;
+	attr String  businessImpact;
+	attr Boolean expected;
+	attr Boolean recoverable;
+	attr String  recoveryAction;
+	attr Boolean compensationRequired;
 
-  ref cimbehavior.BusinessError[*] errors;
-  ref cimbehavior.BusinessEvent[*] resultingEvents;
+	ref cimbehavior.BusinessError[*] errors;
+	ref cimbehavior.BusinessEvent[*] resultingEvents;
 }
 
 class TemporalConstraint extends kernel.TraceableElement {
-  attr String deadlineExpression;
-  attr String durationExpression;
-  attr String orderingExpression;
-  attr kernel.Severity violationSeverity;
+	attr String          deadlineExpression;
+	attr String          durationExpression;
+	attr String          orderingExpression;
+	attr kernel.Severity violationSeverity;
 
-  val kernel.Expression[?] deadline;
-  val kernel.Expression[?] duration;
-  val kernel.Expression[?] ordering;
+	val kernel.Expression[?] deadline;
+	val kernel.Expression[?] duration;
+	val kernel.Expression[?] ordering;
 
-  ref kernel.ModelElement[*] constrainedElements;
+	ref kernel.ModelElement[*] constrainedElements;
 }

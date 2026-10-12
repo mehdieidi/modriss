@@ -1,4 +1,4 @@
-@namespace(uri="https://modriss.org/awspsm/storage/1.0", prefix="awspsmstorage")
+@namespace(uri = "https://modriss.org/awspsm/storage/1.0", prefix = "awspsmstorage")
 package awspsmstorage;
 
 import "../shared/kernel.ecore";
@@ -7,228 +7,227 @@ import "awspsm-core.ecore";
 import "awspsm-security.ecore";
 
 class DynamoDbTable extends awspsmcore.AwsResource {
-  attr String tableName;
-  attr Boolean deletionProtectionEnabled;
-  attr Boolean pointInTimeRecoveryEnabled;
-  attr Boolean contributorInsightsEnabled;
-  attr Boolean importSourceSpecificationRequired;
-  attr String resourcePolicyJson;
-  attr awspsmenums.DynamoDbBillingMode[1] billingMode;
-  attr awspsmenums.DynamoDbTableClass tableClass;
+	attr String                             tableName;
+	attr Boolean                            deletionProtectionEnabled;
+	attr Boolean                            pointInTimeRecoveryEnabled;
+	attr Boolean                            contributorInsightsEnabled;
+	attr Boolean                            importSourceSpecificationRequired;
+	attr String                             resourcePolicyJson;
+	attr awspsmenums.DynamoDbBillingMode[1] billingMode;
+	attr awspsmenums.DynamoDbTableClass     tableClass;
 
-  val DynamoDbAttributeDefinition[+] attributeDefinitions;
-  val DynamoDbKeySchemaElement[+] keySchema;
-  val DynamoDbLocalSecondaryIndex[*] localSecondaryIndexes;
-  val DynamoDbGlobalSecondaryIndex[*] globalSecondaryIndexes;
-  val DynamoDbReplicaSpecification[*] replicas;
-  val DynamoDbProvisionedThroughput[?] provisionedThroughput;
-  val DynamoDbOnDemandThroughput[?] onDemandThroughput;
-  val DynamoDbStreamSpecification[?] streamSpecification;
-  val DynamoDbTimeToLiveSpecification[?] timeToLiveSpecification;
-  val DynamoDbSseSpecification[?] sseSpecification;
-  val DynamoDbBackupPolicy[?] backupPolicy;
-  val awspsmsecurity.IamPolicyDocument[?] resourcePolicy;
+	val DynamoDbAttributeDefinition[+]      attributeDefinitions;
+	val DynamoDbKeySchemaElement[+]         keySchema;
+	val DynamoDbLocalSecondaryIndex[*]      localSecondaryIndexes;
+	val DynamoDbGlobalSecondaryIndex[*]     globalSecondaryIndexes;
+	val DynamoDbReplicaSpecification[*]     replicas;
+	val DynamoDbProvisionedThroughput[?]    provisionedThroughput;
+	val DynamoDbOnDemandThroughput[?]       onDemandThroughput;
+	val DynamoDbStreamSpecification[?]      streamSpecification;
+	val DynamoDbTimeToLiveSpecification[?]  timeToLiveSpecification;
+	val DynamoDbSseSpecification[?]         sseSpecification;
+	val DynamoDbBackupPolicy[?]             backupPolicy;
+	val awspsmsecurity.IamPolicyDocument[?] resourcePolicy;
 
-  ref awspsmsecurity.KmsKey[?] kmsKey;
+	ref awspsmsecurity.KmsKey[?] kmsKey;
 }
 
 class DynamoDbAttributeDefinition extends kernel.TraceableElement {
-  attr String[1] attributeName;
-  attr awspsmenums.DynamoDbAttributeType[1] attributeType;
+	attr String[1]                            attributeName;
+	attr awspsmenums.DynamoDbAttributeType[1] attributeType;
 }
 
 class DynamoDbKeySchemaElement extends kernel.TraceableElement {
-  attr String[1] attributeName;
-  attr awspsmenums.DynamoDbKeyType[1] keyType;
+	attr String[1]                      attributeName;
+	attr awspsmenums.DynamoDbKeyType[1] keyType;
 }
 
 class DynamoDbProjection extends kernel.TraceableElement {
-  attr awspsmenums.DynamoDbProjectionType[1] projectionType;
-  attr String[*] nonKeyAttributes;
+	attr awspsmenums.DynamoDbProjectionType[1] projectionType;
+	attr String[*]                             nonKeyAttributes;
 }
 
 class DynamoDbProvisionedThroughput extends kernel.TraceableElement {
-  attr Integer[1] readCapacityUnits;
-  attr Integer[1] writeCapacityUnits;
+	attr Integer[1] readCapacityUnits;
+	attr Integer[1] writeCapacityUnits;
 }
 
 class DynamoDbOnDemandThroughput extends kernel.TraceableElement {
-  attr Integer maxReadRequestUnits;
-  attr Integer maxWriteRequestUnits;
+	attr Integer maxReadRequestUnits;
+	attr Integer maxWriteRequestUnits;
 }
 
 class DynamoDbLocalSecondaryIndex extends kernel.TraceableElement {
-  attr String[1] indexName;
+	attr String[1] indexName;
 
-  val DynamoDbKeySchemaElement[+] keySchema;
-  val DynamoDbProjection[1] projection;
+	val DynamoDbKeySchemaElement[+] keySchema;
+	val DynamoDbProjection[1]       projection;
 }
 
 class DynamoDbGlobalSecondaryIndex extends kernel.TraceableElement {
-  attr String[1] indexName;
+	attr String[1] indexName;
 
-  val DynamoDbKeySchemaElement[+] keySchema;
-  val DynamoDbProjection[1] projection;
-  val DynamoDbProvisionedThroughput[?] provisionedThroughput;
-  val DynamoDbOnDemandThroughput[?] onDemandThroughput;
+	val DynamoDbKeySchemaElement[+]      keySchema;
+	val DynamoDbProjection[1]            projection;
+	val DynamoDbProvisionedThroughput[?] provisionedThroughput;
+	val DynamoDbOnDemandThroughput[?]    onDemandThroughput;
 }
 
 class DynamoDbReplicaSpecification extends kernel.TraceableElement {
-  attr String[1] region;
-  attr Boolean pointInTimeRecoveryEnabled;
-  attr Boolean deletionProtectionEnabled;
+	attr String[1] region;
+	attr Boolean   pointInTimeRecoveryEnabled;
+	attr Boolean   deletionProtectionEnabled;
 
-  ref awspsmsecurity.KmsKey[?] kmsKey;
+	ref awspsmsecurity.KmsKey[?] kmsKey;
 }
 
 class DynamoDbStreamSpecification extends kernel.TraceableElement {
-  attr awspsmenums.DynamoDbStreamViewType[1] streamViewType;
+	attr awspsmenums.DynamoDbStreamViewType[1] streamViewType;
 }
 
 class DynamoDbTimeToLiveSpecification extends kernel.TraceableElement {
-  attr String[1] attributeName;
-  attr Boolean enabled;
+	attr String[1] attributeName;
+	attr Boolean   enabled;
 }
 
 class DynamoDbSseSpecification extends kernel.TraceableElement {
-  attr Boolean enabled;
-  attr String sseType;
+	attr Boolean enabled;
+	attr String  sseType;
 
-  ref awspsmsecurity.KmsKey[?] kmsKey;
+	ref awspsmsecurity.KmsKey[?] kmsKey;
 }
 
 class DynamoDbBackupPolicy extends kernel.TraceableElement {
-  attr String backupRationale;
-  attr Integer recoveryPointRetentionDays;
-  attr awspsmenums.Decision pointInTimeRecoveryDecision;
+	attr String               backupRationale;
+	attr Integer              recoveryPointRetentionDays;
+	attr awspsmenums.Decision pointInTimeRecoveryDecision;
 }
 
 class S3Bucket extends awspsmcore.AwsResource {
-  attr String bucketName;
-  attr Boolean objectLockEnabled;
-  attr Boolean transferAccelerationEnabled;
-  attr Boolean eventBridgeNotificationEnabled;
-  attr Boolean bucketKeyEnabled;
-  attr String accessControl;
-  attr String websiteConfigurationJson;
-  attr String loggingConfigurationJson;
-  attr awspsmenums.S3VersioningStatus versioningStatus;
-  attr awspsmenums.S3BlockPublicAccessMode publicAccessMode;
+	attr String                              bucketName;
+	attr Boolean                             objectLockEnabled;
+	attr Boolean                             transferAccelerationEnabled;
+	attr Boolean                             eventBridgeNotificationEnabled;
+	attr Boolean                             bucketKeyEnabled;
+	attr String                              accessControl;
+	attr String                              websiteConfigurationJson;
+	attr String                              loggingConfigurationJson;
+	attr awspsmenums.S3VersioningStatus      versioningStatus;
+	attr awspsmenums.S3BlockPublicAccessMode publicAccessMode;
 
-  val S3OwnershipControls[?] ownershipControls;
-  val awspsmcore.CorsConfiguration[?] cors;
-  val S3BucketEncryption[?] encryption;
-  val S3LifecycleConfiguration[?] lifecycle;
-  val S3PublicAccessBlockConfiguration[?] publicAccessBlock;
-  val S3NotificationConfiguration[?] notificationConfiguration;
-  val S3ReplicationConfiguration[?] replicationConfiguration;
+	val S3OwnershipControls[?]              ownershipControls;
+	val awspsmcore.CorsConfiguration[?]     cors;
+	val S3BucketEncryption[?]               encryption;
+	val S3LifecycleConfiguration[?]         lifecycle;
+	val S3PublicAccessBlockConfiguration[?] publicAccessBlock;
+	val S3NotificationConfiguration[?]      notificationConfiguration;
+	val S3ReplicationConfiguration[?]       replicationConfiguration;
 
-  ref S3BucketPolicy[?]#bucket bucketPolicy;
+	ref S3BucketPolicy[?]#bucket bucketPolicy;
 }
 
 class S3BucketEncryption extends kernel.TraceableElement {
-  attr String sseAlgorithm;
-  attr Boolean bucketKeyEnabled;
+	attr String  sseAlgorithm;
+	attr Boolean bucketKeyEnabled;
 
-  ref awspsmsecurity.KmsKey[?] kmsKey;
+	ref awspsmsecurity.KmsKey[?] kmsKey;
 }
 
 class S3OwnershipControls extends kernel.TraceableElement {
-  val S3OwnershipRule[+] rules;
+	val S3OwnershipRule[+] rules;
 }
 
 class S3OwnershipRule extends kernel.TraceableElement {
-  attr String objectOwnership;
+	attr String objectOwnership;
 }
 
 class S3LifecycleConfiguration extends kernel.TraceableElement {
-  val S3LifecycleRule[+] rules;
+	val S3LifecycleRule[+] rules;
 }
 
 class S3LifecycleRule extends kernel.TraceableElement {
-  attr String[1] ruleId;
-  attr String[1] status;
-  attr String prefix;
-  attr String tagFiltersJson;
-  attr Integer expirationInDays;
-  attr Integer noncurrentVersionExpirationInDays;
+	attr String[1] ruleId;
+	attr String[1] status;
+	attr String    prefix;
+	attr String    tagFiltersJson;
+	attr Integer   expirationInDays;
+	attr Integer   noncurrentVersionExpirationInDays;
 
-  val S3LifecycleFilter[?] filter;
-  val S3Transition[*] transitions;
+	val S3LifecycleFilter[?] filter;
+	val S3Transition[*]      transitions;
 }
 
 class S3LifecycleFilter extends kernel.TraceableElement {
-  attr String prefix;
-  attr Integer objectSizeGreaterThan;
-  attr Integer objectSizeLessThan;
+	attr String  prefix;
+	attr Integer objectSizeGreaterThan;
+	attr Integer objectSizeLessThan;
 
-  val S3TagFilter[*] tags;
+	val S3TagFilter[*] tags;
 }
 
 class S3TagFilter extends kernel.TraceableElement {
-  attr String[1] key;
-  attr String value;
+	attr String[1] key;
+	attr String    value;
 }
 
 class S3Transition extends kernel.TraceableElement {
-  attr String storageClass;
-  attr Integer transitionInDays;
+	attr String  storageClass;
+	attr Integer transitionInDays;
 }
 
 class S3PublicAccessBlockConfiguration extends kernel.TraceableElement {
-  attr Boolean blockPublicAcls;
-  attr Boolean blockPublicPolicy;
-  attr Boolean ignorePublicAcls;
-  attr Boolean restrictPublicBuckets;
+	attr Boolean blockPublicAcls;
+	attr Boolean blockPublicPolicy;
+	attr Boolean ignorePublicAcls;
+	attr Boolean restrictPublicBuckets;
 }
 
 class S3NotificationConfiguration extends kernel.TraceableElement {
-  attr Boolean eventBridgeEnabled;
+	attr Boolean eventBridgeEnabled;
 
-  val S3NotificationRule[*]#configuration rules;
+	val S3NotificationRule[*]#configuration rules;
 }
 
 class S3NotificationRule extends kernel.TraceableElement {
-  attr String[*] eventTypes;
-  attr String filterPrefix;
-  attr String filterSuffix;
+	attr String[*] eventTypes;
+	attr String    filterPrefix;
+	attr String    filterSuffix;
 
-  readonly transient ref S3NotificationConfiguration[1]#rules configuration;
-
-  ref awspsmcore.S3NotificationDestination[?] destination;
+	readonly transient ref S3NotificationConfiguration[1]#rules configuration;
+	ref awspsmcore.S3NotificationDestination[?]                 destination;
 }
 
 class S3ReplicationConfiguration extends kernel.TraceableElement {
-  attr String rulesJson;
+	attr String rulesJson;
 
-  val S3ReplicationRule[*] rules;
+	val S3ReplicationRule[*] rules;
 
-  ref awspsmsecurity.IamRole[1] role;
+	ref awspsmsecurity.IamRole[1] role;
 }
 
 class S3ReplicationRule extends kernel.TraceableElement {
-  attr String ruleId;
-  attr String status;
-  attr String destinationBucketArn;
-  attr String prefix;
-  attr String filterJson;
+	attr String ruleId;
+	attr String status;
+	attr String destinationBucketArn;
+	attr String prefix;
+	attr String filterJson;
 
-  val S3LifecycleFilter[?] filter;
-  val S3ReplicationDestination[?] destination;
+	val S3LifecycleFilter[?]        filter;
+	val S3ReplicationDestination[?] destination;
 }
 
 class S3ReplicationDestination extends kernel.TraceableElement {
-  attr String[1] bucketArn;
-  attr String accountId;
-  attr String storageClass;
+	attr String[1] bucketArn;
+	attr String    accountId;
+	attr String    storageClass;
 
-  ref awspsmsecurity.KmsKey[?] replicaKmsKey;
+	ref awspsmsecurity.KmsKey[?] replicaKmsKey;
 }
 
 class S3BucketPolicy extends awspsmcore.AwsResource {
-  attr String policyDocumentJson;
+	attr String policyDocumentJson;
 
-  val awspsmsecurity.IamPolicyDocument[?] policyDocument;
+	val awspsmsecurity.IamPolicyDocument[?] policyDocument;
 
-  ref S3Bucket[1]#bucketPolicy bucket;
+	ref S3Bucket[1]#bucketPolicy bucket;
 }

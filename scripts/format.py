@@ -21,7 +21,8 @@ def run(command: list[str]) -> None:
 
 def normalized_files(config: dict[str, object]) -> list[Path]:
     excluded = set(config["excludedDirectories"])
-    extensions = set(config["normalizedExtensions"])
+    # Emfatic owns its whitespace, including whitespace inside strings/comments.
+    extensions = set(config["normalizedExtensions"]) - {".emf"}
     files: list[Path] = []
 
     for path in ROOT.rglob("*"):
@@ -76,6 +77,15 @@ def maven_command(check: bool) -> list[str]:
     return [maven, "spotless:check" if check else "spotless:apply"]
 
 
+def emf_command(config: dict[str, object], check: bool) -> list[str]:
+    command = [sys.executable, str(Path(__file__).with_name("format-emf.py")), str(ROOT)]
+    for directory in config["excludedDirectories"]:
+        command.extend(["--exclude", directory])
+    if check:
+        command.append("--check")
+    return command
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--check", action="store_true", help="Check without changing files.")
@@ -86,6 +96,7 @@ def main() -> int:
         run(maven_command(args.check))
         ensure_node_dependencies()
         run(prettier_command(config, args.check))
+        run(emf_command(config, args.check))
         normalized = normalize_text_files(config, args.check)
     except (FileNotFoundError, subprocess.CalledProcessError) as error:
         print(f"Formatting failed: {error}", file=sys.stderr)

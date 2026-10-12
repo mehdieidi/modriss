@@ -1,4 +1,4 @@
-@namespace(uri="https://modriss.org/pim/compute/1.0", prefix="compute")
+@namespace(uri = "https://modriss.org/pim/compute/1.0", prefix = "compute")
 package compute;
 
 import "../shared/kernel.ecore";
@@ -12,61 +12,61 @@ import "pim-security.ecore";
 import "pim-deployment.ecore";
 
 abstract class ComputeElement extends kernel.TraceableElement, kernel.FlowEndpoint, kernel.PolicyTarget, kernel.ProtectedResource {
-  attr String responsibility;
-  attr Boolean stateless;
-  attr Boolean coldStartSensitive;
-  attr Integer expectedAverageDurationMs;
-  attr Integer expectedP95DurationMs;
-  attr Integer expectedPeakConcurrency;
-  attr pimtypes.ComputeProfile computeProfile;
-  attr pimtypes.ExecutionModel executionModel;
+	attr String                  responsibility;
+	attr Boolean                 stateless;
+	attr Boolean                 coldStartSensitive;
+	attr Integer                 expectedAverageDurationMs;
+	attr Integer                 expectedP95DurationMs;
+	attr Integer                 expectedPeakConcurrency;
+	attr pimtypes.ComputeProfile computeProfile;
+	attr pimtypes.ExecutionModel executionModel;
 }
 
 class Function extends ComputeElement, kernel.DeployableElement, kernel.InvocationTarget, kernel.FunctionTarget, kernel.SubscriptionTarget, kernel.RoutingTarget, kernel.ConfigurableElement {
-  attr String handlerResponsibility;
-  attr String sourceNameSuggestion;
-  attr Boolean publicEntryPoint;
-  attr Boolean writesState;
-  attr Boolean readsState;
-  attr Boolean publishesEvents;
-  attr Boolean requiresNetworkAccess;
-  attr Boolean requiresFileSystem;
-  attr Boolean requiresLargeTemporaryStorage;
-  attr Boolean requiresIdempotency;
-  attr String businessOperationRef;
-  attr pimtypes.FunctionKind[1] functionKind;
+	attr String                   handlerResponsibility;
+	attr String                   sourceNameSuggestion;
+	attr Boolean                  publicEntryPoint;
+	attr Boolean                  writesState;
+	attr Boolean                  readsState;
+	attr Boolean                  publishesEvents;
+	attr Boolean                  requiresNetworkAccess;
+	attr Boolean                  requiresFileSystem;
+	attr Boolean                  requiresLargeTemporaryStorage;
+	attr Boolean                  requiresIdempotency;
+	attr String                   businessOperationRef;
+	attr pimtypes.FunctionKind[1] functionKind;
 
-  val contracts.FunctionContract[1] contract;
-  val Trigger[*]#function triggers;
+	val contracts.FunctionContract[1] contract;
+	val Trigger[*]#function           triggers;
 
-  readonly transient ref deployment.ServerlessService[1]#functions service;
-  ref data.StorageElement[*] reads;
-  ref data.StorageElement[*] writes;
-  ref contracts.EventType[*] publishes;
-  ref contracts.EventType[*] subscribesTo;
-  ref external.ExternalAdapter[*] callsAdapters;
-  ref config.Secret[*] usesSecrets;
-  ref config.EnvironmentVariable[*] environmentVariables;
-  ref policy.IdempotencyPolicy[?] idempotency;
-  ref policy.TimeoutPolicy[?] timeout;
-  ref policy.ResiliencePolicy[?] resilience;
-  ref policy.ConcurrencyPolicy[?] concurrency;
-  ref policy.ObservabilityConfig[?] observability;
-  ref security.SecurityPolicy[*] securityPolicies;
+	readonly transient ref deployment.ServerlessService[1]#functions service;
+	ref data.StorageElement[*]                                       reads;
+	ref data.StorageElement[*]                                       writes;
+	ref contracts.EventType[*]                                       publishes;
+	ref contracts.EventType[*]                                       subscribesTo;
+	ref external.ExternalAdapter[*]                                  callsAdapters;
+	ref config.Secret[*]                                             usesSecrets;
+	ref config.EnvironmentVariable[*]                                environmentVariables;
+	ref policy.IdempotencyPolicy[?]                                  idempotency;
+	ref policy.TimeoutPolicy[?]                                      timeout;
+	ref policy.ResiliencePolicy[?]                                   resilience;
+	ref policy.ConcurrencyPolicy[?]                                  concurrency;
+	ref policy.ObservabilityConfig[?]                                observability;
+	ref security.SecurityPolicy[*]                                   securityPolicies;
 }
 
 class Trigger extends kernel.TraceableElement, kernel.PolicyTarget {
-  attr String triggerKind;
-  attr Boolean enabled;
-  attr String filterExpression;
-  attr Boolean generatedFromFlow;
-  attr pimtypes.InvocationMode[1] invocationMode;
+	attr String                     triggerKind;
+	attr Boolean                    enabled;
+	attr String                     filterExpression;
+	attr Boolean                    generatedFromFlow;
+	attr pimtypes.InvocationMode[1] invocationMode;
 
-  val kernel.Expression[?] filter;
+	val kernel.Expression[?] filter;
 
-  readonly transient ref Function[1]#triggers function;
-  ref kernel.InvocationSource[1] source;
-  ref kernel.WorkflowTarget[?] startsWorkflow;
-  ref policy.ResiliencePolicy[?] resilience;
-  ref policy.BatchPolicy[?] batchPolicy;
+	readonly transient ref Function[1]#triggers function;
+	ref kernel.InvocationSource[1]              source;
+	ref kernel.WorkflowTarget[?]                startsWorkflow;
+	ref policy.ResiliencePolicy[?]              resilience;
+	ref policy.BatchPolicy[?]                   batchPolicy;
 }

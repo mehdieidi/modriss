@@ -1,205 +1,202 @@
-@namespace(uri="https://modriss.org/awspsm/core/1.0", prefix="awspsmcore")
+@namespace(uri = "https://modriss.org/awspsm/core/1.0", prefix = "awspsmcore")
 package awspsmcore;
 
 import "../shared/kernel.ecore";
 import "awspsm-enums.ecore";
 
 // Marker interface for valid S3 notification targets. Concrete service packages extend it.
-interface S3NotificationDestination {
-}
+interface S3NotificationDestination {}
 
 // Marker interface for resources that can be associated with an AWS WAF Web ACL.
-interface WafAssociableResource {
-}
+interface WafAssociableResource {}
 
 abstract class AwsResource extends kernel.TraceableElement {
-  attr String[1] logicalId;
-  attr String physicalName;
-  attr String awsResourceType;
-  attr String resourceDescription;
-  attr String conditionName;
-  attr Boolean retainInProduction;
-  attr Boolean productionCritical;
-  attr Boolean importedResource;
-  attr String importedArn;
-  attr String costAllocationTagValue;
-  attr awspsmenums.CloudFormationDeletionPolicy deletionPolicy;
-  attr awspsmenums.CloudFormationUpdateReplacePolicy updateReplacePolicy;
+	attr String[1]                                     logicalId;
+	attr String                                        physicalName;
+	attr String                                        awsResourceType;
+	attr String                                        resourceDescription;
+	attr String                                        conditionName;
+	attr Boolean                                       retainInProduction;
+	attr Boolean                                       productionCritical;
+	attr Boolean                                       importedResource;
+	attr String                                        importedArn;
+	attr String                                        costAllocationTagValue;
+	attr awspsmenums.CloudFormationDeletionPolicy      deletionPolicy;
+	attr awspsmenums.CloudFormationUpdateReplacePolicy updateReplacePolicy;
 
-  val AwsTag[*] tags;
-  val NativeProperty[*] metadata;
-  val NativeProperty[*] overrides;
-  val ResourceImport[?] importDetails;
+	val AwsTag[*]         tags;
+	val NativeProperty[*] metadata;
+	val NativeProperty[*] overrides;
+	val ResourceImport[?] importDetails;
 
-  readonly transient ref SamStack[?]#resources stack;
-
-  ref AwsResource[*] dependsOn;
+	readonly transient ref SamStack[?]#resources stack;
+	ref AwsResource[*]                           dependsOn;
 }
 
 class AwsTag extends kernel.TraceableElement {
-  attr String[1] key;
-  attr String value;
-  attr Boolean propagated;
+	attr String[1] key;
+	attr String    value;
+	attr Boolean   propagated;
 }
 
 class ResourceImport extends kernel.TraceableElement {
-  attr String importedArn;
-  attr String importedName;
-  attr String importedLogicalId;
-  attr String importSource;
-  attr Boolean managedOutsideModel;
+	attr String  importedArn;
+	attr String  importedName;
+	attr String  importedLogicalId;
+	attr String  importSource;
+	attr Boolean managedOutsideModel;
 }
 
 class NativeProperty extends kernel.TraceableElement {
-  attr String[1] propertyName;
-  attr Boolean required;
-  attr Boolean secret;
-  attr kernel.StructuredFormat[1] format;
-  attr awspsmenums.Decision validationState;
+	attr String[1]                  propertyName;
+	attr Boolean                    required;
+	attr Boolean                    secret;
+	attr kernel.StructuredFormat[1] format;
+	attr awspsmenums.Decision       validationState;
 
-  val ValueExpression[1] value;
+	val ValueExpression[1] value;
 }
 
 class ValueExpression extends kernel.TraceableElement {
-  attr String literal;
-  attr String expression;
-  attr String attributeName;
-  attr Boolean secret;
-  attr awspsmenums.ValueSourceKind[1] sourceKind;
-  attr awspsmenums.ValueType expectedType;
+	attr String                         literal;
+	attr String                         expression;
+	attr String                         attributeName;
+	attr Boolean                        secret;
+	attr awspsmenums.ValueSourceKind[1] sourceKind;
+	attr awspsmenums.ValueType          expectedType;
 
-  val ValueExpression[*] items;
-  val NamedValueExpression[*] entries;
+	val ValueExpression[*]      items;
+	val NamedValueExpression[*] entries;
 
-  ref AwsResource[?] resource;
-  ref CfnParameter[?] parameter;
+	ref AwsResource[?]  resource;
+	ref CfnParameter[?] parameter;
 }
 
 class NamedValueExpression extends kernel.TraceableElement {
-  attr String[1] key;
+	attr String[1] key;
 
-  val ValueExpression[1] value;
+	val ValueExpression[1] value;
 }
 
 class CorsConfiguration extends kernel.TraceableElement {
-  attr String[*] allowOrigins;
-  attr String[*] allowMethods;
-  attr String[*] allowHeaders;
-  attr String[*] exposeHeaders;
-  attr Integer maxAgeSeconds;
-  attr Boolean allowCredentials;
+	attr String[*] allowOrigins;
+	attr String[*] allowMethods;
+	attr String[*] allowHeaders;
+	attr String[*] exposeHeaders;
+	attr Integer   maxAgeSeconds;
+	attr Boolean   allowCredentials;
 }
 
 abstract class TracingConfig extends kernel.TraceableElement {
-  attr Boolean enabled;
+	attr Boolean enabled;
 }
 
 class AwsNativeResource extends AwsResource {
-  attr String[1] cloudFormationType;
+	attr String[1] cloudFormationType;
 
-  val NativeProperty[+] properties;
+	val NativeProperty[+] properties;
 }
 
 class AwsStage extends kernel.TraceableElement {
-  attr String[1] stageName;
-  attr String accountId;
-  attr String region;
-  attr String deploymentRoleArn;
-  attr String artifactBucketName;
-  attr Boolean requiresManualApproval;
-  attr Boolean confirmChangeset;
-  attr Boolean failOnEmptyChangeset;
-  attr String stackNamePrefix;
-  attr awspsmenums.AwsEnvironmentClass[1] environmentClass;
+	attr String[1]                          stageName;
+	attr String                             accountId;
+	attr String                             region;
+	attr String                             deploymentRoleArn;
+	attr String                             artifactBucketName;
+	attr Boolean                            requiresManualApproval;
+	attr Boolean                            confirmChangeset;
+	attr Boolean                            failOnEmptyChangeset;
+	attr String                             stackNamePrefix;
+	attr awspsmenums.AwsEnvironmentClass[1] environmentClass;
 
-  val kernel.KeyValue[*] parameterOverrides;
-  val AwsTag[*] stageTags;
+	val kernel.KeyValue[*] parameterOverrides;
+	val AwsTag[*]          stageTags;
 
-  ref SamStack[*] deploysStacks;
+	ref SamStack[*] deploysStacks;
 }
 
 class SamStack extends kernel.TraceableElement {
-  attr String[1] stackName;
-  attr String templatePath;
-  attr String templateDescription;
-  attr Boolean useSamTransform;
-  attr Boolean packageIndividually;
-  attr Boolean validateWithSam;
-  attr Boolean validateWithCfnLint;
-  attr awspsmenums.SamCapability[*] capabilities;
+	attr String[1]                    stackName;
+	attr String                       templatePath;
+	attr String                       templateDescription;
+	attr Boolean                      useSamTransform;
+	attr Boolean                      packageIndividually;
+	attr Boolean                      validateWithSam;
+	attr Boolean                      validateWithCfnLint;
+	attr awspsmenums.SamCapability[*] capabilities;
 
-  val CfnParameter[*] parameters;
-  val CfnMapping[*] mappings;
-  val CfnCondition[*] conditions;
-  val AwsResource[*]#stack resources;
-  val CfnOutput[*] outputs;
-  val NativeProperty[*] globals;
-  val NativeProperty[*] metadata;
+	val CfnParameter[*]      parameters;
+	val CfnMapping[*]        mappings;
+	val CfnCondition[*]      conditions;
+	val AwsResource[*]#stack resources;
+	val CfnOutput[*]         outputs;
+	val NativeProperty[*]    globals;
+	val NativeProperty[*]    metadata;
 }
 
 class CfnParameter extends kernel.TraceableElement {
-  attr String[1] parameterName;
-  attr String[1] type;
-  attr String[*] allowedValues;
-  attr String allowedPattern;
-  attr String parameterDescription;
-  attr Boolean noEcho;
+	attr String[1] parameterName;
+	attr String[1] type;
+	attr String[*] allowedValues;
+	attr String    allowedPattern;
+	attr String    parameterDescription;
+	attr Boolean   noEcho;
 
-  val ValueExpression[?] defaultValue;
+	val ValueExpression[?] defaultValue;
 }
 
 class CfnMapping extends kernel.TraceableElement {
-  attr String[1] mappingName;
-  attr String content;
-  attr kernel.StructuredFormat[1] format;
+	attr String[1]                  mappingName;
+	attr String                     content;
+	attr kernel.StructuredFormat[1] format;
 }
 
 class CfnCondition extends kernel.TraceableElement {
-  attr String[1] conditionName;
-  attr String expression;
+	attr String[1] conditionName;
+	attr String    expression;
 
-  val ValueExpression[?] expressionValue;
+	val ValueExpression[?] expressionValue;
 }
 
 class CfnOutput extends kernel.TraceableElement {
-  attr String[1] outputName;
-  attr String outputDescription;
-  attr String exportName;
+	attr String[1] outputName;
+	attr String    outputDescription;
+	attr String    exportName;
 
-  val ValueExpression[1] value;
+	val ValueExpression[1] value;
 
-  ref AwsResource[?] resource;
+	ref AwsResource[?] resource;
 }
 
 class SamGlobals extends kernel.TraceableElement {
-  val NativeProperty[*] functionGlobals;
-  val NativeProperty[*] apiGlobals;
-  val NativeProperty[*] httpApiGlobals;
-  val NativeProperty[*] stateMachineGlobals;
+	val NativeProperty[*] functionGlobals;
+	val NativeProperty[*] apiGlobals;
+	val NativeProperty[*] httpApiGlobals;
+	val NativeProperty[*] stateMachineGlobals;
 }
 
 class AwsNamingPolicy extends kernel.TraceableElement {
-  attr String logicalIdPattern;
-  attr String physicalNamePattern;
-  attr Boolean includeStageInPhysicalNames;
-  attr Boolean includeServiceInPhysicalNames;
-  attr Boolean allowGeneratedPhysicalNames;
+	attr String  logicalIdPattern;
+	attr String  physicalNamePattern;
+	attr Boolean includeStageInPhysicalNames;
+	attr Boolean includeServiceInPhysicalNames;
+	attr Boolean allowGeneratedPhysicalNames;
 }
 
 class AwsTaggingPolicy extends kernel.TraceableElement {
-  attr Boolean requireOwnerTag;
-  attr Boolean requireEnvironmentTag;
-  attr Boolean requireCostCenterTag;
-  attr Boolean propagateStackTags;
+	attr Boolean requireOwnerTag;
+	attr Boolean requireEnvironmentTag;
+	attr Boolean requireCostCenterTag;
+	attr Boolean propagateStackTags;
 
-  val AwsTag[*] requiredTags;
+	val AwsTag[*] requiredTags;
 }
 
 class AwsSecurityBaseline extends kernel.TraceableElement {
-  attr Boolean encryptionAtRestDefault;
-  attr Boolean publicAccessBlockedDefault;
-  attr Boolean xrayDefault;
-  attr Boolean structuredLogsDefault;
-  attr Boolean leastPrivilegeRequired;
-  attr Boolean productionDeletionProtectionDefault;
+	attr Boolean encryptionAtRestDefault;
+	attr Boolean publicAccessBlockedDefault;
+	attr Boolean xrayDefault;
+	attr Boolean structuredLogsDefault;
+	attr Boolean leastPrivilegeRequired;
+	attr Boolean productionDeletionProtectionDefault;
 }

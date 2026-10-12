@@ -1,4 +1,4 @@
-@namespace(uri="https://modriss.org/awspsm/workflow/1.0", prefix="awspsmworkflow")
+@namespace(uri = "https://modriss.org/awspsm/workflow/1.0", prefix = "awspsmworkflow")
 package awspsmworkflow;
 
 import "../shared/kernel.ecore";
@@ -8,132 +8,124 @@ import "awspsm-security.ecore";
 import "awspsm-observability.ecore";
 
 class StepFunctionStateMachine extends awspsmcore.AwsResource {
-  attr String stateMachineName;
-  attr String definitionUri;
-  attr String definitionString;
-  attr String definitionSubstitutionsJson;
-  attr Boolean publishAlias;
-  attr String aliasName;
-  attr awspsmenums.StepFunctionType[1] stateMachineType;
+	attr String                          stateMachineName;
+	attr String                          definitionUri;
+	attr String                          definitionString;
+	attr String                          definitionSubstitutionsJson;
+	attr Boolean                         publishAlias;
+	attr String                          aliasName;
+	attr awspsmenums.StepFunctionType[1] stateMachineType;
 
-  val StepFunctionLoggingConfig[?] logging;
-  val StepFunctionTracingConfig[?] tracing;
-  val AslDocument[?] aslDocument;
-  val SamStateMachineEvent[*] samEvents;
+	val StepFunctionLoggingConfig[?] logging;
+	val StepFunctionTracingConfig[?] tracing;
+	val AslDocument[?]               aslDocument;
+	val SamStateMachineEvent[*]      samEvents;
 
-  ref awspsmsecurity.IamRole[1] role;
+	ref awspsmsecurity.IamRole[1] role;
 }
 
 class AslDocument extends kernel.StructuredDocument {
-  attr String comment;
-  attr String queryLanguage;
-  attr String[1] startAt;
+	attr String    comment;
+	attr String    queryLanguage;
+	attr String[1] startAt;
 
-  val AslState[+] states;
+	val AslState[+] states;
 }
 
 abstract class AslState extends kernel.TraceableElement {
-  attr String[1] stateName;
-  // Optional state-level override. The state-machine default remains JSONPath;
-  // JSONata states must not carry JSONPath-only path fields.
-  attr String queryLanguage;
-  attr String resource;
-  attr String nextStateName;
-  attr Boolean end;
-  attr String inputPath;
-  attr String outputPath;
-  attr String resultPath;
-  attr String parametersJson;
-  attr String argumentsJson;
-  attr String assignJson;
-  attr Integer timeoutSeconds;
-  attr Integer heartbeatSeconds;
-  val AslRetryRule[*] retry;
-  val AslCatchRule[*] catch;
-  val AslChoiceRule[*] choices;
-  val AslBranch[*] branches;
-  val AslMapConfig[?] mapConfig;
+	attr String[1] stateName;
+	// Optional state-level override. The state-machine default remains JSONPath;
+	// JSONata states must not carry JSONPath-only path fields.
+	attr String    queryLanguage;
+	attr String    resource;
+	attr String    nextStateName;
+	attr Boolean   end;
+	attr String    inputPath;
+	attr String    outputPath;
+	attr String    resultPath;
+	attr String    parametersJson;
+	attr String    argumentsJson;
+	attr String    assignJson;
+	attr Integer   timeoutSeconds;
+	attr Integer   heartbeatSeconds;
 
-  ref AslState[?] nextState;
-  ref awspsmcore.AwsResource[?] invokedResource;
+	val AslRetryRule[*]  retry;
+	val AslCatchRule[*]  catch;
+	val AslChoiceRule[*] choices;
+	val AslBranch[*]     branches;
+	val AslMapConfig[?]  mapConfig;
+
+	ref AslState[?]               nextState;
+	ref awspsmcore.AwsResource[?] invokedResource;
 }
 
-class AslPassState extends AslState {
-}
+class AslPassState extends AslState {}
 
-class AslTaskState extends AslState {
-}
+class AslTaskState extends AslState {}
 
-class AslChoiceState extends AslState {
-}
+class AslChoiceState extends AslState {}
 
-class AslWaitState extends AslState {
-}
+class AslWaitState extends AslState {}
 
-class AslSucceedState extends AslState {
-}
+class AslSucceedState extends AslState {}
 
-class AslFailState extends AslState {
-}
+class AslFailState extends AslState {}
 
-class AslParallelState extends AslState {
-}
+class AslParallelState extends AslState {}
 
-class AslMapState extends AslState {
-}
+class AslMapState extends AslState {}
 
 class AslBranch extends kernel.TraceableElement {
-  attr String[1] startAt;
+	attr String[1] startAt;
 
-  val AslState[+] states;
+	val AslState[+] states;
 }
 
 class AslMapConfig extends kernel.TraceableElement {
-  attr String itemsPath;
-  attr String itemSelectorJson;
-  attr Integer maxConcurrency;
-  attr Boolean distributed;
-  attr String resultWriterJson;
+	attr String  itemsPath;
+	attr String  itemSelectorJson;
+	attr Integer maxConcurrency;
+	attr Boolean distributed;
+	attr String  resultWriterJson;
 
-  val AslBranch[?] itemProcessor;
+	val AslBranch[?] itemProcessor;
 }
 
 class AslRetryRule extends kernel.TraceableElement {
-  attr String[*] errorEquals;
-  attr Integer intervalSeconds;
-  attr Integer maxAttempts;
-  attr Double backoffRate;
-  attr Integer maxDelaySeconds;
-  attr String jitterStrategy;
+	attr String[*] errorEquals;
+	attr Integer   intervalSeconds;
+	attr Integer   maxAttempts;
+	attr Double    backoffRate;
+	attr Integer   maxDelaySeconds;
+	attr String    jitterStrategy;
 }
 
 class AslCatchRule extends kernel.TraceableElement {
-  attr String[*] errorEquals;
-  attr String resultPath;
+	attr String[*] errorEquals;
+	attr String    resultPath;
 
-  ref AslState[1] nextState;
+	ref AslState[1] nextState;
 }
 
 class AslChoiceRule extends kernel.TraceableElement {
-  attr String conditionExpression;
-  attr String variable;
+	attr String conditionExpression;
+	attr String variable;
 
-  ref AslState[1] nextState;
+	ref AslState[1] nextState;
 }
 
 class StepFunctionLoggingConfig extends kernel.TraceableElement {
-  attr Boolean includeExecutionData;
-  attr String level;
+	attr Boolean includeExecutionData;
+	attr String  level;
 
-  ref awspsmobservability.CloudWatchLogGroup[1] logGroup;
+	ref awspsmobservability.CloudWatchLogGroup[1] logGroup;
 }
 
-class StepFunctionTracingConfig extends awspsmcore.TracingConfig {
-}
+class StepFunctionTracingConfig extends awspsmcore.TracingConfig {}
 
 class SamStateMachineEvent extends kernel.TraceableElement {
-  attr String[1] eventName;
-  attr String[1] eventType;
+	attr String[1] eventName;
+	attr String[1] eventType;
 
-  val awspsmcore.NativeProperty[*] properties;
+	val awspsmcore.NativeProperty[*] properties;
 }
