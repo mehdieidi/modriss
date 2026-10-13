@@ -13,7 +13,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 LOCATIONS = [
     ROOT / "packages/java/platform-storage-postgres/src/main/resources/db/migration",
-    ROOT / "packages/java/platform-assistant/src/main/resources/db/assistant-migration",
+    ROOT / "packages/java/platform-modeling-assistant/src/main/resources/db/assistant-migration",
 ]
 MIGRATION_RE = re.compile(r"^V(?P<version>\d+)__(?P<description>[A-Za-z0-9_]+)\.sql$")
 
@@ -51,7 +51,51 @@ def added_paths() -> set[Path]:
             path = (ROOT / line).resolve()
             if any(path.is_relative_to(directory.resolve()) for directory in LOCATIONS):
                 paths.add(path)
-    return paths
+    return exclude_unchanged_relocations(paths)
+
+
+def exclude_unchanged_relocations(paths: set[Path]) -> set[Path]:
+    """Keep moved, unchanged migrations in the baseline after module renames."""
+    if not paths:
+        return paths
+    try:
+        result = subprocess.run(
+            ["git", "ls-tree", "-r", "--name-only", "HEAD", "--", "packages/java"],
+            cwd=ROOT,
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+    except (OSError, subprocess.CalledProcessError):
+        return paths
+
+    added = set(paths)
+    for previous in result.stdout.splitlines():
+        previous_path = ROOT / previous
+        if previous_path.exists() or previous_path.parent.parent.name != "db":
+            continue
+        candidates = [
+            path
+            for path in added
+            if path.is_file()
+            and path.name == previous_path.name
+            and path.parent.name == previous_path.parent.name
+        ]
+        if not candidates:
+            continue
+        try:
+            original = subprocess.run(
+                ["git", "show", f"HEAD:{previous}"],
+                cwd=ROOT,
+                check=True,
+                capture_output=True,
+            ).stdout
+        except (OSError, subprocess.CalledProcessError):
+            continue
+        for path in candidates:
+            if path.read_bytes().replace(b"\r\n", b"\n") == original.replace(b"\r\n", b"\n"):
+                added.remove(path)
+    return added
 
 
 def version(path: Path) -> int | None:

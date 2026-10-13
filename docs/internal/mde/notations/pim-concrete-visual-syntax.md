@@ -260,7 +260,7 @@ The changed CVS parses as JSON, retains the required CVS v2 fields, and was
 validated through the focused modeling configuration test suite:
 
 ```text
-mvn -pl packages/java/platform-modeling -Dtest=ModelingConfigServiceTest test
+mvn -pl packages/java/platform-modeling-infrastructure -Dtest=ModelingConfigServiceTest test
 Tests run: 23, Failures: 0, Errors: 0, Skipped: 0
 BUILD SUCCESS
 ```

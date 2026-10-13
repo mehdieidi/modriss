@@ -4,7 +4,7 @@
   <artifactId>platform-storage-postgres</artifactId>
   <dependencies>
     <dependency>
-      <artifactId>platform-kernel</artifactId>
+      <artifactId>platform-shared-types</artifactId>
       <groupId>${project.groupId}</groupId>
     </dependency>
     <dependency>
@@ -12,23 +12,23 @@
       <groupId>${project.groupId}</groupId>
     </dependency>
     <dependency>
-      <artifactId>platform-identity</artifactId>
+      <artifactId>platform-user-authentication</artifactId>
       <groupId>${project.groupId}</groupId>
     </dependency>
     <dependency>
-      <artifactId>platform-project</artifactId>
+      <artifactId>platform-project-management</artifactId>
       <groupId>${project.groupId}</groupId>
     </dependency>
     <dependency>
-      <artifactId>platform-model</artifactId>
+      <artifactId>platform-model-workspace</artifactId>
       <groupId>${project.groupId}</groupId>
     </dependency>
     <dependency>
-      <artifactId>platform-artifact</artifactId>
+      <artifactId>platform-artifact-management</artifactId>
       <groupId>${project.groupId}</groupId>
     </dependency>
     <dependency>
-      <artifactId>platform-transformation</artifactId>
+      <artifactId>platform-mde-pipeline</artifactId>
       <groupId>${project.groupId}</groupId>
     </dependency>
     <dependency>

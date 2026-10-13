@@ -1,6 +1,6 @@
 # model-transformer-cli
 
-CLI wrapper around [`mde-etl-runner`](../../packages/java/mde-etl-runner/README.md).
+CLI wrapper around [`epsilon-model-transformation`](../../packages/java/epsilon-model-transformation/README.md).
 
 Build from the repository root:
 

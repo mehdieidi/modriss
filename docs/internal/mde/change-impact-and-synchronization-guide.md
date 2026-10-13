@@ -16,25 +16,25 @@ to determine what is required.
 
 ## Repository Contract Map
 
-| Concern                            | Primary source of truth                                                                              | Important consumers and derived assets                                                                                           |
-| ---------------------------------- | ---------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
-| Shared abstract syntax             | `methodology/modeling-framework/metamodels/shared/kernel.emf`                                        | `kernel.ecore`, all three combined Ecore files, EVL, ETL, EGX/EGL, UI metadata, JSON/XMI bridge, assistant contracts, samples    |
-| CIM abstract syntax                | `methodology/modeling-framework/metamodels/cim/*.emf`                                                | `cim-combined.ecore`, CIM EVL, CIM-to-PIM ETL, CIM UI metadata, model import/export, assistant, samples/tests                    |
-| PIM abstract syntax                | `methodology/modeling-framework/metamodels/pim/*.emf`                                                | `pim-combined.ecore`, PIM EVL, both ETL profiles, PIM UI metadata, model import/export, assistant, samples/tests                 |
-| PSM abstract syntax                | `methodology/modeling-framework/metamodels/psm/*.emf`                                                | `psm-combined.ecore`, PSM EVL, PIM-to-PSM ETL, EGX/EGL, PSM UI metadata, model import/export, samples/tests                      |
-| Runtime metamodel                  | `methodology/modeling-framework/metamodels/{cim,pim,psm}/*-combined.ecore`                           | Java EMF loading, validation, transformation, generation, UI structural metadata, metamodel hash/version                         |
-| Semantic validation                | `methodology/modeling-framework/validation/{cim,pim,psm}/`                                           | `ModelService`, EVL CLI, validation endpoint tests                                                                               |
-| CIM-to-PIM semantics               | `methodology/modeling-framework/transformations/cim-to-pim/`                                         | ETL runner/CLI, `TransformationService`, generated PIM, tests/docs                                                               |
-| PIM-to-PSM semantics               | `methodology/modeling-framework/transformations/pim-to-awspsm/`                                      | ETL runner/CLI, `TransformationService`, generated PSM, tests/docs                                                               |
-| PSM-to-artifact semantics          | `methodology/modeling-framework/generation/awspsm-to-artifacts/`                                     | M2T runner/CLI, artifact service, generated projects, tests/docs                                                                 |
-| Editor structure and visual syntax | `packages/java/platform-modeling/src/main/resources/modeling/*-ui-metadata.json` plus combined Ecore | `ModelingConfigService`, `/api/modeling/config`, frontend canvas, palette, views, relationship presentation                      |
-| JSON/XMI semantic bridge           | `packages/java/platform-modeling/.../XmiModelImportService.java`                                     | Model create/update/import/export, transformation handoff, graph reconstruction                                                  |
-| Frontend modeling behavior         | `apps/frontend/js/` and `apps/frontend/css/`                                                         | Canvas, graph editor, workbenches, attribute editor, views, layout, methodology checks                                           |
-| Persistence                        | PostgreSQL migrations and platform storage/application records                                       | Stored JSON/XMI, metamodel hash/version, jobs, synchronization baselines/sessions, assistant turns/events/checkpoints/provenance |
-| AI modeling behavior               | `apps/backend/.../assistant/` and `packages/java/platform-assistant/...`                             | Ecore-derived contracts, agent tools, durable turns, checkpoints, source provenance                                              |
-| Public API contract                | controllers plus `docs/api/openapi/openapi.yaml`                                                     | Frontend, external clients, API docs                                                                                             |
-| Regression fixtures                | `methodology/modeling-framework/samples/*.xmi`, Java tests, case-study samples                       | All MDE pipeline regression tests                                                                                                |
-| Architecture documentation         | `README.md`, `docs/internal/project-description.md`, `docs/`, especially `docs/diagrams/`            | Developers, thesis material, operations                                                                                          |
+| Concern                            | Primary source of truth                                                                                             | Important consumers and derived assets                                                                                           |
+| ---------------------------------- | ------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| Shared abstract syntax             | `methodology/modeling-framework/metamodels/shared/kernel.emf`                                                       | `kernel.ecore`, all three combined Ecore files, EVL, ETL, EGX/EGL, UI metadata, JSON/XMI bridge, assistant contracts, samples    |
+| CIM abstract syntax                | `methodology/modeling-framework/metamodels/cim/*.emf`                                                               | `cim-combined.ecore`, CIM EVL, CIM-to-PIM ETL, CIM UI metadata, model import/export, assistant, samples/tests                    |
+| PIM abstract syntax                | `methodology/modeling-framework/metamodels/pim/*.emf`                                                               | `pim-combined.ecore`, PIM EVL, both ETL profiles, PIM UI metadata, model import/export, assistant, samples/tests                 |
+| PSM abstract syntax                | `methodology/modeling-framework/metamodels/psm/*.emf`                                                               | `psm-combined.ecore`, PSM EVL, PIM-to-PSM ETL, EGX/EGL, PSM UI metadata, model import/export, samples/tests                      |
+| Runtime metamodel                  | `methodology/modeling-framework/metamodels/{cim,pim,psm}/*-combined.ecore`                                          | Java EMF loading, validation, transformation, generation, UI structural metadata, metamodel hash/version                         |
+| Semantic validation                | `methodology/modeling-framework/validation/{cim,pim,psm}/`                                                          | `ModelService`, EVL CLI, validation endpoint tests                                                                               |
+| CIM-to-PIM semantics               | `methodology/modeling-framework/transformations/cim-to-pim/`                                                        | ETL runner/CLI, `TransformationService`, generated PIM, tests/docs                                                               |
+| PIM-to-PSM semantics               | `methodology/modeling-framework/transformations/pim-to-awspsm/`                                                     | ETL runner/CLI, `TransformationService`, generated PSM, tests/docs                                                               |
+| PSM-to-artifact semantics          | `methodology/modeling-framework/generation/awspsm-to-artifacts/`                                                    | M2T runner/CLI, artifact service, generated projects, tests/docs                                                                 |
+| Editor structure and visual syntax | `packages/java/platform-modeling-infrastructure/src/main/resources/modeling/*-ui-metadata.json` plus combined Ecore | `ModelingConfigService`, `/api/modeling/config`, frontend canvas, palette, views, relationship presentation                      |
+| JSON/XMI semantic bridge           | `packages/java/platform-modeling-infrastructure/.../XmiModelImportService.java`                                     | Model create/update/import/export, transformation handoff, graph reconstruction                                                  |
+| Frontend modeling behavior         | `apps/frontend/js/` and `apps/frontend/css/`                                                                        | Canvas, graph editor, workbenches, attribute editor, views, layout, methodology checks                                           |
+| Persistence                        | PostgreSQL migrations and platform storage/application records                                                      | Stored JSON/XMI, metamodel hash/version, jobs, synchronization baselines/sessions, assistant turns/events/checkpoints/provenance |
+| AI modeling behavior               | `apps/backend/.../assistant/` and `packages/java/platform-modeling-assistant/...`                                   | Ecore-derived contracts, agent tools, durable turns, checkpoints, source provenance                                              |
+| Public API contract                | controllers plus `docs/api/openapi/openapi.yaml`                                                                    | Frontend, external clients, API docs                                                                                             |
+| Regression fixtures                | `methodology/modeling-framework/samples/*.xmi`, Java tests, case-study samples                                      | All MDE pipeline regression tests                                                                                                |
+| Architecture documentation         | `README.md`, `docs/internal/project-description.md`, `docs/`, especially `docs/diagrams/`                           | Developers, thesis material, operations                                                                                          |
 
 ## How Runtime Metadata Is Built
 
@@ -85,7 +85,7 @@ or view membership.
 
 Usually change:
 
-- `packages/java/platform-modeling/src/main/resources/modeling/*-ui-metadata.json`
+- `packages/java/platform-modeling-infrastructure/src/main/resources/modeling/*-ui-metadata.json`
 - Frontend CSS/JS only when introducing a new rendering behavior or shape
 - UI metadata and frontend tests
 - Visual/editor documentation
@@ -361,9 +361,9 @@ contract itself changes.
 
 ### Primary files
 
-- `packages/java/platform-modeling/src/main/resources/modeling/cim-ui-metadata.json`
-- `packages/java/platform-modeling/src/main/resources/modeling/pim-ui-metadata.json`
-- `packages/java/platform-modeling/src/main/resources/modeling/psm-ui-metadata.json`
+- `packages/java/platform-modeling-infrastructure/src/main/resources/modeling/cim-ui-metadata.json`
+- `packages/java/platform-modeling-infrastructure/src/main/resources/modeling/pim-ui-metadata.json`
+- `packages/java/platform-modeling-infrastructure/src/main/resources/modeling/psm-ui-metadata.json`
 
 Important sections include:
 
@@ -496,21 +496,21 @@ references, or validation changes the language, not merely its notation.
 
 Review these when a change cannot remain purely declarative:
 
-| File/area                                                                                 | Why it may need changes                                                                              |
-| ----------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
-| `packages/java/platform-modeling/.../MdeRuntimePaths.java`                                | Fixed entry module and combined-Ecore paths                                                          |
-| `packages/java/platform-modeling/.../FileMetamodelResolver.java`                          | Combined-Ecore loading, namespace version, hash caching                                              |
-| `packages/java/platform-modeling/.../ModelingConfigService.java`                          | Ecore-to-editor metadata derivation and metadata schema                                              |
-| `packages/java/platform-modeling/.../XmiModelImportService.java`                          | Root names, JSON/XMI mapping, graph relationships, support objects                                   |
-| `packages/java/platform-model/.../ModelService.java`                                      | Validation aliases, required-feature validation, migration state, persistence normalization          |
-| `packages/java/platform-transformation/.../TransformationService.java`                    | End-to-end operation orchestration and generated model import                                        |
-| `packages/java/platform-transformation/.../TransformationSynchronizationCoordinator.java` | Base/Working/NewGenerated lifecycle, conflict sessions, stale checks, and atomic commit              |
-| `packages/java/platform-transformation/.../ModelSynchronizationService.java`              | Standalone EMF Compare matching, policy filtering, merge, and conflict descriptions                  |
-| `CimToPimDefaults.java`                                                                   | CIM/PIM paths and Epsilon aliases                                                                    |
-| `PimToAwsPsmDefaults.java`                                                                | PIM/PSM paths and Epsilon aliases                                                                    |
-| `AwsPsmToArtifactsDefaults.java`                                                          | PSM paths and Epsilon aliases                                                                        |
-| `packages/java/platform-model/.../StoredViewLayoutService.java`                           | Persisted view and level-specific layout assumptions (lives in model to avoid modeling↔model cycle) |
-| Backend controllers                                                                       | Routes and public API contract                                                                       |
+| File/area                                                                               | Why it may need changes                                                                              |
+| --------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| `packages/java/platform-modeling-infrastructure/.../MdeRuntimePaths.java`               | Fixed entry module and combined-Ecore paths                                                          |
+| `packages/java/platform-modeling-infrastructure/.../FileMetamodelResolver.java`         | Combined-Ecore loading, namespace version, hash caching                                              |
+| `packages/java/platform-modeling-infrastructure/.../ModelingConfigService.java`         | Ecore-to-editor metadata derivation and metadata schema                                              |
+| `packages/java/platform-modeling-infrastructure/.../XmiModelImportService.java`         | Root names, JSON/XMI mapping, graph relationships, support objects                                   |
+| `packages/java/platform-model-workspace/.../ModelService.java`                          | Validation aliases, required-feature validation, migration state, persistence normalization          |
+| `packages/java/platform-mde-pipeline/.../TransformationService.java`                    | End-to-end operation orchestration and generated model import                                        |
+| `packages/java/platform-mde-pipeline/.../TransformationSynchronizationCoordinator.java` | Base/Working/NewGenerated lifecycle, conflict sessions, stale checks, and atomic commit              |
+| `packages/java/platform-mde-pipeline/.../ModelSynchronizationService.java`              | Standalone EMF Compare matching, policy filtering, merge, and conflict descriptions                  |
+| `CimToPimDefaults.java`                                                                 | CIM/PIM paths and Epsilon aliases                                                                    |
+| `PimToAwsPsmDefaults.java`                                                              | PIM/PSM paths and Epsilon aliases                                                                    |
+| `AwsPsmToArtifactsDefaults.java`                                                        | PSM paths and Epsilon aliases                                                                        |
+| `packages/java/platform-model-workspace/.../StoredViewLayoutService.java`               | Persisted view and level-specific layout assumptions (lives in model to avoid modeling↔model cycle) |
+| Backend controllers                                                                     | Routes and public API contract                                                                       |
 
 Avoid changing runner internals merely because a rule or metamodel changed. Runner internals should
 change only when execution behavior, diagnostics, model loading, timeouts, or the reusable Java API
@@ -767,29 +767,29 @@ Run the narrowest relevant checks first, then broaden.
 
 ```powershell
 mvn -q -pl tools/emfatic-to-ecore-cli -am test
-mvn -q -pl packages/java/platform-modeling -am test
+mvn -q -pl packages/java/platform-modeling-infrastructure -am test
 ```
 
 ### Validation
 
 ```powershell
-mvn -q -pl packages/java/mde-evl-validator -am test
+mvn -q -pl packages/java/epsilon-model-validation -am test
 mvn -q -pl tools/model-validator-cli -am test
 ```
 
 ### Transformations
 
 ```powershell
-mvn -q -pl packages/java/mde-etl-runner -am test
+mvn -q -pl packages/java/epsilon-model-transformation -am test
 mvn -q -pl tools/model-transformer-cli -am test
-mvn -q -pl packages/java/platform-transformation -am test
-mvn -q -pl packages/java/platform-model -am test
+mvn -q -pl packages/java/platform-mde-pipeline -am test
+mvn -q -pl packages/java/platform-model-workspace -am test
 ```
 
 ### Generation
 
 ```powershell
-mvn -q -pl packages/java/mde-m2t-runner -am test
+mvn -q -pl packages/java/epsilon-text-generation -am test
 mvn -q -pl tools/code-generator-cli -am test
 ```
 

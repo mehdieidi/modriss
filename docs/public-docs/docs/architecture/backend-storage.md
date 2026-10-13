@@ -68,7 +68,7 @@ packages/java/platform-storage-postgres/src/main/resources/db/migration
 Assistant migrations:
 
 ```text
-packages/java/platform-assistant/src/main/resources/db/assistant-migration
+packages/java/platform-modeling-assistant/src/main/resources/db/assistant-migration
 ```
 
 Flyway applies both locations at backend startup. Use forward-only migrations. Do not edit a

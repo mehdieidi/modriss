@@ -11,7 +11,7 @@ const METADATA_DIR = join(
   "..",
   "packages",
   "java",
-  "platform-modeling",
+  "platform-modeling-infrastructure",
   "src",
   "main",
   "resources",

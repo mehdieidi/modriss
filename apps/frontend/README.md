@@ -26,7 +26,7 @@ index.html       shell page
 ```
 
 Modeling palettes and notation come from `GET /api/modeling/config` (backend merges Ecore structure
-with UI metadata from `platform-modeling`). The diagram editor uses the AntV G6 canvas renderer.
+with UI metadata from `platform-modeling-infrastructure`). The diagram editor uses the AntV G6 canvas renderer.
 
 ## Docs
 

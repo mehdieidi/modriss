@@ -52,7 +52,7 @@
 
   <dependencies>
     <dependency>
-      <artifactId>mde-etl-runner</artifactId>
+      <artifactId>epsilon-model-transformation</artifactId>
       <groupId>io.mehdieidi</groupId>
     </dependency>
     <dependency>

@@ -28,10 +28,10 @@ Start only Postgres: `docker compose up -d postgres`
 
 ## Persistence
 
-| Migrations                                  | Module                      |
-| ------------------------------------------- | --------------------------- |
-| Platform schema (V1), MDE job metadata (V5) | `platform-storage-postgres` |
-| Assistant schema (V2–V4, V6–V8)             | `platform-assistant`        |
+| Migrations                                  | Module                        |
+| ------------------------------------------- | ----------------------------- |
+| Platform schema (V1), MDE job metadata (V5) | `platform-storage-postgres`   |
+| Assistant schema (V2–V4, V6–V8)             | `platform-modeling-assistant` |
 
 Details: [postgres-storage](../../docs/internal/operations/postgres-storage.md) ·
 [data model](../../docs/public-docs/docs/reference/data-storage.md)

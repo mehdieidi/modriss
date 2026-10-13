@@ -84,8 +84,8 @@ Examples:
 
 ```powershell
 mvn -pl apps/backend -am test
-mvn -pl packages/java/platform-modeling -am test
-mvn -pl packages/java/platform-assistant -am test
+mvn -pl packages/java/platform-modeling-infrastructure -am test
+mvn -pl packages/java/platform-modeling-assistant -am test
 ```
 
 For modeling, metamodel, EVL, ETL, or generation changes:
@@ -155,7 +155,7 @@ Run verification that matches the risk of the change.
 
 ```powershell
 mvn -pl apps/backend -am -DskipTests compile
-mvn -pl packages/java/platform-modeling -am test
+mvn -pl packages/java/platform-modeling-infrastructure -am test
 docker compose config -q
 ```
 

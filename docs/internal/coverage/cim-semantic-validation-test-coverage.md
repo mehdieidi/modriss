@@ -1,7 +1,7 @@
 # CIM Semantic Validation Test Coverage
 
 This document traces the CIM EVL semantic validation coverage added in
-`packages/java/mde-evl-validator/src/test/java/io/mehdieidi/modriss/mde/validation/CimSemanticValidationTest.java`.
+`packages/java/epsilon-model-validation/src/test/java/io/mehdieidi/modriss/mde/validation/CimSemanticValidationTest.java`.
 
 ## Scope
 
@@ -102,7 +102,7 @@ No `.emf` metamodel change was made in this session.
 Focused verification command:
 
 ```powershell
-mvn -pl packages/java/mde-evl-validator -Dtest=CimSemanticValidationTest test
+mvn -pl packages/java/epsilon-model-validation -Dtest=CimSemanticValidationTest test
 ```
 
 Result: passing.

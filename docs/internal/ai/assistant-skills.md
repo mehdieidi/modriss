@@ -9,7 +9,7 @@ contract tools, or backend validation.
 ## Runtime design
 
 Skills live under
-`packages/java/platform-assistant/src/main/resources/skills/assistant/<skill-name>/SKILL.md`.
+`packages/java/platform-modeling-assistant/src/main/resources/skills/assistant/<skill-name>/SKILL.md`.
 Each skill has `name` and `description` YAML frontmatter plus concise imperative instructions. The
 adjacent `agents/openai.yaml` supplies UI-compatible metadata and makes every folder a conventional,
 portable skill package.

@@ -8,15 +8,15 @@ LLM-supported modeling section and uses the existing landing-page design tokens.
 
 Paths below are relative to the repository root.
 
-| Figure element                                                                                                  | Implementation evidence                                                                                                             |
-| --------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
-| Chatbot requests, asynchronous acceptance, model revision, attachments, and user controls                       | `apps/backend/src/main/java/io/mehdieidi/modriss/backend/api/ChatbotController.java`                                                |
-| Browser polling, event streaming, confirmation, continuation, rebase, undo, and rollback controls               | `apps/frontend/js/chat.js`                                                                                                          |
-| Durable turns, worker leases, checkpoint transactions, events, and partial outcomes                             | `apps/backend/src/main/java/io/mehdieidi/modriss/backend/assistant/DurableAssistantTurnWorker.java`                                 |
-| LLM strategy selection within backend restrictions; read-only explanation; allowlisted action loop              | `packages/java/platform-assistant/src/main/java/io/mehdieidi/modriss/platform/assistant/agent/AgentTurnLoop.java`                   |
-| Obligation ledger, EClass selection, blueprint, private slices, configurable LLM review, and bounded correction | `packages/java/platform-assistant/src/main/java/io/mehdieidi/modriss/platform/assistant/agent/ConceptualInstanceModelWorkflow.java` |
-| Command batches, contract checks, destructive confirmation, and structural validation                           | `packages/java/platform-assistant/src/main/java/io/mehdieidi/modriss/platform/assistant/tools/AgentModelTools.java`                 |
-| Isolated candidate, structural gate, inverse patch, and revision-checked publication                            | `packages/java/platform-assistant/src/main/java/io/mehdieidi/modriss/platform/assistant/workspace/ModelWorkspace.java`              |
+| Figure element                                                                                                  | Implementation evidence                                                                                                                      |
+| --------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| Chatbot requests, asynchronous acceptance, model revision, attachments, and user controls                       | `apps/backend/src/main/java/io/mehdieidi/modriss/backend/api/ChatbotController.java`                                                         |
+| Browser polling, event streaming, confirmation, continuation, rebase, undo, and rollback controls               | `apps/frontend/js/chat.js`                                                                                                                   |
+| Durable turns, worker leases, checkpoint transactions, events, and partial outcomes                             | `apps/backend/src/main/java/io/mehdieidi/modriss/backend/assistant/DurableAssistantTurnWorker.java`                                          |
+| LLM strategy selection within backend restrictions; read-only explanation; allowlisted action loop              | `packages/java/platform-modeling-assistant/src/main/java/io/mehdieidi/modriss/platform/assistant/agent/AgentTurnLoop.java`                   |
+| Obligation ledger, EClass selection, blueprint, private slices, configurable LLM review, and bounded correction | `packages/java/platform-modeling-assistant/src/main/java/io/mehdieidi/modriss/platform/assistant/agent/ConceptualInstanceModelWorkflow.java` |
+| Command batches, contract checks, destructive confirmation, and structural validation                           | `packages/java/platform-modeling-assistant/src/main/java/io/mehdieidi/modriss/platform/assistant/tools/AgentModelTools.java`                 |
+| Isolated candidate, structural gate, inverse patch, and revision-checked publication                            | `packages/java/platform-modeling-assistant/src/main/java/io/mehdieidi/modriss/platform/assistant/workspace/ModelWorkspace.java`              |
 
 ## Reading and maintaining the abstraction
 

@@ -154,7 +154,7 @@ temporary object, then add an ETL regression test.
 For an EGX/EGL exception, start with the named EGX rule/template and source
 stable ID. The Java entry point is:
 
-`packages/java/mde-m2t-runner/src/main/java/io/mehdieidi/modriss/mde/generation/EpsilonEgxGenerator.java`
+`packages/java/epsilon-text-generation/src/main/java/io/mehdieidi/modriss/mde/generation/EpsilonEgxGenerator.java`
 
 ### Static Validation Fails
 
@@ -284,15 +284,15 @@ passes, and verify that an unrelated representative model still works.
 Run the relevant regression suites from the MODRISS repository root:
 
 ```powershell
-mvn -pl packages/java/mde-etl-runner -am `
+mvn -pl packages/java/epsilon-model-transformation -am `
   "-Dtest=PimToAwsPsmEtlRegressionTest" `
   "-Dsurefire.failIfNoSpecifiedTests=false" test
 
-mvn -pl packages/java/mde-m2t-runner -am `
+mvn -pl packages/java/epsilon-text-generation -am `
   "-Dtest=EpsilonEgxGeneratorTest,AwsPsmArtifactGenerationSyntaxTest" `
   "-Dsurefire.failIfNoSpecifiedTests=false" test
 
-mvn -pl packages/java/platform-transformation -am `
+mvn -pl packages/java/platform-mde-pipeline -am `
   "-Dtest=TransformationServiceTest" `
   "-Dsurefire.failIfNoSpecifiedTests=false" test
 ```

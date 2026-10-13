@@ -12,9 +12,9 @@ syntax is configured in:
 - `methodology/modeling-framework/notation/cim.cvs.json` (CVS v2, primary for CIM when present)
 - `methodology/modeling-framework/notation/pim.cvs.json` (phase 2)
 - `methodology/modeling-framework/notation/psm.cvs.json` (phase 3)
-- `packages/java/platform-modeling/src/main/resources/modeling/cim-ui-metadata.json` (G6 v1 fallback)
-- `packages/java/platform-modeling/src/main/resources/modeling/pim-ui-metadata.json`
-- `packages/java/platform-modeling/src/main/resources/modeling/psm-ui-metadata.json`
+- `packages/java/platform-modeling-infrastructure/src/main/resources/modeling/cim-ui-metadata.json` (G6 v1 fallback)
+- `packages/java/platform-modeling-infrastructure/src/main/resources/modeling/pim-ui-metadata.json`
+- `packages/java/platform-modeling-infrastructure/src/main/resources/modeling/psm-ui-metadata.json`
 
 See also `docs/internal/mde/concrete-visual-syntax-v2.md` for the CVS v2 formalism.
 

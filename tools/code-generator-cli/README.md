@@ -1,6 +1,6 @@
 # code-generator-cli
 
-CLI wrapper around [`mde-m2t-runner`](../../packages/java/mde-m2t-runner/README.md) for
+CLI wrapper around [`epsilon-text-generation`](../../packages/java/epsilon-text-generation/README.md) for
 model-to-text generation.
 
 Build from the repository root:

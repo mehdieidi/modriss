@@ -1,7 +1,7 @@
 # model-validator-cli
 
 Command-line runner for Eclipse Epsilon EVL validations. The CLI uses the reusable
-`mde-evl-validator` library and is intentionally thin: it handles arguments, profile defaults,
+`epsilon-model-validation` library and is intentionally thin: it handles arguments, profile defaults,
 console output, exit codes, and JSON reports.
 
 ## Commands

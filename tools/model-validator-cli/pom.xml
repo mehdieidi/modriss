@@ -52,7 +52,7 @@
 
   <dependencies>
     <dependency>
-      <artifactId>mde-evl-validator</artifactId>
+      <artifactId>epsilon-model-validation</artifactId>
       <groupId>io.mehdieidi</groupId>
     </dependency>
     <dependency>

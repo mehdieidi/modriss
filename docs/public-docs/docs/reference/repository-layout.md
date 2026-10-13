@@ -26,20 +26,21 @@ methodology/
     samples/               XMI samples and case study
 packages/
   java/
-    platform-kernel/         Kernel types (PlatformException, ModelLevel)
-    platform-storage-api/    PlatformStore persistence port
-    platform-identity/       Auth and user lifecycle
-    platform-project/        Projects and membership
-    platform-modeling/       Metamodel resolution, JSON/XMI bridge, config, layout
-    platform-model/          Model workspace CRUD, validation, import/export
-    platform-artifact/       Generated artifact storage
-    platform-transformation/ MDE pipeline and async job orchestration
-    platform-assistant/      AI assistant orchestration, patch pipeline, and persistence
-    platform-export/         Project archive ZIP packaging
-    platform-storage-postgres/ PostgreSQL adapter and platform Flyway migrations
-    mde-evl-validator/       Reusable EVL runner
-    mde-etl-runner/          Reusable ETL runner
-    mde-m2t-runner/          Reusable EGX/EGL runner
+    platform-shared-types/             Shared types (PlatformException, ModelLevel)
+    platform-storage-api/              PlatformStore persistence port
+    platform-user-authentication/      Authentication and user lifecycle
+    platform-project-management/       Projects and membership
+    platform-modeling-infrastructure/  Metamodel resolution, JSON/XMI bridge, config, layout
+    platform-model-workspace/          Model workspace CRUD, validation, import/export
+    platform-artifact-management/      Generated artifact storage and indexing
+    platform-mde-pipeline/             MDE pipeline, async jobs, and model synchronization
+    platform-modeling-assistant/       AI modeling assistant orchestration and persistence
+    platform-project-export/           Project archive ZIP packaging
+    platform-storage-postgres/         PostgreSQL adapter and platform Flyway migrations
+    epsilon-model-validation/          Reusable Epsilon EVL validation library
+    epsilon-model-transformation/      Reusable Epsilon ETL transformation library
+    epsilon-text-generation/           Reusable Epsilon EGX/EGL generation library
+    emf-compare-standalone/            Standalone packaging of the EMF Compare core bundle
 tools/
   emfatic-to-ecore-cli/      Emfatic-to-Ecore compiler CLI
   model-validator-cli/      Validation CLI
@@ -51,26 +52,26 @@ scripts/                   Repository automation (format, lint, verify, Flyway c
 
 ## Maven Dependency Direction
 
-Feature libraries depend inward on the kernel and storage port. The backend composes
-feature modules plus the Postgres storage adapter. MDE runner modules stay Spring-free and are
+Feature libraries depend inward on shared types and the storage port. The backend composes
+feature modules plus the Postgres storage adapter. Epsilon execution libraries stay Spring-free and are
 reused from CLIs and transformation services.
 
 ```text
-platform-kernel
-platform-storage-api → platform-kernel
+platform-shared-types
+platform-storage-api → platform-shared-types
 
-platform-identity → platform-storage-api
-platform-project → platform-identity
-platform-modeling → platform-kernel
-platform-model → platform-project, platform-modeling, mde-evl-validator
-platform-artifact → platform-project
-platform-transformation → platform-model, platform-artifact, mde-etl-runner, mde-m2t-runner
-platform-assistant → platform-model, platform-modeling, platform-project
-platform-export → platform-project, platform-model, platform-artifact, platform-transformation
+platform-user-authentication → platform-storage-api
+platform-project-management → platform-user-authentication
+platform-modeling-infrastructure → platform-shared-types
+platform-model-workspace → platform-project-management, platform-modeling-infrastructure, epsilon-model-validation
+platform-artifact-management → platform-project-management
+platform-mde-pipeline → platform-model-workspace, platform-artifact-management, epsilon-model-transformation, epsilon-text-generation
+platform-modeling-assistant → platform-model-workspace, platform-modeling-infrastructure, platform-project-management
+platform-project-export → platform-project-management, platform-model-workspace, platform-artifact-management, platform-mde-pipeline
 
 platform-storage-postgres → platform-storage-api + all feature domain types
 
-apps/backend → platform-storage-postgres + platform-assistant + platform-export + feature modules
+apps/backend → platform-storage-postgres + platform-modeling-assistant + platform-project-export + feature modules
 ```
 
 This separation keeps formal MDE execution reusable outside the web backend and isolates

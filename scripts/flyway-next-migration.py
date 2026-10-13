@@ -11,7 +11,7 @@ ROOT = Path(__file__).resolve().parent.parent
 LOCATIONS = {
     "platform": ROOT / "packages/java/platform-storage-postgres/src/main/resources/db/migration",
     "assistant": (
-        ROOT / "packages/java/platform-assistant/src/main/resources/db/assistant-migration"
+        ROOT / "packages/java/platform-modeling-assistant/src/main/resources/db/assistant-migration"
     ),
 }
 MIGRATION_RE = re.compile(r"^V(?P<version>\d+)__(?P<description>[A-Za-z0-9_]+)\.sql$")

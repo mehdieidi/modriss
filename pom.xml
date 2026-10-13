@@ -145,7 +145,7 @@
         <version>${spring.ai.version}</version>
       </dependency>
       <dependency>
-        <artifactId>platform-kernel</artifactId>
+        <artifactId>platform-shared-types</artifactId>
         <groupId>${project.groupId}</groupId>
         <version>${project.version}</version>
       </dependency>
@@ -155,27 +155,27 @@
         <version>${project.version}</version>
       </dependency>
       <dependency>
-        <artifactId>platform-identity</artifactId>
+        <artifactId>platform-user-authentication</artifactId>
         <groupId>${project.groupId}</groupId>
         <version>${project.version}</version>
       </dependency>
       <dependency>
-        <artifactId>platform-project</artifactId>
+        <artifactId>platform-project-management</artifactId>
         <groupId>${project.groupId}</groupId>
         <version>${project.version}</version>
       </dependency>
       <dependency>
-        <artifactId>platform-model</artifactId>
+        <artifactId>platform-model-workspace</artifactId>
         <groupId>${project.groupId}</groupId>
         <version>${project.version}</version>
       </dependency>
       <dependency>
-        <artifactId>platform-artifact</artifactId>
+        <artifactId>platform-artifact-management</artifactId>
         <groupId>${project.groupId}</groupId>
         <version>${project.version}</version>
       </dependency>
       <dependency>
-        <artifactId>platform-transformation</artifactId>
+        <artifactId>platform-mde-pipeline</artifactId>
         <groupId>${project.groupId}</groupId>
         <version>${project.version}</version>
       </dependency>
@@ -185,32 +185,32 @@
         <version>${project.version}</version>
       </dependency>
       <dependency>
-        <artifactId>platform-modeling</artifactId>
+        <artifactId>platform-modeling-infrastructure</artifactId>
         <groupId>${project.groupId}</groupId>
         <version>${project.version}</version>
       </dependency>
       <dependency>
-        <artifactId>platform-assistant</artifactId>
+        <artifactId>platform-modeling-assistant</artifactId>
         <groupId>${project.groupId}</groupId>
         <version>${project.version}</version>
       </dependency>
       <dependency>
-        <artifactId>platform-export</artifactId>
+        <artifactId>platform-project-export</artifactId>
         <groupId>${project.groupId}</groupId>
         <version>${project.version}</version>
       </dependency>
       <dependency>
-        <artifactId>mde-etl-runner</artifactId>
+        <artifactId>epsilon-model-transformation</artifactId>
         <groupId>${project.groupId}</groupId>
         <version>${project.version}</version>
       </dependency>
       <dependency>
-        <artifactId>mde-m2t-runner</artifactId>
+        <artifactId>epsilon-text-generation</artifactId>
         <groupId>${project.groupId}</groupId>
         <version>${project.version}</version>
       </dependency>
       <dependency>
-        <artifactId>mde-evl-validator</artifactId>
+        <artifactId>epsilon-model-validation</artifactId>
         <groupId>${project.groupId}</groupId>
         <version>${project.version}</version>
       </dependency>
@@ -230,20 +230,20 @@
   <modules>
     <module>packages/java/emf-compare-standalone</module>
     <module>apps/backend</module>
-    <module>packages/java/platform-kernel</module>
+    <module>packages/java/platform-shared-types</module>
     <module>packages/java/platform-storage-api</module>
-    <module>packages/java/platform-identity</module>
-    <module>packages/java/platform-project</module>
-    <module>packages/java/platform-modeling</module>
-    <module>packages/java/platform-model</module>
-    <module>packages/java/platform-assistant</module>
-    <module>packages/java/platform-export</module>
-    <module>packages/java/platform-artifact</module>
-    <module>packages/java/platform-transformation</module>
+    <module>packages/java/platform-user-authentication</module>
+    <module>packages/java/platform-project-management</module>
+    <module>packages/java/platform-modeling-infrastructure</module>
+    <module>packages/java/platform-model-workspace</module>
+    <module>packages/java/platform-modeling-assistant</module>
+    <module>packages/java/platform-project-export</module>
+    <module>packages/java/platform-artifact-management</module>
+    <module>packages/java/platform-mde-pipeline</module>
     <module>packages/java/platform-storage-postgres</module>
-    <module>packages/java/mde-etl-runner</module>
-    <module>packages/java/mde-evl-validator</module>
-    <module>packages/java/mde-m2t-runner</module>
+    <module>packages/java/epsilon-model-transformation</module>
+    <module>packages/java/epsilon-model-validation</module>
+    <module>packages/java/epsilon-text-generation</module>
     <module>tools/emfatic-to-ecore-cli</module>
     <module>tools/model-validator-cli</module>
     <module>tools/model-transformer-cli</module>

@@ -4,7 +4,7 @@
   <artifactId>platform-storage-api</artifactId>
   <dependencies>
     <dependency>
-      <artifactId>platform-kernel</artifactId>
+      <artifactId>platform-shared-types</artifactId>
       <groupId>${project.groupId}</groupId>
     </dependency>
     <dependency>

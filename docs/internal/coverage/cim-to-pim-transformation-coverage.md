@@ -19,11 +19,11 @@ models: <https://eclipse.dev/epsilon/doc/etl/>.
 - Source metamodel: `methodology/modeling-framework/metamodels/cim/cim-combined.ecore`
 - Target metamodel: `methodology/modeling-framework/metamodels/pim/pim-combined.ecore`
 - Test class:
-  `packages/java/mde-etl-runner/src/test/java/io/mehdieidi/modriss/mde/etl/CimToPimEtlRegressionTest.java`
+  `packages/java/epsilon-model-transformation/src/test/java/io/mehdieidi/modriss/mde/etl/CimToPimEtlRegressionTest.java`
 - Verification command:
-  `mvn -pl packages/java/mde-etl-runner -Dtest=CimToPimEtlRegressionTest test`
+  `mvn -pl packages/java/epsilon-model-transformation -Dtest=CimToPimEtlRegressionTest test`
 - Helper utility verification:
-  `mvn -pl packages/java/mde-etl-runner -Dtest=EpsilonEtlExecutorTest#textHelpersPreserveLowerCamelIdentifiers test`
+  `mvn -pl packages/java/epsilon-model-transformation -Dtest=EpsilonEtlExecutorTest#textHelpersPreserveLowerCamelIdentifiers test`
 
 No CIM or PIM metamodel `.emf` files were changed for this coverage work.
 

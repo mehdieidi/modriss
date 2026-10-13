@@ -48,7 +48,7 @@
 
   <dependencies>
     <dependency>
-      <artifactId>mde-m2t-runner</artifactId>
+      <artifactId>epsilon-text-generation</artifactId>
       <groupId>io.mehdieidi</groupId>
     </dependency>
     <dependency>

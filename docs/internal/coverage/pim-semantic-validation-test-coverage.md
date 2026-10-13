@@ -1,7 +1,7 @@
 # PIM Semantic Validation Test Coverage
 
 This document traces the PIM EVL semantic validation coverage added in
-`packages/java/mde-evl-validator/src/test/java/io/mehdieidi/modriss/mde/validation/PimSemanticValidationTest.java`.
+`packages/java/epsilon-model-validation/src/test/java/io/mehdieidi/modriss/mde/validation/PimSemanticValidationTest.java`.
 
 ## Scope
 
@@ -81,7 +81,7 @@ No `.emf` metamodel change was made in this session.
 Focused verification command:
 
 ```powershell
-mvn -pl packages/java/mde-evl-validator -Dtest=PimSemanticValidationTest test
+mvn -pl packages/java/epsilon-model-validation -Dtest=PimSemanticValidationTest test
 ```
 
 Result: passing.

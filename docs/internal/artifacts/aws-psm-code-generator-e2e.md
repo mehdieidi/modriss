@@ -7,7 +7,7 @@ E2E test does not invoke EVL semantic validation.
 
 The E2E source model is:
 
-`packages/java/mde-m2t-runner/src/test/resources/awspsm/e2e/localstack-serverless-system.awspsm.xmi`
+`packages/java/epsilon-text-generation/src/test/resources/awspsm/e2e/localstack-serverless-system.awspsm.xmi`
 
 It models a small serverless runtime stack:
 

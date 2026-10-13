@@ -257,7 +257,7 @@ CloudFormation/SAM fidelity.
 ## Verification expectations
 
 The PSM CVS is structurally validated against the combined Ecore metamodel by the
-existing configuration service. The focused platform-modeling tests verify:
+existing configuration service. The focused platform-modeling-infrastructure tests verify:
 
 - palette/canvas parity,
 - complete Ecore-derived visual metadata,

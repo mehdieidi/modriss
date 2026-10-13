@@ -9,7 +9,7 @@ tests do not invoke EVL semantic validation.
 
 ## Executable Coverage
 
-The primary tests are in `packages/java/mde-m2t-runner/src/test/java/io/mehdieidi/modriss/mde/generation`.
+The primary tests are in `packages/java/epsilon-text-generation/src/test/java/io/mehdieidi/modriss/mde/generation`.
 
 | Test                                                                                       | Coverage role                                                                                                                                                                                                                                                                                                                                |
 | ------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |

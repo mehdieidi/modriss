@@ -11,7 +11,7 @@ The diagrams were derived from:
 - Browser client modules under `apps/frontend/js`.
 - Maven module POMs, `deploy/compose.base.yaml` and its environment overlays, and backend configuration.
 - `PlatformStore`, `PostgresPlatformStore`, and Flyway migrations under
-  `platform-storage-postgres` (including V32 model synchronization records) and `platform-assistant`
+  `platform-storage-postgres` (including V32 model synchronization records) and `platform-modeling-assistant`
   (V14 durable-turn baseline and later assistant migrations through V31).
 - Emfatic/Ecore metamodels, EVL entry modules, ETL entry modules, and EGX/EGL generation assets.
 
