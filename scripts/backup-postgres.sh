@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 # Backup the MODRISS PostgreSQL database to a timestamped custom-format dump.
-# Usage: ./deploy/scripts/backup-postgres.sh [output-directory]
+# Usage: ./scripts/backup-postgres.sh [output-directory]
 
 set -euo pipefail
 
-ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 OUTPUT_DIR="${1:-${ROOT}/backups}"
 TIMESTAMP="$(date -u +%Y%m%dT%H%M%SZ)"
 

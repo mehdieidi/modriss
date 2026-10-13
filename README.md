@@ -130,7 +130,8 @@ For operations guidance, see [deployment](docs/public-docs/docs/operations/deplo
 | [`packages/java/`](packages/java/) | Platform modules, MDE runners, assistant, and PostgreSQL adapter                  |
 | [`tools/`](tools/)                 | Standalone CLIs for Ecore compilation, validation, transformation, and generation |
 | [`docs/`](docs/)                   | Public documentation, API contracts, diagrams, and engineering references         |
-| [`deploy/`](deploy/)               | Docker Compose stack, container definitions, and deployment scripts               |
+| [`deploy/`](deploy/)               | Docker Compose stack and container definitions                                    |
+| [`scripts/`](scripts/)             | Development, deployment, database backup/restore, and repository automation       |
 | [`infra/`](infra/)                 | Observability dashboards and alert rules                                          |
 
 The [repository layout reference](docs/public-docs/docs/reference/repository-layout.md) explains

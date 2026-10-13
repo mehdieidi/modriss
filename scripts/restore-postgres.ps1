@@ -1,5 +1,5 @@
 # Restore a MODRISS PostgreSQL backup created by backup-postgres.sh
-# Usage: .\deploy\scripts\restore-postgres.ps1 -BackupFile backups\modriss-YYYYMMDDTHHMMSSZ.dump
+# Usage: .\scripts\restore-postgres.ps1 -BackupFile backups\modriss-YYYYMMDDTHHMMSSZ.dump
 
 param(
     [Parameter(Mandatory = $true)]

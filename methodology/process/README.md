@@ -50,7 +50,7 @@ When metamodels change:
    node methodology/process/tools/generate-methodology-narratives.mjs
    ```
 
-3. Run `node methodology/process/tools/validate-coverage.mjs` (also invoked by `scripts/verify.py`).
+3. Run `node methodology/process/tools/validate-coverage.mjs`.
 
 To rebuild and verify the formal method package, run:
 

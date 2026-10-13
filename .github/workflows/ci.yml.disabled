@@ -36,8 +36,23 @@ jobs:
       - name: Install Python lint dependencies
         run: pip install -r config/requirements-lint.txt
 
-      - name: Verify format, lint, and tests
-        run: python scripts/verify.py
+      - name: Check formatting
+        run: python scripts/format.py --check
+
+      - name: Run linters
+        run: python scripts/lint.py
+
+      - name: Check Flyway migration versions
+        run: python scripts/check-flyway-migration-versions.py --changed-only
+
+      - name: Run Python tooling tests
+        run: python -m unittest discover -s scripts/tests
+
+      - name: Validate process coverage
+        run: node methodology/process/tools/validate-coverage.mjs
+
+      - name: Run Maven tests
+        run: mvn test
 
   flyway-migrations:
     runs-on: ubuntu-latest

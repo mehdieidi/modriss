@@ -163,7 +163,9 @@ Use broader verification before a PR or release:
 
 ```powershell
 mvn test
-python scripts/verify.py
+python scripts/check-flyway-migration-versions.py --changed-only
+python -m unittest discover -s scripts/tests
+node methodology/process/tools/validate-coverage.mjs
 ```
 
 `python scripts/format.py` and formatting checks are available, but run them only when you intend to

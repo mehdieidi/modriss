@@ -18,19 +18,18 @@ live in the public documentation site.
 ## Development Workflow
 
 ```bash
-# Full verification (format, lint, tests)
-python scripts/verify.py
-
-# Individual steps
+# Run the checks directly
 python scripts/format.py          # apply formatting
 python scripts/format.py --check  # verify formatting
 python scripts/lint.py            # all linters
+python scripts/check-flyway-migration-versions.py --changed-only
+python -m unittest discover -s scripts/tests
+node methodology/process/tools/validate-coverage.mjs
 mvn test                          # Java + integration tests
 docker compose up --build         # full stack smoke test
 ```
 
-Pre-commit runs format check only. Run `python scripts/lint.py` and `python scripts/verify.py` manually
-before opening a PR.
+Run the checks above before opening a PR; apply formatting only when needed.
 
 `scripts/format.py` delegates `.emf` files to `scripts/format-emf.py`, including in
 `--check` mode. Its generic whitespace normalizer skips `.emf` files so it preserves
@@ -47,7 +46,7 @@ run `python scripts/format-emf.py`; see the
   `python scripts/flyway-next-migration.py "<description>"` instead of choosing the version
   manually, because Flyway versions are global across all backend migration locations.
 - Update sample models under `methodology/modeling-framework/samples/` when validation rules affect them.
-- Run `python scripts/verify.py` before opening a PR.
+- Run the development checks above before opening a PR.
 
 ## Architecture Decisions
 

@@ -12,7 +12,7 @@
 
 ## Checklist
 
-- [ ] `python scripts/verify.py` passes locally
+- [ ] Applicable development checks documented in `CONTRIBUTING.md` pass locally
 - [ ] OpenAPI updated (`docs/api/openapi/openapi.yaml`) if REST endpoints changed
 - [ ] Flyway migration added if PostgreSQL schema changed
 - [ ] Sample models under `methodology/modeling-framework/samples/` updated if validation rules changed

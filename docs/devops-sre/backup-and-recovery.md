@@ -20,7 +20,7 @@ PostgreSQL is the primary persistent system of record for MODRISS runtime state.
 The repository includes helper scripts:
 
 ```powershell
-bash deploy/scripts/backup-postgres.sh
+bash scripts/backup-postgres.sh
 ```
 
 The script writes a timestamped PostgreSQL custom-format dump.
@@ -28,7 +28,7 @@ The script writes a timestamped PostgreSQL custom-format dump.
 ## Local Restore
 
 ```powershell
-.\deploy\scripts\restore-postgres.ps1 -BackupFile backups\modriss-YYYYMMDDTHHMMSSZ.dump
+.\scripts\restore-postgres.ps1 -BackupFile backups\modriss-YYYYMMDDTHHMMSSZ.dump
 ```
 
 Restore into a non-production environment first when testing migrations or recovery.

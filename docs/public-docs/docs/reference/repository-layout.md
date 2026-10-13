@@ -6,7 +6,7 @@ apps/
   frontend/                Browser modeling application
   landing/                 Public landing page
 config/                    Tooling and static-analysis configuration
-deploy/                    Docker Compose stack, Dockerfile, deployment scripts
+deploy/                    Docker Compose stack and Dockerfile
 docs/
   api/                     REST and SSE API references
   diagrams/                Mermaid architecture diagrams
@@ -47,7 +47,7 @@ tools/
   model-transformer-cli/  Transformation CLI
   code-generator-cli/        Generation CLI
   notation-migrate/        Legacy UI-metadata to CVS migration utility (Node.js)
-scripts/                   Repository automation (format, lint, verify, Flyway check)
+scripts/                   Development, deployment, database backup/restore, repository automation
 ```
 
 ## Maven Dependency Direction

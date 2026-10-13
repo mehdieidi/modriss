@@ -1,12 +1,17 @@
 # Testing
 
-## One-command verification
+## Repository checks
 
 ```powershell
-python scripts/verify.py
+python scripts/check-flyway-migration-versions.py --changed-only
+python -m unittest discover -s scripts/tests
+node methodology/process/tools/validate-coverage.mjs
+mvn test
 ```
 
-This runs format check, all linters, and `mvn test`. Pre-commit runs format check only on `git commit`.
+Run these checks directly to verify migration versions, Python tooling, process coverage, and Java
+tests. Formatting checks and linters are available separately through `scripts/format.py --check`
+and `scripts/lint.py`.
 
 ## Repository Test Ladder
 

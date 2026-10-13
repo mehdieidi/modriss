@@ -163,4 +163,4 @@ groups:
 - [Deployment guide](deployment.md)
 - [Security controls](security.md)
 - [Testing guide](testing.md)
-- Backup scripts: `deploy/scripts/backup-postgres.sh`
+- Backup scripts: `scripts/backup-postgres.sh`
