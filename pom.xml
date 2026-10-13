@@ -244,10 +244,10 @@
     <module>packages/java/mde-etl-runner</module>
     <module>packages/java/mde-evl-validator</module>
     <module>packages/java/mde-m2t-runner</module>
-    <module>tools/mde-cli</module>
-    <module>tools/mde-evl-cli</module>
-    <module>tools/mde-etl-cli</module>
-    <module>tools/mde-m2t-cli</module>
+    <module>tools/emfatic-to-ecore-cli</module>
+    <module>tools/model-validator-cli</module>
+    <module>tools/model-transformer-cli</module>
+    <module>tools/code-generator-cli</module>
   </modules>
 
   <name>MODRISS</name>

@@ -55,7 +55,7 @@ Create and validate the refined model:
 
 ```powershell
 & methodology/modeling-framework/samples/smart-makerspace-operations/scripts/refine-pim.ps1
-java -jar tools/mde-evl-cli/target/mde-evl-cli-0.0.1-SNAPSHOT.jar pim `
+java -jar tools/model-validator-cli/target/model-validator-cli-0.0.1-SNAPSHOT.jar pim `
   --repo-root . `
   --model methodology/modeling-framework/samples/smart-makerspace-operations/smart-makerspace.refined.pim.xmi `
   --fail-on-mandatory-violations --fail-on-optional-violations
@@ -64,7 +64,7 @@ java -jar tools/mde-evl-cli/target/mde-evl-cli-0.0.1-SNAPSHOT.jar pim `
 The refined PIM reports **0 mandatory and 0 optional violations**. Generate the draft PSM with:
 
 ```powershell
-java -jar tools/mde-etl-cli/target/mde-etl-cli-0.0.1-SNAPSHOT.jar pim-to-psm `
+java -jar tools/model-transformer-cli/target/model-transformer-cli-0.0.1-SNAPSHOT.jar pim-to-psm `
   --repo-root . `
   --source-model methodology/modeling-framework/samples/smart-makerspace-operations/smart-makerspace.refined.pim.xmi `
   --target-model methodology/modeling-framework/samples/smart-makerspace-operations/smart-makerspace.draft.awspsm.xmi `

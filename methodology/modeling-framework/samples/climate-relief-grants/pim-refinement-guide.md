@@ -333,7 +333,7 @@ that unbuilt software is production-ready.
 Export the refined PIM and run:
 
 ```powershell
-java -jar tools/mde-evl-cli/target/mde-evl-cli-0.0.1-SNAPSHOT.jar pim `
+java -jar tools/model-validator-cli/target/model-validator-cli-0.0.1-SNAPSHOT.jar pim `
   --repo-root . `
   --model path/to/refined-climate-relief-grants.pim.xmi `
   --fail-on-mandatory-violations `

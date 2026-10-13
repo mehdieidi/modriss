@@ -3,7 +3,7 @@
 Entry point:
 
 ```bash
-java -jar tools/mde-etl-cli/target/mde-etl-cli-0.0.1-SNAPSHOT.jar run \
+java -jar tools/model-transformer-cli/target/model-transformer-cli-0.0.1-SNAPSHOT.jar run \
   --module methodology/modeling-framework/transformations/pim-to-awspsm/pim-to-awspsm.etl \
   --source-model path/to/input-pim.xmi \
   --target-model path/to/output-awspsm.xmi \

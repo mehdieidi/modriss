@@ -67,7 +67,7 @@ Nested under non-service parents:
    classifier may have alternative valid parents (for example, nested PSM
    resources or reusable expressions). Confirm the actual instance ownership
    and, where needed, add an explicit semantic validation rule.
-4. Regenerate combined Ecore via `mde-cli`
+4. Regenerate combined Ecore via `emfatic-to-ecore-cli`
 
 ## CVS / view alignment
 

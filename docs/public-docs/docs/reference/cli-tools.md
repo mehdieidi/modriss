@@ -5,12 +5,12 @@ from the repository root using `-pl <module> -am package`.
 
 ## Metamodel Compiler
 
-Module: `tools/mde-cli`
+Module: `tools/emfatic-to-ecore-cli`
 
 Converts standalone or modular Emfatic metamodels to Ecore.
 
 ```powershell
-java -jar tools/mde-cli/target/mde-cli-0.0.1-SNAPSHOT.jar `
+java -jar tools/emfatic-to-ecore-cli/target/emfatic-to-ecore-cli-0.0.1-SNAPSHOT.jar `
   methodology/modeling-framework/metamodels/cim `
   --root methodology/modeling-framework/metamodels/cim/cim-root.emf `
   --output methodology/modeling-framework/metamodels/cim/cim-combined.ecore `
@@ -22,7 +22,7 @@ Conversion failures return exit code `2`; unexpected failures return `1`.
 
 ## Validation CLI
 
-Module: `tools/mde-evl-cli`
+Module: `tools/model-validator-cli`
 
 Commands:
 
@@ -32,7 +32,7 @@ Commands:
 - `run` for a generic EVL profile
 
 ```powershell
-java -jar tools/mde-evl-cli/target/mde-evl-cli-0.0.1-SNAPSHOT.jar pim `
+java -jar tools/model-validator-cli/target/model-validator-cli-0.0.1-SNAPSHOT.jar pim `
   --repo-root . `
   --model path/to/model.xmi `
   --log-file target/pim-validation-report.json
@@ -40,13 +40,13 @@ java -jar tools/mde-evl-cli/target/mde-evl-cli-0.0.1-SNAPSHOT.jar pim `
 
 ## Transformation CLI
 
-Module: `tools/mde-etl-cli`
+Module: `tools/model-transformer-cli`
 
 Provides CIM-to-PIM, PIM-to-PSM, and generic ETL execution using configured source and target
 models, metamodels, aliases, and entry modules.
 
 ```powershell
-java -jar tools/mde-etl-cli/target/mde-etl-cli-0.0.1-SNAPSHOT.jar cim-to-pim `
+java -jar tools/model-transformer-cli/target/model-transformer-cli-0.0.1-SNAPSHOT.jar cim-to-pim `
   --repo-root . `
   --source-model input-cim.xmi `
   --target-model output-pim.xmi `
@@ -55,10 +55,10 @@ java -jar tools/mde-etl-cli/target/mde-etl-cli-0.0.1-SNAPSHOT.jar cim-to-pim `
 
 ## Generation CLI
 
-Module: `tools/mde-m2t-cli`
+Module: `tools/code-generator-cli`
 
 ```powershell
-java -jar tools/mde-m2t-cli/target/mde-m2t-cli-0.0.1-SNAPSHOT.jar psm-to-artifacts `
+java -jar tools/code-generator-cli/target/code-generator-cli-0.0.1-SNAPSHOT.jar psm-to-artifacts `
   --repo-root . `
   --source-model input-psm.xmi `
   --output-dir generated-project `

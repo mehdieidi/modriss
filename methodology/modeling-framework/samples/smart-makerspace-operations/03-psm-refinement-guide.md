@@ -52,7 +52,7 @@ Create and validate the final PSM:
 
 ```powershell
 & methodology/modeling-framework/samples/smart-makerspace-operations/scripts/refine-psm.ps1
-java -jar tools/mde-evl-cli/target/mde-evl-cli-0.0.1-SNAPSHOT.jar psm `
+java -jar tools/model-validator-cli/target/model-validator-cli-0.0.1-SNAPSHOT.jar psm `
   --repo-root . `
   --model methodology/modeling-framework/samples/smart-makerspace-operations/smart-makerspace.final.awspsm.xmi `
   --fail-on-mandatory-violations --fail-on-optional-violations
@@ -61,7 +61,7 @@ java -jar tools/mde-evl-cli/target/mde-evl-cli-0.0.1-SNAPSHOT.jar psm `
 The final PSM reports **0 mandatory and 0 optional violations**. Generate artifacts with:
 
 ```powershell
-java -jar tools/mde-m2t-cli/target/mde-m2t-cli-0.0.1-SNAPSHOT.jar psm-to-artifacts `
+java -jar tools/code-generator-cli/target/code-generator-cli-0.0.1-SNAPSHOT.jar psm-to-artifacts `
   --repo-root . `
   --source-model methodology/modeling-framework/samples/smart-makerspace-operations/smart-makerspace.final.awspsm.xmi `
   --output-dir methodology/modeling-framework/samples/smart-makerspace-operations/generated-project

@@ -28,7 +28,7 @@ generator issue.
 ## Validation or Transformation Fails
 
 - Inspect the structured report phase and diagnostics.
-- Validate the source model independently with `mde-evl-cli`.
+- Validate the source model independently with `model-validator-cli`.
 - Confirm combined Ecore files match the Emfatic sources.
 - Confirm entry modules, imported EOL/ETL/EVL files, model aliases, and repository root.
 - Use the CLI `--verbose` and `--log-file` options.

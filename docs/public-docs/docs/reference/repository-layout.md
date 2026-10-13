@@ -41,10 +41,10 @@ packages/
     mde-etl-runner/          Reusable ETL runner
     mde-m2t-runner/          Reusable EGX/EGL runner
 tools/
-  mde-cli/                 Emfatic-to-Ecore compiler CLI
-  mde-evl-cli/             Validation CLI
-  mde-etl-cli/             Transformation CLI
-  mde-m2t-cli/             Generation CLI
+  emfatic-to-ecore-cli/      Emfatic-to-Ecore compiler CLI
+  model-validator-cli/      Validation CLI
+  model-transformer-cli/  Transformation CLI
+  code-generator-cli/        Generation CLI
   notation-migrate/        Legacy UI-metadata to CVS migration utility (Node.js)
 scripts/                   Repository automation (format, lint, verify, Flyway check)
 ```

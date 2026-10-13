@@ -71,20 +71,20 @@ flowchart LR
 
 ```mermaid
 flowchart TB
-    mdecli["tools/mde-cli<br/>Emfatic import, Ecore generation, normalization, combining"]
-    evlcli["tools/mde-evl-cli<br/>Run repository EVL profiles"]
-    etlcli["tools/mde-etl-cli<br/>Run repository ETL profiles"]
-    m2tcli["tools/mde-m2t-cli<br/>Run PSM artifact generation"]
+    emfatictoecore["tools/emfatic-to-ecore-cli<br/>Emfatic import, Ecore generation, normalization, combining"]
+    modelValidationCli["tools/model-validator-cli<br/>Run repository EVL profiles"]
+    modelTransformationCli["tools/model-transformer-cli<br/>Run repository ETL profiles"]
+    codeGeneratorCli["tools/code-generator-cli<br/>Run PSM artifact generation"]
     metamodels["methodology/modeling-framework/metamodels"]
     validations["methodology/modeling-framework/validation"]
     transformations["methodology/modeling-framework/transformations"]
     generation["methodology/modeling-framework/generation"]
 
-    mdecli --> metamodels
-    evlcli --> validations
-    evlcli --> metamodels
-    etlcli --> transformations
-    etlcli --> metamodels
-    m2tcli --> generation
-    m2tcli --> metamodels
+    emfatictoecore --> metamodels
+    modelValidationCli --> validations
+    modelValidationCli --> metamodels
+    modelTransformationCli --> transformations
+    modelTransformationCli --> metamodels
+    codeGeneratorCli --> generation
+    codeGeneratorCli --> metamodels
 ```

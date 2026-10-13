@@ -14,22 +14,22 @@ Run focused checks first, then broader regression tests.
 
 ```powershell
 # Metamodel compiler and modeling configuration
-mvn -q -pl tools/mde-cli -am test
+mvn -q -pl tools/emfatic-to-ecore-cli -am test
 mvn -q -pl packages/java/platform-modeling -am test
 
 # Validation
 mvn -q -pl packages/java/mde-evl-validator -am test
-mvn -q -pl tools/mde-evl-cli -am test
+mvn -q -pl tools/model-validator-cli -am test
 
 # Transformations
 mvn -q -pl packages/java/mde-etl-runner -am test
-mvn -q -pl tools/mde-etl-cli -am test
+mvn -q -pl tools/model-transformer-cli -am test
 mvn -q -pl packages/java/platform-transformation -am test
 mvn -q -pl packages/java/platform-model -am test
 
 # Generation
 mvn -q -pl packages/java/mde-m2t-runner -am test
-mvn -q -pl tools/mde-m2t-cli -am test
+mvn -q -pl tools/code-generator-cli -am test
 
 # Backend, storage, and complete regression
 mvn -q -pl apps/backend -am test

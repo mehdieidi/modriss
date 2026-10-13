@@ -19,9 +19,9 @@ flowchart TB
     etl["mde-etl-runner"]
     evl["mde-evl-validator"]
     m2t["mde-m2t-runner"]
-    etlcli["tools/mde-etl-cli"]
-    evlcli["tools/mde-evl-cli"]
-    m2tcli["tools/mde-m2t-cli"]
+    modelTransformationCli["tools/model-transformer-cli"]
+    modelValidationCli["tools/model-validator-cli"]
+    codeGeneratorCli["tools/code-generator-cli"]
 
     storageApi --> kernel
     identity --> storageApi
@@ -61,9 +61,9 @@ flowchart TB
     backend --> export
 
     etl --> evl
-    etlcli --> etl
-    evlcli --> evl
-    m2tcli --> m2t
+    modelTransformationCli --> etl
+    modelValidationCli --> evl
+    codeGeneratorCli --> m2t
 ```
 
 ## External Library Dependencies

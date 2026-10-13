@@ -642,25 +642,25 @@ change.
 4. Build the metamodel CLI:
 
    ```powershell
-   mvn -q -pl tools/mde-cli -am package
+   mvn -q -pl tools/emfatic-to-ecore-cli -am package
    ```
 
 5. Regenerate the affected combined Ecore in place. Examples:
 
    ```powershell
-   java -jar tools/mde-cli/target/mde-cli-0.0.1-SNAPSHOT.jar `
+   java -jar tools/emfatic-to-ecore-cli/target/emfatic-to-ecore-cli-0.0.1-SNAPSHOT.jar `
      methodology/modeling-framework/metamodels/cim `
      --root methodology/modeling-framework/metamodels/cim/cim-root.emf `
      --output methodology/modeling-framework/metamodels/cim/cim-combined.ecore `
      --overwrite
 
-   java -jar tools/mde-cli/target/mde-cli-0.0.1-SNAPSHOT.jar `
+   java -jar tools/emfatic-to-ecore-cli/target/emfatic-to-ecore-cli-0.0.1-SNAPSHOT.jar `
      methodology/modeling-framework/metamodels/pim `
      --root methodology/modeling-framework/metamodels/pim/pim-root.emf `
      --output methodology/modeling-framework/metamodels/pim/pim-combined.ecore `
      --overwrite
 
-   java -jar tools/mde-cli/target/mde-cli-0.0.1-SNAPSHOT.jar `
+   java -jar tools/emfatic-to-ecore-cli/target/emfatic-to-ecore-cli-0.0.1-SNAPSHOT.jar `
      methodology/modeling-framework/metamodels/psm `
      --root methodology/modeling-framework/metamodels/psm/awspsm-root.emf `
      --output methodology/modeling-framework/metamodels/psm/psm-combined.ecore `
@@ -670,7 +670,7 @@ change.
 6. If the kernel changed, regenerate `kernel.ecore` and all three combined Ecore files:
 
    ```powershell
-   java -jar tools/mde-cli/target/mde-cli-0.0.1-SNAPSHOT.jar `
+   java -jar tools/emfatic-to-ecore-cli/target/emfatic-to-ecore-cli-0.0.1-SNAPSHOT.jar `
      methodology/modeling-framework/metamodels/shared/kernel.emf `
      --output methodology/modeling-framework/metamodels/shared/kernel.ecore `
      --overwrite
@@ -766,7 +766,7 @@ Run the narrowest relevant checks first, then broaden.
 ### Metamodel and UI metadata
 
 ```powershell
-mvn -q -pl tools/mde-cli -am test
+mvn -q -pl tools/emfatic-to-ecore-cli -am test
 mvn -q -pl packages/java/platform-modeling -am test
 ```
 
@@ -774,14 +774,14 @@ mvn -q -pl packages/java/platform-modeling -am test
 
 ```powershell
 mvn -q -pl packages/java/mde-evl-validator -am test
-mvn -q -pl tools/mde-evl-cli -am test
+mvn -q -pl tools/model-validator-cli -am test
 ```
 
 ### Transformations
 
 ```powershell
 mvn -q -pl packages/java/mde-etl-runner -am test
-mvn -q -pl tools/mde-etl-cli -am test
+mvn -q -pl tools/model-transformer-cli -am test
 mvn -q -pl packages/java/platform-transformation -am test
 mvn -q -pl packages/java/platform-model -am test
 ```
@@ -790,7 +790,7 @@ mvn -q -pl packages/java/platform-model -am test
 
 ```powershell
 mvn -q -pl packages/java/mde-m2t-runner -am test
-mvn -q -pl tools/mde-m2t-cli -am test
+mvn -q -pl tools/code-generator-cli -am test
 ```
 
 ### Backend, AI, storage, and complete regression

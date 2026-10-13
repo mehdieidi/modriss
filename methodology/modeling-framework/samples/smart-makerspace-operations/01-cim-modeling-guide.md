@@ -137,7 +137,7 @@ offline-isolation decision. CIM is transformation ready, not production ready.
 ### 9. Validate and transform
 
 ```powershell
-java -jar tools/mde-evl-cli/target/mde-evl-cli-0.0.1-SNAPSHOT.jar cim `
+java -jar tools/model-validator-cli/target/model-validator-cli-0.0.1-SNAPSHOT.jar cim `
   --repo-root . --model methodology/modeling-framework/samples/smart-makerspace-operations/smart-makerspace.cim.xmi `
   --fail-on-mandatory-violations --fail-on-optional-violations
 ```
@@ -145,7 +145,7 @@ java -jar tools/mde-evl-cli/target/mde-evl-cli-0.0.1-SNAPSHOT.jar cim `
 The checked-in CIM reports **0 mandatory and 0 optional violations**. Generate the draft PIM with:
 
 ```powershell
-java -jar tools/mde-etl-cli/target/mde-etl-cli-0.0.1-SNAPSHOT.jar cim-to-pim `
+java -jar tools/model-transformer-cli/target/model-transformer-cli-0.0.1-SNAPSHOT.jar cim-to-pim `
   --repo-root . --source-model methodology/modeling-framework/samples/smart-makerspace-operations/smart-makerspace.cim.xmi `
   --target-model methodology/modeling-framework/samples/smart-makerspace-operations/smart-makerspace.draft.pim.xmi --overwrite
 ```

@@ -30,8 +30,8 @@ reproducible artifact under study.
 From the repository root:
 
 ```powershell
-mvn -q -DskipTests -pl tools/mde-m2t-cli -am package
-java -jar tools/mde-m2t-cli/target/mde-m2t-cli-0.0.1-SNAPSHOT.jar psm-to-artifacts `
+mvn -q -DskipTests -pl tools/code-generator-cli -am package
+java -jar tools/code-generator-cli/target/code-generator-cli-0.0.1-SNAPSHOT.jar psm-to-artifacts `
   --repo-root . `
   --source-model methodology/modeling-framework/samples/orderpulse/orderpulse.awspsm.xmi `
   --output-dir methodology/modeling-framework/samples/orderpulse/generated-project `

@@ -17,10 +17,10 @@ COPY packages/java/platform-project/pom.xml packages/java/platform-project/
 COPY packages/java/platform-storage-api/pom.xml packages/java/platform-storage-api/
 COPY packages/java/platform-storage-postgres/pom.xml packages/java/platform-storage-postgres/
 COPY packages/java/platform-transformation/pom.xml packages/java/platform-transformation/
-COPY tools/mde-cli/pom.xml tools/mde-cli/
-COPY tools/mde-etl-cli/pom.xml tools/mde-etl-cli/
-COPY tools/mde-evl-cli/pom.xml tools/mde-evl-cli/
-COPY tools/mde-m2t-cli/pom.xml tools/mde-m2t-cli/
+COPY tools/emfatic-to-ecore-cli/pom.xml tools/emfatic-to-ecore-cli/
+COPY tools/model-transformer-cli/pom.xml tools/model-transformer-cli/
+COPY tools/model-validator-cli/pom.xml tools/model-validator-cli/
+COPY tools/code-generator-cli/pom.xml tools/code-generator-cli/
 # Warm runtime/build dependencies once per POM change; omit analysis and unused lifecycle tools.
 RUN --mount=type=cache,id=modriss-maven,target=/root/.m2,sharing=locked \
     mvn -B -pl apps/backend -am org.apache.maven.plugins:maven-dependency-plugin:3.9.0:go-offline -DincludeScope=runtime \

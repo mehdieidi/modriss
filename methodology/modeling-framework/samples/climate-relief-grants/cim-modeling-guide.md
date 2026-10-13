@@ -311,7 +311,7 @@ Run the workbench CIM validation and resolve every mandatory and optional violat
 as XMI. The repository equivalent is:
 
 ```powershell
-java -jar tools/mde-evl-cli/target/mde-evl-cli-0.0.1-SNAPSHOT.jar cim `
+java -jar tools/model-validator-cli/target/model-validator-cli-0.0.1-SNAPSHOT.jar cim `
   --repo-root . `
   --model methodology/modeling-framework/samples/climate-relief-grants/climate-relief-grants.cim.xmi `
   --fail-on-mandatory-violations
@@ -323,7 +323,7 @@ CIM-to-PIM transformation while honestly retaining explicitly modeled business h
 ## 4. Reproduce the transformation
 
 ```powershell
-java -jar tools/mde-etl-cli/target/mde-etl-cli-0.0.1-SNAPSHOT.jar cim-to-pim `
+java -jar tools/model-transformer-cli/target/model-transformer-cli-0.0.1-SNAPSHOT.jar cim-to-pim `
   --repo-root . `
   --source-model methodology/modeling-framework/samples/climate-relief-grants/climate-relief-grants.cim.xmi `
   --target-model methodology/modeling-framework/samples/climate-relief-grants/climate-relief-grants.pim.xmi `
