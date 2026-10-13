@@ -5,7 +5,7 @@ This document traces the PSM EVL semantic validation coverage added for the AWS/
 ## Scope
 
 - DSML: PSM only.
-- EVL entrypoint: `mde/validation/psm/psm-semantic-validation.evl`.
+- EVL entrypoint: `methodology/modeling-framework/validation/psm/psm-semantic-validation.evl`.
 - Test class: `packages/java/mde-evl-validator/src/test/java/io/mehdieidi/modriss/mde/validation/PsmSemanticValidationTest.java`.
 - Verification command: `mvn -pl packages/java/mde-evl-validator -Dtest=PsmSemanticValidationTest test`.
 
@@ -31,7 +31,7 @@ Most generated negative fixtures run with structural validation disabled. This i
 
 ## Helper EOL Coverage
 
-The helper contracts exercise all operations in `mde/validation/psm/lib/psm-validation-helpers.eol`, including positive and fallback branches for:
+The helper contracts exercise all operations in `methodology/modeling-framework/validation/psm/lib/psm-validation-helpers.eol`, including positive and fallback branches for:
 
 - primitive helper predicates: `hasText`, `isTrueValue`, `isFalseValue`;
 - model discovery and production scoping: `currentPsmModel`, `productionStageExists`, `productionStackIds`, `deployedToProductionStage`, `isProductionScoped`;

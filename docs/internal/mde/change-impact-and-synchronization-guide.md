@@ -18,22 +18,22 @@ to determine what is required.
 
 | Concern                            | Primary source of truth                                                                              | Important consumers and derived assets                                                                                           |
 | ---------------------------------- | ---------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
-| Shared abstract syntax             | `mde/metamodels/shared/kernel.emf`                                                                   | `kernel.ecore`, all three combined Ecore files, EVL, ETL, EGX/EGL, UI metadata, JSON/XMI bridge, assistant contracts, samples    |
-| CIM abstract syntax                | `mde/metamodels/cim/*.emf`                                                                           | `cim-combined.ecore`, CIM EVL, CIM-to-PIM ETL, CIM UI metadata, model import/export, assistant, samples/tests                    |
-| PIM abstract syntax                | `mde/metamodels/pim/*.emf`                                                                           | `pim-combined.ecore`, PIM EVL, both ETL profiles, PIM UI metadata, model import/export, assistant, samples/tests                 |
-| PSM abstract syntax                | `mde/metamodels/psm/*.emf`                                                                           | `psm-combined.ecore`, PSM EVL, PIM-to-PSM ETL, EGX/EGL, PSM UI metadata, model import/export, samples/tests                      |
-| Runtime metamodel                  | `mde/metamodels/{cim,pim,psm}/*-combined.ecore`                                                      | Java EMF loading, validation, transformation, generation, UI structural metadata, metamodel hash/version                         |
-| Semantic validation                | `mde/validation/{cim,pim,psm}/`                                                                      | `ModelService`, EVL CLI, validation endpoint tests                                                                               |
-| CIM-to-PIM semantics               | `mde/transformations/cim-to-pim/`                                                                    | ETL runner/CLI, `TransformationService`, generated PIM, tests/docs                                                               |
-| PIM-to-PSM semantics               | `mde/transformations/pim-to-awspsm/`                                                                 | ETL runner/CLI, `TransformationService`, generated PSM, tests/docs                                                               |
-| PSM-to-artifact semantics          | `mde/generation/awspsm-to-artifacts/`                                                                | M2T runner/CLI, artifact service, generated projects, tests/docs                                                                 |
+| Shared abstract syntax             | `methodology/modeling-framework/metamodels/shared/kernel.emf`                                        | `kernel.ecore`, all three combined Ecore files, EVL, ETL, EGX/EGL, UI metadata, JSON/XMI bridge, assistant contracts, samples    |
+| CIM abstract syntax                | `methodology/modeling-framework/metamodels/cim/*.emf`                                                | `cim-combined.ecore`, CIM EVL, CIM-to-PIM ETL, CIM UI metadata, model import/export, assistant, samples/tests                    |
+| PIM abstract syntax                | `methodology/modeling-framework/metamodels/pim/*.emf`                                                | `pim-combined.ecore`, PIM EVL, both ETL profiles, PIM UI metadata, model import/export, assistant, samples/tests                 |
+| PSM abstract syntax                | `methodology/modeling-framework/metamodels/psm/*.emf`                                                | `psm-combined.ecore`, PSM EVL, PIM-to-PSM ETL, EGX/EGL, PSM UI metadata, model import/export, samples/tests                      |
+| Runtime metamodel                  | `methodology/modeling-framework/metamodels/{cim,pim,psm}/*-combined.ecore`                           | Java EMF loading, validation, transformation, generation, UI structural metadata, metamodel hash/version                         |
+| Semantic validation                | `methodology/modeling-framework/validation/{cim,pim,psm}/`                                           | `ModelService`, EVL CLI, validation endpoint tests                                                                               |
+| CIM-to-PIM semantics               | `methodology/modeling-framework/transformations/cim-to-pim/`                                         | ETL runner/CLI, `TransformationService`, generated PIM, tests/docs                                                               |
+| PIM-to-PSM semantics               | `methodology/modeling-framework/transformations/pim-to-awspsm/`                                      | ETL runner/CLI, `TransformationService`, generated PSM, tests/docs                                                               |
+| PSM-to-artifact semantics          | `methodology/modeling-framework/generation/awspsm-to-artifacts/`                                     | M2T runner/CLI, artifact service, generated projects, tests/docs                                                                 |
 | Editor structure and visual syntax | `packages/java/platform-modeling/src/main/resources/modeling/*-ui-metadata.json` plus combined Ecore | `ModelingConfigService`, `/api/modeling/config`, frontend canvas, palette, views, relationship presentation                      |
 | JSON/XMI semantic bridge           | `packages/java/platform-modeling/.../XmiModelImportService.java`                                     | Model create/update/import/export, transformation handoff, graph reconstruction                                                  |
 | Frontend modeling behavior         | `apps/frontend/js/` and `apps/frontend/css/`                                                         | Canvas, graph editor, workbenches, attribute editor, views, layout, methodology checks                                           |
 | Persistence                        | PostgreSQL migrations and platform storage/application records                                       | Stored JSON/XMI, metamodel hash/version, jobs, synchronization baselines/sessions, assistant turns/events/checkpoints/provenance |
 | AI modeling behavior               | `apps/backend/.../assistant/` and `packages/java/platform-assistant/...`                             | Ecore-derived contracts, agent tools, durable turns, checkpoints, source provenance                                              |
 | Public API contract                | controllers plus `docs/api/openapi/openapi.yaml`                                                     | Frontend, external clients, API docs                                                                                             |
-| Regression fixtures                | `mde/samples/*.xmi`, Java tests, case-study samples                                                  | All MDE pipeline regression tests                                                                                                |
+| Regression fixtures                | `methodology/modeling-framework/samples/*.xmi`, Java tests, case-study samples                       | All MDE pipeline regression tests                                                                                                |
 | Architecture documentation         | `README.md`, `docs/internal/project-description.md`, `docs/`, especially `docs/diagrams/`            | Developers, thesis material, operations                                                                                          |
 
 ## How Runtime Metadata Is Built
@@ -125,7 +125,7 @@ unchanged.
 
 ### Always required for an Emfatic metamodel change
 
-1. Edit the authoritative `.emf` module under `mde/metamodels/`.
+1. Edit the authoritative `.emf` module under `methodology/modeling-framework/metamodels/`.
 2. Regenerate the affected `.ecore` output.
 3. Regenerate the affected level's `*-combined.ecore`.
 4. Run structural loading and model import/export tests.
@@ -140,7 +140,7 @@ behavior.
 
 `kernel.emf` is imported by CIM, PIM, and PSM. After changing it:
 
-- Regenerate `mde/metamodels/shared/kernel.ecore`.
+- Regenerate `methodology/modeling-framework/metamodels/shared/kernel.ecore`.
 - Regenerate all three combined Ecore files.
 - Review all three validation profiles.
 - Review both ETL profiles and PSM generation.
@@ -242,9 +242,9 @@ This is a platform-contract change. In addition to the full metamodel review, up
 
 Validation entry modules are:
 
-- `mde/validation/cim/cim-semantic-validation.evl`
-- `mde/validation/pim/pim-semantic-validation.evl`
-- `mde/validation/psm/psm-semantic-validation.evl`
+- `methodology/modeling-framework/validation/cim/cim-semantic-validation.evl`
+- `methodology/modeling-framework/validation/pim/pim-semantic-validation.evl`
+- `methodology/modeling-framework/validation/psm/psm-semantic-validation.evl`
 
 They import rules and EOL helpers beneath their level directories.
 
@@ -270,7 +270,7 @@ tests, docs, frontend issue handling, and assistant expectations that refer to i
 
 ### CIM to PIM
 
-Entry point: `mde/transformations/cim-to-pim/cim-to-pim.etl`
+Entry point: `methodology/modeling-framework/transformations/cim-to-pim/cim-to-pim.etl`
 
 Main modules:
 
@@ -295,7 +295,7 @@ When a CIM-to-PIM rule changes:
 
 ### PIM to PSM
 
-Entry point: `mde/transformations/pim-to-awspsm/pim-to-awspsm.etl`
+Entry point: `methodology/modeling-framework/transformations/pim-to-awspsm/pim-to-awspsm.etl`
 
 Main modules:
 
@@ -331,7 +331,7 @@ For any ETL/EOL logic change, ask:
 
 ## Code Generation Change Impact
 
-Entry point: `mde/generation/awspsm-to-artifacts/awspsm2artifacts.egx`
+Entry point: `methodology/modeling-framework/generation/awspsm-to-artifacts/awspsm2artifacts.egx`
 
 Supporting assets:
 
@@ -350,7 +350,7 @@ When generation logic changes:
 - Update artifact documentation and expected generated file lists.
 - Add syntax/content assertions to `AwsPsmArtifactGenerationSyntaxTest` and
   `EpsilonEgxGeneratorTest`.
-- Run generation from `mde/samples/psm.xmi` and inspect the deployable outputs as well as the EGX parse
+- Run generation from `methodology/modeling-framework/samples/psm.xmi` and inspect the deployable outputs as well as the EGX parse
   success.
 
 Changes to generated artifact content do not require PostgreSQL migrations because artifact files
@@ -567,7 +567,7 @@ Verify both a fresh database and an existing database containing pre-change mode
 After metamodel or methodology changes:
 
 - Regenerate Ecore before restart so both Emfatic and runtime structure are current.
-- Restart or rebuild the backend so packaged `mde/` resources and Ecore-derived contracts are
+- Restart or rebuild the backend so packaged `methodology/` resources and Ecore-derived contracts are
   current.
 - Verify assistant tools accept new classes/features and reject removed or renamed ones.
 
@@ -616,7 +616,7 @@ Relevant docs:
 ### Generated JSON Schema
 
 JSON Schema artifacts generated from PSM contracts are controlled by
-`mde/generation/awspsm-to-artifacts/templates/contracts/*.egl` and related EOL helpers. Change those
+`methodology/modeling-framework/generation/awspsm-to-artifacts/templates/contracts/*.egl` and related EOL helpers. Change those
 when the generated application contract changes.
 
 ### Architecture and thesis documentation
@@ -649,21 +649,21 @@ change.
 
    ```powershell
    java -jar tools/mde-cli/target/mde-cli-0.0.1-SNAPSHOT.jar `
-     mde/metamodels/cim `
-     --root mde/metamodels/cim/cim-root.emf `
-     --output mde/metamodels/cim/cim-combined.ecore `
+     methodology/modeling-framework/metamodels/cim `
+     --root methodology/modeling-framework/metamodels/cim/cim-root.emf `
+     --output methodology/modeling-framework/metamodels/cim/cim-combined.ecore `
      --overwrite
 
    java -jar tools/mde-cli/target/mde-cli-0.0.1-SNAPSHOT.jar `
-     mde/metamodels/pim `
-     --root mde/metamodels/pim/pim-root.emf `
-     --output mde/metamodels/pim/pim-combined.ecore `
+     methodology/modeling-framework/metamodels/pim `
+     --root methodology/modeling-framework/metamodels/pim/pim-root.emf `
+     --output methodology/modeling-framework/metamodels/pim/pim-combined.ecore `
      --overwrite
 
    java -jar tools/mde-cli/target/mde-cli-0.0.1-SNAPSHOT.jar `
-     mde/metamodels/psm `
-     --root mde/metamodels/psm/awspsm-root.emf `
-     --output mde/metamodels/psm/psm-combined.ecore `
+     methodology/modeling-framework/metamodels/psm `
+     --root methodology/modeling-framework/metamodels/psm/awspsm-root.emf `
+     --output methodology/modeling-framework/metamodels/psm/psm-combined.ecore `
      --overwrite
    ```
 
@@ -671,8 +671,8 @@ change.
 
    ```powershell
    java -jar tools/mde-cli/target/mde-cli-0.0.1-SNAPSHOT.jar `
-     mde/metamodels/shared/kernel.emf `
-     --output mde/metamodels/shared/kernel.ecore `
+     methodology/modeling-framework/metamodels/shared/kernel.emf `
+     --output methodology/modeling-framework/metamodels/shared/kernel.ecore `
      --overwrite
    ```
 

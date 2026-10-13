@@ -2,7 +2,7 @@
 
 API rules make a provider-independent interface internally coherent: routes are unique and well formed, each has one backend, protected operations have authorization, and validation settings are backed by schemas. Critiques add the consumer-facing documentation and error behavior that makes an API usable rather than merely callable.
 
-Source profile: `mde/validation/pim/rules/api.evl`.
+Source profile: `methodology/modeling-framework/validation/pim/rules/api.evl`.
 
 ## Reading these rules
 
@@ -14,7 +14,7 @@ Each entry preserves the actual EVL guard and check. Treat the guard as the appl
 
 **Context:** `PIM!Api`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/pim/rules/api.evl:8`
+**Source:** `methodology/modeling-framework/validation/pim/rules/api.evl:8`
 
 ### Why this rule exists
 
@@ -52,7 +52,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `PIM!Api`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/pim/rules/api.evl:14`
+**Source:** `methodology/modeling-framework/validation/pim/rules/api.evl:14`
 
 ### Why this rule exists
 
@@ -92,7 +92,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `PIM!Api`  
 **Classification:** Advisory critique (warning)  
-**Source:** `mde/validation/pim/rules/api.evl:21`
+**Source:** `methodology/modeling-framework/validation/pim/rules/api.evl:21`
 
 ### Why this rule exists
 
@@ -132,7 +132,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 **Context:** `PIM!Api`  
 **Classification:** Advisory critique (warning)  
-**Source:** `mde/validation/pim/rules/api.evl:28`
+**Source:** `methodology/modeling-framework/validation/pim/rules/api.evl:28`
 
 ### Why this rule exists
 
@@ -172,7 +172,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 **Context:** `PIM!ApiRoute`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/pim/rules/api.evl:39`
+**Source:** `methodology/modeling-framework/validation/pim/rules/api.evl:39`
 
 ### Why this rule exists
 
@@ -210,7 +210,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `PIM!ApiRoute`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/pim/rules/api.evl:46`
+**Source:** `methodology/modeling-framework/validation/pim/rules/api.evl:46`
 
 ### Why this rule exists
 
@@ -248,7 +248,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `PIM!ApiRoute`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/pim/rules/api.evl:52`
+**Source:** `methodology/modeling-framework/validation/pim/rules/api.evl:52`
 
 ### Why this rule exists
 
@@ -286,7 +286,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `PIM!ApiRoute`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/pim/rules/api.evl:58`
+**Source:** `methodology/modeling-framework/validation/pim/rules/api.evl:58`
 
 ### Why this rule exists
 
@@ -324,7 +324,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `PIM!ApiRoute`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/pim/rules/api.evl:65`
+**Source:** `methodology/modeling-framework/validation/pim/rules/api.evl:65`
 
 ### Why this rule exists
 
@@ -364,7 +364,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `PIM!ApiRoute`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/pim/rules/api.evl:72`
+**Source:** `methodology/modeling-framework/validation/pim/rules/api.evl:72`
 
 ### Why this rule exists
 
@@ -404,7 +404,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `PIM!ApiRoute`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/pim/rules/api.evl:79`
+**Source:** `methodology/modeling-framework/validation/pim/rules/api.evl:79`
 
 ### Why this rule exists
 
@@ -444,7 +444,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `PIM!ApiRoute`  
 **Classification:** Advisory critique (warning)  
-**Source:** `mde/validation/pim/rules/api.evl:86`
+**Source:** `methodology/modeling-framework/validation/pim/rules/api.evl:86`
 
 ### Why this rule exists
 
@@ -484,7 +484,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 **Context:** `PIM!ErrorMapping`  
 **Classification:** Advisory critique (warning)  
-**Source:** `mde/validation/pim/rules/api.evl:97`
+**Source:** `methodology/modeling-framework/validation/pim/rules/api.evl:97`
 
 ### Why this rule exists
 

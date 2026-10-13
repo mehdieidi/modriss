@@ -38,8 +38,8 @@ Classify the failure before editing code:
 
 | Observation                                                      | Most likely owner                                                                     |
 | ---------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
-| CIM -> PIM fails or PIM contains incorrect concepts              | `mde/transformations/cim-to-pim`                                                      |
-| PIM -> PSM fails or PSM contains an incorrect AWS mapping        | `mde/transformations/pim-to-awspsm`                                                   |
+| CIM -> PIM fails or PIM contains incorrect concepts              | `methodology/modeling-framework/transformations/cim-to-pim`                           |
+| PIM -> PSM fails or PSM contains an incorrect AWS mapping        | `methodology/modeling-framework/transformations/pim-to-awspsm`                        |
 | Artifact generation fails before producing the ZIP               | EGX orchestration, EGL/EOL, or invalid PSM                                            |
 | A file is missing, duplicated, or at the wrong path              | `awspsm2artifacts.egx`, `paths.eol`, or an EGX guard                                  |
 | Correct PSM produces incorrect artifact text                     | EGL template or shared generator EOL library                                          |
@@ -82,13 +82,13 @@ template from the MODRISS repository root:
 
 ```powershell
 $rule = $artifact.generatedBy
-rg -n -F $rule .\mde\generation\awspsm-to-artifacts
+rg -n -F $rule .\methodology\modeling-framework\generation\awspsm-to-artifacts
 rg -n -F 'the incorrect literal value' `
-  .\mde\generation\awspsm-to-artifacts .\mde\transformations
+  .\methodology\modeling-framework\generation\awspsm-to-artifacts .\methodology\modeling-framework\transformations
 ```
 
 Inspect the EGX rule in
-`mde/generation/awspsm-to-artifacts/awspsm2artifacts.egx`, then inspect its
+`methodology/modeling-framework/generation/awspsm-to-artifacts/awspsm2artifacts.egx`, then inspect its
 `template` and any EOL operations called by that template.
 
 Use each `sourceStableIds` value to find the responsible PSM element and trace
@@ -263,10 +263,10 @@ wiring defects.
 
 Use this decision:
 
-1. If the PSM is wrong, fix `mde/transformations/pim-to-awspsm` and add an ETL
+1. If the PSM is wrong, fix `methodology/modeling-framework/transformations/pim-to-awspsm` and add an ETL
    regression test.
 2. If the PSM is correct but the artifact is wrong, fix
-   `mde/generation/awspsm-to-artifacts/awspsm2artifacts.egx`, its EGL template,
+   `methodology/modeling-framework/generation/awspsm-to-artifacts/awspsm2artifacts.egx`, its EGL template,
    or a shared EOL library and add an M2T regression test.
 3. If the artifact and AWS behavior are correct but LocalStack fails, document
    or isolate the LocalStack limitation; do not weaken valid AWS output.

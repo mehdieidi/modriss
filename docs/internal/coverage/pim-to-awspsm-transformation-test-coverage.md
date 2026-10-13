@@ -1,6 +1,6 @@
 # PIM-to-PSM Transformation Test Coverage
 
-This document traces semantic test coverage for the PIM-to-PSM ETL profile in `mde/transformations/pim-to-awspsm`.
+This document traces semantic test coverage for the PIM-to-PSM ETL profile in `methodology/modeling-framework/transformations/pim-to-awspsm`.
 
 Coverage status: **100% of direct ETL rules and helper EOL rule families are exercised by semantic tests** in `PimToAwsPsmEtlRegressionTest`.
 

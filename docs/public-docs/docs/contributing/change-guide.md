@@ -5,17 +5,17 @@ change as a contract change across every affected producer, consumer, representa
 
 ## Source-of-Truth Map
 
-| Change                    | Primary source                       |
-| ------------------------- | ------------------------------------ |
-| Abstract syntax           | Emfatic under `mde/metamodels/`      |
-| Runtime metamodel         | Combined Ecore files                 |
-| Semantic rules            | EVL under `mde/validation/`          |
-| Transformation meaning    | ETL/EOL under `mde/transformations/` |
-| Generated project meaning | EGX/EGL/EOL under `mde/generation/`  |
-| Visual syntax             | Level UI metadata plus Ecore         |
-| Browser behavior          | `apps/frontend/js/` and CSS          |
-| Persistence schema        | Flyway migrations                    |
-| Public API                | Controllers and OpenAPI              |
+| Change                    | Primary source                                                  |
+| ------------------------- | --------------------------------------------------------------- |
+| Abstract syntax           | Emfatic under `methodology/modeling-framework/metamodels/`      |
+| Runtime metamodel         | Combined Ecore files                                            |
+| Semantic rules            | EVL under `methodology/modeling-framework/validation/`          |
+| Transformation meaning    | ETL/EOL under `methodology/modeling-framework/transformations/` |
+| Generated project meaning | EGX/EGL/EOL under `methodology/modeling-framework/generation/`  |
+| Visual syntax             | Level UI metadata plus Ecore                                    |
+| Browser behavior          | `apps/frontend/js/` and CSS                                     |
+| Persistence schema        | Flyway migrations                                               |
+| Public API                | Controllers and OpenAPI                                         |
 
 ## Changing a Metamodel
 

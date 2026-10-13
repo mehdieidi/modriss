@@ -6,9 +6,9 @@ This document traces the PIM EVL semantic validation coverage added in
 ## Scope
 
 - Level covered: PIM only.
-- Entry EVL: `mde/validation/pim/pim-semantic-validation.evl`.
-- Metamodel: `mde/metamodels/pim/pim-combined.ecore`.
-- Positive model: `mde/samples/pim.xmi`, asserted to produce zero mandatory and zero optional EVL violations.
+- Entry EVL: `methodology/modeling-framework/validation/pim/pim-semantic-validation.evl`.
+- Metamodel: `methodology/modeling-framework/metamodels/pim/pim-combined.ecore`.
+- Positive model: `methodology/modeling-framework/samples/pim.xmi`, asserted to produce zero mandatory and zero optional EVL violations.
 - Negative models: generated in JUnit from the positive sample plus minimal focused XMI fixtures.
 - Validation boundary: tests use the standalone Epsilon EVL validator and EMF structural loading. They do not use assistant apply/repair/commit paths, `ModelService.validate(...)`, stored validation endpoints, `validateGeneratedXmi(...)`, EVL CLIs, or EVL profiles from chatbot assistant paths.
 
@@ -32,7 +32,7 @@ metamodel/runtime shape prevents a meaningful failing instance.
 
 ## EVL Fixes
 
-`ExternalSchemaShouldStateCompatibility` in `mde/validation/pim/rules/contracts.evl` was fixed to
+`ExternalSchemaShouldStateCompatibility` in `methodology/modeling-framework/validation/pim/rules/contracts.evl` was fixed to
 use EMF explicit-set state:
 
 ```eol
@@ -45,7 +45,7 @@ pass the critique.
 
 ## EOL Helper Coverage
 
-The helper-only test imports `mde/validation/pim/lib/pim-validation-helpers.eol` and asserts helper
+The helper-only test imports `methodology/modeling-framework/validation/pim/lib/pim-validation-helpers.eol` and asserts helper
 behavior against a compact, valid PIM fixture. All 45 helper operations are directly called by the
 helper-contract EVL used in `pimEolHelpersHaveExplicitBehaviorCoverage`. Covered helper behavior
 includes:

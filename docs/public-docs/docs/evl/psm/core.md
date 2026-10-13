@@ -2,7 +2,7 @@
 
 PSM core rules protect the deployment graph and CloudFormation/SAM safety model: stages and stacks must exist, logical IDs must be valid and unique, imports must be explicit, expressions must have compatible shapes, and production resources must carry the required governance metadata.
 
-Source profile: `mde/validation/psm/rules/core.evl`.
+Source profile: `methodology/modeling-framework/validation/psm/rules/core.evl`.
 
 ## Reading these rules
 
@@ -14,7 +14,7 @@ Each entry preserves the actual EVL guard and check. Treat the guard as the appl
 
 **Context:** `AWSPSM!AwsPsmModel`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/psm/rules/core.evl:9`
+**Source:** `methodology/modeling-framework/validation/psm/rules/core.evl:9`
 
 ### Why this rule exists
 
@@ -52,7 +52,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `AWSPSM!AwsPsmModel`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/psm/rules/core.evl:15`
+**Source:** `methodology/modeling-framework/validation/psm/rules/core.evl:15`
 
 ### Why this rule exists
 
@@ -90,7 +90,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `AWSPSM!AwsPsmModel`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/psm/rules/core.evl:21`
+**Source:** `methodology/modeling-framework/validation/psm/rules/core.evl:21`
 
 ### Why this rule exists
 
@@ -130,7 +130,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `AWSPSM!AwsPsmModel`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/psm/rules/core.evl:28`
+**Source:** `methodology/modeling-framework/validation/psm/rules/core.evl:28`
 
 ### Why this rule exists
 
@@ -168,7 +168,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `AWSPSM!AwsPsmModel`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/psm/rules/core.evl:35`
+**Source:** `methodology/modeling-framework/validation/psm/rules/core.evl:35`
 
 ### Why this rule exists
 
@@ -206,7 +206,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `AWSPSM!AwsPsmModel`  
 **Classification:** Advisory critique (warning)  
-**Source:** `mde/validation/psm/rules/core.evl:42`
+**Source:** `methodology/modeling-framework/validation/psm/rules/core.evl:42`
 
 ### Why this rule exists
 
@@ -244,7 +244,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 **Context:** `AWSPSM!AwsPsmModel`  
 **Classification:** Advisory critique (warning)  
-**Source:** `mde/validation/psm/rules/core.evl:48`
+**Source:** `methodology/modeling-framework/validation/psm/rules/core.evl:48`
 
 ### Why this rule exists
 
@@ -282,7 +282,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 **Context:** `AWSPSM!AwsStage`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/psm/rules/core.evl:58`
+**Source:** `methodology/modeling-framework/validation/psm/rules/core.evl:58`
 
 ### Why this rule exists
 
@@ -320,7 +320,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `AWSPSM!AwsStage`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/psm/rules/core.evl:64`
+**Source:** `methodology/modeling-framework/validation/psm/rules/core.evl:64`
 
 ### Why this rule exists
 
@@ -360,7 +360,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `AWSPSM!AwsStage`  
 **Classification:** Advisory critique (warning)  
-**Source:** `mde/validation/psm/rules/core.evl:77`
+**Source:** `methodology/modeling-framework/validation/psm/rules/core.evl:77`
 
 ### Why this rule exists
 
@@ -400,7 +400,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 **Context:** `AWSPSM!AwsStage`  
 **Classification:** Advisory critique (warning)  
-**Source:** `mde/validation/psm/rules/core.evl:84`
+**Source:** `methodology/modeling-framework/validation/psm/rules/core.evl:84`
 
 ### Why this rule exists
 
@@ -438,7 +438,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 **Context:** `AWSPSM!SamStack`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/psm/rules/core.evl:94`
+**Source:** `methodology/modeling-framework/validation/psm/rules/core.evl:94`
 
 ### Why this rule exists
 
@@ -476,7 +476,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `AWSPSM!SamStack`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/psm/rules/core.evl:100`
+**Source:** `methodology/modeling-framework/validation/psm/rules/core.evl:100`
 
 ### Why this rule exists
 
@@ -514,7 +514,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `AWSPSM!SamStack`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/psm/rules/core.evl:106`
+**Source:** `methodology/modeling-framework/validation/psm/rules/core.evl:106`
 
 ### Why this rule exists
 
@@ -552,7 +552,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `AWSPSM!SamStack`  
 **Classification:** Advisory critique (warning)  
-**Source:** `mde/validation/psm/rules/core.evl:113`
+**Source:** `methodology/modeling-framework/validation/psm/rules/core.evl:113`
 
 ### Why this rule exists
 
@@ -590,7 +590,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 **Context:** `AWSPSM!SamStack`  
 **Classification:** Advisory critique (warning)  
-**Source:** `mde/validation/psm/rules/core.evl:119`
+**Source:** `methodology/modeling-framework/validation/psm/rules/core.evl:119`
 
 ### Why this rule exists
 
@@ -628,7 +628,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 **Context:** `AWSPSM!AwsResource`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/psm/rules/core.evl:129`
+**Source:** `methodology/modeling-framework/validation/psm/rules/core.evl:129`
 
 ### Why this rule exists
 
@@ -666,7 +666,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `AWSPSM!AwsResource`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/psm/rules/core.evl:135`
+**Source:** `methodology/modeling-framework/validation/psm/rules/core.evl:135`
 
 ### Why this rule exists
 
@@ -704,7 +704,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `AWSPSM!AwsResource`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/psm/rules/core.evl:141`
+**Source:** `methodology/modeling-framework/validation/psm/rules/core.evl:141`
 
 ### Why this rule exists
 
@@ -742,7 +742,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `AWSPSM!AwsResource`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/psm/rules/core.evl:147`
+**Source:** `methodology/modeling-framework/validation/psm/rules/core.evl:147`
 
 ### Why this rule exists
 
@@ -780,7 +780,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `AWSPSM!AwsResource`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/psm/rules/core.evl:153`
+**Source:** `methodology/modeling-framework/validation/psm/rules/core.evl:153`
 
 ### Why this rule exists
 
@@ -820,7 +820,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `AWSPSM!AwsResource`  
 **Classification:** Advisory critique (warning)  
-**Source:** `mde/validation/psm/rules/core.evl:162`
+**Source:** `methodology/modeling-framework/validation/psm/rules/core.evl:162`
 
 ### Why this rule exists
 
@@ -860,7 +860,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 **Context:** `AWSPSM!AwsResource`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/psm/rules/core.evl:169`
+**Source:** `methodology/modeling-framework/validation/psm/rules/core.evl:169`
 
 ### Why this rule exists
 
@@ -900,7 +900,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `AWSPSM!AwsResource`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/psm/rules/core.evl:176`
+**Source:** `methodology/modeling-framework/validation/psm/rules/core.evl:176`
 
 ### Why this rule exists
 
@@ -940,7 +940,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `AWSPSM!AwsResource`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/psm/rules/core.evl:183`
+**Source:** `methodology/modeling-framework/validation/psm/rules/core.evl:183`
 
 ### Why this rule exists
 
@@ -978,7 +978,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `AWSPSM!AwsResource`  
 **Classification:** Advisory critique (warning)  
-**Source:** `mde/validation/psm/rules/core.evl:189`
+**Source:** `methodology/modeling-framework/validation/psm/rules/core.evl:189`
 
 ### Why this rule exists
 
@@ -1018,7 +1018,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 **Context:** `AWSPSM!AwsNativeResource`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/psm/rules/core.evl:199`
+**Source:** `methodology/modeling-framework/validation/psm/rules/core.evl:199`
 
 ### Why this rule exists
 
@@ -1056,7 +1056,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `AWSPSM!ValueExpression`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/psm/rules/core.evl:208`
+**Source:** `methodology/modeling-framework/validation/psm/rules/core.evl:208`
 
 ### Why this rule exists
 
@@ -1094,7 +1094,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `AWSPSM!ValueExpression`  
 **Classification:** Advisory critique (warning)  
-**Source:** `mde/validation/psm/rules/core.evl:226`
+**Source:** `methodology/modeling-framework/validation/psm/rules/core.evl:226`
 
 ### Why this rule exists
 
@@ -1134,7 +1134,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 **Context:** `AWSPSM!AwsTag`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/psm/rules/core.evl:236`
+**Source:** `methodology/modeling-framework/validation/psm/rules/core.evl:236`
 
 ### Why this rule exists
 
@@ -1172,7 +1172,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `AWSPSM!AwsTag`  
 **Classification:** Advisory critique (warning)  
-**Source:** `mde/validation/psm/rules/core.evl:242`
+**Source:** `methodology/modeling-framework/validation/psm/rules/core.evl:242`
 
 ### Why this rule exists
 
@@ -1210,7 +1210,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 **Context:** `AWSPSM!NativeProperty`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/psm/rules/core.evl:251`
+**Source:** `methodology/modeling-framework/validation/psm/rules/core.evl:251`
 
 ### Why this rule exists
 
@@ -1250,7 +1250,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `AWSPSM!NativeProperty`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/psm/rules/core.evl:258`
+**Source:** `methodology/modeling-framework/validation/psm/rules/core.evl:258`
 
 ### Why this rule exists
 
@@ -1290,7 +1290,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `AWSPSM!ValueExpression`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/psm/rules/core.evl:268`
+**Source:** `methodology/modeling-framework/validation/psm/rules/core.evl:268`
 
 ### Why this rule exists
 
@@ -1330,7 +1330,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `AWSPSM!ValueExpression`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/psm/rules/core.evl:275`
+**Source:** `methodology/modeling-framework/validation/psm/rules/core.evl:275`
 
 ### Why this rule exists
 
@@ -1370,7 +1370,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `AWSPSM!ValueExpression`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/psm/rules/core.evl:282`
+**Source:** `methodology/modeling-framework/validation/psm/rules/core.evl:282`
 
 ### Why this rule exists
 
@@ -1410,7 +1410,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `AWSPSM!ValueExpression`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/psm/rules/core.evl:289`
+**Source:** `methodology/modeling-framework/validation/psm/rules/core.evl:289`
 
 ### Why this rule exists
 
@@ -1450,7 +1450,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `AWSPSM!ValueExpression`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/psm/rules/core.evl:296`
+**Source:** `methodology/modeling-framework/validation/psm/rules/core.evl:296`
 
 ### Why this rule exists
 
@@ -1490,7 +1490,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `AWSPSM!ValueExpression`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/psm/rules/core.evl:303`
+**Source:** `methodology/modeling-framework/validation/psm/rules/core.evl:303`
 
 ### Why this rule exists
 
@@ -1530,7 +1530,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `AWSPSM!NamedValueExpression`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/psm/rules/core.evl:313`
+**Source:** `methodology/modeling-framework/validation/psm/rules/core.evl:313`
 
 ### Why this rule exists
 

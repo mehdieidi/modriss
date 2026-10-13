@@ -2,7 +2,7 @@
 
 Boundary and security refinement decides where provider-independent services begin and who may act within them. Bounded contexts and capabilities become service ownership, actors and roles become principals, and external systems become adapters. The important design choice is that this page preserves business ownership and trust boundaries instead of producing anonymous functions first.
 
-Source module: `mde/transformations/cim-to-pim/boundaries-security.etl`.
+Source module: `methodology/modeling-framework/transformations/cim-to-pim/boundaries-security.etl`.
 
 ## Reading this page
 
@@ -14,11 +14,11 @@ A transformation rule determines whether a source element contributes to the tar
 
 Supporting operations also shape the transformation. They derive defaults, create secondary resources, cache correspondences, and resolve relationships after the main rule runs.
 
-| Operation                             | Role                                     | Source                                                      |
-| ------------------------------------- | ---------------------------------------- | ----------------------------------------------------------- |
-| `capabilityInBoundedContext`          | Computes capability in bounded context.  | `mde/transformations/cim-to-pim/boundaries-security.etl:8`  |
-| `inferExternalProtocolFamily`         | Derives infer external protocol family.  | `mde/transformations/cim-to-pim/boundaries-security.etl:16` |
-| `ensurePrivilegedPrincipalPermission` | Ensures privileged principal permission. | `mde/transformations/cim-to-pim/boundaries-security.etl:31` |
+| Operation                             | Role                                     | Source                                                                                 |
+| ------------------------------------- | ---------------------------------------- | -------------------------------------------------------------------------------------- |
+| `capabilityInBoundedContext`          | Computes capability in bounded context.  | `methodology/modeling-framework/transformations/cim-to-pim/boundaries-security.etl:8`  |
+| `inferExternalProtocolFamily`         | Derives infer external protocol family.  | `methodology/modeling-framework/transformations/cim-to-pim/boundaries-security.etl:16` |
+| `ensurePrivilegedPrincipalPermission` | Ensures privileged principal permission. | `methodology/modeling-framework/transformations/cim-to-pim/boundaries-security.etl:31` |
 
 ---
 
@@ -26,7 +26,7 @@ Supporting operations also shape the transformation. They derive defaults, creat
 
 **Source:** `bc` to `CIMORG!BoundedContextCandidate`  
 **Target:** `s` to `DEPLOY!ServerlessService`  
-**Source location:** `mde/transformations/cim-to-pim/boundaries-security.etl:52`
+**Source location:** `methodology/modeling-framework/transformations/cim-to-pim/boundaries-security.etl:52`
 
 ### Why this rule exists
 
@@ -53,7 +53,7 @@ The trace record is the best first diagnostic: it tells you whether the target w
 
 ### Authoritative source
 
-See the complete ETL rule at `mde/transformations/cim-to-pim/boundaries-security.etl:52`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
+See the complete ETL rule at `methodology/modeling-framework/transformations/cim-to-pim/boundaries-security.etl:52`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
 
 ---
 
@@ -61,7 +61,7 @@ See the complete ETL rule at `mde/transformations/cim-to-pim/boundaries-security
 
 **Source:** `cap` to `CIMORG!BusinessCapability`  
 **Target:** `s` to `DEPLOY!ServerlessService`  
-**Source location:** `mde/transformations/cim-to-pim/boundaries-security.etl:69`
+**Source location:** `methodology/modeling-framework/transformations/cim-to-pim/boundaries-security.etl:69`
 
 ### Why this rule exists
 
@@ -92,7 +92,7 @@ The trace record is the best first diagnostic: it tells you whether the target w
 
 ### Authoritative source
 
-See the complete ETL rule at `mde/transformations/cim-to-pim/boundaries-security.etl:69`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
+See the complete ETL rule at `methodology/modeling-framework/transformations/cim-to-pim/boundaries-security.etl:69`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
 
 ---
 
@@ -100,7 +100,7 @@ See the complete ETL rule at `mde/transformations/cim-to-pim/boundaries-security
 
 **Source:** `a` to `CIMORG!Actor`  
 **Target:** `p` to `SECURITY!Principal`  
-**Source location:** `mde/transformations/cim-to-pim/boundaries-security.etl:89`
+**Source location:** `methodology/modeling-framework/transformations/cim-to-pim/boundaries-security.etl:89`
 
 ### Why this rule exists
 
@@ -129,7 +129,7 @@ The trace record is the best first diagnostic: it tells you whether the target w
 
 ### Authoritative source
 
-See the complete ETL rule at `mde/transformations/cim-to-pim/boundaries-security.etl:89`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
+See the complete ETL rule at `methodology/modeling-framework/transformations/cim-to-pim/boundaries-security.etl:89`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
 
 ---
 
@@ -137,7 +137,7 @@ See the complete ETL rule at `mde/transformations/cim-to-pim/boundaries-security
 
 **Source:** `r` to `CIMORG!Role`  
 **Target:** `p` to `SECURITY!Principal`  
-**Source location:** `mde/transformations/cim-to-pim/boundaries-security.etl:130`
+**Source location:** `methodology/modeling-framework/transformations/cim-to-pim/boundaries-security.etl:130`
 
 ### Why this rule exists
 
@@ -166,7 +166,7 @@ The trace record is the best first diagnostic: it tells you whether the target w
 
 ### Authoritative source
 
-See the complete ETL rule at `mde/transformations/cim-to-pim/boundaries-security.etl:130`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
+See the complete ETL rule at `methodology/modeling-framework/transformations/cim-to-pim/boundaries-security.etl:130`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
 
 ---
 
@@ -174,7 +174,7 @@ See the complete ETL rule at `mde/transformations/cim-to-pim/boundaries-security
 
 **Source:** `es` to `CIMORG!ExternalSystem`  
 **Target:** `a` to `EXTERNAL!ExternalAdapter`  
-**Source location:** `mde/transformations/cim-to-pim/boundaries-security.etl:162`
+**Source location:** `methodology/modeling-framework/transformations/cim-to-pim/boundaries-security.etl:162`
 
 ### Why this rule exists
 
@@ -203,6 +203,6 @@ The trace record is the best first diagnostic: it tells you whether the target w
 
 ### Authoritative source
 
-See the complete ETL rule at `mde/transformations/cim-to-pim/boundaries-security.etl:162`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
+See the complete ETL rule at `methodology/modeling-framework/transformations/cim-to-pim/boundaries-security.etl:162`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
 
 ---

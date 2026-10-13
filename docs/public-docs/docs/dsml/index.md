@@ -51,7 +51,7 @@ Inherited attributes are not copied into every class table because that would ob
 
 ## Source-of-truth boundaries
 
-The reference follows the `.emf` files under `mde/metamodels/`. The combined `.ecore` files are the compiled abstract syntax. EVL files add semantic constraints and readiness rules, ETL files refine one model level into the next, and EGX/EGL files generate implementation artifacts. A value being syntactically accepted by the metamodel does not by itself mean it will pass EVL or produce a deployable artifact.
+The reference follows the `.emf` files under `methodology/modeling-framework/metamodels/`. The combined `.ecore` files are the compiled abstract syntax. EVL files add semantic constraints and readiness rules, ETL files refine one model level into the next, and EGX/EGL files generate implementation artifacts. A value being syntactically accepted by the metamodel does not by itself mean it will pass EVL or produce a deployable artifact.
 
 For chatbot assistant apply, repair, and commit paths, generated model output is gated by structural Ecore/EMF conformance through `ModelService.validateStructural(...)`. EVL semantic validation remains part of explicit user/model validation workflows outside that assistant apply boundary.
 

@@ -1,6 +1,6 @@
 # CIM domain and data
 
-Source: `mde/metamodels/cim/cim-domain-data.emf`.
+Source: `methodology/modeling-framework/metamodels/cim/cim-domain-data.emf`.
 
 This module gives the CIM a precise business vocabulary. `DomainEntity` is used when identity and lifecycle matter. `ValueObject` is used for a descriptive value whose equality comes from its contents. `InformationItem` describes a piece of business information that can appear in an entity, command, query, event, decision, or external exchange. `AggregateCandidate` records a proposed consistency boundary without committing to a persistence technology.
 

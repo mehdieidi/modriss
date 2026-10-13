@@ -19,11 +19,13 @@ import org.junit.jupiter.api.parallel.ResourceLock;
 class PsmSemanticValidationTest {
 
   private static final Path REPOSITORY_ROOT = findRepositoryRoot();
-  private static final Path PSM_SAMPLE = REPOSITORY_ROOT.resolve("mde/samples/psm.xmi");
+  private static final Path PSM_SAMPLE =
+      REPOSITORY_ROOT.resolve("methodology/modeling-framework/samples/psm.xmi");
   private static final Path PSM_EVL =
-      REPOSITORY_ROOT.resolve("mde/validation/psm/psm-semantic-validation.evl");
+      REPOSITORY_ROOT.resolve(
+          "methodology/modeling-framework/validation/psm/psm-semantic-validation.evl");
   private static final Path PSM_ECORE =
-      REPOSITORY_ROOT.resolve("mde/metamodels/psm/psm-combined.ecore");
+      REPOSITORY_ROOT.resolve("methodology/modeling-framework/metamodels/psm/psm-combined.ecore");
   private static final List<String> ALIASES = List.of("AWSPSMENUMS", "KERNEL");
 
   private static final String VALID_LAMBDA_ID = "4b085e12-363a-4503-99bc-82bc05510faf";
@@ -90,10 +92,12 @@ class PsmSemanticValidationTest {
     Files.createDirectories(evlRoot.resolve("lib"));
     Files.createDirectories(evlRoot.resolve("../shared").normalize());
     Files.copy(
-        REPOSITORY_ROOT.resolve("mde/validation/psm/lib/psm-validation-helpers.eol"),
+        REPOSITORY_ROOT.resolve(
+            "methodology/modeling-framework/validation/psm/lib/psm-validation-helpers.eol"),
         evlRoot.resolve("lib/psm-validation-helpers.eol"));
     Files.copy(
-        REPOSITORY_ROOT.resolve("mde/validation/shared/shared-validation-helpers.eol"),
+        REPOSITORY_ROOT.resolve(
+            "methodology/modeling-framework/validation/shared/shared-validation-helpers.eol"),
         evlRoot.resolve("../shared/shared-validation-helpers.eol").normalize());
     Path evl = evlRoot.resolve("helper-contract.evl");
     Files.writeString(
@@ -282,10 +286,12 @@ context AWSPSM!AwsPsmModel {
     Files.createDirectories(evlRoot.resolve("lib"));
     Files.createDirectories(evlRoot.resolve("../shared").normalize());
     Files.copy(
-        REPOSITORY_ROOT.resolve("mde/validation/psm/lib/psm-validation-helpers.eol"),
+        REPOSITORY_ROOT.resolve(
+            "methodology/modeling-framework/validation/psm/lib/psm-validation-helpers.eol"),
         evlRoot.resolve("lib/psm-validation-helpers.eol"));
     Files.copy(
-        REPOSITORY_ROOT.resolve("mde/validation/shared/shared-validation-helpers.eol"),
+        REPOSITORY_ROOT.resolve(
+            "methodology/modeling-framework/validation/shared/shared-validation-helpers.eol"),
         evlRoot.resolve("../shared/shared-validation-helpers.eol").normalize());
     Path evl = evlRoot.resolve("tagging-helper-contract.evl");
     Files.writeString(
@@ -1287,8 +1293,8 @@ context AWSPSM!AwsPsmModel {
   private static Path findRepositoryRoot() {
     Path current = Path.of(System.getProperty("user.dir")).toAbsolutePath().normalize();
     while (current != null) {
-      if (Files.isDirectory(current.resolve("mde/metamodels"))
-          && Files.isDirectory(current.resolve("mde/validation/psm"))) {
+      if (Files.isDirectory(current.resolve("methodology/modeling-framework/metamodels"))
+          && Files.isDirectory(current.resolve("methodology/modeling-framework/validation/psm"))) {
         return current;
       }
       current = current.getParent();

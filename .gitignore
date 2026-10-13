@@ -80,7 +80,7 @@ site/
 generated-project/
 
 # CVS activation backups are local recovery artifacts; the active CVS files remain Git-tracked.
-mde/notation/backup/
+methodology/modeling-framework/notation/backup/
 
 # Automatically created by ruff
 .ruff_cache/

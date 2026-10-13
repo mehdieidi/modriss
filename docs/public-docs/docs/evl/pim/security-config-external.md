@@ -2,7 +2,7 @@
 
 Security, configuration, and external-system rules stop credentials, identity assumptions, authorization logic, and provider endpoints from remaining implicit. The rules are especially concerned with secret references, least privilege, federation, and environment-specific ownership.
 
-Source profile: `mde/validation/pim/rules/security-config-external.evl`.
+Source profile: `methodology/modeling-framework/validation/pim/rules/security-config-external.evl`.
 
 ## Reading these rules
 
@@ -14,7 +14,7 @@ Each entry preserves the actual EVL guard and check. Treat the guard as the appl
 
 **Context:** `PIM!ExternalAdapter`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/pim/rules/security-config-external.evl:8`
+**Source:** `methodology/modeling-framework/validation/pim/rules/security-config-external.evl:8`
 
 ### Why this rule exists
 
@@ -52,7 +52,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `PIM!ExternalAdapter`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/pim/rules/security-config-external.evl:14`
+**Source:** `methodology/modeling-framework/validation/pim/rules/security-config-external.evl:14`
 
 ### Why this rule exists
 
@@ -92,7 +92,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `PIM!ExternalAdapter`  
 **Classification:** Advisory critique (warning)  
-**Source:** `mde/validation/pim/rules/security-config-external.evl:21`
+**Source:** `methodology/modeling-framework/validation/pim/rules/security-config-external.evl:21`
 
 ### Why this rule exists
 
@@ -132,7 +132,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 **Context:** `PIM!ExternalAdapter`  
 **Classification:** Advisory critique (warning)  
-**Source:** `mde/validation/pim/rules/security-config-external.evl:28`
+**Source:** `methodology/modeling-framework/validation/pim/rules/security-config-external.evl:28`
 
 ### Why this rule exists
 
@@ -172,7 +172,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 **Context:** `PIM!ConfigurationSet`  
 **Classification:** Advisory critique (warning)  
-**Source:** `mde/validation/pim/rules/security-config-external.evl:39`
+**Source:** `methodology/modeling-framework/validation/pim/rules/security-config-external.evl:39`
 
 ### Why this rule exists
 
@@ -210,7 +210,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 **Context:** `PIM!ConfigParameter`  
 **Classification:** Advisory critique (warning)  
-**Source:** `mde/validation/pim/rules/security-config-external.evl:49`
+**Source:** `methodology/modeling-framework/validation/pim/rules/security-config-external.evl:49`
 
 ### Why this rule exists
 
@@ -250,7 +250,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 **Context:** `PIM!EnvironmentVariable`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/pim/rules/security-config-external.evl:60`
+**Source:** `methodology/modeling-framework/validation/pim/rules/security-config-external.evl:60`
 
 ### Why this rule exists
 
@@ -290,7 +290,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `PIM!EnvironmentVariable`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/pim/rules/security-config-external.evl:67`
+**Source:** `methodology/modeling-framework/validation/pim/rules/security-config-external.evl:67`
 
 ### Why this rule exists
 
@@ -328,7 +328,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `PIM!EnvironmentVariable`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/pim/rules/security-config-external.evl:73`
+**Source:** `methodology/modeling-framework/validation/pim/rules/security-config-external.evl:73`
 
 ### Why this rule exists
 
@@ -368,7 +368,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `PIM!Secret`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/pim/rules/security-config-external.evl:84`
+**Source:** `methodology/modeling-framework/validation/pim/rules/security-config-external.evl:84`
 
 ### Why this rule exists
 
@@ -406,7 +406,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `PIM!Secret`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/pim/rules/security-config-external.evl:90`
+**Source:** `methodology/modeling-framework/validation/pim/rules/security-config-external.evl:90`
 
 ### Why this rule exists
 
@@ -446,7 +446,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `PIM!Secret`  
 **Classification:** Advisory critique (warning)  
-**Source:** `mde/validation/pim/rules/security-config-external.evl:97`
+**Source:** `methodology/modeling-framework/validation/pim/rules/security-config-external.evl:97`
 
 ### Why this rule exists
 
@@ -486,7 +486,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 **Context:** `PIM!CredentialRequirement`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/pim/rules/security-config-external.evl:108`
+**Source:** `methodology/modeling-framework/validation/pim/rules/security-config-external.evl:108`
 
 ### Why this rule exists
 
@@ -524,7 +524,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `PIM!CredentialRequirement`  
 **Classification:** Advisory critique (warning)  
-**Source:** `mde/validation/pim/rules/security-config-external.evl:114`
+**Source:** `methodology/modeling-framework/validation/pim/rules/security-config-external.evl:114`
 
 ### Why this rule exists
 
@@ -562,7 +562,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 **Context:** `PIM!IdentityProvider`  
 **Classification:** Advisory critique (warning)  
-**Source:** `mde/validation/pim/rules/security-config-external.evl:124`
+**Source:** `methodology/modeling-framework/validation/pim/rules/security-config-external.evl:124`
 
 ### Why this rule exists
 
@@ -602,7 +602,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 **Context:** `PIM!Principal`  
 **Classification:** Advisory critique (warning)  
-**Source:** `mde/validation/pim/rules/security-config-external.evl:135`
+**Source:** `methodology/modeling-framework/validation/pim/rules/security-config-external.evl:135`
 
 ### Why this rule exists
 
@@ -642,7 +642,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 **Context:** `PIM!Permission`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/pim/rules/security-config-external.evl:146`
+**Source:** `methodology/modeling-framework/validation/pim/rules/security-config-external.evl:146`
 
 ### Why this rule exists
 
@@ -680,7 +680,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `PIM!Permission`  
 **Classification:** Advisory critique (warning)  
-**Source:** `mde/validation/pim/rules/security-config-external.evl:152`
+**Source:** `methodology/modeling-framework/validation/pim/rules/security-config-external.evl:152`
 
 ### Why this rule exists
 
@@ -718,7 +718,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 **Context:** `PIM!AuthPolicy`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/pim/rules/security-config-external.evl:162`
+**Source:** `methodology/modeling-framework/validation/pim/rules/security-config-external.evl:162`
 
 ### Why this rule exists
 
@@ -756,7 +756,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `PIM!AuthorizationPolicy`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/pim/rules/security-config-external.evl:172`
+**Source:** `methodology/modeling-framework/validation/pim/rules/security-config-external.evl:172`
 
 ### Why this rule exists
 
@@ -794,7 +794,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `PIM!AuthorizationPolicy`  
 **Classification:** Advisory critique (warning)  
-**Source:** `mde/validation/pim/rules/security-config-external.evl:179`
+**Source:** `methodology/modeling-framework/validation/pim/rules/security-config-external.evl:179`
 
 ### Why this rule exists
 

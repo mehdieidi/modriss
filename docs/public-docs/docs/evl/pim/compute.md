@@ -2,7 +2,7 @@
 
 Compute rules ensure that every function has a responsibility, contract, reachability path, and compatible state behavior. They also surface the operational consequences of external calls, public exposure, duration, idempotency, and event publication.
 
-Source profile: `mde/validation/pim/rules/compute.evl`.
+Source profile: `methodology/modeling-framework/validation/pim/rules/compute.evl`.
 
 ## Reading these rules
 
@@ -14,7 +14,7 @@ Each entry preserves the actual EVL guard and check. Treat the guard as the appl
 
 **Context:** `PIM!Function`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/pim/rules/compute.evl:8`
+**Source:** `methodology/modeling-framework/validation/pim/rules/compute.evl:8`
 
 ### Why this rule exists
 
@@ -52,7 +52,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `PIM!Function`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/pim/rules/compute.evl:14`
+**Source:** `methodology/modeling-framework/validation/pim/rules/compute.evl:14`
 
 ### Why this rule exists
 
@@ -90,7 +90,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `PIM!Function`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/pim/rules/compute.evl:20`
+**Source:** `methodology/modeling-framework/validation/pim/rules/compute.evl:20`
 
 ### Why this rule exists
 
@@ -128,7 +128,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `PIM!Function`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/pim/rules/compute.evl:26`
+**Source:** `methodology/modeling-framework/validation/pim/rules/compute.evl:26`
 
 ### Why this rule exists
 
@@ -168,7 +168,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `PIM!Function`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/pim/rules/compute.evl:33`
+**Source:** `methodology/modeling-framework/validation/pim/rules/compute.evl:33`
 
 ### Why this rule exists
 
@@ -208,7 +208,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `PIM!Function`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/pim/rules/compute.evl:40`
+**Source:** `methodology/modeling-framework/validation/pim/rules/compute.evl:40`
 
 ### Why this rule exists
 
@@ -248,7 +248,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `PIM!Function`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/pim/rules/compute.evl:47`
+**Source:** `methodology/modeling-framework/validation/pim/rules/compute.evl:47`
 
 ### Why this rule exists
 
@@ -288,7 +288,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `PIM!Function`  
 **Classification:** Advisory critique (warning)  
-**Source:** `mde/validation/pim/rules/compute.evl:54`
+**Source:** `methodology/modeling-framework/validation/pim/rules/compute.evl:54`
 
 ### Why this rule exists
 
@@ -328,7 +328,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 **Context:** `PIM!Function`  
 **Classification:** Advisory critique (warning)  
-**Source:** `mde/validation/pim/rules/compute.evl:61`
+**Source:** `methodology/modeling-framework/validation/pim/rules/compute.evl:61`
 
 ### Why this rule exists
 
@@ -368,7 +368,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 **Context:** `PIM!Function`  
 **Classification:** Advisory critique (warning)  
-**Source:** `mde/validation/pim/rules/compute.evl:68`
+**Source:** `methodology/modeling-framework/validation/pim/rules/compute.evl:68`
 
 ### Why this rule exists
 
@@ -408,7 +408,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 **Context:** `PIM!Trigger`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/pim/rules/compute.evl:79`
+**Source:** `methodology/modeling-framework/validation/pim/rules/compute.evl:79`
 
 ### Why this rule exists
 
@@ -446,7 +446,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `PIM!Trigger`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/pim/rules/compute.evl:86`
+**Source:** `methodology/modeling-framework/validation/pim/rules/compute.evl:86`
 
 ### Why this rule exists
 
@@ -484,7 +484,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `PIM!Trigger`  
 **Classification:** Advisory critique (warning)  
-**Source:** `mde/validation/pim/rules/compute.evl:92`
+**Source:** `methodology/modeling-framework/validation/pim/rules/compute.evl:92`
 
 ### Why this rule exists
 

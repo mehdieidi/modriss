@@ -60,7 +60,8 @@ final class EpsilonEgxGeneratorTest {
 
   /** EGX coordinator for the PSM artifact generator. */
   private static final Path AWS_PSM_EGX =
-      REPOSITORY_ROOT.resolve("mde/generation/awspsm-to-artifacts/awspsm2artifacts.egx");
+      REPOSITORY_ROOT.resolve(
+          "methodology/modeling-framework/generation/awspsm-to-artifacts/awspsm2artifacts.egx");
 
   /** JSON parser used for syntax checks of generated machine-readable artifacts. */
   private static final ObjectMapper JSON = new ObjectMapper();
@@ -102,8 +103,9 @@ final class EpsilonEgxGeneratorTest {
   private static Path findRepositoryRoot() {
     Path current = Path.of(System.getProperty("user.dir")).toAbsolutePath().normalize();
     while (current != null) {
-      if (Files.isDirectory(current.resolve("mde/metamodels"))
-          && Files.isDirectory(current.resolve("mde/generation/awspsm-to-artifacts"))) {
+      if (Files.isDirectory(current.resolve("methodology/modeling-framework/metamodels"))
+          && Files.isDirectory(
+              current.resolve("methodology/modeling-framework/generation/awspsm-to-artifacts"))) {
         return current;
       }
       current = current.getParent();
@@ -354,7 +356,7 @@ final class EpsilonEgxGeneratorTest {
    */
   @Test
   void generatesCompleteUniqueTraceForRepositoryPsmSample() throws Exception {
-    Path sourceModel = REPOSITORY_ROOT.resolve("mde/samples/psm.xmi");
+    Path sourceModel = REPOSITORY_ROOT.resolve("methodology/modeling-framework/samples/psm.xmi");
     Path outputDirectory = tempDir.resolve("sample-generated-project");
 
     EgxGenerationReport report =
@@ -2953,7 +2955,9 @@ final class EpsilonEgxGeneratorTest {
     Resource metamodelResource =
         resourceSet.getResource(
             URI.createFileURI(
-                REPOSITORY_ROOT.resolve("mde/metamodels/psm/psm-combined.ecore").toString()),
+                REPOSITORY_ROOT
+                    .resolve("methodology/modeling-framework/metamodels/psm/psm-combined.ecore")
+                    .toString()),
             true);
     EcoreUtil.resolveAll(resourceSet);
     registerPackages(metamodelResource);
@@ -3627,7 +3631,8 @@ final class EpsilonEgxGeneratorTest {
    * @throws IOException when the generated fixture cannot be saved
    */
   private void createLocalStackDeployableAwsPsmModel(Path modelFile) throws IOException {
-    Path metamodel = REPOSITORY_ROOT.resolve("mde/metamodels/psm/psm-combined.ecore");
+    Path metamodel =
+        REPOSITORY_ROOT.resolve("methodology/modeling-framework/metamodels/psm/psm-combined.ecore");
     ResourceSet resourceSet = new ResourceSetImpl();
     resourceSet
         .getResourceFactoryRegistry()
@@ -4009,7 +4014,8 @@ final class EpsilonEgxGeneratorTest {
    * @throws IOException when the generated fixture cannot be saved
    */
   private void createMinimalGuardAwsPsmModel(Path modelFile) throws IOException {
-    Path metamodel = REPOSITORY_ROOT.resolve("mde/metamodels/psm/psm-combined.ecore");
+    Path metamodel =
+        REPOSITORY_ROOT.resolve("methodology/modeling-framework/metamodels/psm/psm-combined.ecore");
     ResourceSet resourceSet = new ResourceSetImpl();
     resourceSet
         .getResourceFactoryRegistry()
@@ -4066,7 +4072,8 @@ final class EpsilonEgxGeneratorTest {
    * @throws IOException when the generated fixture cannot be saved
    */
   private void createBroadAwsPsmRenderingModel(Path modelFile) throws IOException {
-    Path metamodel = REPOSITORY_ROOT.resolve("mde/metamodels/psm/psm-combined.ecore");
+    Path metamodel =
+        REPOSITORY_ROOT.resolve("methodology/modeling-framework/metamodels/psm/psm-combined.ecore");
     ResourceSet resourceSet = new ResourceSetImpl();
     resourceSet
         .getResourceFactoryRegistry()
@@ -5345,7 +5352,8 @@ final class EpsilonEgxGeneratorTest {
    * @throws IOException when the generated fixture cannot be saved
    */
   private void createRepresentativeAwsPsmModel(Path modelFile) throws IOException {
-    Path metamodel = REPOSITORY_ROOT.resolve("mde/metamodels/psm/psm-combined.ecore");
+    Path metamodel =
+        REPOSITORY_ROOT.resolve("methodology/modeling-framework/metamodels/psm/psm-combined.ecore");
     ResourceSet resourceSet = new ResourceSetImpl();
     resourceSet
         .getResourceFactoryRegistry()

@@ -1,6 +1,6 @@
 # CIM model root
 
-Source: `mde/metamodels/cim/cim-root.emf`.
+Source: `methodology/modeling-framework/metamodels/cim/cim-root.emf`.
 
 `CIMModel` is the root object for one computation-independent model. It gives a transformation a single business scope and a single containment tree. The root does not represent a deployed application. It represents the slice of organisational reality that the current modeling increment is intended to understand and refine.
 
@@ -59,10 +59,10 @@ Every relationship in this table is a containment. The target objects are owned 
 
 ## Root-level semantic rules
 
-The EVL rules in `mde/validation/cim/rules/core-kernel-trace.evl` require a semantic core: at least one goal, actor, and capability. A complete scope declaration is a warning when `domainName`, `businessScope`, or `organizationName` is missing. Every model element must have a user-facing name and an explanation, and CIM text must avoid provider-specific terms such as Lambda, S3, or CloudFormation.
+The EVL rules in `methodology/modeling-framework/validation/cim/rules/core-kernel-trace.evl` require a semantic core: at least one goal, actor, and capability. A complete scope declaration is a warning when `domainName`, `businessScope`, or `organizationName` is missing. Every model element must have a user-facing name and an explanation, and CIM text must avoid provider-specific terms such as Lambda, S3, or CloudFormation.
 
 The root also acts as a policy switch for two cross-cutting checks. If `transformationProfile.requireExplicitActorAuthForCommands` is true, every human-issued command must carry an explicit authorization decision. If `requirePrivacyClassificationForAllInformation` is true, every root-level `InformationItem` must have a `DataClassification`. A model marked production-ready cannot retain blocking hotspots, production-blocking risks, blocking readiness findings, or failed readiness checks.
 
 ## Role in CIM-to-PIM refinement
 
-`CIMModel2PIMModel` in `mde/transformations/cim-to-pim/root-scaffolding.etl` creates the PIM root, trace model, and initial readiness assessment from this object. It also carries the model's domain name, scope, organization, and lifecycle information into the PIM. The root therefore supplies the context in which all more specific CIM-to-PIM correspondences are interpreted.
+`CIMModel2PIMModel` in `methodology/modeling-framework/transformations/cim-to-pim/root-scaffolding.etl` creates the PIM root, trace model, and initial readiness assessment from this object. It also carries the model's domain name, scope, organization, and lifecycle information into the PIM. The root therefore supplies the context in which all more specific CIM-to-PIM correspondences are interpreted.

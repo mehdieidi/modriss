@@ -2,7 +2,7 @@
 
 Root scaffolding establishes the PIM document that every later rule writes into. It carries the domain identity forward, creates traceability and readiness containers, seeds environments and implementation settings, and turns high-level organizational intent into reviewable PIM policy or readiness evidence. These rules deliberately leave some decisions as review-required rather than pretending that CIM can know a runtime, package manager, or deployment command.
 
-Source module: `mde/transformations/cim-to-pim/root-scaffolding.etl`.
+Source module: `methodology/modeling-framework/transformations/cim-to-pim/root-scaffolding.etl`.
 
 ## Reading this page
 
@@ -14,12 +14,12 @@ A transformation rule determines whether a source element contributes to the tar
 
 Supporting operations also shape the transformation. They derive defaults, create secondary resources, cache correspondences, and resolve relationships after the main rule runs.
 
-| Operation                | Role                                                               | Source                                                   |
-| ------------------------ | ------------------------------------------------------------------ | -------------------------------------------------------- |
-| `inferArchitectureStyle` | Maps root scaffolding model elements and supporting relationships. | `mde/transformations/cim-to-pim/root-scaffolding.etl:6`  |
-| `requirementRuleText`    | Computes requirement rule text.                                    | `mde/transformations/cim-to-pim/root-scaffolding.etl:20` |
-| `goalRuleText`           | Computes goal rule text.                                           | `mde/transformations/cim-to-pim/root-scaffolding.etl:35` |
-| `glossaryRuleText`       | Computes glossary rule text.                                       | `mde/transformations/cim-to-pim/root-scaffolding.etl:41` |
+| Operation                | Role                                                               | Source                                                                              |
+| ------------------------ | ------------------------------------------------------------------ | ----------------------------------------------------------------------------------- |
+| `inferArchitectureStyle` | Maps root scaffolding model elements and supporting relationships. | `methodology/modeling-framework/transformations/cim-to-pim/root-scaffolding.etl:6`  |
+| `requirementRuleText`    | Computes requirement rule text.                                    | `methodology/modeling-framework/transformations/cim-to-pim/root-scaffolding.etl:20` |
+| `goalRuleText`           | Computes goal rule text.                                           | `methodology/modeling-framework/transformations/cim-to-pim/root-scaffolding.etl:35` |
+| `glossaryRuleText`       | Computes glossary rule text.                                       | `methodology/modeling-framework/transformations/cim-to-pim/root-scaffolding.etl:41` |
 
 ---
 
@@ -27,7 +27,7 @@ Supporting operations also shape the transformation. They derive defaults, creat
 
 **Source:** `c` to `CIM!CIMModel`  
 **Target:** `p` to `PIM!PIMModel`  
-**Source location:** `mde/transformations/cim-to-pim/root-scaffolding.etl:51`
+**Source location:** `methodology/modeling-framework/transformations/cim-to-pim/root-scaffolding.etl:51`
 
 ### Why this rule exists
 
@@ -55,7 +55,7 @@ The trace record is the best first diagnostic: it tells you whether the target w
 
 ### Authoritative source
 
-See the complete ETL rule at `mde/transformations/cim-to-pim/root-scaffolding.etl:51`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
+See the complete ETL rule at `methodology/modeling-framework/transformations/cim-to-pim/root-scaffolding.etl:51`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
 
 ---
 
@@ -63,7 +63,7 @@ See the complete ETL rule at `mde/transformations/cim-to-pim/root-scaffolding.et
 
 **Source:** `c` to `CIM!CIMModel`  
 **Target:** `dev` to `DEPLOY!Environment`, `test` to `DEPLOY!Environment`, `prod` to `DEPLOY!Environment`, `profile` to `DEPLOY!ImplementationProfile`  
-**Source location:** `mde/transformations/cim-to-pim/root-scaffolding.etl:85`
+**Source location:** `methodology/modeling-framework/transformations/cim-to-pim/root-scaffolding.etl:85`
 
 ### Why this rule exists
 
@@ -94,7 +94,7 @@ The trace record is the best first diagnostic: it tells you whether the target w
 
 ### Authoritative source
 
-See the complete ETL rule at `mde/transformations/cim-to-pim/root-scaffolding.etl:85`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
+See the complete ETL rule at `methodology/modeling-framework/transformations/cim-to-pim/root-scaffolding.etl:85`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
 
 ---
 
@@ -102,7 +102,7 @@ See the complete ETL rule at `mde/transformations/cim-to-pim/root-scaffolding.et
 
 **Source:** `r` to `CIMORG!Requirement`  
 **Target:** `b` to `POLICY!BusinessRule`  
-**Source location:** `mde/transformations/cim-to-pim/root-scaffolding.etl:140`
+**Source location:** `methodology/modeling-framework/transformations/cim-to-pim/root-scaffolding.etl:140`
 
 ### Why this rule exists
 
@@ -130,7 +130,7 @@ The trace record is the best first diagnostic: it tells you whether the target w
 
 ### Authoritative source
 
-See the complete ETL rule at `mde/transformations/cim-to-pim/root-scaffolding.etl:140`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
+See the complete ETL rule at `methodology/modeling-framework/transformations/cim-to-pim/root-scaffolding.etl:140`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
 
 ---
 
@@ -138,7 +138,7 @@ See the complete ETL rule at `mde/transformations/cim-to-pim/root-scaffolding.et
 
 **Source:** `g` to `CIMORG!BusinessGoal`  
 **Target:** `b` to `POLICY!BusinessRule`  
-**Source location:** `mde/transformations/cim-to-pim/root-scaffolding.etl:159`
+**Source location:** `methodology/modeling-framework/transformations/cim-to-pim/root-scaffolding.etl:159`
 
 ### Why this rule exists
 
@@ -165,7 +165,7 @@ The trace record is the best first diagnostic: it tells you whether the target w
 
 ### Authoritative source
 
-See the complete ETL rule at `mde/transformations/cim-to-pim/root-scaffolding.etl:159`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
+See the complete ETL rule at `methodology/modeling-framework/transformations/cim-to-pim/root-scaffolding.etl:159`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
 
 ---
 
@@ -173,7 +173,7 @@ See the complete ETL rule at `mde/transformations/cim-to-pim/root-scaffolding.et
 
 **Source:** `t` to `CIMORG!UbiquitousLanguageTerm`  
 **Target:** `b` to `POLICY!BusinessRule`  
-**Source location:** `mde/transformations/cim-to-pim/root-scaffolding.etl:172`
+**Source location:** `methodology/modeling-framework/transformations/cim-to-pim/root-scaffolding.etl:172`
 
 ### Why this rule exists
 
@@ -200,7 +200,7 @@ The trace record is the best first diagnostic: it tells you whether the target w
 
 ### Authoritative source
 
-See the complete ETL rule at `mde/transformations/cim-to-pim/root-scaffolding.etl:172`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
+See the complete ETL rule at `methodology/modeling-framework/transformations/cim-to-pim/root-scaffolding.etl:172`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
 
 ---
 
@@ -208,7 +208,7 @@ See the complete ETL rule at `mde/transformations/cim-to-pim/root-scaffolding.et
 
 **Source:** `k` to `CIMORG!KPI`  
 **Target:** `c` to `KERNEL!ReadinessCheck`  
-**Source location:** `mde/transformations/cim-to-pim/root-scaffolding.etl:185`
+**Source location:** `methodology/modeling-framework/transformations/cim-to-pim/root-scaffolding.etl:185`
 
 ### Why this rule exists
 
@@ -235,7 +235,7 @@ The trace record is the best first diagnostic: it tells you whether the target w
 
 ### Authoritative source
 
-See the complete ETL rule at `mde/transformations/cim-to-pim/root-scaffolding.etl:185`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
+See the complete ETL rule at `methodology/modeling-framework/transformations/cim-to-pim/root-scaffolding.etl:185`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
 
 ---
 
@@ -243,7 +243,7 @@ See the complete ETL rule at `mde/transformations/cim-to-pim/root-scaffolding.et
 
 **Source:** `s` to `CIMORG!Stakeholder`  
 **Target:** `d` to `KERNEL!ManualDecision`  
-**Source location:** `mde/transformations/cim-to-pim/root-scaffolding.etl:203`
+**Source location:** `methodology/modeling-framework/transformations/cim-to-pim/root-scaffolding.etl:203`
 
 ### Why this rule exists
 
@@ -270,6 +270,6 @@ The trace record is the best first diagnostic: it tells you whether the target w
 
 ### Authoritative source
 
-See the complete ETL rule at `mde/transformations/cim-to-pim/root-scaffolding.etl:203`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
+See the complete ETL rule at `methodology/modeling-framework/transformations/cim-to-pim/root-scaffolding.etl:203`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
 
 ---

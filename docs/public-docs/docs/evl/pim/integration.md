@@ -2,7 +2,7 @@
 
 Integration rules ensure channels, queues, topics, schedules, subscriptions, buses, and flows say enough about delivery, routing, ordering, replay, dead letters, and ownership to be mapped safely to AWS messaging and event services.
 
-Source profile: `mde/validation/pim/rules/integration.evl`.
+Source profile: `methodology/modeling-framework/validation/pim/rules/integration.evl`.
 
 ## Reading these rules
 
@@ -14,7 +14,7 @@ Each entry preserves the actual EVL guard and check. Treat the guard as the appl
 
 **Context:** `PIM!EventType`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/pim/rules/integration.evl:8`
+**Source:** `methodology/modeling-framework/validation/pim/rules/integration.evl:8`
 
 ### Why this rule exists
 
@@ -52,7 +52,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `PIM!EventType`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/pim/rules/integration.evl:14`
+**Source:** `methodology/modeling-framework/validation/pim/rules/integration.evl:14`
 
 ### Why this rule exists
 
@@ -92,7 +92,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `PIM!EventType`  
 **Classification:** Advisory critique (warning)  
-**Source:** `mde/validation/pim/rules/integration.evl:21`
+**Source:** `methodology/modeling-framework/validation/pim/rules/integration.evl:21`
 
 ### Why this rule exists
 
@@ -130,7 +130,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 **Context:** `PIM!EventType`  
 **Classification:** Advisory critique (warning)  
-**Source:** `mde/validation/pim/rules/integration.evl:27`
+**Source:** `methodology/modeling-framework/validation/pim/rules/integration.evl:27`
 
 ### Why this rule exists
 
@@ -170,7 +170,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 **Context:** `PIM!EventType`  
 **Classification:** Advisory critique (warning)  
-**Source:** `mde/validation/pim/rules/integration.evl:34`
+**Source:** `methodology/modeling-framework/validation/pim/rules/integration.evl:34`
 
 ### Why this rule exists
 
@@ -208,7 +208,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 **Context:** `PIM!EventEnvelope`  
 **Classification:** Advisory critique (warning)  
-**Source:** `mde/validation/pim/rules/integration.evl:45`
+**Source:** `methodology/modeling-framework/validation/pim/rules/integration.evl:45`
 
 ### Why this rule exists
 
@@ -246,7 +246,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 **Context:** `PIM!EventChannel`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/pim/rules/integration.evl:56`
+**Source:** `methodology/modeling-framework/validation/pim/rules/integration.evl:56`
 
 ### Why this rule exists
 
@@ -284,7 +284,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `PIM!EventChannel`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/pim/rules/integration.evl:62`
+**Source:** `methodology/modeling-framework/validation/pim/rules/integration.evl:62`
 
 ### Why this rule exists
 
@@ -324,7 +324,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `PIM!EventChannel`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/pim/rules/integration.evl:69`
+**Source:** `methodology/modeling-framework/validation/pim/rules/integration.evl:69`
 
 ### Why this rule exists
 
@@ -364,7 +364,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `PIM!EventChannel`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/pim/rules/integration.evl:77`
+**Source:** `methodology/modeling-framework/validation/pim/rules/integration.evl:77`
 
 ### Why this rule exists
 
@@ -404,7 +404,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `PIM!EventChannel`  
 **Classification:** Advisory critique (warning)  
-**Source:** `mde/validation/pim/rules/integration.evl:84`
+**Source:** `methodology/modeling-framework/validation/pim/rules/integration.evl:84`
 
 ### Why this rule exists
 
@@ -442,7 +442,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 **Context:** `PIM!EventChannel`  
 **Classification:** Advisory critique (warning)  
-**Source:** `mde/validation/pim/rules/integration.evl:91`
+**Source:** `methodology/modeling-framework/validation/pim/rules/integration.evl:91`
 
 ### Why this rule exists
 
@@ -480,7 +480,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 **Context:** `PIM!Queue`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/pim/rules/integration.evl:105`
+**Source:** `methodology/modeling-framework/validation/pim/rules/integration.evl:105`
 
 ### Why this rule exists
 
@@ -520,7 +520,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `PIM!Queue`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/pim/rules/integration.evl:112`
+**Source:** `methodology/modeling-framework/validation/pim/rules/integration.evl:112`
 
 ### Why this rule exists
 
@@ -560,7 +560,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `PIM!Queue`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/pim/rules/integration.evl:119`
+**Source:** `methodology/modeling-framework/validation/pim/rules/integration.evl:119`
 
 ### Why this rule exists
 
@@ -600,7 +600,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `PIM!Queue`  
 **Classification:** Advisory critique (warning)  
-**Source:** `mde/validation/pim/rules/integration.evl:126`
+**Source:** `methodology/modeling-framework/validation/pim/rules/integration.evl:126`
 
 ### Why this rule exists
 
@@ -638,7 +638,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 **Context:** `PIM!Topic`  
 **Classification:** Advisory critique (warning)  
-**Source:** `mde/validation/pim/rules/integration.evl:136`
+**Source:** `methodology/modeling-framework/validation/pim/rules/integration.evl:136`
 
 ### Why this rule exists
 
@@ -678,7 +678,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 **Context:** `PIM!EventBus`  
 **Classification:** Advisory critique (warning)  
-**Source:** `mde/validation/pim/rules/integration.evl:147`
+**Source:** `methodology/modeling-framework/validation/pim/rules/integration.evl:147`
 
 ### Why this rule exists
 
@@ -716,7 +716,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 **Context:** `PIM!EventRoutingRule`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/pim/rules/integration.evl:157`
+**Source:** `methodology/modeling-framework/validation/pim/rules/integration.evl:157`
 
 ### Why this rule exists
 
@@ -754,7 +754,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `PIM!EventRoutingRule`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/pim/rules/integration.evl:163`
+**Source:** `methodology/modeling-framework/validation/pim/rules/integration.evl:163`
 
 ### Why this rule exists
 
@@ -794,7 +794,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `PIM!Subscription`  
 **Classification:** Advisory critique (warning)  
-**Source:** `mde/validation/pim/rules/integration.evl:174`
+**Source:** `methodology/modeling-framework/validation/pim/rules/integration.evl:174`
 
 ### Why this rule exists
 
@@ -834,7 +834,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 **Context:** `PIM!Schedule`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/pim/rules/integration.evl:185`
+**Source:** `methodology/modeling-framework/validation/pim/rules/integration.evl:185`
 
 ### Why this rule exists
 
@@ -872,7 +872,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `PIM!Schedule`  
 **Classification:** Advisory critique (warning)  
-**Source:** `mde/validation/pim/rules/integration.evl:191`
+**Source:** `methodology/modeling-framework/validation/pim/rules/integration.evl:191`
 
 ### Why this rule exists
 
@@ -910,7 +910,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 **Context:** `PIM!Schedule`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/pim/rules/integration.evl:197`
+**Source:** `methodology/modeling-framework/validation/pim/rules/integration.evl:197`
 
 ### Why this rule exists
 
@@ -950,7 +950,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `PIM!Flow`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/pim/rules/integration.evl:208`
+**Source:** `methodology/modeling-framework/validation/pim/rules/integration.evl:208`
 
 ### Why this rule exists
 
@@ -988,7 +988,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `PIM!Flow`  
 **Classification:** Advisory critique (warning)  
-**Source:** `mde/validation/pim/rules/integration.evl:214`
+**Source:** `methodology/modeling-framework/validation/pim/rules/integration.evl:214`
 
 ### Why this rule exists
 
@@ -1028,7 +1028,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 **Context:** `PIM!Flow`  
 **Classification:** Advisory critique (warning)  
-**Source:** `mde/validation/pim/rules/integration.evl:221`
+**Source:** `methodology/modeling-framework/validation/pim/rules/integration.evl:221`
 
 ### Why this rule exists
 

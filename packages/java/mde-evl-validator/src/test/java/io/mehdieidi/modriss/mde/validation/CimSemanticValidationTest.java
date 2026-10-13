@@ -19,11 +19,13 @@ import org.junit.jupiter.api.parallel.ResourceLock;
 class CimSemanticValidationTest {
 
   private static final Path REPOSITORY_ROOT = findRepositoryRoot();
-  private static final Path CIM_SAMPLE = REPOSITORY_ROOT.resolve("mde/samples/cim.xmi");
+  private static final Path CIM_SAMPLE =
+      REPOSITORY_ROOT.resolve("methodology/modeling-framework/samples/cim.xmi");
   private static final Path CIM_EVL =
-      REPOSITORY_ROOT.resolve("mde/validation/cim/cim-semantic-validation.evl");
+      REPOSITORY_ROOT.resolve(
+          "methodology/modeling-framework/validation/cim/cim-semantic-validation.evl");
   private static final Path CIM_ECORE =
-      REPOSITORY_ROOT.resolve("mde/metamodels/cim/cim-combined.ecore");
+      REPOSITORY_ROOT.resolve("methodology/modeling-framework/metamodels/cim/cim-combined.ecore");
   private static final List<String> ALIASES =
       List.of(
           "CIMORG", "CIMDOMAIN", "CIMBEHAVIOR", "CIMPROCESS", "CIMGOV", "CIMTRANSFORM", "KERNEL");
@@ -75,10 +77,12 @@ class CimSemanticValidationTest {
     Files.createDirectories(evlRoot.resolve("lib"));
     Files.createDirectories(evlRoot.resolve("../shared").normalize());
     Files.copy(
-        REPOSITORY_ROOT.resolve("mde/validation/cim/lib/cim-validation-helpers.eol"),
+        REPOSITORY_ROOT.resolve(
+            "methodology/modeling-framework/validation/cim/lib/cim-validation-helpers.eol"),
         evlRoot.resolve("lib/cim-validation-helpers.eol"));
     Files.copy(
-        REPOSITORY_ROOT.resolve("mde/validation/shared/shared-validation-helpers.eol"),
+        REPOSITORY_ROOT.resolve(
+            "methodology/modeling-framework/validation/shared/shared-validation-helpers.eol"),
         evlRoot.resolve("../shared/shared-validation-helpers.eol").normalize());
     Path evl = evlRoot.resolve("helper-contract.evl");
     Files.writeString(
@@ -767,8 +771,8 @@ context CIM!CIMModel {
   private static Path findRepositoryRoot() {
     Path current = Path.of(System.getProperty("user.dir")).toAbsolutePath().normalize();
     while (current != null) {
-      if (Files.isDirectory(current.resolve("mde/metamodels"))
-          && Files.isDirectory(current.resolve("mde/validation/cim"))) {
+      if (Files.isDirectory(current.resolve("methodology/modeling-framework/metamodels"))
+          && Files.isDirectory(current.resolve("methodology/modeling-framework/validation/cim"))) {
         return current;
       }
       current = current.getParent();

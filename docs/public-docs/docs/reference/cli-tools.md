@@ -11,9 +11,9 @@ Converts standalone or modular Emfatic metamodels to Ecore.
 
 ```powershell
 java -jar tools/mde-cli/target/mde-cli-0.0.1-SNAPSHOT.jar `
-  mde/metamodels/cim `
-  --root mde/metamodels/cim/cim-root.emf `
-  --output mde/metamodels/cim/cim-combined.ecore `
+  methodology/modeling-framework/metamodels/cim `
+  --root methodology/modeling-framework/metamodels/cim/cim-root.emf `
+  --output methodology/modeling-framework/metamodels/cim/cim-combined.ecore `
   --overwrite
 ```
 

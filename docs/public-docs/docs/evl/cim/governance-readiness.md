@@ -2,7 +2,7 @@
 
 Governance rules turn non-functional, security, privacy, compliance, risk, and readiness concerns into reviewable model facts. They keep a model from being declared ready while a known blocker has no owner, recommendation, evidence, or decision.
 
-Source profile: `mde/validation/cim/rules/governance-readiness.evl`.
+Source profile: `methodology/modeling-framework/validation/cim/rules/governance-readiness.evl`.
 
 ## Reading these rules
 
@@ -14,7 +14,7 @@ Each entry preserves the actual EVL guard and check. Treat the guard as the appl
 
 **Context:** `CIM!NonFunctionalRequirement`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/cim/rules/governance-readiness.evl:8`
+**Source:** `methodology/modeling-framework/validation/cim/rules/governance-readiness.evl:8`
 
 ### Why this rule exists
 
@@ -52,7 +52,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `CIM!NonFunctionalRequirement`  
 **Classification:** Advisory critique (warning)  
-**Source:** `mde/validation/cim/rules/governance-readiness.evl:16`
+**Source:** `methodology/modeling-framework/validation/cim/rules/governance-readiness.evl:16`
 
 ### Why this rule exists
 
@@ -92,7 +92,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 **Context:** `CIM!QualityScenario`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/cim/rules/governance-readiness.evl:29`
+**Source:** `methodology/modeling-framework/validation/cim/rules/governance-readiness.evl:29`
 
 ### Why this rule exists
 
@@ -130,7 +130,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `CIM!SecurityConstraint`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/cim/rules/governance-readiness.evl:43`
+**Source:** `methodology/modeling-framework/validation/cim/rules/governance-readiness.evl:43`
 
 ### Why this rule exists
 
@@ -168,7 +168,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `CIM!SecurityConstraint`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/cim/rules/governance-readiness.evl:55`
+**Source:** `methodology/modeling-framework/validation/cim/rules/governance-readiness.evl:55`
 
 ### Why this rule exists
 
@@ -206,7 +206,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `CIM!SecurityConstraint`  
 **Classification:** Advisory critique (warning)  
-**Source:** `mde/validation/cim/rules/governance-readiness.evl:64`
+**Source:** `methodology/modeling-framework/validation/cim/rules/governance-readiness.evl:64`
 
 ### Why this rule exists
 
@@ -246,7 +246,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 **Context:** `CIM!SecurityConstraint`  
 **Classification:** Advisory critique (warning)  
-**Source:** `mde/validation/cim/rules/governance-readiness.evl:76`
+**Source:** `methodology/modeling-framework/validation/cim/rules/governance-readiness.evl:76`
 
 ### Why this rule exists
 
@@ -284,7 +284,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 **Context:** `CIM!PrivacyConstraint`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/cim/rules/governance-readiness.evl:91`
+**Source:** `methodology/modeling-framework/validation/cim/rules/governance-readiness.evl:91`
 
 ### Why this rule exists
 
@@ -322,7 +322,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `CIM!PrivacyConstraint`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/cim/rules/governance-readiness.evl:101`
+**Source:** `methodology/modeling-framework/validation/cim/rules/governance-readiness.evl:101`
 
 ### Why this rule exists
 
@@ -360,7 +360,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `CIM!PrivacyConstraint`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/cim/rules/governance-readiness.evl:109`
+**Source:** `methodology/modeling-framework/validation/cim/rules/governance-readiness.evl:109`
 
 ### Why this rule exists
 
@@ -400,7 +400,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `CIM!PrivacyConstraint`  
 **Classification:** Advisory critique (warning)  
-**Source:** `mde/validation/cim/rules/governance-readiness.evl:118`
+**Source:** `methodology/modeling-framework/validation/cim/rules/governance-readiness.evl:118`
 
 ### Why this rule exists
 
@@ -440,7 +440,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 **Context:** `CIM!ComplianceConstraint`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/cim/rules/governance-readiness.evl:131`
+**Source:** `methodology/modeling-framework/validation/cim/rules/governance-readiness.evl:131`
 
 ### Why this rule exists
 
@@ -478,7 +478,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `CIM!ComplianceConstraint`  
 **Classification:** Advisory critique (warning)  
-**Source:** `mde/validation/cim/rules/governance-readiness.evl:141`
+**Source:** `methodology/modeling-framework/validation/cim/rules/governance-readiness.evl:141`
 
 ### Why this rule exists
 
@@ -516,7 +516,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 **Context:** `CIM!Risk`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/cim/rules/governance-readiness.evl:153`
+**Source:** `methodology/modeling-framework/validation/cim/rules/governance-readiness.evl:153`
 
 ### Why this rule exists
 
@@ -556,7 +556,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `CIM!Risk`  
 **Classification:** Advisory critique (warning)  
-**Source:** `mde/validation/cim/rules/governance-readiness.evl:165`
+**Source:** `methodology/modeling-framework/validation/cim/rules/governance-readiness.evl:165`
 
 ### Why this rule exists
 
@@ -594,7 +594,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 **Context:** `CIM!Assumption`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/cim/rules/governance-readiness.evl:177`
+**Source:** `methodology/modeling-framework/validation/cim/rules/governance-readiness.evl:177`
 
 ### Why this rule exists
 
@@ -632,7 +632,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `CIM!Assumption`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/cim/rules/governance-readiness.evl:185`
+**Source:** `methodology/modeling-framework/validation/cim/rules/governance-readiness.evl:185`
 
 ### Why this rule exists
 
@@ -672,7 +672,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `CIM!Hotspot`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/cim/rules/governance-readiness.evl:198`
+**Source:** `methodology/modeling-framework/validation/cim/rules/governance-readiness.evl:198`
 
 ### Why this rule exists
 
@@ -712,7 +712,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `CIM!Hotspot`  
 **Classification:** Advisory critique (warning)  
-**Source:** `mde/validation/cim/rules/governance-readiness.evl:207`
+**Source:** `methodology/modeling-framework/validation/cim/rules/governance-readiness.evl:207`
 
 ### Why this rule exists
 
@@ -752,7 +752,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 **Context:** `CIM!TransformationProfile`  
 **Classification:** Advisory critique (warning)  
-**Source:** `mde/validation/cim/rules/governance-readiness.evl:220`
+**Source:** `methodology/modeling-framework/validation/cim/rules/governance-readiness.evl:220`
 
 ### Why this rule exists
 
@@ -792,7 +792,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 **Context:** `CIM!TransformationProfile`  
 **Classification:** Advisory critique (warning)  
-**Source:** `mde/validation/cim/rules/governance-readiness.evl:229`
+**Source:** `methodology/modeling-framework/validation/cim/rules/governance-readiness.evl:229`
 
 ### Why this rule exists
 
@@ -830,7 +830,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 **Context:** `KERNEL!ProductionReadinessAssessment`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/cim/rules/governance-readiness.evl:245`
+**Source:** `methodology/modeling-framework/validation/cim/rules/governance-readiness.evl:245`
 
 ### Why this rule exists
 
@@ -870,7 +870,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `KERNEL!ProductionReadinessAssessment`  
 **Classification:** Advisory critique (warning)  
-**Source:** `mde/validation/cim/rules/governance-readiness.evl:257`
+**Source:** `methodology/modeling-framework/validation/cim/rules/governance-readiness.evl:257`
 
 ### Why this rule exists
 
@@ -908,7 +908,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 **Context:** `KERNEL!ReadinessFinding`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/cim/rules/governance-readiness.evl:269`
+**Source:** `methodology/modeling-framework/validation/cim/rules/governance-readiness.evl:269`
 
 ### Why this rule exists
 
@@ -948,7 +948,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `KERNEL!ReadinessCheck`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/cim/rules/governance-readiness.evl:283`
+**Source:** `methodology/modeling-framework/validation/cim/rules/governance-readiness.evl:283`
 
 ### Why this rule exists
 
@@ -988,7 +988,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `KERNEL!ManualDecision`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/cim/rules/governance-readiness.evl:296`
+**Source:** `methodology/modeling-framework/validation/cim/rules/governance-readiness.evl:296`
 
 ### Why this rule exists
 
@@ -1028,7 +1028,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `KERNEL!ManualDecision`  
 **Classification:** Advisory critique (warning)  
-**Source:** `mde/validation/cim/rules/governance-readiness.evl:305`
+**Source:** `methodology/modeling-framework/validation/cim/rules/governance-readiness.evl:305`
 
 ### Why this rule exists
 

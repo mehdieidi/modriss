@@ -16,10 +16,11 @@ final class PlatformTestFixtures {
 
   private static final Path REPOSITORY_ROOT = findRepositoryRoot();
   private static final byte[] CLIMATE_CIM_XMI =
-      loadBytes(REPOSITORY_ROOT.resolve("mde/samples/cim.xmi"));
-  private static final byte[] PIM_XMI = loadBytes(REPOSITORY_ROOT.resolve("mde/samples/pim.xmi"));
+      loadBytes(REPOSITORY_ROOT.resolve("methodology/modeling-framework/samples/cim.xmi"));
+  private static final byte[] PIM_XMI =
+      loadBytes(REPOSITORY_ROOT.resolve("methodology/modeling-framework/samples/pim.xmi"));
   private static final byte[] AWS_PSM_XMI =
-      loadBytes(REPOSITORY_ROOT.resolve("mde/samples/psm.xmi"));
+      loadBytes(REPOSITORY_ROOT.resolve("methodology/modeling-framework/samples/psm.xmi"));
 
   private PlatformTestFixtures() {}
 
@@ -60,8 +61,8 @@ final class PlatformTestFixtures {
   private static Path findRepositoryRoot() {
     Path current = Path.of(System.getProperty("user.dir")).toAbsolutePath().normalize();
     while (current != null) {
-      if (Files.isDirectory(current.resolve("mde/samples"))
-          && Files.isDirectory(current.resolve("mde/metamodels"))) {
+      if (Files.isDirectory(current.resolve("methodology/modeling-framework/samples"))
+          && Files.isDirectory(current.resolve("methodology/modeling-framework/metamodels"))) {
         return current;
       }
       current = current.getParent();

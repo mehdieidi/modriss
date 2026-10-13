@@ -28,7 +28,7 @@ RUN --mount=type=cache,id=modriss-maven,target=/root/.m2,sharing=locked \
 COPY apps/backend/src apps/backend/src
 COPY packages/java packages/java
 COPY config config
-COPY mde mde
+COPY methodology methodology
 RUN --mount=type=cache,id=modriss-maven,target=/root/.m2,sharing=locked \
     mvn -pl apps/backend -am package -Dmaven.test.skip=true
 
@@ -42,7 +42,7 @@ RUN useradd --system --uid 10001 modriss
 RUN mkdir -p /app/uploads /app/logs /app/storage \
     && chown -R modriss:modriss /app/uploads /app/logs /app/storage
 COPY --from=build /workspace/apps/backend/target/backend-*.jar /app/backend.jar
-COPY --from=build /workspace/mde /app/mde
+COPY --from=build /workspace/methodology /app/methodology
 USER 10001
 EXPOSE 8080
 ENTRYPOINT ["java", "-jar", "/app/backend.jar"]

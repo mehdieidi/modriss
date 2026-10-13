@@ -2,7 +2,7 @@
 
 Lambda rules check the parts of a function that AWS cannot safely infer: execution role, code location, runtime/handler pairing, package form, resource limits, environment-secret handling, event-source bounds, destinations, logging, and production safeguards.
 
-Source profile: `mde/validation/psm/rules/compute.evl`.
+Source profile: `methodology/modeling-framework/validation/psm/rules/compute.evl`.
 
 ## Reading these rules
 
@@ -14,7 +14,7 @@ Each entry preserves the actual EVL guard and check. Treat the guard as the appl
 
 **Context:** `AWSPSM!AwsLambdaFunction`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/psm/rules/compute.evl:9`
+**Source:** `methodology/modeling-framework/validation/psm/rules/compute.evl:9`
 
 ### Why this rule exists
 
@@ -52,7 +52,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `AWSPSM!AwsLambdaFunction`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/psm/rules/compute.evl:15`
+**Source:** `methodology/modeling-framework/validation/psm/rules/compute.evl:15`
 
 ### Why this rule exists
 
@@ -90,7 +90,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `AWSPSM!AwsLambdaFunction`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/psm/rules/compute.evl:21`
+**Source:** `methodology/modeling-framework/validation/psm/rules/compute.evl:21`
 
 ### Why this rule exists
 
@@ -128,7 +128,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `AWSPSM!AwsLambdaFunction`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/psm/rules/compute.evl:27`
+**Source:** `methodology/modeling-framework/validation/psm/rules/compute.evl:27`
 
 ### Why this rule exists
 
@@ -166,7 +166,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `AWSPSM!AwsLambdaFunction`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/psm/rules/compute.evl:33`
+**Source:** `methodology/modeling-framework/validation/psm/rules/compute.evl:33`
 
 ### Why this rule exists
 
@@ -204,7 +204,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `AWSPSM!AwsLambdaFunction`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/psm/rules/compute.evl:41`
+**Source:** `methodology/modeling-framework/validation/psm/rules/compute.evl:41`
 
 ### Why this rule exists
 
@@ -242,7 +242,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `AWSPSM!AwsLambdaFunction`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/psm/rules/compute.evl:47`
+**Source:** `methodology/modeling-framework/validation/psm/rules/compute.evl:47`
 
 ### Why this rule exists
 
@@ -280,7 +280,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `AWSPSM!AwsLambdaFunction`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/psm/rules/compute.evl:53`
+**Source:** `methodology/modeling-framework/validation/psm/rules/compute.evl:53`
 
 ### Why this rule exists
 
@@ -318,7 +318,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `AWSPSM!AwsLambdaFunction`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/psm/rules/compute.evl:59`
+**Source:** `methodology/modeling-framework/validation/psm/rules/compute.evl:59`
 
 ### Why this rule exists
 
@@ -356,7 +356,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `AWSPSM!AwsLambdaFunction`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/psm/rules/compute.evl:65`
+**Source:** `methodology/modeling-framework/validation/psm/rules/compute.evl:65`
 
 ### Why this rule exists
 
@@ -396,7 +396,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `AWSPSM!AwsLambdaFunction`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/psm/rules/compute.evl:72`
+**Source:** `methodology/modeling-framework/validation/psm/rules/compute.evl:72`
 
 ### Why this rule exists
 
@@ -436,7 +436,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `AWSPSM!AwsLambdaFunction`  
 **Classification:** Advisory critique (warning)  
-**Source:** `mde/validation/psm/rules/compute.evl:79`
+**Source:** `methodology/modeling-framework/validation/psm/rules/compute.evl:79`
 
 ### Why this rule exists
 
@@ -476,7 +476,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 **Context:** `AWSPSM!AwsLambdaFunction`  
 **Classification:** Advisory critique (warning)  
-**Source:** `mde/validation/psm/rules/compute.evl:86`
+**Source:** `methodology/modeling-framework/validation/psm/rules/compute.evl:86`
 
 ### Why this rule exists
 
@@ -516,7 +516,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 **Context:** `AWSPSM!AwsLambdaFunction`  
 **Classification:** Advisory critique (warning)  
-**Source:** `mde/validation/psm/rules/compute.evl:93`
+**Source:** `methodology/modeling-framework/validation/psm/rules/compute.evl:93`
 
 ### Why this rule exists
 
@@ -556,7 +556,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 **Context:** `AWSPSM!LambdaZipCodeConfig`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/psm/rules/compute.evl:104`
+**Source:** `methodology/modeling-framework/validation/psm/rules/compute.evl:104`
 
 ### Why this rule exists
 
@@ -594,7 +594,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `AWSPSM!LambdaZipCodeConfig`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/psm/rules/compute.evl:110`
+**Source:** `methodology/modeling-framework/validation/psm/rules/compute.evl:110`
 
 ### Why this rule exists
 
@@ -632,7 +632,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `AWSPSM!LambdaImageCodeConfig`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/psm/rules/compute.evl:121`
+**Source:** `methodology/modeling-framework/validation/psm/rules/compute.evl:121`
 
 ### Why this rule exists
 
@@ -670,7 +670,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `AWSPSM!LambdaEnvironmentVariable`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/psm/rules/compute.evl:130`
+**Source:** `methodology/modeling-framework/validation/psm/rules/compute.evl:130`
 
 ### Why this rule exists
 
@@ -708,7 +708,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `AWSPSM!LambdaEnvironmentVariable`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/psm/rules/compute.evl:136`
+**Source:** `methodology/modeling-framework/validation/psm/rules/compute.evl:136`
 
 ### Why this rule exists
 
@@ -748,7 +748,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `AWSPSM!LambdaEnvironmentVariable`  
 **Classification:** Advisory critique (warning)  
-**Source:** `mde/validation/psm/rules/compute.evl:143`
+**Source:** `methodology/modeling-framework/validation/psm/rules/compute.evl:143`
 
 ### Why this rule exists
 
@@ -788,7 +788,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 **Context:** `AWSPSM!LambdaDeadLetterConfig`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/psm/rules/compute.evl:153`
+**Source:** `methodology/modeling-framework/validation/psm/rules/compute.evl:153`
 
 ### Why this rule exists
 
@@ -826,7 +826,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `AWSPSM!LambdaEventSourceMapping`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/psm/rules/compute.evl:162`
+**Source:** `methodology/modeling-framework/validation/psm/rules/compute.evl:162`
 
 ### Why this rule exists
 
@@ -864,7 +864,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `AWSPSM!LambdaEventSourceMapping`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/psm/rules/compute.evl:168`
+**Source:** `methodology/modeling-framework/validation/psm/rules/compute.evl:168`
 
 ### Why this rule exists
 
@@ -902,7 +902,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `AWSPSM!LambdaEventSourceMapping`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/psm/rules/compute.evl:174`
+**Source:** `methodology/modeling-framework/validation/psm/rules/compute.evl:174`
 
 ### Why this rule exists
 
@@ -940,7 +940,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `AWSPSM!LambdaEventSourceMapping`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/psm/rules/compute.evl:180`
+**Source:** `methodology/modeling-framework/validation/psm/rules/compute.evl:180`
 
 ### Why this rule exists
 
@@ -980,7 +980,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `AWSPSM!SqsLambdaEventSourceMapping`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/psm/rules/compute.evl:190`
+**Source:** `methodology/modeling-framework/validation/psm/rules/compute.evl:190`
 
 ### Why this rule exists
 
@@ -1018,7 +1018,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `AWSPSM!SqsLambdaEventSourceMapping`  
 **Classification:** Advisory critique (warning)  
-**Source:** `mde/validation/psm/rules/compute.evl:199`
+**Source:** `methodology/modeling-framework/validation/psm/rules/compute.evl:199`
 
 ### Why this rule exists
 
@@ -1056,7 +1056,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 **Context:** `AWSPSM!SqsLambdaEventSourceMapping`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/psm/rules/compute.evl:205`
+**Source:** `methodology/modeling-framework/validation/psm/rules/compute.evl:205`
 
 ### Why this rule exists
 
@@ -1096,7 +1096,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `AWSPSM!DynamoDbStreamLambdaEventSourceMapping`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/psm/rules/compute.evl:215`
+**Source:** `methodology/modeling-framework/validation/psm/rules/compute.evl:215`
 
 ### Why this rule exists
 
@@ -1134,7 +1134,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `AWSPSM!DynamoDbStreamLambdaEventSourceMapping`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/psm/rules/compute.evl:221`
+**Source:** `methodology/modeling-framework/validation/psm/rules/compute.evl:221`
 
 ### Why this rule exists
 
@@ -1172,7 +1172,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `AWSPSM!LambdaProvisionedConcurrencyConfig`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/psm/rules/compute.evl:230`
+**Source:** `methodology/modeling-framework/validation/psm/rules/compute.evl:230`
 
 ### Why this rule exists
 
@@ -1210,7 +1210,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `AWSPSM!LambdaFunctionUrl`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/psm/rules/compute.evl:239`
+**Source:** `methodology/modeling-framework/validation/psm/rules/compute.evl:239`
 
 ### Why this rule exists
 

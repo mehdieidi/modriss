@@ -2,7 +2,7 @@
 
 Deployment rules check that services, deployment units, environments, and implementation profiles form a realizable architecture. They connect ownership to membership, production intent to approval, and code-generation settings to a coherent language/runtime toolchain.
 
-Source profile: `mde/validation/pim/rules/deployment.evl`.
+Source profile: `methodology/modeling-framework/validation/pim/rules/deployment.evl`.
 
 ## Reading these rules
 
@@ -14,7 +14,7 @@ Each entry preserves the actual EVL guard and check. Treat the guard as the appl
 
 **Context:** `PIM!ServerlessService`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/pim/rules/deployment.evl:8`
+**Source:** `methodology/modeling-framework/validation/pim/rules/deployment.evl:8`
 
 ### Why this rule exists
 
@@ -52,7 +52,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `PIM!ServerlessService`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/pim/rules/deployment.evl:14`
+**Source:** `methodology/modeling-framework/validation/pim/rules/deployment.evl:14`
 
 ### Why this rule exists
 
@@ -90,7 +90,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `PIM!ServerlessService`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/pim/rules/deployment.evl:20`
+**Source:** `methodology/modeling-framework/validation/pim/rules/deployment.evl:20`
 
 ### Why this rule exists
 
@@ -128,7 +128,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `PIM!ServerlessService`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/pim/rules/deployment.evl:26`
+**Source:** `methodology/modeling-framework/validation/pim/rules/deployment.evl:26`
 
 ### Why this rule exists
 
@@ -168,7 +168,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `PIM!ServerlessService`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/pim/rules/deployment.evl:33`
+**Source:** `methodology/modeling-framework/validation/pim/rules/deployment.evl:33`
 
 ### Why this rule exists
 
@@ -208,7 +208,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `PIM!ServerlessService`  
 **Classification:** Advisory critique (warning)  
-**Source:** `mde/validation/pim/rules/deployment.evl:40`
+**Source:** `methodology/modeling-framework/validation/pim/rules/deployment.evl:40`
 
 ### Why this rule exists
 
@@ -246,7 +246,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 **Context:** `PIM!DeploymentUnit`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/pim/rules/deployment.evl:50`
+**Source:** `methodology/modeling-framework/validation/pim/rules/deployment.evl:50`
 
 ### Why this rule exists
 
@@ -284,7 +284,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `PIM!DeploymentUnit`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/pim/rules/deployment.evl:56`
+**Source:** `methodology/modeling-framework/validation/pim/rules/deployment.evl:56`
 
 ### Why this rule exists
 
@@ -322,7 +322,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `PIM!DeploymentUnit`  
 **Classification:** Advisory critique (warning)  
-**Source:** `mde/validation/pim/rules/deployment.evl:62`
+**Source:** `methodology/modeling-framework/validation/pim/rules/deployment.evl:62`
 
 ### Why this rule exists
 
@@ -362,7 +362,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 **Context:** `PIM!Environment`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/pim/rules/deployment.evl:73`
+**Source:** `methodology/modeling-framework/validation/pim/rules/deployment.evl:73`
 
 ### Why this rule exists
 
@@ -402,7 +402,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `PIM!Environment`  
 **Classification:** Advisory critique (warning)  
-**Source:** `mde/validation/pim/rules/deployment.evl:80`
+**Source:** `methodology/modeling-framework/validation/pim/rules/deployment.evl:80`
 
 ### Why this rule exists
 
@@ -442,7 +442,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 **Context:** `PIM!ImplementationProfile`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/pim/rules/deployment.evl:91`
+**Source:** `methodology/modeling-framework/validation/pim/rules/deployment.evl:91`
 
 ### Why this rule exists
 
@@ -480,7 +480,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `PIM!ImplementationProfile`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/pim/rules/deployment.evl:97`
+**Source:** `methodology/modeling-framework/validation/pim/rules/deployment.evl:97`
 
 ### Why this rule exists
 
@@ -518,7 +518,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `PIM!ImplementationProfile`  
 **Classification:** Advisory critique (warning)  
-**Source:** `mde/validation/pim/rules/deployment.evl:103`
+**Source:** `methodology/modeling-framework/validation/pim/rules/deployment.evl:103`
 
 ### Why this rule exists
 
@@ -558,7 +558,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 **Context:** `PIM!ServiceElementMembership`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/pim/rules/deployment.evl:113`
+**Source:** `methodology/modeling-framework/validation/pim/rules/deployment.evl:113`
 
 ### Why this rule exists
 

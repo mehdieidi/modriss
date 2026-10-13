@@ -2,7 +2,7 @@
 
 Behavior rules distinguish commands, queries, events, errors, and conditions. Their purpose is to preserve business meaning at the point where it is easiest to lose: before functions, routes, event channels, retries, and authorization policies are generated.
 
-Source profile: `mde/validation/cim/rules/behavior.evl`.
+Source profile: `methodology/modeling-framework/validation/cim/rules/behavior.evl`.
 
 ## Reading these rules
 
@@ -14,7 +14,7 @@ Each entry preserves the actual EVL guard and check. Treat the guard as the appl
 
 **Context:** `CIM!Command`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/cim/rules/behavior.evl:8`
+**Source:** `methodology/modeling-framework/validation/cim/rules/behavior.evl:8`
 
 ### Why this rule exists
 
@@ -52,7 +52,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `CIM!Command`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/cim/rules/behavior.evl:16`
+**Source:** `methodology/modeling-framework/validation/cim/rules/behavior.evl:16`
 
 ### Why this rule exists
 
@@ -90,7 +90,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `CIM!Command`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/cim/rules/behavior.evl:24`
+**Source:** `methodology/modeling-framework/validation/cim/rules/behavior.evl:24`
 
 ### Why this rule exists
 
@@ -130,7 +130,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `CIM!Command`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/cim/rules/behavior.evl:33`
+**Source:** `methodology/modeling-framework/validation/cim/rules/behavior.evl:33`
 
 ### Why this rule exists
 
@@ -170,7 +170,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `CIM!Command`  
 **Classification:** Advisory critique (warning)  
-**Source:** `mde/validation/cim/rules/behavior.evl:42`
+**Source:** `methodology/modeling-framework/validation/cim/rules/behavior.evl:42`
 
 ### Why this rule exists
 
@@ -210,7 +210,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 **Context:** `CIM!Command`  
 **Classification:** Advisory critique (warning)  
-**Source:** `mde/validation/cim/rules/behavior.evl:51`
+**Source:** `methodology/modeling-framework/validation/cim/rules/behavior.evl:51`
 
 ### Why this rule exists
 
@@ -248,7 +248,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 **Context:** `CIM!Command`  
 **Classification:** Advisory critique (warning)  
-**Source:** `mde/validation/cim/rules/behavior.evl:59`
+**Source:** `methodology/modeling-framework/validation/cim/rules/behavior.evl:59`
 
 ### Why this rule exists
 
@@ -286,7 +286,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 **Context:** `CIM!Query`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/cim/rules/behavior.evl:96`
+**Source:** `methodology/modeling-framework/validation/cim/rules/behavior.evl:96`
 
 ### Why this rule exists
 
@@ -326,7 +326,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `CIM!Query`  
 **Classification:** Advisory critique (warning)  
-**Source:** `mde/validation/cim/rules/behavior.evl:105`
+**Source:** `methodology/modeling-framework/validation/cim/rules/behavior.evl:105`
 
 ### Why this rule exists
 
@@ -364,7 +364,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 **Context:** `CIM!Query`  
 **Classification:** Advisory critique (warning)  
-**Source:** `mde/validation/cim/rules/behavior.evl:115`
+**Source:** `methodology/modeling-framework/validation/cim/rules/behavior.evl:115`
 
 ### Why this rule exists
 
@@ -404,7 +404,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 **Context:** `CIM!Query`  
 **Classification:** Advisory critique (warning)  
-**Source:** `mde/validation/cim/rules/behavior.evl:124`
+**Source:** `methodology/modeling-framework/validation/cim/rules/behavior.evl:124`
 
 ### Why this rule exists
 
@@ -442,7 +442,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 **Context:** `CIM!BusinessEvent`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/cim/rules/behavior.evl:136`
+**Source:** `methodology/modeling-framework/validation/cim/rules/behavior.evl:136`
 
 ### Why this rule exists
 
@@ -480,7 +480,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `CIM!BusinessEvent`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/cim/rules/behavior.evl:146`
+**Source:** `methodology/modeling-framework/validation/cim/rules/behavior.evl:146`
 
 ### Why this rule exists
 
@@ -518,7 +518,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `CIM!BusinessEvent`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/cim/rules/behavior.evl:160`
+**Source:** `methodology/modeling-framework/validation/cim/rules/behavior.evl:160`
 
 ### Why this rule exists
 
@@ -556,7 +556,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `CIM!BusinessEvent`  
 **Classification:** Advisory critique (warning)  
-**Source:** `mde/validation/cim/rules/behavior.evl:168`
+**Source:** `methodology/modeling-framework/validation/cim/rules/behavior.evl:168`
 
 ### Why this rule exists
 
@@ -594,7 +594,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 **Context:** `CIM!BusinessEvent`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/cim/rules/behavior.evl:180`
+**Source:** `methodology/modeling-framework/validation/cim/rules/behavior.evl:180`
 
 ### Why this rule exists
 
@@ -634,7 +634,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `CIM!BusinessEvent`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/cim/rules/behavior.evl:189`
+**Source:** `methodology/modeling-framework/validation/cim/rules/behavior.evl:189`
 
 ### Why this rule exists
 
@@ -674,7 +674,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `CIM!BusinessEvent`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/cim/rules/behavior.evl:198`
+**Source:** `methodology/modeling-framework/validation/cim/rules/behavior.evl:198`
 
 ### Why this rule exists
 
@@ -712,7 +712,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `CIM!BusinessError`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/cim/rules/behavior.evl:210`
+**Source:** `methodology/modeling-framework/validation/cim/rules/behavior.evl:210`
 
 ### Why this rule exists
 
@@ -750,7 +750,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `CIM!BusinessError`  
 **Classification:** Advisory critique (warning)  
-**Source:** `mde/validation/cim/rules/behavior.evl:219`
+**Source:** `methodology/modeling-framework/validation/cim/rules/behavior.evl:219`
 
 ### Why this rule exists
 
@@ -790,7 +790,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 **Context:** `CIM!Condition`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/cim/rules/behavior.evl:232`
+**Source:** `methodology/modeling-framework/validation/cim/rules/behavior.evl:232`
 
 ### Why this rule exists
 
@@ -828,7 +828,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `CIM!Condition`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/cim/rules/behavior.evl:240`
+**Source:** `methodology/modeling-framework/validation/cim/rules/behavior.evl:240`
 
 ### Why this rule exists
 
@@ -868,7 +868,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `CIM!Condition`  
 **Classification:** Advisory critique (warning)  
-**Source:** `mde/validation/cim/rules/behavior.evl:249`
+**Source:** `methodology/modeling-framework/validation/cim/rules/behavior.evl:249`
 
 ### Why this rule exists
 

@@ -2,7 +2,7 @@
 
 Workflow rules protect the PIM execution graph: it must have entry and termination, reachable steps, valid transitions, unambiguous task actions, recoverable errors, and explicit compensation where the business needs it.
 
-Source profile: `mde/validation/pim/rules/workflow.evl`.
+Source profile: `methodology/modeling-framework/validation/pim/rules/workflow.evl`.
 
 ## Reading these rules
 
@@ -14,7 +14,7 @@ Each entry preserves the actual EVL guard and check. Treat the guard as the appl
 
 **Context:** `PIM!Workflow`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/pim/rules/workflow.evl:8`
+**Source:** `methodology/modeling-framework/validation/pim/rules/workflow.evl:8`
 
 ### Why this rule exists
 
@@ -52,7 +52,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `PIM!Workflow`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/pim/rules/workflow.evl:14`
+**Source:** `methodology/modeling-framework/validation/pim/rules/workflow.evl:14`
 
 ### Why this rule exists
 
@@ -90,7 +90,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `PIM!Workflow`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/pim/rules/workflow.evl:20`
+**Source:** `methodology/modeling-framework/validation/pim/rules/workflow.evl:20`
 
 ### Why this rule exists
 
@@ -128,7 +128,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `PIM!Workflow`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/pim/rules/workflow.evl:27`
+**Source:** `methodology/modeling-framework/validation/pim/rules/workflow.evl:27`
 
 ### Why this rule exists
 
@@ -166,7 +166,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `PIM!Workflow`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/pim/rules/workflow.evl:34`
+**Source:** `methodology/modeling-framework/validation/pim/rules/workflow.evl:34`
 
 ### Why this rule exists
 
@@ -204,7 +204,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `PIM!Workflow`  
 **Classification:** Advisory critique (warning)  
-**Source:** `mde/validation/pim/rules/workflow.evl:40`
+**Source:** `methodology/modeling-framework/validation/pim/rules/workflow.evl:40`
 
 ### Why this rule exists
 
@@ -244,7 +244,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 **Context:** `PIM!WorkflowStep`  
 **Classification:** Advisory critique (warning)  
-**Source:** `mde/validation/pim/rules/workflow.evl:51`
+**Source:** `methodology/modeling-framework/validation/pim/rules/workflow.evl:51`
 
 ### Why this rule exists
 
@@ -284,7 +284,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 **Context:** `PIM!WorkflowStep`  
 **Classification:** Advisory critique (warning)  
-**Source:** `mde/validation/pim/rules/workflow.evl:58`
+**Source:** `methodology/modeling-framework/validation/pim/rules/workflow.evl:58`
 
 ### Why this rule exists
 
@@ -324,7 +324,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 **Context:** `PIM!ChoiceStep`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/pim/rules/workflow.evl:69`
+**Source:** `methodology/modeling-framework/validation/pim/rules/workflow.evl:69`
 
 ### Why this rule exists
 
@@ -362,7 +362,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `PIM!SuccessEndStep`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/pim/rules/workflow.evl:79`
+**Source:** `methodology/modeling-framework/validation/pim/rules/workflow.evl:79`
 
 ### Why this rule exists
 
@@ -400,7 +400,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `PIM!FailureEndStep`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/pim/rules/workflow.evl:89`
+**Source:** `methodology/modeling-framework/validation/pim/rules/workflow.evl:89`
 
 ### Why this rule exists
 
@@ -438,7 +438,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `PIM!TaskStep`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/pim/rules/workflow.evl:99`
+**Source:** `methodology/modeling-framework/validation/pim/rules/workflow.evl:99`
 
 ### Why this rule exists
 
@@ -476,7 +476,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `PIM!WorkflowTransition`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/pim/rules/workflow.evl:109`
+**Source:** `methodology/modeling-framework/validation/pim/rules/workflow.evl:109`
 
 ### Why this rule exists
 
@@ -514,7 +514,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `PIM!WorkflowTransition`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/pim/rules/workflow.evl:116`
+**Source:** `methodology/modeling-framework/validation/pim/rules/workflow.evl:116`
 
 ### Why this rule exists
 
@@ -552,7 +552,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `PIM!WorkflowTransition`  
 **Classification:** Advisory critique (warning)  
-**Source:** `mde/validation/pim/rules/workflow.evl:123`
+**Source:** `methodology/modeling-framework/validation/pim/rules/workflow.evl:123`
 
 ### Why this rule exists
 
@@ -590,7 +590,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 **Context:** `PIM!ErrorHandler`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/pim/rules/workflow.evl:133`
+**Source:** `methodology/modeling-framework/validation/pim/rules/workflow.evl:133`
 
 ### Why this rule exists
 
@@ -630,7 +630,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `PIM!ErrorHandler`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/pim/rules/workflow.evl:140`
+**Source:** `methodology/modeling-framework/validation/pim/rules/workflow.evl:140`
 
 ### Why this rule exists
 
@@ -668,7 +668,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `PIM!ErrorHandler`  
 **Classification:** Advisory critique (warning)  
-**Source:** `mde/validation/pim/rules/workflow.evl:146`
+**Source:** `methodology/modeling-framework/validation/pim/rules/workflow.evl:146`
 
 ### Why this rule exists
 
@@ -706,7 +706,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 **Context:** `PIM!CompensationPolicy`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/pim/rules/workflow.evl:156`
+**Source:** `methodology/modeling-framework/validation/pim/rules/workflow.evl:156`
 
 ### Why this rule exists
 
@@ -744,7 +744,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `PIM!CompensationPolicy`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/pim/rules/workflow.evl:162`
+**Source:** `methodology/modeling-framework/validation/pim/rules/workflow.evl:162`
 
 ### Why this rule exists
 

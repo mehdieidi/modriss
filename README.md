@@ -84,9 +84,9 @@ From the repository root:
 | AWS emulator, Floci by default | <http://127.0.0.1:4566>                 |
 
 For a first workflow, register a user, create a project, and open the CIM workspace. Create a
-model or import [`mde/samples/cim.xmi`](mde/samples/cim.xmi), validate it, then generate and review
+model or import [`methodology/modeling-framework/samples/cim.xmi`](methodology/modeling-framework/samples/cim.xmi), validate it, then generate and review
 the PIM and PSM models. From PSM, select **Generate Artifacts** and inspect or download the
-generated project. The [climate-relief sample](mde/samples/climate-relief-grants/) offers a broader
+generated project. The [climate-relief sample](methodology/modeling-framework/samples/climate-relief-grants/) offers a broader
 end-to-end case study.
 
 See the [quickstart](docs/public-docs/docs/getting-started/quickstart.md) and
@@ -126,7 +126,7 @@ For operations guidance, see [deployment](docs/public-docs/docs/operations/deplo
 | Path                               | Purpose                                                                           |
 | ---------------------------------- | --------------------------------------------------------------------------------- |
 | [`apps/`](apps/)                   | Backend, modeling workbench, and landing site                                     |
-| [`mde/`](mde/)                     | Metamodels, semantics, transformations, generation, methodology, and samples      |
+| [`methodology/`](methodology/)     | Development process and modeling framework                                        |
 | [`packages/java/`](packages/java/) | Platform modules, MDE runners, assistant, and PostgreSQL adapter                  |
 | [`tools/`](tools/)                 | Standalone CLIs for Ecore compilation, validation, transformation, and generation |
 | [`docs/`](docs/)                   | Public documentation, API contracts, diagrams, and engineering references         |
@@ -135,15 +135,19 @@ For operations guidance, see [deployment](docs/public-docs/docs/operations/deplo
 
 The [repository layout reference](docs/public-docs/docs/reference/repository-layout.md) explains
 the module structure and Maven dependency direction. The formal sources of truth are located in
-[`mde/metamodels/`](mde/metamodels/), [`mde/validation/`](mde/validation/),
-[`mde/transformations/`](mde/transformations/), and
-[`mde/generation/awspsm-to-artifacts/`](mde/generation/awspsm-to-artifacts/).
+[`methodology/modeling-framework/metamodels/`](methodology/modeling-framework/metamodels/), [`methodology/modeling-framework/validation/`](methodology/modeling-framework/validation/),
+[`methodology/modeling-framework/transformations/`](methodology/modeling-framework/transformations/), and
+[`methodology/modeling-framework/generation/awspsm-to-artifacts/`](methodology/modeling-framework/generation/awspsm-to-artifacts/).
+
+[`methodology/process/`](methodology/process/) contains process definitions, the method library,
+and coverage matrices. [`methodology/modeling-framework/`](methodology/modeling-framework/)
+contains metamodels, notation, validation, transformations, generation, and samples.
 
 ## Documentation
 
 - [Public documentation](docs/public-docs/)
 - [Model-driven engineering concepts](docs/public-docs/docs/concepts/model-driven-engineering.md)
-- [Full-lifecycle software development process](mde/process/software-development-process.md)
+- [Full-lifecycle software development process](methodology/process/software-development-process.md)
 - [Capability-increment process](docs/public-docs/docs/guides/end-to-end-modeling-methodology.md)
 - [REST API reference](docs/public-docs/docs/reference/rest-api.md)
 - [OpenAPI contract](docs/api/openapi/openapi.yaml)

@@ -19,7 +19,7 @@ The category contains 3 EGX generation rules and 3 EGL templates.
 **Source context:** ``, `shared PSM generation context` 
 **Template:**`cicd/github-actions-validate.egl` 
 **Target path expression:**`".github/workflows/validate.yml"` 
-**EGX source:**`mde/generation/awspsm-to-artifacts/awspsm2artifacts.egx:732`
+**EGX source:**`methodology/modeling-framework/generation/awspsm-to-artifacts/awspsm2artifacts.egx:732`
 
 ### Why this generation rule exists
 
@@ -53,7 +53,7 @@ First evaluate the guard: `emitCtx().get("enableCiCd") = true`. If it is false, 
 
 ### Authoritative sources
 
-The scheduling, guard, target path, merge policy, and artifact record are defined at `mde/generation/awspsm-to-artifacts/awspsm2artifacts.egx:732`. The rendered content is defined by `cicd/github-actions-validate.egl` under `mde/generation/awspsm-to-artifacts/templates/`.
+The scheduling, guard, target path, merge policy, and artifact record are defined at `methodology/modeling-framework/generation/awspsm-to-artifacts/awspsm2artifacts.egx:732`. The rendered content is defined by `cicd/github-actions-validate.egl` under `methodology/modeling-framework/generation/awspsm-to-artifacts/templates/`.
 
 ---
 
@@ -62,7 +62,7 @@ The scheduling, guard, target path, merge policy, and artifact record are define
 **Source context:** ``, `shared PSM generation context` 
 **Template:**`cicd/github-actions-deploy-dev.egl` 
 **Target path expression:**`".github/workflows/deploy-dev.yml"` 
-**EGX source:**`mde/generation/awspsm-to-artifacts/awspsm2artifacts.egx:744`
+**EGX source:**`methodology/modeling-framework/generation/awspsm-to-artifacts/awspsm2artifacts.egx:744`
 
 ### Why this generation rule exists
 
@@ -96,7 +96,7 @@ First evaluate the guard: `emitCtx().get("enableCiCd") = true`. If it is false, 
 
 ### Authoritative sources
 
-The scheduling, guard, target path, merge policy, and artifact record are defined at `mde/generation/awspsm-to-artifacts/awspsm2artifacts.egx:744`. The rendered content is defined by `cicd/github-actions-deploy-dev.egl` under `mde/generation/awspsm-to-artifacts/templates/`.
+The scheduling, guard, target path, merge policy, and artifact record are defined at `methodology/modeling-framework/generation/awspsm-to-artifacts/awspsm2artifacts.egx:744`. The rendered content is defined by `cicd/github-actions-deploy-dev.egl` under `methodology/modeling-framework/generation/awspsm-to-artifacts/templates/`.
 
 ---
 
@@ -105,7 +105,7 @@ The scheduling, guard, target path, merge policy, and artifact record are define
 **Source context:** ``, `shared PSM generation context` 
 **Template:**`cicd/github-actions-deploy-prod.egl` 
 **Target path expression:**`".github/workflows/deploy-prod.yml"` 
-**EGX source:**`mde/generation/awspsm-to-artifacts/awspsm2artifacts.egx:756`
+**EGX source:**`methodology/modeling-framework/generation/awspsm-to-artifacts/awspsm2artifacts.egx:756`
 
 ### Why this generation rule exists
 
@@ -139,7 +139,7 @@ First evaluate the guard: `emitCtx().get("enableCiCd") = true`. If it is false, 
 
 ### Authoritative sources
 
-The scheduling, guard, target path, merge policy, and artifact record are defined at `mde/generation/awspsm-to-artifacts/awspsm2artifacts.egx:756`. The rendered content is defined by `cicd/github-actions-deploy-prod.egl` under `mde/generation/awspsm-to-artifacts/templates/`.
+The scheduling, guard, target path, merge policy, and artifact record are defined at `methodology/modeling-framework/generation/awspsm-to-artifacts/awspsm2artifacts.egx:756`. The rendered content is defined by `cicd/github-actions-deploy-prod.egl` under `methodology/modeling-framework/generation/awspsm-to-artifacts/templates/`.
 
 ---
 

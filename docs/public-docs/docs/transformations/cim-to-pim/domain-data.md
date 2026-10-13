@@ -2,7 +2,7 @@
 
 Domain-data refinement turns concepts into the schemas and stores that PIM behavior can actually use. Entities become object-shaped schemas, value objects become reusable nested structures, aggregates become stores, and classification/privacy/compliance decisions become data-protection policies. Relationship fields and access consequences are completed after the initial objects exist.
 
-Source module: `mde/transformations/cim-to-pim/domain-data.etl`.
+Source module: `methodology/modeling-framework/transformations/cim-to-pim/domain-data.etl`.
 
 ## Reading this page
 
@@ -14,12 +14,12 @@ A transformation rule determines whether a source element contributes to the tar
 
 Supporting operations also shape the transformation. They derive defaults, create secondary resources, cache correspondences, and resolve relationships after the main rule runs.
 
-| Operation                        | Role                                        | Source                                              |
-| -------------------------------- | ------------------------------------------- | --------------------------------------------------- |
-| `aggregateItems`                 | Computes aggregate items.                   | `mde/transformations/cim-to-pim/domain-data.etl:9`  |
-| `aggregateContainsSensitiveData` | Computes aggregate contains sensitive data. | `mde/transformations/cim-to-pim/domain-data.etl:25` |
-| `aggregateContainsPersonalData`  | Computes aggregate contains personal data.  | `mde/transformations/cim-to-pim/domain-data.etl:30` |
-| `storageFieldNameFor`            | Computes storage field name for.            | `mde/transformations/cim-to-pim/domain-data.etl:35` |
+| Operation                        | Role                                        | Source                                                                         |
+| -------------------------------- | ------------------------------------------- | ------------------------------------------------------------------------------ |
+| `aggregateItems`                 | Computes aggregate items.                   | `methodology/modeling-framework/transformations/cim-to-pim/domain-data.etl:9`  |
+| `aggregateContainsSensitiveData` | Computes aggregate contains sensitive data. | `methodology/modeling-framework/transformations/cim-to-pim/domain-data.etl:25` |
+| `aggregateContainsPersonalData`  | Computes aggregate contains personal data.  | `methodology/modeling-framework/transformations/cim-to-pim/domain-data.etl:30` |
+| `storageFieldNameFor`            | Computes storage field name for.            | `methodology/modeling-framework/transformations/cim-to-pim/domain-data.etl:35` |
 
 ---
 
@@ -27,7 +27,7 @@ Supporting operations also shape the transformation. They derive defaults, creat
 
 **Source:** `e` to `CIMDOMAIN!DomainEntity`  
 **Target:** `s` to `CONTRACTS!Schema`  
-**Source location:** `mde/transformations/cim-to-pim/domain-data.etl:40`
+**Source location:** `methodology/modeling-framework/transformations/cim-to-pim/domain-data.etl:40`
 
 ### Why this rule exists
 
@@ -55,7 +55,7 @@ The trace record is the best first diagnostic: it tells you whether the target w
 
 ### Authoritative source
 
-See the complete ETL rule at `mde/transformations/cim-to-pim/domain-data.etl:40`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
+See the complete ETL rule at `methodology/modeling-framework/transformations/cim-to-pim/domain-data.etl:40`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
 
 ---
 
@@ -63,7 +63,7 @@ See the complete ETL rule at `mde/transformations/cim-to-pim/domain-data.etl:40`
 
 **Source:** `v` to `CIMDOMAIN!ValueObject`  
 **Target:** `s` to `CONTRACTS!Schema`  
-**Source location:** `mde/transformations/cim-to-pim/domain-data.etl:75`
+**Source location:** `methodology/modeling-framework/transformations/cim-to-pim/domain-data.etl:75`
 
 ### Why this rule exists
 
@@ -90,7 +90,7 @@ The trace record is the best first diagnostic: it tells you whether the target w
 
 ### Authoritative source
 
-See the complete ETL rule at `mde/transformations/cim-to-pim/domain-data.etl:75`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
+See the complete ETL rule at `methodology/modeling-framework/transformations/cim-to-pim/domain-data.etl:75`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
 
 ---
 
@@ -98,7 +98,7 @@ See the complete ETL rule at `mde/transformations/cim-to-pim/domain-data.etl:75`
 
 **Source:** `rel` to `CIMDOMAIN!DomainRelationship`  
 **Target:** `field` to `CONTRACTS!SchemaField`, `constraint` to `CONTRACTS!SchemaConstraint`  
-**Source location:** `mde/transformations/cim-to-pim/domain-data.etl:95`
+**Source location:** `methodology/modeling-framework/transformations/cim-to-pim/domain-data.etl:95`
 
 ### Why this rule exists
 
@@ -127,7 +127,7 @@ The trace record is the best first diagnostic: it tells you whether the target w
 
 ### Authoritative source
 
-See the complete ETL rule at `mde/transformations/cim-to-pim/domain-data.etl:95`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
+See the complete ETL rule at `methodology/modeling-framework/transformations/cim-to-pim/domain-data.etl:95`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
 
 ---
 
@@ -135,7 +135,7 @@ See the complete ETL rule at `mde/transformations/cim-to-pim/domain-data.etl:95`
 
 **Source:** `ag` to `CIMDOMAIN!AggregateCandidate`  
 **Target:** `store` to `DATA!DataStore`, `dataModel` to `DATA!DataModel`  
-**Source location:** `mde/transformations/cim-to-pim/domain-data.etl:175`
+**Source location:** `methodology/modeling-framework/transformations/cim-to-pim/domain-data.etl:175`
 
 ### Why this rule exists
 
@@ -165,7 +165,7 @@ The trace record is the best first diagnostic: it tells you whether the target w
 
 ### Authoritative source
 
-See the complete ETL rule at `mde/transformations/cim-to-pim/domain-data.etl:175`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
+See the complete ETL rule at `methodology/modeling-framework/transformations/cim-to-pim/domain-data.etl:175`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
 
 ---
 
@@ -173,7 +173,7 @@ See the complete ETL rule at `mde/transformations/cim-to-pim/domain-data.etl:175
 
 **Source:** `dc` to `CIMDOMAIN!DataClassification`  
 **Target:** `pol` to `POLICY!DataProtectionPolicy`  
-**Source location:** `mde/transformations/cim-to-pim/domain-data.etl:262`
+**Source location:** `methodology/modeling-framework/transformations/cim-to-pim/domain-data.etl:262`
 
 ### Why this rule exists
 
@@ -201,7 +201,7 @@ The trace record is the best first diagnostic: it tells you whether the target w
 
 ### Authoritative source
 
-See the complete ETL rule at `mde/transformations/cim-to-pim/domain-data.etl:262`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
+See the complete ETL rule at `methodology/modeling-framework/transformations/cim-to-pim/domain-data.etl:262`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
 
 ---
 
@@ -209,7 +209,7 @@ See the complete ETL rule at `mde/transformations/cim-to-pim/domain-data.etl:262
 
 **Source:** `pc` to `CIMGOV!PrivacyConstraint`  
 **Target:** `dp` to `POLICY!DataProtectionPolicy`, `rp` to `POLICY!RetentionPolicy`  
-**Source location:** `mde/transformations/cim-to-pim/domain-data.etl:288`
+**Source location:** `methodology/modeling-framework/transformations/cim-to-pim/domain-data.etl:288`
 
 ### Why this rule exists
 
@@ -238,7 +238,7 @@ The trace record is the best first diagnostic: it tells you whether the target w
 
 ### Authoritative source
 
-See the complete ETL rule at `mde/transformations/cim-to-pim/domain-data.etl:288`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
+See the complete ETL rule at `methodology/modeling-framework/transformations/cim-to-pim/domain-data.etl:288`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
 
 ---
 
@@ -246,7 +246,7 @@ See the complete ETL rule at `mde/transformations/cim-to-pim/domain-data.etl:288
 
 **Source:** `cc` to `CIMGOV!ComplianceConstraint`  
 **Target:** `pol` to `POLICY!CompliancePolicy`  
-**Source location:** `mde/transformations/cim-to-pim/domain-data.etl:328`
+**Source location:** `methodology/modeling-framework/transformations/cim-to-pim/domain-data.etl:328`
 
 ### Why this rule exists
 
@@ -274,6 +274,6 @@ The trace record is the best first diagnostic: it tells you whether the target w
 
 ### Authoritative source
 
-See the complete ETL rule at `mde/transformations/cim-to-pim/domain-data.etl:328`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
+See the complete ETL rule at `methodology/modeling-framework/transformations/cim-to-pim/domain-data.etl:328`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
 
 ---

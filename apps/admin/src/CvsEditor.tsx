@@ -34,21 +34,21 @@ const levels = ["cim", "pim", "psm"];
 const metamodel: Record<string, any> = {
   cim: {
     displayName: "CIM",
-    ecore: "mde/metamodels/cim/cim-combined.ecore",
+    ecore: "methodology/modeling-framework/metamodels/cim/cim-combined.ecore",
     nsUri: "https://modriss.org/cim/1.0",
     rootEClass: "CIMModel",
     modelLevel: "CIM",
   },
   pim: {
     displayName: "PIM",
-    ecore: "mde/metamodels/pim/pim-combined.ecore",
+    ecore: "methodology/modeling-framework/metamodels/pim/pim-combined.ecore",
     nsUri: "https://modriss.org/pim/1.0",
     rootEClass: "PIMModel",
     modelLevel: "PIM",
   },
   psm: {
     displayName: "PSM",
-    ecore: "mde/metamodels/psm/psm-combined.ecore",
+    ecore: "methodology/modeling-framework/metamodels/psm/psm-combined.ecore",
     nsUri: "https://modriss.org/psm/aws/1.0",
     rootEClass: "PSMModel",
     modelLevel: "PSM",

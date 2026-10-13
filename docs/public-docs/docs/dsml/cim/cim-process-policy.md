@@ -1,6 +1,6 @@
 # CIM processes and policies
 
-Source: `mde/metamodels/cim/cim-process-policy.emf`.
+Source: `methodology/modeling-framework/metamodels/cim/cim-process-policy.emf`.
 
 The process-policy module expresses progression through business work. A `BusinessProcess` owns typed steps and transitions. The step subclasses distinguish commands, queries, events, policies, human work, external interactions, decisions, waits, and the process boundary. `Policy` and `DecisionTable` express rules that can influence those paths. `ExceptionScenario` and `TemporalConstraint` keep failure and time behavior explicit.
 

@@ -2,7 +2,7 @@
 
 DynamoDB and S3 rules validate key coverage, capacity-mode consistency, index definitions, TTL/encryption/backup choices, public-access blocking, notifications, and replication. These checks are aimed at preventing deployable templates that still lose or expose data.
 
-Source profile: `mde/validation/psm/rules/storage.evl`.
+Source profile: `methodology/modeling-framework/validation/psm/rules/storage.evl`.
 
 ## Reading these rules
 
@@ -14,7 +14,7 @@ Each entry preserves the actual EVL guard and check. Treat the guard as the appl
 
 **Context:** `AWSPSM!DynamoDbTable`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/psm/rules/storage.evl:8`
+**Source:** `methodology/modeling-framework/validation/psm/rules/storage.evl:8`
 
 ### Why this rule exists
 
@@ -52,7 +52,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `AWSPSM!DynamoDbTable`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/psm/rules/storage.evl:15`
+**Source:** `methodology/modeling-framework/validation/psm/rules/storage.evl:15`
 
 ### Why this rule exists
 
@@ -90,7 +90,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `AWSPSM!DynamoDbTable`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/psm/rules/storage.evl:22`
+**Source:** `methodology/modeling-framework/validation/psm/rules/storage.evl:22`
 
 ### Why this rule exists
 
@@ -128,7 +128,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `AWSPSM!DynamoDbTable`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/psm/rules/storage.evl:31`
+**Source:** `methodology/modeling-framework/validation/psm/rules/storage.evl:31`
 
 ### Why this rule exists
 
@@ -168,7 +168,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `AWSPSM!DynamoDbTable`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/psm/rules/storage.evl:38`
+**Source:** `methodology/modeling-framework/validation/psm/rules/storage.evl:38`
 
 ### Why this rule exists
 
@@ -208,7 +208,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `AWSPSM!DynamoDbTable`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/psm/rules/storage.evl:45`
+**Source:** `methodology/modeling-framework/validation/psm/rules/storage.evl:45`
 
 ### Why this rule exists
 
@@ -248,7 +248,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `AWSPSM!DynamoDbTable`  
 **Classification:** Advisory critique (warning)  
-**Source:** `mde/validation/psm/rules/storage.evl:52`
+**Source:** `methodology/modeling-framework/validation/psm/rules/storage.evl:52`
 
 ### Why this rule exists
 
@@ -288,7 +288,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 **Context:** `AWSPSM!DynamoDbTable`  
 **Classification:** Advisory critique (warning)  
-**Source:** `mde/validation/psm/rules/storage.evl:59`
+**Source:** `methodology/modeling-framework/validation/psm/rules/storage.evl:59`
 
 ### Why this rule exists
 
@@ -328,7 +328,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 **Context:** `AWSPSM!DynamoDbGlobalSecondaryIndex`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/psm/rules/storage.evl:69`
+**Source:** `methodology/modeling-framework/validation/psm/rules/storage.evl:69`
 
 ### Why this rule exists
 
@@ -368,7 +368,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `AWSPSM!DynamoDbGlobalSecondaryIndex`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/psm/rules/storage.evl:76`
+**Source:** `methodology/modeling-framework/validation/psm/rules/storage.evl:76`
 
 ### Why this rule exists
 
@@ -408,7 +408,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `AWSPSM!DynamoDbTimeToLiveSpecification`  
 **Classification:** Advisory critique (warning)  
-**Source:** `mde/validation/psm/rules/storage.evl:86`
+**Source:** `methodology/modeling-framework/validation/psm/rules/storage.evl:86`
 
 ### Why this rule exists
 
@@ -448,7 +448,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 **Context:** `AWSPSM!S3Bucket`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/psm/rules/storage.evl:96`
+**Source:** `methodology/modeling-framework/validation/psm/rules/storage.evl:96`
 
 ### Why this rule exists
 
@@ -488,7 +488,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `AWSPSM!S3Bucket`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/psm/rules/storage.evl:103`
+**Source:** `methodology/modeling-framework/validation/psm/rules/storage.evl:103`
 
 ### Why this rule exists
 
@@ -528,7 +528,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `AWSPSM!S3Bucket`  
 **Classification:** Advisory critique (warning)  
-**Source:** `mde/validation/psm/rules/storage.evl:110`
+**Source:** `methodology/modeling-framework/validation/psm/rules/storage.evl:110`
 
 ### Why this rule exists
 
@@ -568,7 +568,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 **Context:** `AWSPSM!S3Bucket`  
 **Classification:** Advisory critique (warning)  
-**Source:** `mde/validation/psm/rules/storage.evl:117`
+**Source:** `methodology/modeling-framework/validation/psm/rules/storage.evl:117`
 
 ### Why this rule exists
 
@@ -608,7 +608,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 **Context:** `AWSPSM!S3BucketEncryption`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/psm/rules/storage.evl:127`
+**Source:** `methodology/modeling-framework/validation/psm/rules/storage.evl:127`
 
 ### Why this rule exists
 
@@ -648,7 +648,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `AWSPSM!S3NotificationRule`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/psm/rules/storage.evl:137`
+**Source:** `methodology/modeling-framework/validation/psm/rules/storage.evl:137`
 
 ### Why this rule exists
 
@@ -686,7 +686,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `AWSPSM!S3ReplicationConfiguration`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/psm/rules/storage.evl:146`
+**Source:** `methodology/modeling-framework/validation/psm/rules/storage.evl:146`
 
 ### Why this rule exists
 

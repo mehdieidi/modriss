@@ -65,7 +65,8 @@ public final class LexicalRetrievalIndex {
 
   private static Path discoverRepositoryRoot(Path start) {
     for (Path current = start; current != null; current = current.getParent()) {
-      if (Files.isDirectory(current.resolve("mde")) && Files.isDirectory(current.resolve("docs"))) {
+      if (Files.isDirectory(current.resolve("methodology"))
+          && Files.isDirectory(current.resolve("docs"))) {
         return current;
       }
     }

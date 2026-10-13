@@ -1,6 +1,6 @@
 # CIM governance
 
-Source: `mde/metamodels/cim/cim-governance.emf`.
+Source: `methodology/modeling-framework/metamodels/cim/cim-governance.emf`.
 
 Governance classes turn quality and control expectations into model elements that can constrain later architecture. They remain at the business level. A security constraint says what must be protected and why. A privacy constraint says why information may be processed, for how long, and with which data-subject obligations. A compliance constraint identifies the control and evidence. The CIM-to-PIM transformation then chooses concrete policy, security, data-protection, resilience, observability, and contract structures.
 

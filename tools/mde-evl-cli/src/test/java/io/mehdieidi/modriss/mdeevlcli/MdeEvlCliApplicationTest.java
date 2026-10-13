@@ -40,8 +40,8 @@ final class MdeEvlCliApplicationTest {
   private static Path findRepositoryRoot() {
     Path current = Path.of(System.getProperty("user.dir")).toAbsolutePath().normalize();
     while (current != null) {
-      if (Files.isDirectory(current.resolve("mde/metamodels"))
-          && Files.isDirectory(current.resolve("mde/validation/psm"))) {
+      if (Files.isDirectory(current.resolve("methodology/modeling-framework/metamodels"))
+          && Files.isDirectory(current.resolve("methodology/modeling-framework/validation/psm"))) {
         return current;
       }
       current = current.getParent();
@@ -108,7 +108,8 @@ final class MdeEvlCliApplicationTest {
     Document document =
         documentBuilderFactory
             .newDocumentBuilder()
-            .parse(REPOSITORY_ROOT.resolve("mde/samples/psm.xmi").toFile());
+            .parse(
+                REPOSITORY_ROOT.resolve("methodology/modeling-framework/samples/psm.xmi").toFile());
     NodeList stages = document.getDocumentElement().getElementsByTagName("stages");
     boolean changed = false;
     for (int i = 0; i < stages.getLength(); i++) {

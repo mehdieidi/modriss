@@ -12,7 +12,10 @@ import java.util.Map;
 import tools.jackson.core.type.TypeReference;
 import tools.jackson.databind.ObjectMapper;
 
-/** Loads and validates Concrete Visual Syntax (CVS) v2 documents from {@code mde/notation/}. */
+/**
+ * Loads and validates Concrete Visual Syntax (CVS) v2 documents from {@code
+ * methodology/modeling-framework/notation/}.
+ */
 public final class CvsV2Loader {
 
   private final ObjectMapper objectMapper = new ObjectMapper();
@@ -36,7 +39,8 @@ public final class CvsV2Loader {
    * Returns whether a CVS v2 file exists for the given level.
    *
    * @param level lowercase level key
-   * @return {@code true} when {@code mde/notation/{level}.cvs.json} exists
+   * @return {@code true} when {@code methodology/modeling-framework/notation/{level}.cvs.json}
+   *     exists
    */
   public boolean hasCvs(String level) {
     return Files.isRegularFile(cvsFile(level));

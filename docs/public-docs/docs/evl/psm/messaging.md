@@ -2,7 +2,7 @@
 
 SQS and SNS rules enforce AWS naming, FIFO semantics, timing ranges, redrive behavior, encryption expectations, subscription targets, and filter completeness. They protect the operational contract that sits below the provider-independent channel model.
 
-Source profile: `mde/validation/psm/rules/messaging.evl`.
+Source profile: `methodology/modeling-framework/validation/psm/rules/messaging.evl`.
 
 ## Reading these rules
 
@@ -14,7 +14,7 @@ Each entry preserves the actual EVL guard and check. Treat the guard as the appl
 
 **Context:** `AWSPSM!SqsQueue`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/psm/rules/messaging.evl:8`
+**Source:** `methodology/modeling-framework/validation/psm/rules/messaging.evl:8`
 
 ### Why this rule exists
 
@@ -54,7 +54,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `AWSPSM!SqsQueue`  
 **Classification:** Advisory critique (warning)  
-**Source:** `mde/validation/psm/rules/messaging.evl:15`
+**Source:** `methodology/modeling-framework/validation/psm/rules/messaging.evl:15`
 
 ### Why this rule exists
 
@@ -94,7 +94,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 **Context:** `AWSPSM!SqsQueue`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/psm/rules/messaging.evl:22`
+**Source:** `methodology/modeling-framework/validation/psm/rules/messaging.evl:22`
 
 ### Why this rule exists
 
@@ -132,7 +132,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `AWSPSM!SqsQueue`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/psm/rules/messaging.evl:31`
+**Source:** `methodology/modeling-framework/validation/psm/rules/messaging.evl:31`
 
 ### Why this rule exists
 
@@ -170,7 +170,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `AWSPSM!SqsQueue`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/psm/rules/messaging.evl:37`
+**Source:** `methodology/modeling-framework/validation/psm/rules/messaging.evl:37`
 
 ### Why this rule exists
 
@@ -210,7 +210,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `AWSPSM!SqsQueue`  
 **Classification:** Advisory critique (warning)  
-**Source:** `mde/validation/psm/rules/messaging.evl:47`
+**Source:** `methodology/modeling-framework/validation/psm/rules/messaging.evl:47`
 
 ### Why this rule exists
 
@@ -250,7 +250,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 **Context:** `AWSPSM!SnsTopic`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/psm/rules/messaging.evl:57`
+**Source:** `methodology/modeling-framework/validation/psm/rules/messaging.evl:57`
 
 ### Why this rule exists
 
@@ -290,7 +290,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `AWSPSM!SnsTopic`  
 **Classification:** Advisory critique (warning)  
-**Source:** `mde/validation/psm/rules/messaging.evl:64`
+**Source:** `methodology/modeling-framework/validation/psm/rules/messaging.evl:64`
 
 ### Why this rule exists
 
@@ -330,7 +330,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 **Context:** `AWSPSM!SnsSubscription`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/psm/rules/messaging.evl:74`
+**Source:** `methodology/modeling-framework/validation/psm/rules/messaging.evl:74`
 
 ### Why this rule exists
 
@@ -368,7 +368,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `AWSPSM!SnsSubscription`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/psm/rules/messaging.evl:80`
+**Source:** `methodology/modeling-framework/validation/psm/rules/messaging.evl:80`
 
 ### Why this rule exists
 
@@ -408,7 +408,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `AWSPSM!SnsSubscription`  
 **Classification:** Advisory critique (warning)  
-**Source:** `mde/validation/psm/rules/messaging.evl:87`
+**Source:** `methodology/modeling-framework/validation/psm/rules/messaging.evl:87`
 
 ### Why this rule exists
 
@@ -448,7 +448,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 **Context:** `AWSPSM!SnsFilterRule`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/psm/rules/messaging.evl:97`
+**Source:** `methodology/modeling-framework/validation/psm/rules/messaging.evl:97`
 
 ### Why this rule exists
 

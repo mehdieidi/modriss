@@ -103,7 +103,7 @@ Operational alert rules and response procedures for MODRISS production deploymen
 ### MDE job failures
 
 1. Query failed jobs via API or `mde_jobs` table; read `mde_job_diagnostics`.
-2. Reproduce with sample models under `mde/samples/` in a staging environment.
+2. Reproduce with sample models under `methodology/modeling-framework/samples/` in a staging environment.
 3. Check Epsilon runner timeouts (`MODRISS_MDE_EXECUTION_TIMEOUT`, `MODRISS_MDE_JOB_TIMEOUT`).
 4. File a bug if validation/transformation rules regressed; communicate workaround to users.
 

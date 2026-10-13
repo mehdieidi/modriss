@@ -31,7 +31,9 @@ public final class AwsPsmToArtifactsCommand implements Callable<Integer> {
   @Option(
       names = "--repo-root",
       required = true,
-      description = "Repository root containing mde/metamodels and mde/generation.")
+      description =
+          "Repository root containing methodology/modeling-framework/metamodels and"
+              + " methodology/modeling-framework/generation.")
   private Path repositoryRoot;
 
   @Option(names = "--source-model", required = true, description = "Input PSM XMI model file.")

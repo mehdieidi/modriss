@@ -4,7 +4,7 @@ Enumerations give recurring architectural decisions a stable vocabulary across e
 
 Choose a literal for the meaning it records at PIM level. A later transformation may map several literals to the same provider resource, reject a combination, or retain it as metadata. `UNKNOWN` and `UNDECIDED` preserve genuine open questions; they should not be used as convenient substitutes for analysis that has already been completed.
 
-Source: `mde/metamodels/pim/pim-types.emf`.
+Source: `methodology/modeling-framework/metamodels/pim/pim-types.emf`.
 
 ## Enumeration values
 

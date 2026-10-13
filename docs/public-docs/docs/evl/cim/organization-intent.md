@@ -2,7 +2,7 @@
 
 Organization and intent rules ask whether the business problem is specific enough to guide architecture. Requirements need observable fit, goals need measurable success, actors and systems need explicit trust expectations, and capabilities need ownership and behavior.
 
-Source profile: `mde/validation/cim/rules/organization-intent.evl`.
+Source profile: `methodology/modeling-framework/validation/cim/rules/organization-intent.evl`.
 
 ## Reading these rules
 
@@ -14,7 +14,7 @@ Each entry preserves the actual EVL guard and check. Treat the guard as the appl
 
 **Context:** `CIM!Requirement`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/cim/rules/organization-intent.evl:8`
+**Source:** `methodology/modeling-framework/validation/cim/rules/organization-intent.evl:8`
 
 ### Why this rule exists
 
@@ -52,7 +52,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `CIM!Requirement`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/cim/rules/organization-intent.evl:16`
+**Source:** `methodology/modeling-framework/validation/cim/rules/organization-intent.evl:16`
 
 ### Why this rule exists
 
@@ -92,7 +92,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `CIM!Requirement`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/cim/rules/organization-intent.evl:25`
+**Source:** `methodology/modeling-framework/validation/cim/rules/organization-intent.evl:25`
 
 ### Why this rule exists
 
@@ -130,7 +130,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `CIM!Requirement`  
 **Classification:** Advisory critique (warning)  
-**Source:** `mde/validation/cim/rules/organization-intent.evl:34`
+**Source:** `methodology/modeling-framework/validation/cim/rules/organization-intent.evl:34`
 
 ### Why this rule exists
 
@@ -168,7 +168,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 **Context:** `CIM!AcceptanceCriterion`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/cim/rules/organization-intent.evl:46`
+**Source:** `methodology/modeling-framework/validation/cim/rules/organization-intent.evl:46`
 
 ### Why this rule exists
 
@@ -206,7 +206,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `CIM!AcceptanceCriterion`  
 **Classification:** Advisory critique (warning)  
-**Source:** `mde/validation/cim/rules/organization-intent.evl:55`
+**Source:** `methodology/modeling-framework/validation/cim/rules/organization-intent.evl:55`
 
 ### Why this rule exists
 
@@ -246,7 +246,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 **Context:** `CIM!BusinessGoal`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/cim/rules/organization-intent.evl:68`
+**Source:** `methodology/modeling-framework/validation/cim/rules/organization-intent.evl:68`
 
 ### Why this rule exists
 
@@ -284,7 +284,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `CIM!BusinessGoal`  
 **Classification:** Advisory critique (warning)  
-**Source:** `mde/validation/cim/rules/organization-intent.evl:76`
+**Source:** `methodology/modeling-framework/validation/cim/rules/organization-intent.evl:76`
 
 ### Why this rule exists
 
@@ -324,7 +324,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 **Context:** `CIM!BusinessGoal`  
 **Classification:** Advisory critique (warning)  
-**Source:** `mde/validation/cim/rules/organization-intent.evl:85`
+**Source:** `methodology/modeling-framework/validation/cim/rules/organization-intent.evl:85`
 
 ### Why this rule exists
 
@@ -362,7 +362,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 **Context:** `CIM!KPI`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/cim/rules/organization-intent.evl:97`
+**Source:** `methodology/modeling-framework/validation/cim/rules/organization-intent.evl:97`
 
 ### Why this rule exists
 
@@ -400,7 +400,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `CIM!KPI`  
 **Classification:** Advisory critique (warning)  
-**Source:** `mde/validation/cim/rules/organization-intent.evl:106`
+**Source:** `methodology/modeling-framework/validation/cim/rules/organization-intent.evl:106`
 
 ### Why this rule exists
 
@@ -438,7 +438,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 **Context:** `CIM!KPI`  
 **Classification:** Advisory critique (warning)  
-**Source:** `mde/validation/cim/rules/organization-intent.evl:115`
+**Source:** `methodology/modeling-framework/validation/cim/rules/organization-intent.evl:115`
 
 ### Why this rule exists
 
@@ -478,7 +478,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 **Context:** `CIM!Stakeholder`  
 **Classification:** Advisory critique (warning)  
-**Source:** `mde/validation/cim/rules/organization-intent.evl:128`
+**Source:** `methodology/modeling-framework/validation/cim/rules/organization-intent.evl:128`
 
 ### Why this rule exists
 
@@ -516,7 +516,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 **Context:** `CIM!Actor`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/cim/rules/organization-intent.evl:140`
+**Source:** `methodology/modeling-framework/validation/cim/rules/organization-intent.evl:140`
 
 ### Why this rule exists
 
@@ -554,7 +554,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `CIM!Actor`  
 **Classification:** Advisory critique (warning)  
-**Source:** `mde/validation/cim/rules/organization-intent.evl:148`
+**Source:** `methodology/modeling-framework/validation/cim/rules/organization-intent.evl:148`
 
 ### Why this rule exists
 
@@ -594,7 +594,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 **Context:** `CIM!Actor`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/cim/rules/organization-intent.evl:157`
+**Source:** `methodology/modeling-framework/validation/cim/rules/organization-intent.evl:157`
 
 ### Why this rule exists
 
@@ -634,7 +634,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `CIM!Role`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/cim/rules/organization-intent.evl:174`
+**Source:** `methodology/modeling-framework/validation/cim/rules/organization-intent.evl:174`
 
 ### Why this rule exists
 
@@ -674,7 +674,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `CIM!Role`  
 **Classification:** Advisory critique (warning)  
-**Source:** `mde/validation/cim/rules/organization-intent.evl:183`
+**Source:** `methodology/modeling-framework/validation/cim/rules/organization-intent.evl:183`
 
 ### Why this rule exists
 
@@ -712,7 +712,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 **Context:** `CIM!ExternalSystem`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/cim/rules/organization-intent.evl:195`
+**Source:** `methodology/modeling-framework/validation/cim/rules/organization-intent.evl:195`
 
 ### Why this rule exists
 
@@ -750,7 +750,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `CIM!ExternalSystem`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/cim/rules/organization-intent.evl:203`
+**Source:** `methodology/modeling-framework/validation/cim/rules/organization-intent.evl:203`
 
 ### Why this rule exists
 
@@ -788,7 +788,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `CIM!ExternalSystem`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/cim/rules/organization-intent.evl:212`
+**Source:** `methodology/modeling-framework/validation/cim/rules/organization-intent.evl:212`
 
 ### Why this rule exists
 
@@ -828,7 +828,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `CIM!BusinessCapability`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/cim/rules/organization-intent.evl:231`
+**Source:** `methodology/modeling-framework/validation/cim/rules/organization-intent.evl:231`
 
 ### Why this rule exists
 
@@ -866,7 +866,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `CIM!BusinessCapability`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/cim/rules/organization-intent.evl:239`
+**Source:** `methodology/modeling-framework/validation/cim/rules/organization-intent.evl:239`
 
 ### Why this rule exists
 
@@ -904,7 +904,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `CIM!BusinessCapability`  
 **Classification:** Advisory critique (warning)  
-**Source:** `mde/validation/cim/rules/organization-intent.evl:248`
+**Source:** `methodology/modeling-framework/validation/cim/rules/organization-intent.evl:248`
 
 ### Why this rule exists
 
@@ -942,7 +942,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 **Context:** `CIM!BusinessCapability`  
 **Classification:** Advisory critique (warning)  
-**Source:** `mde/validation/cim/rules/organization-intent.evl:259`
+**Source:** `methodology/modeling-framework/validation/cim/rules/organization-intent.evl:259`
 
 ### Why this rule exists
 
@@ -982,7 +982,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 **Context:** `CIM!CapabilityDependency`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/cim/rules/organization-intent.evl:274`
+**Source:** `methodology/modeling-framework/validation/cim/rules/organization-intent.evl:274`
 
 ### Why this rule exists
 
@@ -1020,7 +1020,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `CIM!CapabilityDependency`  
 **Classification:** Advisory critique (warning)  
-**Source:** `mde/validation/cim/rules/organization-intent.evl:283`
+**Source:** `methodology/modeling-framework/validation/cim/rules/organization-intent.evl:283`
 
 ### Why this rule exists
 
@@ -1060,7 +1060,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 **Context:** `CIM!BoundedContextCandidate`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/cim/rules/organization-intent.evl:296`
+**Source:** `methodology/modeling-framework/validation/cim/rules/organization-intent.evl:296`
 
 ### Why this rule exists
 
@@ -1098,7 +1098,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `CIM!BoundedContextCandidate`  
 **Classification:** Advisory critique (warning)  
-**Source:** `mde/validation/cim/rules/organization-intent.evl:304`
+**Source:** `methodology/modeling-framework/validation/cim/rules/organization-intent.evl:304`
 
 ### Why this rule exists
 
@@ -1136,7 +1136,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 **Context:** `CIM!BoundedContextCandidate`  
 **Classification:** Advisory critique (warning)  
-**Source:** `mde/validation/cim/rules/organization-intent.evl:315`
+**Source:** `methodology/modeling-framework/validation/cim/rules/organization-intent.evl:315`
 
 ### Why this rule exists
 
@@ -1174,7 +1174,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 **Context:** `CIM!UbiquitousLanguageTerm`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/cim/rules/organization-intent.evl:331`
+**Source:** `methodology/modeling-framework/validation/cim/rules/organization-intent.evl:331`
 
 ### Why this rule exists
 
@@ -1212,7 +1212,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `CIM!UbiquitousLanguageTerm`  
 **Classification:** Advisory critique (warning)  
-**Source:** `mde/validation/cim/rules/organization-intent.evl:339`
+**Source:** `methodology/modeling-framework/validation/cim/rules/organization-intent.evl:339`
 
 ### Why this rule exists
 

@@ -1,4 +1,4 @@
 **/vendor/**
 node_modules/**
 target/**
-mde/samples/**/generated-project/**
+methodology/modeling-framework/samples/**/generated-project/**

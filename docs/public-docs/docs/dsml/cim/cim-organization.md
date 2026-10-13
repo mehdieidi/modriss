@@ -1,6 +1,6 @@
 # CIM organization and bounded contexts
 
-Source: `mde/metamodels/cim/cim-organization.emf`.
+Source: `methodology/modeling-framework/metamodels/cim/cim-organization.emf`.
 
 This module explains why the modeled work matters and who is responsible for it. It starts with goals and requirements, separates stakeholders from actors, describes responsibilities through roles and capabilities, and then records candidate language and ownership boundaries. These distinctions are important during refinement. A stakeholder may own a goal without issuing a command. An actor may issue a command without owning the capability that handles it. A capability may own entities and processes while several roles perform its work.
 

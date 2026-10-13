@@ -6,9 +6,9 @@ This document traces the CIM EVL semantic validation coverage added in
 ## Scope
 
 - Level covered: CIM only.
-- Entry EVL: `mde/validation/cim/cim-semantic-validation.evl`.
-- Metamodel: `mde/metamodels/cim/cim-combined.ecore`.
-- Positive model: `mde/samples/cim.xmi`, asserted to produce zero mandatory and zero optional EVL violations.
+- Entry EVL: `methodology/modeling-framework/validation/cim/cim-semantic-validation.evl`.
+- Metamodel: `methodology/modeling-framework/metamodels/cim/cim-combined.ecore`.
+- Positive model: `methodology/modeling-framework/samples/cim.xmi`, asserted to produce zero mandatory and zero optional EVL violations.
 - Negative models: generated in JUnit from structurally valid mutations of the positive sample.
 - Validation boundary: tests use the standalone Epsilon EVL validator and EMF structural loading. They do not use assistant apply/repair/commit paths, `ModelService.validate(...)`, stored validation endpoints, `validateGeneratedXmi(...)`, `EpsilonEvlValidator` outside this validator module, EVL CLIs, or EVL profiles from chatbot assistant paths.
 
@@ -49,7 +49,7 @@ metamodel cannot represent.
 ## EOL Helper Coverage
 
 The `cimEolHelpersHaveExplicitBehaviorCoverage` test imports
-`mde/validation/cim/lib/cim-validation-helpers.eol` through a small helper-only EVL module and
+`methodology/modeling-framework/validation/cim/lib/cim-validation-helpers.eol` through a small helper-only EVL module and
 asserts the behavior of every remaining CIM helper operation against explicit positive and negative
 model fixtures.
 
@@ -77,7 +77,7 @@ model fixtures.
 | `isProductionReadyIntent`              | returns true when readiness explicitly marks the model as production ready.     |
 
 The obsolete `hasSubItemCycle` overloads were removed from
-`mde/validation/cim/lib/cim-validation-helpers.eol` together with `AcyclicSubItems` because they
+`methodology/modeling-framework/validation/cim/lib/cim-validation-helpers.eol` together with `AcyclicSubItems` because they
 targeted a model shape that cannot be represented by the current containment-based metamodel.
 
 ## Remaining Untestable Enum Rules

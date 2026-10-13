@@ -2,7 +2,7 @@
 
 Cognito rules protect production authentication posture and OAuth completeness. They make MFA, deletion protection, callback URLs, user-existence behavior, and unauthenticated identity review explicit rather than silently accepting an insecure default.
 
-Source profile: `mde/validation/psm/rules/identity.evl`.
+Source profile: `methodology/modeling-framework/validation/psm/rules/identity.evl`.
 
 ## Reading these rules
 
@@ -14,7 +14,7 @@ Each entry preserves the actual EVL guard and check. Treat the guard as the appl
 
 **Context:** `AWSPSM!CognitoUserPool`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/psm/rules/identity.evl:8`
+**Source:** `methodology/modeling-framework/validation/psm/rules/identity.evl:8`
 
 ### Why this rule exists
 
@@ -54,7 +54,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `AWSPSM!CognitoUserPool`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/psm/rules/identity.evl:15`
+**Source:** `methodology/modeling-framework/validation/psm/rules/identity.evl:15`
 
 ### Why this rule exists
 
@@ -94,7 +94,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `AWSPSM!CognitoUserPool`  
 **Classification:** Advisory critique (warning)  
-**Source:** `mde/validation/psm/rules/identity.evl:22`
+**Source:** `methodology/modeling-framework/validation/psm/rules/identity.evl:22`
 
 ### Why this rule exists
 
@@ -134,7 +134,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 **Context:** `AWSPSM!CognitoUserPoolClient`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/psm/rules/identity.evl:32`
+**Source:** `methodology/modeling-framework/validation/psm/rules/identity.evl:32`
 
 ### Why this rule exists
 
@@ -174,7 +174,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `AWSPSM!CognitoUserPoolClient`  
 **Classification:** Advisory critique (warning)  
-**Source:** `mde/validation/psm/rules/identity.evl:39`
+**Source:** `methodology/modeling-framework/validation/psm/rules/identity.evl:39`
 
 ### Why this rule exists
 
@@ -212,7 +212,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 **Context:** `AWSPSM!CognitoIdentityPool`  
 **Classification:** Advisory critique (warning)  
-**Source:** `mde/validation/psm/rules/identity.evl:48`
+**Source:** `methodology/modeling-framework/validation/psm/rules/identity.evl:48`
 
 ### Why this rule exists
 

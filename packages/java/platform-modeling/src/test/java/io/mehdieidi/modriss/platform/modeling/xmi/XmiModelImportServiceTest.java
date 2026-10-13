@@ -29,7 +29,16 @@ class XmiModelImportServiceTest {
             new Fixture(ModelLevel.CIM, "cim.xmi"),
             new Fixture(ModelLevel.PIM, "pim.xmi"),
             new Fixture(ModelLevel.PSM, "psm.xmi"))) {
-      Path sample = Path.of("..", "..", "..", "mde", "samples", fixture.fileName()).normalize();
+      Path sample =
+          Path.of(
+                  "..",
+                  "..",
+                  "..",
+                  "methodology",
+                  "modeling-framework",
+                  "samples",
+                  fixture.fileName())
+              .normalize();
       byte[] bytes = Files.readAllBytes(sample);
       JsonNode model = service.importModel(fixture.level(), bytes);
       JsonNode elements = model.path("graph").path("elements");
@@ -119,7 +128,9 @@ class XmiModelImportServiceTest {
   @Test
   void importsCimDomainRelationshipEndpointsIntoSemanticJson() throws Exception {
     XmiModelImportService service = new XmiModelImportService(new ObjectMapper());
-    Path sample = Path.of("..", "..", "..", "mde", "samples", "cim.xmi").normalize();
+    Path sample =
+        Path.of("..", "..", "..", "methodology", "modeling-framework", "samples", "cim.xmi")
+            .normalize();
     JsonNode model = service.importModel(ModelLevel.CIM, Files.readAllBytes(sample));
 
     for (JsonNode relationship : model.path("relationships")) {
@@ -142,7 +153,8 @@ class XmiModelImportServiceTest {
                 "..",
                 "..",
                 "..",
-                "mde",
+                "methodology",
+                "modeling-framework",
                 "samples",
                 "smart-makerspace-operations",
                 "smart-makerspace.cim.xmi")

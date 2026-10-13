@@ -5,7 +5,7 @@ DSML. It is intentionally limited to CIM; PIM and PSM are separate design
 efforts.
 
 The configuration is implemented in
-[`mde/notation/cim.cvs.json`](../mde/notation/cim.cvs.json). The decisions below
+[`methodology/modeling-framework/notation/cim.cvs.json`](../methodology/modeling-framework/notation/cim.cvs.json). The decisions below
 are based on the Ecore generated from the eight CIM Emfatic modules and the
 kernel, not on the names that happened to exist in the previous CVS.
 

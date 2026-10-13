@@ -2,7 +2,7 @@
 
 Data rules connect stores to schemas and access patterns, then connect those choices back to functions and policies. They make transactionality, consistency, indexes, retention, backup, streams, and privacy explicit before a DynamoDB or S3 design is generated.
 
-Source profile: `mde/validation/pim/rules/data.evl`.
+Source profile: `methodology/modeling-framework/validation/pim/rules/data.evl`.
 
 ## Reading these rules
 
@@ -14,7 +14,7 @@ Each entry preserves the actual EVL guard and check. Treat the guard as the appl
 
 **Context:** `PIM!StorageElement`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/pim/rules/data.evl:8`
+**Source:** `methodology/modeling-framework/validation/pim/rules/data.evl:8`
 
 ### Why this rule exists
 
@@ -54,7 +54,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `PIM!StorageElement`  
 **Classification:** Advisory critique (warning)  
-**Source:** `mde/validation/pim/rules/data.evl:15`
+**Source:** `methodology/modeling-framework/validation/pim/rules/data.evl:15`
 
 ### Why this rule exists
 
@@ -94,7 +94,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 **Context:** `PIM!StorageElement`  
 **Classification:** Advisory critique (warning)  
-**Source:** `mde/validation/pim/rules/data.evl:22`
+**Source:** `methodology/modeling-framework/validation/pim/rules/data.evl:22`
 
 ### Why this rule exists
 
@@ -134,7 +134,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 **Context:** `PIM!DataStore`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/pim/rules/data.evl:33`
+**Source:** `methodology/modeling-framework/validation/pim/rules/data.evl:33`
 
 ### Why this rule exists
 
@@ -172,7 +172,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `PIM!DataStore`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/pim/rules/data.evl:39`
+**Source:** `methodology/modeling-framework/validation/pim/rules/data.evl:39`
 
 ### Why this rule exists
 
@@ -210,7 +210,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `PIM!DataStore`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/pim/rules/data.evl:45`
+**Source:** `methodology/modeling-framework/validation/pim/rules/data.evl:45`
 
 ### Why this rule exists
 
@@ -250,7 +250,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `PIM!DataStore`  
 **Classification:** Advisory critique (warning)  
-**Source:** `mde/validation/pim/rules/data.evl:52`
+**Source:** `methodology/modeling-framework/validation/pim/rules/data.evl:52`
 
 ### Why this rule exists
 
@@ -290,7 +290,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 **Context:** `PIM!ObjectStore`  
 **Classification:** Advisory critique (warning)  
-**Source:** `mde/validation/pim/rules/data.evl:63`
+**Source:** `methodology/modeling-framework/validation/pim/rules/data.evl:63`
 
 ### Why this rule exists
 
@@ -330,7 +330,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 **Context:** `PIM!ObjectStore`  
 **Classification:** Advisory critique (warning)  
-**Source:** `mde/validation/pim/rules/data.evl:70`
+**Source:** `methodology/modeling-framework/validation/pim/rules/data.evl:70`
 
 ### Why this rule exists
 
@@ -370,7 +370,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 **Context:** `PIM!DataModel`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/pim/rules/data.evl:81`
+**Source:** `methodology/modeling-framework/validation/pim/rules/data.evl:81`
 
 ### Why this rule exists
 
@@ -408,7 +408,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `PIM!DataModel`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/pim/rules/data.evl:87`
+**Source:** `methodology/modeling-framework/validation/pim/rules/data.evl:87`
 
 ### Why this rule exists
 
@@ -448,7 +448,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `PIM!DataModel`  
 **Classification:** Advisory critique (warning)  
-**Source:** `mde/validation/pim/rules/data.evl:94`
+**Source:** `methodology/modeling-framework/validation/pim/rules/data.evl:94`
 
 ### Why this rule exists
 
@@ -486,7 +486,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 **Context:** `PIM!DataField`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/pim/rules/data.evl:104`
+**Source:** `methodology/modeling-framework/validation/pim/rules/data.evl:104`
 
 ### Why this rule exists
 
@@ -526,7 +526,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `PIM!DataField`  
 **Classification:** Advisory critique (warning)  
-**Source:** `mde/validation/pim/rules/data.evl:111`
+**Source:** `methodology/modeling-framework/validation/pim/rules/data.evl:111`
 
 ### Why this rule exists
 
@@ -566,7 +566,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 **Context:** `PIM!AccessPattern`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/pim/rules/data.evl:122`
+**Source:** `methodology/modeling-framework/validation/pim/rules/data.evl:122`
 
 ### Why this rule exists
 
@@ -604,7 +604,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `PIM!AccessPattern`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/pim/rules/data.evl:128`
+**Source:** `methodology/modeling-framework/validation/pim/rules/data.evl:128`
 
 ### Why this rule exists
 
@@ -642,7 +642,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `PIM!AccessPattern`  
 **Classification:** Advisory critique (warning)  
-**Source:** `mde/validation/pim/rules/data.evl:134`
+**Source:** `methodology/modeling-framework/validation/pim/rules/data.evl:134`
 
 ### Why this rule exists
 
@@ -682,7 +682,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 **Context:** `PIM!IndexCandidate`  
 **Classification:** Advisory critique (warning)  
-**Source:** `mde/validation/pim/rules/data.evl:145`
+**Source:** `methodology/modeling-framework/validation/pim/rules/data.evl:145`
 
 ### Why this rule exists
 
@@ -722,7 +722,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 **Context:** `PIM!DataAccess`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/pim/rules/data.evl:156`
+**Source:** `methodology/modeling-framework/validation/pim/rules/data.evl:156`
 
 ### Why this rule exists
 
@@ -760,7 +760,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `PIM!DataAccess`  
 **Classification:** Advisory critique (warning)  
-**Source:** `mde/validation/pim/rules/data.evl:165`
+**Source:** `methodology/modeling-framework/validation/pim/rules/data.evl:165`
 
 ### Why this rule exists
 
@@ -798,7 +798,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 **Context:** `PIM!DataAccess`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/pim/rules/data.evl:171`
+**Source:** `methodology/modeling-framework/validation/pim/rules/data.evl:171`
 
 ### Why this rule exists
 

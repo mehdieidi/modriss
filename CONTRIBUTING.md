@@ -46,7 +46,7 @@ run `python scripts/format-emf.py`; see the
 - Add a Flyway migration when the PostgreSQL schema changes. Use
   `python scripts/flyway-next-migration.py "<description>"` instead of choosing the version
   manually, because Flyway versions are global across all backend migration locations.
-- Update sample models under `mde/samples/` when validation rules affect them.
+- Update sample models under `methodology/modeling-framework/samples/` when validation rules affect them.
 - Run `python scripts/verify.py` before opening a PR.
 
 ## Architecture Decisions

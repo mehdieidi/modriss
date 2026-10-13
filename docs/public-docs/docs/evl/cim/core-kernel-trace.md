@@ -2,7 +2,7 @@
 
 These rules make a CIM model a coherent starting point for refinement. They require a semantic core, protect model identity and origin, and stop provider vocabulary from leaking into the computation-independent language.
 
-Source profile: `mde/validation/cim/rules/core-kernel-trace.evl`.
+Source profile: `methodology/modeling-framework/validation/cim/rules/core-kernel-trace.evl`.
 
 ## Reading these rules
 
@@ -14,7 +14,7 @@ Each entry preserves the actual EVL guard and check. Treat the guard as the appl
 
 **Context:** `CIM!CIMModel`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/cim/rules/core-kernel-trace.evl:8`
+**Source:** `methodology/modeling-framework/validation/cim/rules/core-kernel-trace.evl:8`
 
 ### Why this rule exists
 
@@ -52,7 +52,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `CIM!CIMModel`  
 **Classification:** Advisory critique (warning)  
-**Source:** `mde/validation/cim/rules/core-kernel-trace.evl:19`
+**Source:** `methodology/modeling-framework/validation/cim/rules/core-kernel-trace.evl:19`
 
 ### Why this rule exists
 
@@ -90,7 +90,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 **Context:** `CIM!CIMModel`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/cim/rules/core-kernel-trace.evl:28`
+**Source:** `methodology/modeling-framework/validation/cim/rules/core-kernel-trace.evl:28`
 
 ### Why this rule exists
 
@@ -130,7 +130,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `CIM!CIMModel`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/cim/rules/core-kernel-trace.evl:42`
+**Source:** `methodology/modeling-framework/validation/cim/rules/core-kernel-trace.evl:42`
 
 ### Why this rule exists
 
@@ -170,7 +170,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `CIM!CIMModel`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/cim/rules/core-kernel-trace.evl:56`
+**Source:** `methodology/modeling-framework/validation/cim/rules/core-kernel-trace.evl:56`
 
 ### Why this rule exists
 
@@ -210,7 +210,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `KERNEL!ModelElement`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/cim/rules/core-kernel-trace.evl:72`
+**Source:** `methodology/modeling-framework/validation/cim/rules/core-kernel-trace.evl:72`
 
 ### Why this rule exists
 
@@ -248,7 +248,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `KERNEL!ModelElement`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/cim/rules/core-kernel-trace.evl:80`
+**Source:** `methodology/modeling-framework/validation/cim/rules/core-kernel-trace.evl:80`
 
 ### Why this rule exists
 
@@ -286,7 +286,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `KERNEL!ModelElement`  
 **Classification:** Advisory critique (warning)  
-**Source:** `mde/validation/cim/rules/core-kernel-trace.evl:88`
+**Source:** `methodology/modeling-framework/validation/cim/rules/core-kernel-trace.evl:88`
 
 ### Why this rule exists
 
@@ -324,7 +324,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 **Context:** `KERNEL!TraceableElement`  
 **Classification:** Advisory critique (warning)  
-**Source:** `mde/validation/cim/rules/core-kernel-trace.evl:101`
+**Source:** `methodology/modeling-framework/validation/cim/rules/core-kernel-trace.evl:101`
 
 ### Why this rule exists
 
@@ -362,7 +362,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 **Context:** `KERNEL!TraceableElement`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/cim/rules/core-kernel-trace.evl:111`
+**Source:** `methodology/modeling-framework/validation/cim/rules/core-kernel-trace.evl:111`
 
 ### Why this rule exists
 
@@ -402,7 +402,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `KERNEL!TraceLink`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/cim/rules/core-kernel-trace.evl:124`
+**Source:** `methodology/modeling-framework/validation/cim/rules/core-kernel-trace.evl:124`
 
 ### Why this rule exists
 
@@ -440,7 +440,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `KERNEL!TraceLink`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/cim/rules/core-kernel-trace.evl:134`
+**Source:** `methodology/modeling-framework/validation/cim/rules/core-kernel-trace.evl:134`
 
 ### Why this rule exists
 

@@ -26,7 +26,7 @@ The category contains 10 EGX generation rules and 10 EGL templates.
 **Source context:** `awsFn`, `AWSPSMCOMPUTE!AwsLambdaFunction`  
 **Template:** `lambda/go-handler.egl`  
 **Target path expression:** `awsFn.handlerPath(emitCtx())`  
-**EGX source:** `mde/generation/awspsm-to-artifacts/awspsm2artifacts.egx:261`
+**EGX source:** `methodology/modeling-framework/generation/awspsm-to-artifacts/awspsm2artifacts.egx:261`
 
 ### Why this generation rule exists
 
@@ -56,7 +56,7 @@ First evaluate the guard: `awsFn.code.isDefined()`. If it is false, check the co
 
 ### Authoritative sources
 
-The scheduling, guard, target path, merge policy, and artifact record are defined at `mde/generation/awspsm-to-artifacts/awspsm2artifacts.egx:261`. The rendered content is defined by `lambda/go-handler.egl` under `mde/generation/awspsm-to-artifacts/templates/`.
+The scheduling, guard, target path, merge policy, and artifact record are defined at `methodology/modeling-framework/generation/awspsm-to-artifacts/awspsm2artifacts.egx:261`. The rendered content is defined by `lambda/go-handler.egl` under `methodology/modeling-framework/generation/awspsm-to-artifacts/templates/`.
 
 ---
 
@@ -65,7 +65,7 @@ The scheduling, guard, target path, merge policy, and artifact record are define
 **Source context:** ``, `shared PSM generation context` 
 **Template:**`lambda/shared-logger.egl` 
 **Target path expression:**`"src/shared/logger." + emitCtx().sourceExtension()` 
-**EGX source:**`mde/generation/awspsm-to-artifacts/awspsm2artifacts.egx:486`
+**EGX source:**`methodology/modeling-framework/generation/awspsm-to-artifacts/awspsm2artifacts.egx:486`
 
 ### Why this generation rule exists
 
@@ -89,7 +89,7 @@ Verify that the PSM root and the source objects expected by the template exist, 
 
 ### Authoritative sources
 
-The scheduling, guard, target path, merge policy, and artifact record are defined at `mde/generation/awspsm-to-artifacts/awspsm2artifacts.egx:486`. The rendered content is defined by `lambda/shared-logger.egl` under `mde/generation/awspsm-to-artifacts/templates/`.
+The scheduling, guard, target path, merge policy, and artifact record are defined at `methodology/modeling-framework/generation/awspsm-to-artifacts/awspsm2artifacts.egx:486`. The rendered content is defined by `lambda/shared-logger.egl` under `methodology/modeling-framework/generation/awspsm-to-artifacts/templates/`.
 
 ---
 
@@ -98,7 +98,7 @@ The scheduling, guard, target path, merge policy, and artifact record are define
 **Source context:** ``, `shared PSM generation context` 
 **Template:**`lambda/shared-tracer.egl` 
 **Target path expression:**`"src/shared/tracer." + emitCtx().sourceExtension()` 
-**EGX source:**`mde/generation/awspsm-to-artifacts/awspsm2artifacts.egx:497`
+**EGX source:**`methodology/modeling-framework/generation/awspsm-to-artifacts/awspsm2artifacts.egx:497`
 
 ### Why this generation rule exists
 
@@ -122,7 +122,7 @@ Verify that the PSM root and the source objects expected by the template exist, 
 
 ### Authoritative sources
 
-The scheduling, guard, target path, merge policy, and artifact record are defined at `mde/generation/awspsm-to-artifacts/awspsm2artifacts.egx:497`. The rendered content is defined by `lambda/shared-tracer.egl` under `mde/generation/awspsm-to-artifacts/templates/`.
+The scheduling, guard, target path, merge policy, and artifact record are defined at `methodology/modeling-framework/generation/awspsm-to-artifacts/awspsm2artifacts.egx:497`. The rendered content is defined by `lambda/shared-tracer.egl` under `methodology/modeling-framework/generation/awspsm-to-artifacts/templates/`.
 
 ---
 
@@ -131,7 +131,7 @@ The scheduling, guard, target path, merge policy, and artifact record are define
 **Source context:** ``, `shared PSM generation context` 
 **Template:**`lambda/shared-metrics.egl` 
 **Target path expression:**`"src/shared/metrics." + emitCtx().sourceExtension()` 
-**EGX source:**`mde/generation/awspsm-to-artifacts/awspsm2artifacts.egx:508`
+**EGX source:**`methodology/modeling-framework/generation/awspsm-to-artifacts/awspsm2artifacts.egx:508`
 
 ### Why this generation rule exists
 
@@ -155,7 +155,7 @@ Verify that the PSM root and the source objects expected by the template exist, 
 
 ### Authoritative sources
 
-The scheduling, guard, target path, merge policy, and artifact record are defined at `mde/generation/awspsm-to-artifacts/awspsm2artifacts.egx:508`. The rendered content is defined by `lambda/shared-metrics.egl` under `mde/generation/awspsm-to-artifacts/templates/`.
+The scheduling, guard, target path, merge policy, and artifact record are defined at `methodology/modeling-framework/generation/awspsm-to-artifacts/awspsm2artifacts.egx:508`. The rendered content is defined by `lambda/shared-metrics.egl` under `methodology/modeling-framework/generation/awspsm-to-artifacts/templates/`.
 
 ---
 
@@ -164,7 +164,7 @@ The scheduling, guard, target path, merge policy, and artifact record are define
 **Source context:** ``, `shared PSM generation context` 
 **Template:**`lambda/shared-errors.egl` 
 **Target path expression:**`"src/shared/errors." + emitCtx().sourceExtension()` 
-**EGX source:**`mde/generation/awspsm-to-artifacts/awspsm2artifacts.egx:519`
+**EGX source:**`methodology/modeling-framework/generation/awspsm-to-artifacts/awspsm2artifacts.egx:519`
 
 ### Why this generation rule exists
 
@@ -188,7 +188,7 @@ Verify that the PSM root and the source objects expected by the template exist, 
 
 ### Authoritative sources
 
-The scheduling, guard, target path, merge policy, and artifact record are defined at `mde/generation/awspsm-to-artifacts/awspsm2artifacts.egx:519`. The rendered content is defined by `lambda/shared-errors.egl` under `mde/generation/awspsm-to-artifacts/templates/`.
+The scheduling, guard, target path, merge policy, and artifact record are defined at `methodology/modeling-framework/generation/awspsm-to-artifacts/awspsm2artifacts.egx:519`. The rendered content is defined by `lambda/shared-errors.egl` under `methodology/modeling-framework/generation/awspsm-to-artifacts/templates/`.
 
 ---
 
@@ -197,7 +197,7 @@ The scheduling, guard, target path, merge policy, and artifact record are define
 **Source context:** ``, `shared PSM generation context` 
 **Template:**`lambda/shared-validation.egl` 
 **Target path expression:**`"src/shared/validation." + emitCtx().sourceExtension()` 
-**EGX source:**`mde/generation/awspsm-to-artifacts/awspsm2artifacts.egx:530`
+**EGX source:**`methodology/modeling-framework/generation/awspsm-to-artifacts/awspsm2artifacts.egx:530`
 
 ### Why this generation rule exists
 
@@ -221,7 +221,7 @@ Verify that the PSM root and the source objects expected by the template exist, 
 
 ### Authoritative sources
 
-The scheduling, guard, target path, merge policy, and artifact record are defined at `mde/generation/awspsm-to-artifacts/awspsm2artifacts.egx:530`. The rendered content is defined by `lambda/shared-validation.egl` under `mde/generation/awspsm-to-artifacts/templates/`.
+The scheduling, guard, target path, merge policy, and artifact record are defined at `methodology/modeling-framework/generation/awspsm-to-artifacts/awspsm2artifacts.egx:530`. The rendered content is defined by `lambda/shared-validation.egl` under `methodology/modeling-framework/generation/awspsm-to-artifacts/templates/`.
 
 ---
 
@@ -230,7 +230,7 @@ The scheduling, guard, target path, merge policy, and artifact record are define
 **Source context:** ``, `shared PSM generation context` 
 **Template:**`lambda/shared-config.egl` 
 **Target path expression:**`"src/shared/config." + emitCtx().sourceExtension()` 
-**EGX source:**`mde/generation/awspsm-to-artifacts/awspsm2artifacts.egx:541`
+**EGX source:**`methodology/modeling-framework/generation/awspsm-to-artifacts/awspsm2artifacts.egx:541`
 
 ### Why this generation rule exists
 
@@ -254,7 +254,7 @@ Verify that the PSM root and the source objects expected by the template exist, 
 
 ### Authoritative sources
 
-The scheduling, guard, target path, merge policy, and artifact record are defined at `mde/generation/awspsm-to-artifacts/awspsm2artifacts.egx:541`. The rendered content is defined by `lambda/shared-config.egl` under `mde/generation/awspsm-to-artifacts/templates/`.
+The scheduling, guard, target path, merge policy, and artifact record are defined at `methodology/modeling-framework/generation/awspsm-to-artifacts/awspsm2artifacts.egx:541`. The rendered content is defined by `lambda/shared-config.egl` under `methodology/modeling-framework/generation/awspsm-to-artifacts/templates/`.
 
 ---
 
@@ -263,7 +263,7 @@ The scheduling, guard, target path, merge policy, and artifact record are define
 **Source context:** ``, `shared PSM generation context` 
 **Template:**`lambda/shared-idempotency.egl` 
 **Target path expression:**`"src/shared/idempotency." + emitCtx().sourceExtension()` 
-**EGX source:**`mde/generation/awspsm-to-artifacts/awspsm2artifacts.egx:552`
+**EGX source:**`methodology/modeling-framework/generation/awspsm-to-artifacts/awspsm2artifacts.egx:552`
 
 ### Why this generation rule exists
 
@@ -289,7 +289,7 @@ Verify that the PSM root and the source objects expected by the template exist, 
 
 ### Authoritative sources
 
-The scheduling, guard, target path, merge policy, and artifact record are defined at `mde/generation/awspsm-to-artifacts/awspsm2artifacts.egx:552`. The rendered content is defined by `lambda/shared-idempotency.egl` under `mde/generation/awspsm-to-artifacts/templates/`.
+The scheduling, guard, target path, merge policy, and artifact record are defined at `methodology/modeling-framework/generation/awspsm-to-artifacts/awspsm2artifacts.egx:552`. The rendered content is defined by `lambda/shared-idempotency.egl` under `methodology/modeling-framework/generation/awspsm-to-artifacts/templates/`.
 
 ---
 
@@ -298,7 +298,7 @@ The scheduling, guard, target path, merge policy, and artifact record are define
 **Source context:** ``, `shared PSM generation context` 
 **Template:**`lambda/shared-event-publisher.egl` 
 **Target path expression:**`"src/shared/event-publisher." + emitCtx().sourceExtension()` 
-**EGX source:**`mde/generation/awspsm-to-artifacts/awspsm2artifacts.egx:563`
+**EGX source:**`methodology/modeling-framework/generation/awspsm-to-artifacts/awspsm2artifacts.egx:563`
 
 ### Why this generation rule exists
 
@@ -322,7 +322,7 @@ Verify that the PSM root and the source objects expected by the template exist, 
 
 ### Authoritative sources
 
-The scheduling, guard, target path, merge policy, and artifact record are defined at `mde/generation/awspsm-to-artifacts/awspsm2artifacts.egx:563`. The rendered content is defined by `lambda/shared-event-publisher.egl` under `mde/generation/awspsm-to-artifacts/templates/`.
+The scheduling, guard, target path, merge policy, and artifact record are defined at `methodology/modeling-framework/generation/awspsm-to-artifacts/awspsm2artifacts.egx:563`. The rendered content is defined by `lambda/shared-event-publisher.egl` under `methodology/modeling-framework/generation/awspsm-to-artifacts/templates/`.
 
 ---
 
@@ -331,7 +331,7 @@ The scheduling, guard, target path, merge policy, and artifact record are define
 **Source context:** ``, `shared PSM generation context` 
 **Template:**`lambda/shared-data-access.egl` 
 **Target path expression:**`"src/shared/data-access." + emitCtx().sourceExtension()` 
-**EGX source:**`mde/generation/awspsm-to-artifacts/awspsm2artifacts.egx:574`
+**EGX source:**`methodology/modeling-framework/generation/awspsm-to-artifacts/awspsm2artifacts.egx:574`
 
 ### Why this generation rule exists
 
@@ -355,7 +355,7 @@ Verify that the PSM root and the source objects expected by the template exist, 
 
 ### Authoritative sources
 
-The scheduling, guard, target path, merge policy, and artifact record are defined at `mde/generation/awspsm-to-artifacts/awspsm2artifacts.egx:574`. The rendered content is defined by `lambda/shared-data-access.egl` under `mde/generation/awspsm-to-artifacts/templates/`.
+The scheduling, guard, target path, merge policy, and artifact record are defined at `methodology/modeling-framework/generation/awspsm-to-artifacts/awspsm2artifacts.egx:574`. The rendered content is defined by `lambda/shared-data-access.egl` under `methodology/modeling-framework/generation/awspsm-to-artifacts/templates/`.
 
 ---
 

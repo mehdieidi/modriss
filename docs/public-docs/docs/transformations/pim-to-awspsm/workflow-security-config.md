@@ -2,7 +2,7 @@
 
 Workflow, identity, security, and configuration binding turns PIM control flow and access intent into Step Functions, Cognito, IAM, Secrets Manager, CloudFormation parameters, and SSM parameters. The module builds an ASL graph in phases, resolves task targets after Lambda resources exist, separates secret from non-secret configuration, and keeps trust/permission decisions traceable.
 
-Source module: `mde/transformations/pim-to-awspsm/workflow-security-config.etl`.
+Source module: `methodology/modeling-framework/transformations/pim-to-awspsm/workflow-security-config.etl`.
 
 ## Reading this page
 
@@ -14,39 +14,39 @@ A transformation rule determines whether a source element contributes to the tar
 
 Supporting operations also shape the transformation. They derive defaults, create secondary resources, cache correspondences, and resolve relationships after the main rule runs.
 
-| Operation                          | Role                                                                                     | Source                                                               |
-| ---------------------------------- | ---------------------------------------------------------------------------------------- | -------------------------------------------------------------------- |
-| `resolveWorkflowTaskTargets`       | Resolves workflow task references after all PIM resources have been transformed.         | `mde/transformations/pim-to-awspsm/workflow-security-config.etl:41`  |
-| `createAslDocument`                | Creates asl document.                                                                    | `mde/transformations/pim-to-awspsm/workflow-security-config.etl:255` |
-| `createChoiceEvaluatorState`       | Creates the Lambda evaluator task that supplies input to a function-backed choice.       | `mde/transformations/pim-to-awspsm/workflow-security-config.etl:312` |
-| `createAslState`                   | Creates asl state.                                                                       | `mde/transformations/pim-to-awspsm/workflow-security-config.etl:333` |
-| `newAslStateForStep`               | Creates the concrete ASL state classifier corresponding to a PIM workflow step.          | `mde/transformations/pim-to-awspsm/workflow-security-config.etl:440` |
-| `choiceRoutingIsComplete`          | Checks whether a choice has enough explicit routing to emit executable ASL.              | `mde/transformations/pim-to-awspsm/workflow-security-config.etl:466` |
-| `aslJsonPathOrRoot`                | Returns a valid JSONPath root when an upstream mapping is absent or still a placeholder. | `mde/transformations/pim-to-awspsm/workflow-security-config.etl:475` |
-| `defaultWorkflowResultPath`        | Returns a stable per-step path for an output mapping that is still TBD.                  | `mde/transformations/pim-to-awspsm/workflow-security-config.etl:483` |
-| `hasExplicitWorkflowOutputMapping` | Checks whether a workflow output mapping is explicit enough to honor directly.           | `mde/transformations/pim-to-awspsm/workflow-security-config.etl:488` |
-| `nextOrderedWorkflowStep`          | Computes complete asl state transitions.                                                 | `mde/transformations/pim-to-awspsm/workflow-security-config.etl:493` |
-| `completeAslStateTransitions`      | Supporting ETL operation used by the module's transformation rules.                      | `mde/transformations/pim-to-awspsm/workflow-security-config.etl:507` |
-| `createAslChoice`                  | Creates asl choice.                                                                      | `mde/transformations/pim-to-awspsm/workflow-security-config.etl:603` |
-| `createAslRetry`                   | Creates asl retry.                                                                       | `mde/transformations/pim-to-awspsm/workflow-security-config.etl:640` |
-| `createAslCatch`                   | Creates asl catch.                                                                       | `mde/transformations/pim-to-awspsm/workflow-security-config.etl:662` |
-| `createStateMachineRole`           | Creates state machine role.                                                              | `mde/transformations/pim-to-awspsm/workflow-security-config.etl:681` |
-| `createStepFunctionLogging`        | Creates step function logging.                                                           | `mde/transformations/pim-to-awspsm/workflow-security-config.etl:692` |
-| `createStepFunctionTracing`        | Creates step function tracing.                                                           | `mde/transformations/pim-to-awspsm/workflow-security-config.etl:703` |
-| `aslSummaryJson`                   | Renders asl summary json.                                                                | `mde/transformations/pim-to-awspsm/workflow-security-config.etl:712` |
-| `renderAsl`                        | Renders render asl.                                                                      | `mde/transformations/pim-to-awspsm/workflow-security-config.etl:717` |
-| `renderAslState`                   | Renders render asl state.                                                                | `mde/transformations/pim-to-awspsm/workflow-security-config.etl:729` |
-| `aslTypeName`                      | Renders asl type name.                                                                   | `mde/transformations/pim-to-awspsm/workflow-security-config.etl:787` |
-| `retryJson`                        | Computes retry json.                                                                     | `mde/transformations/pim-to-awspsm/workflow-security-config.etl:813` |
-| `catchJson`                        | Computes catch json.                                                                     | `mde/transformations/pim-to-awspsm/workflow-security-config.etl:826` |
-| `choiceJson`                       | Computes choice json.                                                                    | `mde/transformations/pim-to-awspsm/workflow-security-config.etl:839` |
-| `stringArrayJson`                  | Computes string array json.                                                              | `mde/transformations/pim-to-awspsm/workflow-security-config.etl:851` |
-| `jsonataCondition`                 | Converts the supported provider-independent boolean subset into a JSONata condition.     | `mde/transformations/pim-to-awspsm/workflow-security-config.etl:863` |
-| `jsonataDecisionOutcomeCondition`  | Builds the JSONata predicate for an explicit evaluator outcome mapping.                  | `mde/transformations/pim-to-awspsm/workflow-security-config.etl:895` |
-| `waitSeconds`                      | Converts supported ISO-8601 day/hour/minute durations to ASL seconds.                    | `mde/transformations/pim-to-awspsm/workflow-security-config.etl:900` |
-| `isSupportedWaitDuration`          | Returns whether a wait expression was parsed to an AWS-supported duration.               | `mde/transformations/pim-to-awspsm/workflow-security-config.etl:931` |
-| `rotationDays`                     | Computes rotation days.                                                                  | `mde/transformations/pim-to-awspsm/workflow-security-config.etl:941` |
-| `configurationJson`                | Computes configuration json.                                                             | `mde/transformations/pim-to-awspsm/workflow-security-config.etl:955` |
+| Operation                          | Role                                                                                     | Source                                                                                          |
+| ---------------------------------- | ---------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| `resolveWorkflowTaskTargets`       | Resolves workflow task references after all PIM resources have been transformed.         | `methodology/modeling-framework/transformations/pim-to-awspsm/workflow-security-config.etl:41`  |
+| `createAslDocument`                | Creates asl document.                                                                    | `methodology/modeling-framework/transformations/pim-to-awspsm/workflow-security-config.etl:255` |
+| `createChoiceEvaluatorState`       | Creates the Lambda evaluator task that supplies input to a function-backed choice.       | `methodology/modeling-framework/transformations/pim-to-awspsm/workflow-security-config.etl:312` |
+| `createAslState`                   | Creates asl state.                                                                       | `methodology/modeling-framework/transformations/pim-to-awspsm/workflow-security-config.etl:333` |
+| `newAslStateForStep`               | Creates the concrete ASL state classifier corresponding to a PIM workflow step.          | `methodology/modeling-framework/transformations/pim-to-awspsm/workflow-security-config.etl:440` |
+| `choiceRoutingIsComplete`          | Checks whether a choice has enough explicit routing to emit executable ASL.              | `methodology/modeling-framework/transformations/pim-to-awspsm/workflow-security-config.etl:466` |
+| `aslJsonPathOrRoot`                | Returns a valid JSONPath root when an upstream mapping is absent or still a placeholder. | `methodology/modeling-framework/transformations/pim-to-awspsm/workflow-security-config.etl:475` |
+| `defaultWorkflowResultPath`        | Returns a stable per-step path for an output mapping that is still TBD.                  | `methodology/modeling-framework/transformations/pim-to-awspsm/workflow-security-config.etl:483` |
+| `hasExplicitWorkflowOutputMapping` | Checks whether a workflow output mapping is explicit enough to honor directly.           | `methodology/modeling-framework/transformations/pim-to-awspsm/workflow-security-config.etl:488` |
+| `nextOrderedWorkflowStep`          | Computes complete asl state transitions.                                                 | `methodology/modeling-framework/transformations/pim-to-awspsm/workflow-security-config.etl:493` |
+| `completeAslStateTransitions`      | Supporting ETL operation used by the module's transformation rules.                      | `methodology/modeling-framework/transformations/pim-to-awspsm/workflow-security-config.etl:507` |
+| `createAslChoice`                  | Creates asl choice.                                                                      | `methodology/modeling-framework/transformations/pim-to-awspsm/workflow-security-config.etl:603` |
+| `createAslRetry`                   | Creates asl retry.                                                                       | `methodology/modeling-framework/transformations/pim-to-awspsm/workflow-security-config.etl:640` |
+| `createAslCatch`                   | Creates asl catch.                                                                       | `methodology/modeling-framework/transformations/pim-to-awspsm/workflow-security-config.etl:662` |
+| `createStateMachineRole`           | Creates state machine role.                                                              | `methodology/modeling-framework/transformations/pim-to-awspsm/workflow-security-config.etl:681` |
+| `createStepFunctionLogging`        | Creates step function logging.                                                           | `methodology/modeling-framework/transformations/pim-to-awspsm/workflow-security-config.etl:692` |
+| `createStepFunctionTracing`        | Creates step function tracing.                                                           | `methodology/modeling-framework/transformations/pim-to-awspsm/workflow-security-config.etl:703` |
+| `aslSummaryJson`                   | Renders asl summary json.                                                                | `methodology/modeling-framework/transformations/pim-to-awspsm/workflow-security-config.etl:712` |
+| `renderAsl`                        | Renders render asl.                                                                      | `methodology/modeling-framework/transformations/pim-to-awspsm/workflow-security-config.etl:717` |
+| `renderAslState`                   | Renders render asl state.                                                                | `methodology/modeling-framework/transformations/pim-to-awspsm/workflow-security-config.etl:729` |
+| `aslTypeName`                      | Renders asl type name.                                                                   | `methodology/modeling-framework/transformations/pim-to-awspsm/workflow-security-config.etl:787` |
+| `retryJson`                        | Computes retry json.                                                                     | `methodology/modeling-framework/transformations/pim-to-awspsm/workflow-security-config.etl:813` |
+| `catchJson`                        | Computes catch json.                                                                     | `methodology/modeling-framework/transformations/pim-to-awspsm/workflow-security-config.etl:826` |
+| `choiceJson`                       | Computes choice json.                                                                    | `methodology/modeling-framework/transformations/pim-to-awspsm/workflow-security-config.etl:839` |
+| `stringArrayJson`                  | Computes string array json.                                                              | `methodology/modeling-framework/transformations/pim-to-awspsm/workflow-security-config.etl:851` |
+| `jsonataCondition`                 | Converts the supported provider-independent boolean subset into a JSONata condition.     | `methodology/modeling-framework/transformations/pim-to-awspsm/workflow-security-config.etl:863` |
+| `jsonataDecisionOutcomeCondition`  | Builds the JSONata predicate for an explicit evaluator outcome mapping.                  | `methodology/modeling-framework/transformations/pim-to-awspsm/workflow-security-config.etl:895` |
+| `waitSeconds`                      | Converts supported ISO-8601 day/hour/minute durations to ASL seconds.                    | `methodology/modeling-framework/transformations/pim-to-awspsm/workflow-security-config.etl:900` |
+| `isSupportedWaitDuration`          | Returns whether a wait expression was parsed to an AWS-supported duration.               | `methodology/modeling-framework/transformations/pim-to-awspsm/workflow-security-config.etl:931` |
+| `rotationDays`                     | Computes rotation days.                                                                  | `methodology/modeling-framework/transformations/pim-to-awspsm/workflow-security-config.etl:941` |
+| `configurationJson`                | Computes configuration json.                                                             | `methodology/modeling-framework/transformations/pim-to-awspsm/workflow-security-config.etl:955` |
 
 ---
 
@@ -54,7 +54,7 @@ Supporting operations also shape the transformation. They derive defaults, creat
 
 **Source:** `w` to `WORKFLOW!Workflow`  
 **Target:** `sm` to `AWSPSMWORKFLOW!StepFunctionStateMachine`  
-**Source location:** `mde/transformations/pim-to-awspsm/workflow-security-config.etl:2`
+**Source location:** `methodology/modeling-framework/transformations/pim-to-awspsm/workflow-security-config.etl:2`
 
 ### Why this rule exists
 
@@ -83,7 +83,7 @@ Start with the manual decision(s) `WORKFLOW_HUMAN_APPROVAL_DESIGN` and complete 
 
 ### Authoritative source
 
-See the complete ETL rule at `mde/transformations/pim-to-awspsm/workflow-security-config.etl:2`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
+See the complete ETL rule at `methodology/modeling-framework/transformations/pim-to-awspsm/workflow-security-config.etl:2`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
 
 ---
 
@@ -91,7 +91,7 @@ See the complete ETL rule at `mde/transformations/pim-to-awspsm/workflow-securit
 
 **Source:** `idp` to `SECURITY!IdentityProvider`  
 **Target:** `pool` to `AWSPSMIDENTITY!CognitoUserPool`  
-**Source location:** `mde/transformations/pim-to-awspsm/workflow-security-config.etl:95`
+**Source location:** `methodology/modeling-framework/transformations/pim-to-awspsm/workflow-security-config.etl:95`
 
 ### Why this rule exists
 
@@ -116,7 +116,7 @@ Start with the manual decision(s) `COGNITO_FEDERATION_DETAILS_REQUIRED` and comp
 
 ### Authoritative source
 
-See the complete ETL rule at `mde/transformations/pim-to-awspsm/workflow-security-config.etl:95`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
+See the complete ETL rule at `methodology/modeling-framework/transformations/pim-to-awspsm/workflow-security-config.etl:95`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
 
 ---
 
@@ -124,7 +124,7 @@ See the complete ETL rule at `mde/transformations/pim-to-awspsm/workflow-securit
 
 **Source:** `p` to `SECURITY!Principal`  
 **Target:** `role` to `AWSPSMSECURITY!IamRole`  
-**Source location:** `mde/transformations/pim-to-awspsm/workflow-security-config.etl:125`
+**Source location:** `methodology/modeling-framework/transformations/pim-to-awspsm/workflow-security-config.etl:125`
 
 ### Why this rule exists
 
@@ -153,7 +153,7 @@ Verify the principal instance first: the guard shown above must evaluate to true
 
 ### Authoritative source
 
-See the complete ETL rule at `mde/transformations/pim-to-awspsm/workflow-security-config.etl:125`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
+See the complete ETL rule at `methodology/modeling-framework/transformations/pim-to-awspsm/workflow-security-config.etl:125`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
 
 ---
 
@@ -161,7 +161,7 @@ See the complete ETL rule at `mde/transformations/pim-to-awspsm/workflow-securit
 
 **Source:** `s` to `CONFIG!Secret`  
 **Target:** `sec` to `AWSPSMSECURITY!SecretsManagerSecret`  
-**Source location:** `mde/transformations/pim-to-awspsm/workflow-security-config.etl:161`
+**Source location:** `methodology/modeling-framework/transformations/pim-to-awspsm/workflow-security-config.etl:161`
 
 ### Why this rule exists
 
@@ -187,7 +187,7 @@ Start with the manual decision(s) `EXTERNAL_SECRET_VALUE_REQUIRED, SECRET_ROTATI
 
 ### Authoritative source
 
-See the complete ETL rule at `mde/transformations/pim-to-awspsm/workflow-security-config.etl:161`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
+See the complete ETL rule at `methodology/modeling-framework/transformations/pim-to-awspsm/workflow-security-config.etl:161`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
 
 ---
 
@@ -195,7 +195,7 @@ See the complete ETL rule at `mde/transformations/pim-to-awspsm/workflow-securit
 
 **Source:** `c` to `CONFIG!ConfigurationSet`  
 **Target:** `doc` to `KERNEL!StructuredDocument`  
-**Source location:** `mde/transformations/pim-to-awspsm/workflow-security-config.etl:196`
+**Source location:** `methodology/modeling-framework/transformations/pim-to-awspsm/workflow-security-config.etl:196`
 
 ### Why this rule exists
 
@@ -219,7 +219,7 @@ Verify that the configuration set is present and semantically complete, then rer
 
 ### Authoritative source
 
-See the complete ETL rule at `mde/transformations/pim-to-awspsm/workflow-security-config.etl:196`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
+See the complete ETL rule at `methodology/modeling-framework/transformations/pim-to-awspsm/workflow-security-config.etl:196`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
 
 ---
 
@@ -227,7 +227,7 @@ See the complete ETL rule at `mde/transformations/pim-to-awspsm/workflow-securit
 
 **Source:** `p` to `CONFIG!ConfigParameter`  
 **Target:** `c` to `AWSPSMCORE!CfnParameter`  
-**Source location:** `mde/transformations/pim-to-awspsm/workflow-security-config.etl:209`
+**Source location:** `methodology/modeling-framework/transformations/pim-to-awspsm/workflow-security-config.etl:209`
 
 ### Why this rule exists
 
@@ -255,7 +255,7 @@ Verify the config parameter instance first: the guard shown above must evaluate 
 
 ### Authoritative source
 
-See the complete ETL rule at `mde/transformations/pim-to-awspsm/workflow-security-config.etl:209`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
+See the complete ETL rule at `methodology/modeling-framework/transformations/pim-to-awspsm/workflow-security-config.etl:209`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
 
 ---
 
@@ -263,7 +263,7 @@ See the complete ETL rule at `mde/transformations/pim-to-awspsm/workflow-securit
 
 **Source:** `p` to `CONFIG!ConfigParameter`  
 **Target:** `s` to `AWSPSMSECURITY!SsmParameter`  
-**Source location:** `mde/transformations/pim-to-awspsm/workflow-security-config.etl:230`
+**Source location:** `methodology/modeling-framework/transformations/pim-to-awspsm/workflow-security-config.etl:230`
 
 ### Why this rule exists
 
@@ -292,6 +292,6 @@ Start with the manual decision(s) `SECRET_PARAMETER_VALUE_REQUIRED` and complete
 
 ### Authoritative source
 
-See the complete ETL rule at `mde/transformations/pim-to-awspsm/workflow-security-config.etl:230`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
+See the complete ETL rule at `methodology/modeling-framework/transformations/pim-to-awspsm/workflow-security-config.etl:230`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
 
 ---

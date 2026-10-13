@@ -12,15 +12,15 @@
 !tools/*/pom.xml
 !config/
 !config/**
-!mde/
-!mde/**
+!methodology/
+!methodology/**
 !deploy/
 !deploy/Dockerfile
 
 **/target
 **/node_modules
 **/.git
-mde/notation/backup
+methodology/modeling-framework/notation/backup
 # Never send real environment files to BuildKit, including nested module files.
 **/.env
 **/.env.*

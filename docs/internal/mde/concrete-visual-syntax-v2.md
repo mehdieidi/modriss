@@ -9,13 +9,13 @@ merged result through `GET /api/modeling/config`.
 
 ## Artifacts
 
-| Artifact                                       | Role                                 |
-| ---------------------------------------------- | ------------------------------------ |
-| `mde/notation/cvs-v2.schema.json`              | JSON Schema for CVS documents        |
-| `mde/notation/cim.cvs.json`                    | CIM concrete visual syntax (phase 1) |
-| `mde/notation/pim.cvs.json`                    | PIM CVS (phase 2)                    |
-| `mde/notation/psm.cvs.json`                    | PSM CVS (phase 3)                    |
-| `tools/notation-migrate/migrate-ui-to-cvs.mjs` | Migrates legacy `*-ui-metadata.json` |
+| Artifact                                                     | Role                                 |
+| ------------------------------------------------------------ | ------------------------------------ |
+| `methodology/modeling-framework/notation/cvs-v2.schema.json` | JSON Schema for CVS documents        |
+| `methodology/modeling-framework/notation/cim.cvs.json`       | CIM concrete visual syntax (phase 1) |
+| `methodology/modeling-framework/notation/pim.cvs.json`       | PIM CVS (phase 2)                    |
+| `methodology/modeling-framework/notation/psm.cvs.json`       | PSM CVS (phase 3)                    |
+| `tools/notation-migrate/migrate-ui-to-cvs.mjs`               | Migrates legacy `*-ui-metadata.json` |
 
 Legacy `*-ui-metadata.json` files remain on the classpath as fallback when a CVS file is absent.
 

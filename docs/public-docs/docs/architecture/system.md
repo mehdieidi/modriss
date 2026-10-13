@@ -47,7 +47,7 @@ modeling configuration rather than maintaining a second independent metamodel.
 ## Runtime Boundaries
 
 - Static browser assets can be hosted independently from the backend.
-- The backend requires PostgreSQL and filesystem access to the `mde/` assets.
+- The backend requires PostgreSQL and filesystem access to the `methodology/` assets.
 - The admin app is a separate browser app for operational control-plane workflows.
 - Prometheus, Grafana, Loki, Promtail, Caddy logs, and Dozzle provide the local DevOps/SRE surface.
 - AI provider calls are optional and isolated from normal platform traffic.

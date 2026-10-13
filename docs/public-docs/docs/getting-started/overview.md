@@ -40,13 +40,13 @@ client cannot silently overwrite a newer revision.
 
 ## Formal Sources of Truth
 
-| Concern                                      | Source                                                         |
-| -------------------------------------------- | -------------------------------------------------------------- |
-| Shared and level-specific language structure | `mde/metamodels/**/*.emf`                                      |
-| Runtime metamodel structure                  | `mde/metamodels/**/*-combined.ecore`                           |
-| Semantic constraints                         | `mde/validation/`                                              |
-| CIM-to-PIM transformation                    | `mde/transformations/cim-to-pim/`                              |
-| PIM-to-PSM transformation                    | `mde/transformations/pim-to-awspsm/`                           |
-| PSM-to-artifact generation                   | `mde/generation/awspsm-to-artifacts/`                          |
-| Visual syntax and palettes                   | `packages/java/platform-modeling/src/main/resources/modeling/` |
-| Public backend behavior                      | Backend controllers and checked-in OpenAPI contract            |
+| Concern                                      | Source                                                           |
+| -------------------------------------------- | ---------------------------------------------------------------- |
+| Shared and level-specific language structure | `methodology/modeling-framework/metamodels/**/*.emf`             |
+| Runtime metamodel structure                  | `methodology/modeling-framework/metamodels/**/*-combined.ecore`  |
+| Semantic constraints                         | `methodology/modeling-framework/validation/`                     |
+| CIM-to-PIM transformation                    | `methodology/modeling-framework/transformations/cim-to-pim/`     |
+| PIM-to-PSM transformation                    | `methodology/modeling-framework/transformations/pim-to-awspsm/`  |
+| PSM-to-artifact generation                   | `methodology/modeling-framework/generation/awspsm-to-artifacts/` |
+| Visual syntax and palettes                   | `packages/java/platform-modeling/src/main/resources/modeling/`   |
+| Public backend behavior                      | Backend controllers and checked-in OpenAPI contract              |

@@ -2,7 +2,7 @@
 
 Step Functions and ASL rules protect the executable state graph. They verify definition sources, entry and terminal states, state naming, task targets, JSONPath/JSONata boundaries, waits, choices, retries, and catches so a generated state machine is not merely syntactically shaped but operationally startable.
 
-Source profile: `mde/validation/psm/rules/workflow.evl`.
+Source profile: `methodology/modeling-framework/validation/psm/rules/workflow.evl`.
 
 ## Reading these rules
 
@@ -14,7 +14,7 @@ Each entry preserves the actual EVL guard and check. Treat the guard as the appl
 
 **Context:** `AWSPSM!StepFunctionStateMachine`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/psm/rules/workflow.evl:8`
+**Source:** `methodology/modeling-framework/validation/psm/rules/workflow.evl:8`
 
 ### Why this rule exists
 
@@ -52,7 +52,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `AWSPSM!StepFunctionStateMachine`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/psm/rules/workflow.evl:14`
+**Source:** `methodology/modeling-framework/validation/psm/rules/workflow.evl:14`
 
 ### Why this rule exists
 
@@ -90,7 +90,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `AWSPSM!StepFunctionStateMachine`  
 **Classification:** Advisory critique (warning)  
-**Source:** `mde/validation/psm/rules/workflow.evl:20`
+**Source:** `methodology/modeling-framework/validation/psm/rules/workflow.evl:20`
 
 ### Why this rule exists
 
@@ -128,7 +128,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 **Context:** `AWSPSM!StepFunctionStateMachine`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/psm/rules/workflow.evl:26`
+**Source:** `methodology/modeling-framework/validation/psm/rules/workflow.evl:26`
 
 ### Why this rule exists
 
@@ -168,7 +168,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `AWSPSM!StepFunctionStateMachine`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/psm/rules/workflow.evl:33`
+**Source:** `methodology/modeling-framework/validation/psm/rules/workflow.evl:33`
 
 ### Why this rule exists
 
@@ -208,7 +208,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `AWSPSM!StepFunctionStateMachine`  
 **Classification:** Advisory critique (warning)  
-**Source:** `mde/validation/psm/rules/workflow.evl:40`
+**Source:** `methodology/modeling-framework/validation/psm/rules/workflow.evl:40`
 
 ### Why this rule exists
 
@@ -248,7 +248,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 **Context:** `AWSPSM!AslDocument`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/psm/rules/workflow.evl:50`
+**Source:** `methodology/modeling-framework/validation/psm/rules/workflow.evl:50`
 
 ### Why this rule exists
 
@@ -286,7 +286,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `AWSPSM!AslDocument`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/psm/rules/workflow.evl:56`
+**Source:** `methodology/modeling-framework/validation/psm/rules/workflow.evl:56`
 
 ### Why this rule exists
 
@@ -324,7 +324,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `AWSPSM!AslDocument`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/psm/rules/workflow.evl:62`
+**Source:** `methodology/modeling-framework/validation/psm/rules/workflow.evl:62`
 
 ### Why this rule exists
 
@@ -362,7 +362,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `AWSPSM!AslState`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/psm/rules/workflow.evl:72`
+**Source:** `methodology/modeling-framework/validation/psm/rules/workflow.evl:72`
 
 ### Why this rule exists
 
@@ -400,7 +400,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `AWSPSM!AslState`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/psm/rules/workflow.evl:79`
+**Source:** `methodology/modeling-framework/validation/psm/rules/workflow.evl:79`
 
 ### Why this rule exists
 
@@ -440,7 +440,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `AWSPSM!AslTaskState`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/psm/rules/workflow.evl:90`
+**Source:** `methodology/modeling-framework/validation/psm/rules/workflow.evl:90`
 
 ### Why this rule exists
 
@@ -478,7 +478,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `AWSPSM!AslTaskState`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/psm/rules/workflow.evl:96`
+**Source:** `methodology/modeling-framework/validation/psm/rules/workflow.evl:96`
 
 ### Why this rule exists
 
@@ -518,7 +518,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `AWSPSM!AslTaskState`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/psm/rules/workflow.evl:103`
+**Source:** `methodology/modeling-framework/validation/psm/rules/workflow.evl:103`
 
 ### Why this rule exists
 
@@ -558,7 +558,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `AWSPSM!AslState`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/psm/rules/workflow.evl:112`
+**Source:** `methodology/modeling-framework/validation/psm/rules/workflow.evl:112`
 
 ### Why this rule exists
 
@@ -598,7 +598,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `AWSPSM!AslWaitState`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/psm/rules/workflow.evl:122`
+**Source:** `methodology/modeling-framework/validation/psm/rules/workflow.evl:122`
 
 ### Why this rule exists
 
@@ -636,7 +636,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `AWSPSM!AslChoiceState`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/psm/rules/workflow.evl:131`
+**Source:** `methodology/modeling-framework/validation/psm/rules/workflow.evl:131`
 
 ### Why this rule exists
 
@@ -674,7 +674,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `AWSPSM!AslRetryRule`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/psm/rules/workflow.evl:140`
+**Source:** `methodology/modeling-framework/validation/psm/rules/workflow.evl:140`
 
 ### Why this rule exists
 
@@ -712,7 +712,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `AWSPSM!AslCatchRule`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/psm/rules/workflow.evl:152`
+**Source:** `methodology/modeling-framework/validation/psm/rules/workflow.evl:152`
 
 ### Why this rule exists
 
@@ -750,7 +750,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `AWSPSM!AslChoiceRule`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/psm/rules/workflow.evl:161`
+**Source:** `methodology/modeling-framework/validation/psm/rules/workflow.evl:161`
 
 ### Why this rule exists
 

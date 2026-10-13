@@ -32,7 +32,7 @@ Wait for PostgreSQL and the backend to become healthy, then open:
 1. Register a user in the frontend.
 2. Create a project.
 3. Open the CIM workspace.
-4. Create a model or import `mde/samples/cim.xmi`.
+4. Create a model or import `methodology/modeling-framework/samples/cim.xmi`.
 5. Save and validate the CIM.
 6. Select **Generate PIM**, review the result, then select **Generate PSM**.
 7. From PSM, select **Generate Artifacts**.

@@ -2,7 +2,7 @@
 
 Policy rules turn resilience, timeout, idempotency, rate, batching, ordering, caching, backup, retention, cost, observability, CORS, and data-protection intent into bounded architecture decisions rather than provider defaults.
 
-Source profile: `mde/validation/pim/rules/policies.evl`.
+Source profile: `methodology/modeling-framework/validation/pim/rules/policies.evl`.
 
 ## Reading these rules
 
@@ -14,7 +14,7 @@ Each entry preserves the actual EVL guard and check. Treat the guard as the appl
 
 **Context:** `PIM!RetryPolicy`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/pim/rules/policies.evl:8`
+**Source:** `methodology/modeling-framework/validation/pim/rules/policies.evl:8`
 
 ### Why this rule exists
 
@@ -52,7 +52,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `PIM!RetryPolicy`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/pim/rules/policies.evl:14`
+**Source:** `methodology/modeling-framework/validation/pim/rules/policies.evl:14`
 
 ### Why this rule exists
 
@@ -90,7 +90,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `PIM!DeadLetterPolicy`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/pim/rules/policies.evl:26`
+**Source:** `methodology/modeling-framework/validation/pim/rules/policies.evl:26`
 
 ### Why this rule exists
 
@@ -130,7 +130,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `PIM!TimeoutPolicy`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/pim/rules/policies.evl:37`
+**Source:** `methodology/modeling-framework/validation/pim/rules/policies.evl:37`
 
 ### Why this rule exists
 
@@ -168,7 +168,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `PIM!TimeoutPolicy`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/pim/rules/policies.evl:43`
+**Source:** `methodology/modeling-framework/validation/pim/rules/policies.evl:43`
 
 ### Why this rule exists
 
@@ -206,7 +206,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `PIM!IdempotencyPolicy`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/pim/rules/policies.evl:55`
+**Source:** `methodology/modeling-framework/validation/pim/rules/policies.evl:55`
 
 ### Why this rule exists
 
@@ -244,7 +244,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `PIM!IdempotencyPolicy`  
 **Classification:** Advisory critique (warning)  
-**Source:** `mde/validation/pim/rules/policies.evl:61`
+**Source:** `methodology/modeling-framework/validation/pim/rules/policies.evl:61`
 
 ### Why this rule exists
 
@@ -282,7 +282,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 **Context:** `PIM!ConcurrencyPolicy`  
 **Classification:** Advisory critique (warning)  
-**Source:** `mde/validation/pim/rules/policies.evl:71`
+**Source:** `methodology/modeling-framework/validation/pim/rules/policies.evl:71`
 
 ### Why this rule exists
 
@@ -320,7 +320,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 **Context:** `PIM!RateLimitPolicy`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/pim/rules/policies.evl:81`
+**Source:** `methodology/modeling-framework/validation/pim/rules/policies.evl:81`
 
 ### Why this rule exists
 
@@ -358,7 +358,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `PIM!BatchPolicy`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/pim/rules/policies.evl:92`
+**Source:** `methodology/modeling-framework/validation/pim/rules/policies.evl:92`
 
 ### Why this rule exists
 
@@ -396,7 +396,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `PIM!BatchPolicy`  
 **Classification:** Advisory critique (warning)  
-**Source:** `mde/validation/pim/rules/policies.evl:99`
+**Source:** `methodology/modeling-framework/validation/pim/rules/policies.evl:99`
 
 ### Why this rule exists
 
@@ -436,7 +436,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 **Context:** `PIM!ObservabilityConfig`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/pim/rules/policies.evl:110`
+**Source:** `methodology/modeling-framework/validation/pim/rules/policies.evl:110`
 
 ### Why this rule exists
 
@@ -476,7 +476,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `PIM!ObservabilityConfig`  
 **Classification:** Advisory critique (warning)  
-**Source:** `mde/validation/pim/rules/policies.evl:117`
+**Source:** `methodology/modeling-framework/validation/pim/rules/policies.evl:117`
 
 ### Why this rule exists
 
@@ -514,7 +514,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 **Context:** `PIM!LoggingPolicy`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/pim/rules/policies.evl:127`
+**Source:** `methodology/modeling-framework/validation/pim/rules/policies.evl:127`
 
 ### Why this rule exists
 
@@ -554,7 +554,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `PIM!LoggingPolicy`  
 **Classification:** Advisory critique (warning)  
-**Source:** `mde/validation/pim/rules/policies.evl:134`
+**Source:** `methodology/modeling-framework/validation/pim/rules/policies.evl:134`
 
 ### Why this rule exists
 
@@ -592,7 +592,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 **Context:** `PIM!MetricPolicy`  
 **Classification:** Advisory critique (warning)  
-**Source:** `mde/validation/pim/rules/policies.evl:144`
+**Source:** `methodology/modeling-framework/validation/pim/rules/policies.evl:144`
 
 ### Why this rule exists
 
@@ -630,7 +630,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 **Context:** `PIM!AlertPolicy`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/pim/rules/policies.evl:154`
+**Source:** `methodology/modeling-framework/validation/pim/rules/policies.evl:154`
 
 ### Why this rule exists
 
@@ -668,7 +668,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `PIM!Slo`  
 **Classification:** Advisory critique (warning)  
-**Source:** `mde/validation/pim/rules/policies.evl:164`
+**Source:** `methodology/modeling-framework/validation/pim/rules/policies.evl:164`
 
 ### Why this rule exists
 
@@ -706,7 +706,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 **Context:** `PIM!CorsPolicy`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/pim/rules/policies.evl:174`
+**Source:** `methodology/modeling-framework/validation/pim/rules/policies.evl:174`
 
 ### Why this rule exists
 
@@ -746,7 +746,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `PIM!CorsPolicy`  
 **Classification:** Advisory critique (warning)  
-**Source:** `mde/validation/pim/rules/policies.evl:181`
+**Source:** `methodology/modeling-framework/validation/pim/rules/policies.evl:181`
 
 ### Why this rule exists
 
@@ -784,7 +784,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 **Context:** `PIM!DataProtectionPolicy`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/pim/rules/policies.evl:191`
+**Source:** `methodology/modeling-framework/validation/pim/rules/policies.evl:191`
 
 ### Why this rule exists
 
@@ -824,7 +824,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `PIM!DataProtectionPolicy`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/pim/rules/policies.evl:198`
+**Source:** `methodology/modeling-framework/validation/pim/rules/policies.evl:198`
 
 ### Why this rule exists
 
@@ -864,7 +864,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `PIM!RetentionPolicy`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/pim/rules/policies.evl:209`
+**Source:** `methodology/modeling-framework/validation/pim/rules/policies.evl:209`
 
 ### Why this rule exists
 
@@ -902,7 +902,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `PIM!BackupPolicy`  
 **Classification:** Advisory critique (warning)  
-**Source:** `mde/validation/pim/rules/policies.evl:219`
+**Source:** `methodology/modeling-framework/validation/pim/rules/policies.evl:219`
 
 ### Why this rule exists
 
@@ -942,7 +942,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 **Context:** `PIM!DataQualityPolicy`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/pim/rules/policies.evl:229`
+**Source:** `methodology/modeling-framework/validation/pim/rules/policies.evl:229`
 
 ### Why this rule exists
 

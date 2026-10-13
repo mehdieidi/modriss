@@ -21,7 +21,7 @@ The category contains 11 EGX generation rules and 5 EGL templates.
 **Source context:** `apiObj`, `AWSPSMAPI!ApiGatewayApi`  
 **Template:** `contracts/openapi.egl`  
 **Target path expression:** `apiObj.openApiPath()`  
-**EGX source:** `mde/generation/awspsm-to-artifacts/awspsm2artifacts.egx:225`
+**EGX source:** `methodology/modeling-framework/generation/awspsm-to-artifacts/awspsm2artifacts.egx:225`
 
 ### Why this generation rule exists
 
@@ -51,7 +51,7 @@ First evaluate the guard: `emitCtx().get("enableOpenApi") = true and apiObj.rout
 
 ### Authoritative sources
 
-The scheduling, guard, target path, merge policy, and artifact record are defined at `mde/generation/awspsm-to-artifacts/awspsm2artifacts.egx:225`. The rendered content is defined by `contracts/openapi.egl` under `mde/generation/awspsm-to-artifacts/templates/`.
+The scheduling, guard, target path, merge policy, and artifact record are defined at `methodology/modeling-framework/generation/awspsm-to-artifacts/awspsm2artifacts.egx:225`. The rendered content is defined by `contracts/openapi.egl` under `methodology/modeling-framework/generation/awspsm-to-artifacts/templates/`.
 
 ---
 
@@ -60,7 +60,7 @@ The scheduling, guard, target path, merge policy, and artifact record are define
 **Source context:** `stateMachineObj`, `AWSPSMWORKFLOW!StepFunctionStateMachine`  
 **Template:** `contracts/asl.egl`  
 **Target path expression:** `stateMachineObj.aslPath()`  
-**EGX source:** `mde/generation/awspsm-to-artifacts/awspsm2artifacts.egx:243`
+**EGX source:** `methodology/modeling-framework/generation/awspsm-to-artifacts/awspsm2artifacts.egx:243`
 
 ### Why this generation rule exists
 
@@ -88,7 +88,7 @@ First evaluate the guard: `emitCtx().get("enableAsl") = true and stateMachineObj
 
 ### Authoritative sources
 
-The scheduling, guard, target path, merge policy, and artifact record are defined at `mde/generation/awspsm-to-artifacts/awspsm2artifacts.egx:243`. The rendered content is defined by `contracts/asl.egl` under `mde/generation/awspsm-to-artifacts/templates/`.
+The scheduling, guard, target path, merge policy, and artifact record are defined at `methodology/modeling-framework/generation/awspsm-to-artifacts/awspsm2artifacts.egx:243`. The rendered content is defined by `contracts/asl.egl` under `methodology/modeling-framework/generation/awspsm-to-artifacts/templates/`.
 
 ---
 
@@ -97,7 +97,7 @@ The scheduling, guard, target path, merge policy, and artifact record are define
 **Source context:** `awsFn`, `AWSPSMCOMPUTE!AwsLambdaFunction`  
 **Template:** `contracts/json-schema.egl`  
 **Target path expression:** `awsFn.localSchemaPath(emitCtx())`  
-**EGX source:** `mde/generation/awspsm-to-artifacts/awspsm2artifacts.egx:285`
+**EGX source:** `methodology/modeling-framework/generation/awspsm-to-artifacts/awspsm2artifacts.egx:285`
 
 ### Why this generation rule exists
 
@@ -121,7 +121,7 @@ Verify that the PSM root and the source objects expected by the template exist, 
 
 ### Authoritative sources
 
-The scheduling, guard, target path, merge policy, and artifact record are defined at `mde/generation/awspsm-to-artifacts/awspsm2artifacts.egx:285`. The rendered content is defined by `contracts/json-schema.egl` under `mde/generation/awspsm-to-artifacts/templates/`.
+The scheduling, guard, target path, merge policy, and artifact record are defined at `methodology/modeling-framework/generation/awspsm-to-artifacts/awspsm2artifacts.egx:285`. The rendered content is defined by `contracts/json-schema.egl` under `methodology/modeling-framework/generation/awspsm-to-artifacts/templates/`.
 
 ---
 
@@ -130,7 +130,7 @@ The scheduling, guard, target path, merge policy, and artifact record are define
 **Source context:** `bridgeRuleObj`, `AWSPSMEVENTS!EventBridgeRule`  
 **Template:** `contracts/sample-event.egl`  
 **Target path expression:** `bridgeRuleObj.eventFixturePath()`  
-**EGX source:** `mde/generation/awspsm-to-artifacts/awspsm2artifacts.egx:353`
+**EGX source:** `methodology/modeling-framework/generation/awspsm-to-artifacts/awspsm2artifacts.egx:353`
 
 ### Why this generation rule exists
 
@@ -158,7 +158,7 @@ First evaluate the guard: `bridgeRuleObj.eventPattern.isDefined() or bridgeRuleO
 
 ### Authoritative sources
 
-The scheduling, guard, target path, merge policy, and artifact record are defined at `mde/generation/awspsm-to-artifacts/awspsm2artifacts.egx:353`. The rendered content is defined by `contracts/sample-event.egl` under `mde/generation/awspsm-to-artifacts/templates/`.
+The scheduling, guard, target path, merge policy, and artifact record are defined at `methodology/modeling-framework/generation/awspsm-to-artifacts/awspsm2artifacts.egx:353`. The rendered content is defined by `contracts/sample-event.egl` under `methodology/modeling-framework/generation/awspsm-to-artifacts/templates/`.
 
 ---
 
@@ -167,7 +167,7 @@ The scheduling, guard, target path, merge policy, and artifact record are define
 **Source context:** `queueObj`, `AWSPSMMESSAGING!SqsQueue`  
 **Template:** `contracts/sample-event.egl`  
 **Target path expression:** `queueObj.queueFixturePath()`  
-**EGX source:** `mde/generation/awspsm-to-artifacts/awspsm2artifacts.egx:371`
+**EGX source:** `methodology/modeling-framework/generation/awspsm-to-artifacts/awspsm2artifacts.egx:371`
 
 ### Why this generation rule exists
 
@@ -191,7 +191,7 @@ Verify that the PSM root and the source objects expected by the template exist, 
 
 ### Authoritative sources
 
-The scheduling, guard, target path, merge policy, and artifact record are defined at `mde/generation/awspsm-to-artifacts/awspsm2artifacts.egx:371`. The rendered content is defined by `contracts/sample-event.egl` under `mde/generation/awspsm-to-artifacts/templates/`.
+The scheduling, guard, target path, merge policy, and artifact record are defined at `methodology/modeling-framework/generation/awspsm-to-artifacts/awspsm2artifacts.egx:371`. The rendered content is defined by `contracts/sample-event.egl` under `methodology/modeling-framework/generation/awspsm-to-artifacts/templates/`.
 
 ---
 
@@ -200,7 +200,7 @@ The scheduling, guard, target path, merge policy, and artifact record are define
 **Source context:** `topicObj`, `AWSPSMMESSAGING!SnsTopic`  
 **Template:** `contracts/sample-event.egl`  
 **Target path expression:** `topicObj.topicFixturePath()`  
-**EGX source:** `mde/generation/awspsm-to-artifacts/awspsm2artifacts.egx:388`
+**EGX source:** `methodology/modeling-framework/generation/awspsm-to-artifacts/awspsm2artifacts.egx:388`
 
 ### Why this generation rule exists
 
@@ -224,7 +224,7 @@ Verify that the PSM root and the source objects expected by the template exist, 
 
 ### Authoritative sources
 
-The scheduling, guard, target path, merge policy, and artifact record are defined at `mde/generation/awspsm-to-artifacts/awspsm2artifacts.egx:388`. The rendered content is defined by `contracts/sample-event.egl` under `mde/generation/awspsm-to-artifacts/templates/`.
+The scheduling, guard, target path, merge policy, and artifact record are defined at `methodology/modeling-framework/generation/awspsm-to-artifacts/awspsm2artifacts.egx:388`. The rendered content is defined by `contracts/sample-event.egl` under `methodology/modeling-framework/generation/awspsm-to-artifacts/templates/`.
 
 ---
 
@@ -233,7 +233,7 @@ The scheduling, guard, target path, merge policy, and artifact record are define
 **Source context:** ``, `shared PSM generation context` 
 **Template:**`contracts/catalog-schema.egl` 
 **Target path expression:**`"schemas/api/generated-api.schema.json"` 
-**EGX source:**`mde/generation/awspsm-to-artifacts/awspsm2artifacts.egx:405`
+**EGX source:**`methodology/modeling-framework/generation/awspsm-to-artifacts/awspsm2artifacts.egx:405`
 
 ### Why this generation rule exists
 
@@ -261,7 +261,7 @@ Verify that the PSM root and the source objects expected by the template exist, 
 
 ### Authoritative sources
 
-The scheduling, guard, target path, merge policy, and artifact record are defined at `mde/generation/awspsm-to-artifacts/awspsm2artifacts.egx:405`. The rendered content is defined by `contracts/catalog-schema.egl` under `mde/generation/awspsm-to-artifacts/templates/`.
+The scheduling, guard, target path, merge policy, and artifact record are defined at `methodology/modeling-framework/generation/awspsm-to-artifacts/awspsm2artifacts.egx:405`. The rendered content is defined by `contracts/catalog-schema.egl` under `methodology/modeling-framework/generation/awspsm-to-artifacts/templates/`.
 
 ---
 
@@ -270,7 +270,7 @@ The scheduling, guard, target path, merge policy, and artifact record are define
 **Source context:** ``, `shared PSM generation context` 
 **Template:**`contracts/catalog-schema.egl` 
 **Target path expression:**`"schemas/events/generated-event.schema.json"` 
-**EGX source:**`mde/generation/awspsm-to-artifacts/awspsm2artifacts.egx:416`
+**EGX source:**`methodology/modeling-framework/generation/awspsm-to-artifacts/awspsm2artifacts.egx:416`
 
 ### Why this generation rule exists
 
@@ -298,7 +298,7 @@ Verify that the PSM root and the source objects expected by the template exist, 
 
 ### Authoritative sources
 
-The scheduling, guard, target path, merge policy, and artifact record are defined at `mde/generation/awspsm-to-artifacts/awspsm2artifacts.egx:416`. The rendered content is defined by `contracts/catalog-schema.egl` under `mde/generation/awspsm-to-artifacts/templates/`.
+The scheduling, guard, target path, merge policy, and artifact record are defined at `methodology/modeling-framework/generation/awspsm-to-artifacts/awspsm2artifacts.egx:416`. The rendered content is defined by `contracts/catalog-schema.egl` under `methodology/modeling-framework/generation/awspsm-to-artifacts/templates/`.
 
 ---
 
@@ -307,7 +307,7 @@ The scheduling, guard, target path, merge policy, and artifact record are define
 **Source context:** ``, `shared PSM generation context` 
 **Template:**`contracts/catalog-schema.egl` 
 **Target path expression:**`"schemas/messages/generated-message.schema.json"` 
-**EGX source:**`mde/generation/awspsm-to-artifacts/awspsm2artifacts.egx:427`
+**EGX source:**`methodology/modeling-framework/generation/awspsm-to-artifacts/awspsm2artifacts.egx:427`
 
 ### Why this generation rule exists
 
@@ -335,7 +335,7 @@ Verify that the PSM root and the source objects expected by the template exist, 
 
 ### Authoritative sources
 
-The scheduling, guard, target path, merge policy, and artifact record are defined at `mde/generation/awspsm-to-artifacts/awspsm2artifacts.egx:427`. The rendered content is defined by `contracts/catalog-schema.egl` under `mde/generation/awspsm-to-artifacts/templates/`.
+The scheduling, guard, target path, merge policy, and artifact record are defined at `methodology/modeling-framework/generation/awspsm-to-artifacts/awspsm2artifacts.egx:427`. The rendered content is defined by `contracts/catalog-schema.egl` under `methodology/modeling-framework/generation/awspsm-to-artifacts/templates/`.
 
 ---
 
@@ -344,7 +344,7 @@ The scheduling, guard, target path, merge policy, and artifact record are define
 **Source context:** ``, `shared PSM generation context` 
 **Template:**`contracts/catalog-schema.egl` 
 **Target path expression:**`"schemas/errors/generated-error.schema.json"` 
-**EGX source:**`mde/generation/awspsm-to-artifacts/awspsm2artifacts.egx:438`
+**EGX source:**`methodology/modeling-framework/generation/awspsm-to-artifacts/awspsm2artifacts.egx:438`
 
 ### Why this generation rule exists
 
@@ -372,7 +372,7 @@ Verify that the PSM root and the source objects expected by the template exist, 
 
 ### Authoritative sources
 
-The scheduling, guard, target path, merge policy, and artifact record are defined at `mde/generation/awspsm-to-artifacts/awspsm2artifacts.egx:438`. The rendered content is defined by `contracts/catalog-schema.egl` under `mde/generation/awspsm-to-artifacts/templates/`.
+The scheduling, guard, target path, merge policy, and artifact record are defined at `methodology/modeling-framework/generation/awspsm-to-artifacts/awspsm2artifacts.egx:438`. The rendered content is defined by `contracts/catalog-schema.egl` under `methodology/modeling-framework/generation/awspsm-to-artifacts/templates/`.
 
 ---
 
@@ -381,7 +381,7 @@ The scheduling, guard, target path, merge policy, and artifact record are define
 **Source context:** ``, `shared PSM generation context` 
 **Template:**`contracts/catalog-schema.egl` 
 **Target path expression:**`"schemas/data/generated-data.schema.json"` 
-**EGX source:**`mde/generation/awspsm-to-artifacts/awspsm2artifacts.egx:449`
+**EGX source:**`methodology/modeling-framework/generation/awspsm-to-artifacts/awspsm2artifacts.egx:449`
 
 ### Why this generation rule exists
 
@@ -409,7 +409,7 @@ Verify that the PSM root and the source objects expected by the template exist, 
 
 ### Authoritative sources
 
-The scheduling, guard, target path, merge policy, and artifact record are defined at `mde/generation/awspsm-to-artifacts/awspsm2artifacts.egx:449`. The rendered content is defined by `contracts/catalog-schema.egl` under `mde/generation/awspsm-to-artifacts/templates/`.
+The scheduling, guard, target path, merge policy, and artifact record are defined at `methodology/modeling-framework/generation/awspsm-to-artifacts/awspsm2artifacts.egx:449`. The rendered content is defined by `contracts/catalog-schema.egl` under `methodology/modeling-framework/generation/awspsm-to-artifacts/templates/`.
 
 ---
 

@@ -2,7 +2,7 @@
 
 Domain-data rules prevent business concepts from becoming attractive but unusable nouns. They protect identity and lifecycle meaning, aggregate boundaries, equality of value objects, information typing, privacy classification, and the evidence needed to turn domain data into PIM schemas and stores.
 
-Source profile: `mde/validation/cim/rules/domain-data.evl`.
+Source profile: `methodology/modeling-framework/validation/cim/rules/domain-data.evl`.
 
 ## Reading these rules
 
@@ -14,7 +14,7 @@ Each entry preserves the actual EVL guard and check. Treat the guard as the appl
 
 **Context:** `CIM!DomainConcept`  
 **Classification:** Advisory critique (warning)  
-**Source:** `mde/validation/cim/rules/domain-data.evl:8`
+**Source:** `methodology/modeling-framework/validation/cim/rules/domain-data.evl:8`
 
 ### Why this rule exists
 
@@ -52,7 +52,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 **Context:** `CIM!DomainEntity`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/cim/rules/domain-data.evl:20`
+**Source:** `methodology/modeling-framework/validation/cim/rules/domain-data.evl:20`
 
 ### Why this rule exists
 
@@ -92,7 +92,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `CIM!DomainEntity`  
 **Classification:** Advisory critique (warning)  
-**Source:** `mde/validation/cim/rules/domain-data.evl:32`
+**Source:** `methodology/modeling-framework/validation/cim/rules/domain-data.evl:32`
 
 ### Why this rule exists
 
@@ -130,7 +130,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 **Context:** `CIM!DomainEntity`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/cim/rules/domain-data.evl:40`
+**Source:** `methodology/modeling-framework/validation/cim/rules/domain-data.evl:40`
 
 ### Why this rule exists
 
@@ -170,7 +170,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `CIM!ValueObject`  
 **Classification:** Advisory critique (warning)  
-**Source:** `mde/validation/cim/rules/domain-data.evl:55`
+**Source:** `methodology/modeling-framework/validation/cim/rules/domain-data.evl:55`
 
 ### Why this rule exists
 
@@ -208,7 +208,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 **Context:** `CIM!ValueObject`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/cim/rules/domain-data.evl:63`
+**Source:** `methodology/modeling-framework/validation/cim/rules/domain-data.evl:63`
 
 ### Why this rule exists
 
@@ -246,7 +246,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `CIM!DomainRelationship`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/cim/rules/domain-data.evl:75`
+**Source:** `methodology/modeling-framework/validation/cim/rules/domain-data.evl:75`
 
 ### Why this rule exists
 
@@ -284,7 +284,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `CIM!DomainRelationship`  
 **Classification:** Advisory critique (warning)  
-**Source:** `mde/validation/cim/rules/domain-data.evl:83`
+**Source:** `methodology/modeling-framework/validation/cim/rules/domain-data.evl:83`
 
 ### Why this rule exists
 
@@ -322,7 +322,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 **Context:** `CIM!DomainRelationship`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/cim/rules/domain-data.evl:93`
+**Source:** `methodology/modeling-framework/validation/cim/rules/domain-data.evl:93`
 
 ### Why this rule exists
 
@@ -362,7 +362,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `CIM!AggregateCandidate`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/cim/rules/domain-data.evl:109`
+**Source:** `methodology/modeling-framework/validation/cim/rules/domain-data.evl:109`
 
 ### Why this rule exists
 
@@ -400,7 +400,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `CIM!AggregateCandidate`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/cim/rules/domain-data.evl:117`
+**Source:** `methodology/modeling-framework/validation/cim/rules/domain-data.evl:117`
 
 ### Why this rule exists
 
@@ -440,7 +440,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `CIM!AggregateCandidate`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/cim/rules/domain-data.evl:126`
+**Source:** `methodology/modeling-framework/validation/cim/rules/domain-data.evl:126`
 
 ### Why this rule exists
 
@@ -480,7 +480,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `CIM!AggregateCandidate`  
 **Classification:** Advisory critique (warning)  
-**Source:** `mde/validation/cim/rules/domain-data.evl:137`
+**Source:** `methodology/modeling-framework/validation/cim/rules/domain-data.evl:137`
 
 ### Why this rule exists
 
@@ -520,7 +520,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 **Context:** `CIM!AggregateCandidate`  
 **Classification:** Advisory critique (warning)  
-**Source:** `mde/validation/cim/rules/domain-data.evl:148`
+**Source:** `methodology/modeling-framework/validation/cim/rules/domain-data.evl:148`
 
 ### Why this rule exists
 
@@ -560,7 +560,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 **Context:** `CIM!BusinessInvariant`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/cim/rules/domain-data.evl:164`
+**Source:** `methodology/modeling-framework/validation/cim/rules/domain-data.evl:164`
 
 ### Why this rule exists
 
@@ -598,7 +598,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `CIM!BusinessInvariant`  
 **Classification:** Advisory critique (warning)  
-**Source:** `mde/validation/cim/rules/domain-data.evl:172`
+**Source:** `methodology/modeling-framework/validation/cim/rules/domain-data.evl:172`
 
 ### Why this rule exists
 
@@ -636,7 +636,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 **Context:** `CIM!InformationItem`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/cim/rules/domain-data.evl:184`
+**Source:** `methodology/modeling-framework/validation/cim/rules/domain-data.evl:184`
 
 ### Why this rule exists
 
@@ -676,7 +676,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `CIM!InformationItem`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/cim/rules/domain-data.evl:193`
+**Source:** `methodology/modeling-framework/validation/cim/rules/domain-data.evl:193`
 
 ### Why this rule exists
 
@@ -714,7 +714,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `CIM!InformationItem`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/cim/rules/domain-data.evl:201`
+**Source:** `methodology/modeling-framework/validation/cim/rules/domain-data.evl:201`
 
 ### Why this rule exists
 
@@ -752,7 +752,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `CIM!InformationItem`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/cim/rules/domain-data.evl:209`
+**Source:** `methodology/modeling-framework/validation/cim/rules/domain-data.evl:209`
 
 ### Why this rule exists
 
@@ -790,7 +790,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `CIM!InformationItem`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/cim/rules/domain-data.evl:217`
+**Source:** `methodology/modeling-framework/validation/cim/rules/domain-data.evl:217`
 
 ### Why this rule exists
 
@@ -830,7 +830,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `CIM!InformationItem`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/cim/rules/domain-data.evl:226`
+**Source:** `methodology/modeling-framework/validation/cim/rules/domain-data.evl:226`
 
 ### Why this rule exists
 
@@ -870,7 +870,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `CIM!InformationItem`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/cim/rules/domain-data.evl:236`
+**Source:** `methodology/modeling-framework/validation/cim/rules/domain-data.evl:236`
 
 ### Why this rule exists
 
@@ -910,7 +910,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `CIM!InformationItem`  
 **Classification:** Advisory critique (warning)  
-**Source:** `mde/validation/cim/rules/domain-data.evl:245`
+**Source:** `methodology/modeling-framework/validation/cim/rules/domain-data.evl:245`
 
 ### Why this rule exists
 
@@ -950,7 +950,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 **Context:** `CIM!InformationItem`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/cim/rules/domain-data.evl:254`
+**Source:** `methodology/modeling-framework/validation/cim/rules/domain-data.evl:254`
 
 ### Why this rule exists
 
@@ -990,7 +990,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `CIM!DataClassification`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/cim/rules/domain-data.evl:267`
+**Source:** `methodology/modeling-framework/validation/cim/rules/domain-data.evl:267`
 
 ### Why this rule exists
 
@@ -1028,7 +1028,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `CIM!DataClassification`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/cim/rules/domain-data.evl:275`
+**Source:** `methodology/modeling-framework/validation/cim/rules/domain-data.evl:275`
 
 ### Why this rule exists
 
@@ -1068,7 +1068,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `CIM!DataClassification`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/cim/rules/domain-data.evl:284`
+**Source:** `methodology/modeling-framework/validation/cim/rules/domain-data.evl:284`
 
 ### Why this rule exists
 
@@ -1108,7 +1108,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `CIM!DataClassification`  
 **Classification:** Advisory critique (warning)  
-**Source:** `mde/validation/cim/rules/domain-data.evl:296`
+**Source:** `methodology/modeling-framework/validation/cim/rules/domain-data.evl:296`
 
 ### Why this rule exists
 

@@ -15,7 +15,9 @@ import java.util.Set;
 import tools.jackson.core.type.TypeReference;
 import tools.jackson.databind.ObjectMapper;
 
-/** Loads SPEM-aligned modeling process definitions from {@code mde/process/definitions/}. */
+/**
+ * Loads SPEM-aligned modeling process definitions from {@code methodology/process/definitions/}.
+ */
 public final class ModelingProcessService {
 
   private static final Set<String> LEVELS = Set.of("cim", "pim", "psm", "artifact", "end-to-end");

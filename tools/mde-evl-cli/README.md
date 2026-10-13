@@ -30,9 +30,9 @@ java -jar tools/mde-evl-cli/target/mde-evl-cli-0.0.1-SNAPSHOT.jar pim `
 
 ```powershell
 java -jar tools/mde-evl-cli/target/mde-evl-cli-0.0.1-SNAPSHOT.jar run `
-  --evl-root mde/validation/pim/pim-semantic-validation.evl `
+  --evl-root methodology/modeling-framework/validation/pim/pim-semantic-validation.evl `
   --model path/to/model.xmi `
-  --metamodel mde/metamodels/pim/pim-combined.ecore `
+  --metamodel methodology/modeling-framework/metamodels/pim/pim-combined.ecore `
   --model-name PIM `
   --aliases KERNEL `
   --fail-on-mandatory-violations

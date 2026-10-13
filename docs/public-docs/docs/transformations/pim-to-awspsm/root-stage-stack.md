@@ -2,7 +2,7 @@
 
 The PSM root rules establish AWS deployment scope: one PIM root becomes one PSM model, environments become stages, deployment units become SAM stacks, and service ownership becomes structured metadata. They give provider-specific rules a stage and stack context in which names, resources, policies, and readiness can be placed.
 
-Source module: `mde/transformations/pim-to-awspsm/root-stage-stack.etl`.
+Source module: `methodology/modeling-framework/transformations/pim-to-awspsm/root-stage-stack.etl`.
 
 ## Reading this page
 
@@ -14,7 +14,7 @@ A transformation rule determines whether a source element contributes to the tar
 
 **Source:** `p` to `PIM!PIMModel`  
 **Target:** `a` to `AWSPSM!AwsPsmModel`  
-**Source location:** `mde/transformations/pim-to-awspsm/root-stage-stack.etl:2`
+**Source location:** `methodology/modeling-framework/transformations/pim-to-awspsm/root-stage-stack.etl:2`
 
 ### Why this rule exists
 
@@ -39,7 +39,7 @@ Start with the manual decision(s) `AWS_REGION_REQUIRED` and complete the request
 
 ### Authoritative source
 
-See the complete ETL rule at `mde/transformations/pim-to-awspsm/root-stage-stack.etl:2`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
+See the complete ETL rule at `methodology/modeling-framework/transformations/pim-to-awspsm/root-stage-stack.etl:2`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
 
 ---
 
@@ -47,7 +47,7 @@ See the complete ETL rule at `mde/transformations/pim-to-awspsm/root-stage-stack
 
 **Source:** `e` to `DEPLOYMENT!Environment`  
 **Target:** `s` to `AWSPSMCORE!AwsStage`  
-**Source location:** `mde/transformations/pim-to-awspsm/root-stage-stack.etl:50`
+**Source location:** `methodology/modeling-framework/transformations/pim-to-awspsm/root-stage-stack.etl:50`
 
 ### Why this rule exists
 
@@ -71,7 +71,7 @@ Verify that the environment is present and semantically complete, then rerun the
 
 ### Authoritative source
 
-See the complete ETL rule at `mde/transformations/pim-to-awspsm/root-stage-stack.etl:50`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
+See the complete ETL rule at `methodology/modeling-framework/transformations/pim-to-awspsm/root-stage-stack.etl:50`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
 
 ---
 
@@ -79,7 +79,7 @@ See the complete ETL rule at `mde/transformations/pim-to-awspsm/root-stage-stack
 
 **Source:** `d` to `DEPLOYMENT!DeploymentUnit`  
 **Target:** `s` to `AWSPSMCORE!SamStack`  
-**Source location:** `mde/transformations/pim-to-awspsm/root-stage-stack.etl:77`
+**Source location:** `methodology/modeling-framework/transformations/pim-to-awspsm/root-stage-stack.etl:77`
 
 ### Why this rule exists
 
@@ -103,7 +103,7 @@ Verify that the deployment unit is present and semantically complete, then rerun
 
 ### Authoritative source
 
-See the complete ETL rule at `mde/transformations/pim-to-awspsm/root-stage-stack.etl:77`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
+See the complete ETL rule at `methodology/modeling-framework/transformations/pim-to-awspsm/root-stage-stack.etl:77`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
 
 ---
 
@@ -111,7 +111,7 @@ See the complete ETL rule at `mde/transformations/pim-to-awspsm/root-stage-stack
 
 **Source:** `svc` to `DEPLOYMENT!ServerlessService`  
 **Target:** `doc` to `KERNEL!StructuredDocument`  
-**Source location:** `mde/transformations/pim-to-awspsm/root-stage-stack.etl:96`
+**Source location:** `methodology/modeling-framework/transformations/pim-to-awspsm/root-stage-stack.etl:96`
 
 ### Why this rule exists
 
@@ -135,6 +135,6 @@ Verify that the serverless service is present and semantically complete, then re
 
 ### Authoritative source
 
-See the complete ETL rule at `mde/transformations/pim-to-awspsm/root-stage-stack.etl:96`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
+See the complete ETL rule at `methodology/modeling-framework/transformations/pim-to-awspsm/root-stage-stack.etl:96`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
 
 ---

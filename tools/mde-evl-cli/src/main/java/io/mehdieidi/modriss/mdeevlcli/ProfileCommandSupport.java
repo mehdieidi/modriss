@@ -32,7 +32,7 @@ final class ProfileCommandSupport {
       List<String> aliases,
       boolean structuralValidation) {
     Path root = repositoryRoot.toAbsolutePath().normalize();
-    Path evlRoot = root.resolve("mde/validation").resolve(profile);
+    Path evlRoot = root.resolve("methodology/modeling-framework/validation").resolve(profile);
     return new EvlValidationRequest(
         evlRoot,
         List.of(Path.of(entryModule)),
@@ -42,7 +42,7 @@ final class ProfileCommandSupport {
                 aliases,
                 model.toAbsolutePath().normalize(),
                 List.of(
-                    root.resolve("mde/metamodels")
+                    root.resolve("methodology/modeling-framework/metamodels")
                         .resolve(profile)
                         .resolve(profile + "-combined.ecore")),
                 structuralValidation)),

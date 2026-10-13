@@ -38,11 +38,11 @@ The pages here describe the running implementation and link to formal sources wh
 more detail. Paths in this list are relative to the repository root:
 
 - Backend controllers and configuration define runtime API behavior.
-- The Emfatic, Ecore, EVL, ETL, EOL, EGX, and EGL files under `mde/` define the formal modeling behavior.
+- The Emfatic, Ecore, EVL, ETL, EOL, EGX, and EGL files under `methodology/` define the formal modeling behavior.
 - Flyway migrations define the persisted PostgreSQL structure.
 - `docs/api/openapi/openapi.yaml` is the checked-in API contract.
 - `docs/diagrams/` contains architecture diagrams and the source for the modeling-path SVG.
-- `mde/process/method/diagrams/` contains the lifecycle and delivery-engine SVG sources.
+- `methodology/process/method/diagrams/` contains the lifecycle and delivery-engine SVG sources.
 
 The modeling-path, lifecycle, and delivery-engine SVGs are copied into
 `docs/public-docs/docs/assets/diagrams/` for the public site. Refresh those copies when a source

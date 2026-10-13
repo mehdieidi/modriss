@@ -31,7 +31,9 @@ public final class PimToAwsPsmCommand implements Callable<Integer> {
   @Option(
       names = "--repo-root",
       required = true,
-      description = "Repository root containing mde/metamodels and mde/transformations.")
+      description =
+          "Repository root containing methodology/modeling-framework/metamodels and"
+              + " methodology/modeling-framework/transformations.")
   private Path repositoryRoot;
 
   @Option(names = "--source-model", required = true, description = "Input PIM XMI model file.")

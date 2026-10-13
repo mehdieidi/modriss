@@ -49,8 +49,8 @@ final class PimToAwsPsmEtlRegressionTest {
   private static Path findRepositoryRoot() {
     Path current = Path.of(System.getProperty("user.dir")).toAbsolutePath().normalize();
     while (current != null) {
-      if (Files.isDirectory(current.resolve("mde/metamodels"))
-          && Files.isDirectory(current.resolve("mde/transformations"))) {
+      if (Files.isDirectory(current.resolve("methodology/modeling-framework/metamodels"))
+          && Files.isDirectory(current.resolve("methodology/modeling-framework/transformations"))) {
         return current;
       }
       current = current.getParent();
@@ -66,8 +66,9 @@ final class PimToAwsPsmEtlRegressionTest {
    */
   @Test
   void transformsSamplePimToAwsPsmWithSpecCompletenessShape() throws Exception {
-    Path psmMetamodel = REPOSITORY_ROOT.resolve("mde/metamodels/psm/psm-combined.ecore");
-    Path sampleModel = REPOSITORY_ROOT.resolve("mde/samples/pim.xmi");
+    Path psmMetamodel =
+        REPOSITORY_ROOT.resolve("methodology/modeling-framework/metamodels/psm/psm-combined.ecore");
+    Path sampleModel = REPOSITORY_ROOT.resolve("methodology/modeling-framework/samples/pim.xmi");
     Path psmModel = tempDir.resolve("climate-relief-grants-awspsm.xmi");
 
     EtlExecutionReport report =
@@ -268,8 +269,10 @@ final class PimToAwsPsmEtlRegressionTest {
    */
   @Test
   void transformsDirectPimRuleFamiliesWithAwsSemantics() throws Exception {
-    Path pimMetamodel = REPOSITORY_ROOT.resolve("mde/metamodels/pim/pim-combined.ecore");
-    Path psmMetamodel = REPOSITORY_ROOT.resolve("mde/metamodels/psm/psm-combined.ecore");
+    Path pimMetamodel =
+        REPOSITORY_ROOT.resolve("methodology/modeling-framework/metamodels/pim/pim-combined.ecore");
+    Path psmMetamodel =
+        REPOSITORY_ROOT.resolve("methodology/modeling-framework/metamodels/psm/psm-combined.ecore");
     Path pimModel = tempDir.resolve("direct-rule-coverage.pim.xmi");
     Path psmModel = tempDir.resolve("direct-rule-coverage.awspsm.xmi");
 
@@ -440,8 +443,10 @@ final class PimToAwsPsmEtlRegressionTest {
    */
   @Test
   void resolvesPimToAwsRelationshipsAndReviewBacklogSemantics() throws Exception {
-    Path pimMetamodel = REPOSITORY_ROOT.resolve("mde/metamodels/pim/pim-combined.ecore");
-    Path psmMetamodel = REPOSITORY_ROOT.resolve("mde/metamodels/psm/psm-combined.ecore");
+    Path pimMetamodel =
+        REPOSITORY_ROOT.resolve("methodology/modeling-framework/metamodels/pim/pim-combined.ecore");
+    Path psmMetamodel =
+        REPOSITORY_ROOT.resolve("methodology/modeling-framework/metamodels/psm/psm-combined.ecore");
     Path pimModel = tempDir.resolve("relationship-coverage.pim.xmi");
     Path psmModel = tempDir.resolve("relationship-coverage.awspsm.xmi");
 
@@ -532,8 +537,10 @@ final class PimToAwsPsmEtlRegressionTest {
    */
   @Test
   void coversPimToAwsPsmHelperEolBranchesWithSemanticAssertions() throws Exception {
-    Path pimMetamodel = REPOSITORY_ROOT.resolve("mde/metamodels/pim/pim-combined.ecore");
-    Path psmMetamodel = REPOSITORY_ROOT.resolve("mde/metamodels/psm/psm-combined.ecore");
+    Path pimMetamodel =
+        REPOSITORY_ROOT.resolve("methodology/modeling-framework/metamodels/pim/pim-combined.ecore");
+    Path psmMetamodel =
+        REPOSITORY_ROOT.resolve("methodology/modeling-framework/metamodels/psm/psm-combined.ecore");
     Path pimModel = tempDir.resolve("helper-eol-coverage.pim.xmi");
     Path psmModel = tempDir.resolve("helper-eol-coverage.awspsm.xmi");
 

@@ -1,6 +1,6 @@
 # CIM transformation metadata
 
-Source: `mde/metamodels/cim/cim-transformation.emf`.
+Source: `methodology/modeling-framework/metamodels/cim/cim-transformation.emf`.
 
 CIM-to-PIM refinement is deliberately not presented as a complete deduction from business facts. Service granularity, workflow candidacy, event collaboration, authorization, privacy coverage, and unresolved boundary decisions still require judgment. This module records that judgment as model data so it can be reviewed, transformed, and traced.
 

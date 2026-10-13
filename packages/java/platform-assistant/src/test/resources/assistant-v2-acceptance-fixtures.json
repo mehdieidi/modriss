@@ -2,7 +2,7 @@
   {
     "id": "document-to-cim-community-clinic",
     "level": "CIM",
-    "sourceDocumentPath": "mde/samples/document-to-cim/community-clinic-user-stories.md",
+    "sourceDocumentPath": "methodology/modeling-framework/samples/document-to-cim/community-clinic-user-stories.md",
     "semanticObligations": [
       "Patient",
       "Clinic Scheduler",
@@ -35,7 +35,7 @@
   {
     "id": "document-to-cim-marketplace-returns",
     "level": "CIM",
-    "sourceDocumentPath": "mde/samples/document-to-cim/marketplace-returns-event-storming.md",
+    "sourceDocumentPath": "methodology/modeling-framework/samples/document-to-cim/marketplace-returns-event-storming.md",
     "semanticObligations": [
       "Customer",
       "Seller Operations Specialist",

@@ -5,7 +5,7 @@
     "level": "CIM",
     "prompt": "Transform the attached user story requirements into a complete draft CIM model. Include actors, goals, user stories, business rules, domain terms, risks, assumptions, commands, events, and relationships grounded in the source.",
     "emptyCanvas": true,
-    "sourceDocumentPath": "mde/samples/document-to-cim/community-clinic-user-stories.md",
+    "sourceDocumentPath": "methodology/modeling-framework/samples/document-to-cim/community-clinic-user-stories.md",
     "semanticObligations": [
       "Patient",
       "Clinic Scheduler",
@@ -31,7 +31,7 @@
     "level": "CIM",
     "prompt": "From the event storming workshop notes, create a complete draft CIM model covering actors, commands, events, policies, entities, goals, risks, and relationships.",
     "emptyCanvas": true,
-    "sourceDocumentPath": "mde/samples/document-to-cim/marketplace-returns-event-storming.md",
+    "sourceDocumentPath": "methodology/modeling-framework/samples/document-to-cim/marketplace-returns-event-storming.md",
     "semanticObligations": [
       "Customer",
       "Seller Operations Specialist",

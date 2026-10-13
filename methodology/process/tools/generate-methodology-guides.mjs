@@ -1,0 +1,213 @@
+#!/usr/bin/env node
+/**
+ * Regenerates SPEM task-catalog sections in public modeling-process guides from process definitions.
+ * Keeps prose above <!-- TASK-CATALOG:START -->; replaces everything until <!-- TASK-CATALOG:END -->.
+ */
+import fs from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+import { collectProcessTasks } from "./lib/process-walk.mjs";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const ROOT = path.resolve(__dirname, "../../..");
+const DEFS = path.join(ROOT, "methodology/process/definitions");
+const GUIDES = path.join(ROOT, "docs/public-docs/docs/guides");
+
+const GUIDE_MAP = {
+  cim: "cim-modeling-methodology.md",
+  pim: "pim-modeling-methodology.md",
+  psm: "psm-modeling-methodology.md",
+};
+
+function flattenStages(stages, depth = 0) {
+  const out = [];
+  for (const stage of stages || []) {
+    out.push({ stage, depth });
+    if (stage.subStages?.length) {
+      out.push(...flattenStages(stage.subStages, depth + 1));
+    }
+  }
+  return out;
+}
+
+function renderTask(task) {
+  const lines = [`#### ${task.name} (\`${task.id}\`)`, ""];
+  if (task.viewpoint) {
+    lines.push(`**Viewpoint:** ${task.viewpoint}`);
+  }
+  if (task.durationEstimate) {
+    lines.push(`**Duration:** ${task.durationEstimate}`);
+  }
+  if (task.inputArtifacts?.length) {
+    const inputLine = `**Inputs:** ${task.inputArtifacts.map((a) => a.name).join(", ")}`;
+    if (inputLine.length > 110) {
+      lines.push("**Inputs:**", "");
+      task.inputArtifacts.forEach((a) => lines.push(`- ${a.name}`));
+    } else {
+      lines.push(inputLine);
+    }
+  }
+  if (task.artifacts?.length) {
+    const artifactLine = `**Work products:** ${task.artifacts.map((a) => a.name).join(", ")}`;
+    if (artifactLine.length > 110) {
+      lines.push("**Work products:**", "");
+      task.artifacts.forEach((a) => lines.push(`- ${a.name}`));
+    } else {
+      lines.push(artifactLine);
+    }
+  }
+  if (task.paletteFocus?.length) {
+    const focusLine = `**Palette focus:** ${task.paletteFocus.map((t) => `\`${t}\``).join(", ")}`;
+    if (focusLine.length > 110) {
+      lines.push("**Palette focus:**", "");
+      task.paletteFocus.forEach((t) => lines.push(`- \`${t}\``));
+    } else {
+      lines.push(focusLine);
+    }
+  }
+  if (task.steps?.length) {
+    lines.push("", "**Steps:**", "");
+    task.steps.forEach((step, i) => lines.push(`${i + 1}. ${step}`));
+  }
+  if (task.entryCriteria?.length) {
+    lines.push("", "**Entry criteria:**", "");
+    task.entryCriteria.forEach((c) => lines.push(`- ${c}`));
+  }
+  if (task.exitCriteria?.length) {
+    lines.push("", "**Exit criteria:**", "");
+    task.exitCriteria.forEach((c) => lines.push(`- ${c}`));
+  }
+  if (task.validationRules?.length) {
+    lines.push("", "**Validation:**", "");
+    task.validationRules.forEach((r) => lines.push(`- \`${r}\``));
+  }
+  lines.push("");
+  return lines.join("\n");
+}
+
+function renderCatalog(process) {
+  const taskEntries = collectProcessTasks(process);
+  const tasksByStage = new Map();
+  for (const entry of taskEntries) {
+    const list = tasksByStage.get(entry.stageId) || [];
+    list.push(entry.task);
+    tasksByStage.set(entry.stageId, list);
+  }
+  const lines = [
+    "<!-- TASK-CATALOG:START -->",
+    "<!-- Generated from the process definition; do not edit manually -->",
+    "",
+    "## Task Catalog",
+    "",
+    `Process \`${process.processId}\` · ${process.phases.length} phases · ${taskEntries.length} TaskUses / TaskDefinitions · ${process.level.toUpperCase()} metamodel coverage enforced in CI.`,
+    "",
+  ];
+
+  const roleName = (roleUseId) => {
+    const roleUse = (process.roleUses || []).find((item) => item.id === roleUseId);
+    const role = (process.methodContent?.roleDefinitions || []).find(
+      (item) => item.id === roleUse?.roleDefinitionRef,
+    );
+    return role?.name || "Not set";
+  };
+
+  for (const phase of process.phases || []) {
+    const engine = phase.inEngine === false ? "once per program" : "in engine cycle";
+    lines.push(`### ${phase.name} (\`${phase.id}\`)`);
+    lines.push("");
+    lines.push(phase.objective || "");
+    lines.push("");
+    lines.push(`**Runs:** ${engine} · **Role:** ${roleName(phase.roleUseRefs?.[0])}`);
+    if (phase.entryCriteria?.length) {
+      lines.push("", "**Phase entry:**", "");
+      phase.entryCriteria.forEach((c) => lines.push(`- ${c}`));
+    }
+    if (phase.exitCriteria?.length) {
+      lines.push("", "**Phase exit:**", "");
+      phase.exitCriteria.forEach((c) => lines.push(`- ${c}`));
+    }
+    lines.push("");
+
+    for (const { stage, depth } of flattenStages(phase.stages)) {
+      const tasks = tasksByStage.get(stage.id) || [];
+      if (!tasks.length && stage.subStages?.length) {
+        lines.push(`${"#".repeat(Math.min(4 + depth, 6))} ${stage.name} (\`${stage.id}\`)`);
+        lines.push("");
+        if (stage.objective) {
+          lines.push(stage.objective);
+          lines.push("");
+        }
+        continue;
+      }
+      if (!tasks.length) continue;
+
+      lines.push(`${"#".repeat(Math.min(4 + depth, 6))} ${stage.name} (\`${stage.id}\`)`);
+      lines.push("");
+      if (stage.objective) {
+        lines.push(stage.objective);
+        lines.push("");
+      }
+      if (stage.viewpoint) {
+        lines.push(`**Viewpoint:** ${stage.viewpoint}`);
+        lines.push("");
+      }
+      lines.push("##### Tasks", "");
+      for (const task of tasks) {
+        lines.push(renderTask(task));
+      }
+    }
+    lines.push("---", "");
+  }
+
+  const processTransition = {
+    cim: "The CIM process produces a reviewed CIM revision for CIM-to-PIM transformation. Review the resulting PIM draft before beginning PIM refinement.",
+    pim: "The PIM process produces a reviewed PIM revision for PIM-to-PSM transformation. Review the resulting PSM draft before beginning PSM refinement.",
+    psm: "The PSM process produces a reviewed deployment model for artifact generation. Generate the AWS project and continue with artifact-readiness review.",
+  }[process.level];
+  lines.push(
+    "## Process transition",
+    "",
+    processTransition,
+    "",
+    "<!-- TASK-CATALOG:END -->",
+  );
+  return lines.join("\n");
+}
+
+function patchGuide(level, catalog) {
+  const guidePath = path.join(GUIDES, GUIDE_MAP[level]);
+  let content = fs.readFileSync(guidePath, "utf8");
+  const start = "<!-- TASK-CATALOG:START -->";
+  const end = "<!-- TASK-CATALOG:END -->";
+  const startIdx = content.indexOf(start);
+  const endIdx = content.indexOf(end);
+
+  if (startIdx >= 0 && endIdx > startIdx) {
+    content = content.slice(0, startIdx) + catalog;
+  } else {
+    const legacyMarkers = [
+      "<!-- Legacy phase detail",
+      "<!-- Legacy 12-phase detail",
+      "\n---\n\n## Phase 0",
+    ];
+    let cut = -1;
+    for (const marker of legacyMarkers) {
+      const idx = content.indexOf(marker);
+      if (idx >= 0) {
+        cut = cut < 0 ? idx : Math.min(cut, idx);
+      }
+    }
+    if (cut < 0) {
+      cut = content.length;
+    }
+    content = content.slice(0, cut).trimEnd() + "\n\n" + catalog;
+  }
+  fs.writeFileSync(guidePath, content.endsWith("\n") ? content : `${content}\n`);
+  console.log(`Updated ${guidePath}`);
+}
+
+for (const level of Object.keys(GUIDE_MAP)) {
+  const jsonPath = path.join(DEFS, `${level}.json`);
+  const process = JSON.parse(fs.readFileSync(jsonPath, "utf8"));
+  patchGuide(level, renderCatalog(process));
+}

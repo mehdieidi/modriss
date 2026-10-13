@@ -30,8 +30,9 @@ final class MdeM2tCliApplicationTest {
   private static Path findRepositoryRoot() {
     Path current = Path.of(System.getProperty("user.dir")).toAbsolutePath().normalize();
     while (current != null) {
-      if (Files.isDirectory(current.resolve("mde/metamodels"))
-          && Files.isDirectory(current.resolve("mde/generation/awspsm-to-artifacts"))) {
+      if (Files.isDirectory(current.resolve("methodology/modeling-framework/metamodels"))
+          && Files.isDirectory(
+              current.resolve("methodology/modeling-framework/generation/awspsm-to-artifacts"))) {
         return current;
       }
       current = current.getParent();
@@ -60,7 +61,9 @@ final class MdeM2tCliApplicationTest {
                 "--repo-root",
                 REPOSITORY_ROOT.toString(),
                 "--source-model",
-                REPOSITORY_ROOT.resolve("mde/samples/psm.xmi").toString(),
+                REPOSITORY_ROOT
+                    .resolve("methodology/modeling-framework/samples/psm.xmi")
+                    .toString(),
                 "--output-dir",
                 outputDirectory.toString(),
                 "--fail-if-output-not-empty",

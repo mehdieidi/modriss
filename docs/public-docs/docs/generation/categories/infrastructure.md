@@ -23,7 +23,7 @@ The category contains 11 EGX generation rules and 7 EGL templates.
 **Source context:** ``, `shared PSM generation context` 
 **Template:**`infrastructure/go-mod.egl` 
 **Target path expression:**`"go.mod"` 
-**EGX source:**`mde/generation/awspsm-to-artifacts/awspsm2artifacts.egx:58`
+**EGX source:**`methodology/modeling-framework/generation/awspsm-to-artifacts/awspsm2artifacts.egx:58`
 
 ### Why this generation rule exists
 
@@ -51,7 +51,7 @@ Verify that the PSM root and the source objects expected by the template exist, 
 
 ### Authoritative sources
 
-The scheduling, guard, target path, merge policy, and artifact record are defined at `mde/generation/awspsm-to-artifacts/awspsm2artifacts.egx:58`. The rendered content is defined by `infrastructure/go-mod.egl` under `mde/generation/awspsm-to-artifacts/templates/`.
+The scheduling, guard, target path, merge policy, and artifact record are defined at `methodology/modeling-framework/generation/awspsm-to-artifacts/awspsm2artifacts.egx:58`. The rendered content is defined by `infrastructure/go-mod.egl` under `methodology/modeling-framework/generation/awspsm-to-artifacts/templates/`.
 
 ---
 
@@ -60,7 +60,7 @@ The scheduling, guard, target path, merge policy, and artifact record are define
 **Source context:** ``, `shared PSM generation context` 
 **Template:**`infrastructure/gitignore.egl` 
 **Target path expression:**`".gitignore"` 
-**EGX source:**`mde/generation/awspsm-to-artifacts/awspsm2artifacts.egx:74`
+**EGX source:**`methodology/modeling-framework/generation/awspsm-to-artifacts/awspsm2artifacts.egx:74`
 
 ### Why this generation rule exists
 
@@ -90,7 +90,7 @@ Verify that the PSM root and the source objects expected by the template exist, 
 
 ### Authoritative sources
 
-The scheduling, guard, target path, merge policy, and artifact record are defined at `mde/generation/awspsm-to-artifacts/awspsm2artifacts.egx:74`. The rendered content is defined by `infrastructure/gitignore.egl` under `mde/generation/awspsm-to-artifacts/templates/`.
+The scheduling, guard, target path, merge policy, and artifact record are defined at `methodology/modeling-framework/generation/awspsm-to-artifacts/awspsm2artifacts.egx:74`. The rendered content is defined by `infrastructure/gitignore.egl` under `methodology/modeling-framework/generation/awspsm-to-artifacts/templates/`.
 
 ---
 
@@ -99,7 +99,7 @@ The scheduling, guard, target path, merge policy, and artifact record are define
 **Source context:** `stackObj`, `AWSPSMCORE!SamStack`  
 **Template:** `infrastructure/sam-template.egl`  
 **Target path expression:** `stackPathText`  
-**EGX source:** `mde/generation/awspsm-to-artifacts/awspsm2artifacts.egx:100`
+**EGX source:** `methodology/modeling-framework/generation/awspsm-to-artifacts/awspsm2artifacts.egx:100`
 
 ### Why this generation rule exists
 
@@ -129,7 +129,7 @@ First evaluate the guard: `stackObj.resources.notEmpty()`. If it is false, check
 
 ### Authoritative sources
 
-The scheduling, guard, target path, merge policy, and artifact record are defined at `mde/generation/awspsm-to-artifacts/awspsm2artifacts.egx:100`. The rendered content is defined by `infrastructure/sam-template.egl` under `mde/generation/awspsm-to-artifacts/templates/`.
+The scheduling, guard, target path, merge policy, and artifact record are defined at `methodology/modeling-framework/generation/awspsm-to-artifacts/awspsm2artifacts.egx:100`. The rendered content is defined by `infrastructure/sam-template.egl` under `methodology/modeling-framework/generation/awspsm-to-artifacts/templates/`.
 
 ---
 
@@ -138,7 +138,7 @@ The scheduling, guard, target path, merge policy, and artifact record are define
 **Source context:** ``, `shared PSM generation context` 
 **Template:**`infrastructure/samconfig.egl` 
 **Target path expression:**`"samconfig.toml"` 
-**EGX source:**`mde/generation/awspsm-to-artifacts/awspsm2artifacts.egx:122`
+**EGX source:**`methodology/modeling-framework/generation/awspsm-to-artifacts/awspsm2artifacts.egx:122`
 
 ### Why this generation rule exists
 
@@ -168,7 +168,7 @@ Verify that the PSM root and the source objects expected by the template exist, 
 
 ### Authoritative sources
 
-The scheduling, guard, target path, merge policy, and artifact record are defined at `mde/generation/awspsm-to-artifacts/awspsm2artifacts.egx:122`. The rendered content is defined by `infrastructure/samconfig.egl` under `mde/generation/awspsm-to-artifacts/templates/`.
+The scheduling, guard, target path, merge policy, and artifact record are defined at `methodology/modeling-framework/generation/awspsm-to-artifacts/awspsm2artifacts.egx:122`. The rendered content is defined by `infrastructure/samconfig.egl` under `methodology/modeling-framework/generation/awspsm-to-artifacts/templates/`.
 
 ---
 
@@ -177,7 +177,7 @@ The scheduling, guard, target path, merge policy, and artifact record are define
 **Source context:** `stageObj`, `AWSPSMCORE!AwsStage`  
 **Template:** `infrastructure/env-json.egl`  
 **Target path expression:** `stageObj.envPath()`  
-**EGX source:** `mde/generation/awspsm-to-artifacts/awspsm2artifacts.egx:138`
+**EGX source:** `methodology/modeling-framework/generation/awspsm-to-artifacts/awspsm2artifacts.egx:138`
 
 ### Why this generation rule exists
 
@@ -201,7 +201,7 @@ Verify that the PSM root and the source objects expected by the template exist, 
 
 ### Authoritative sources
 
-The scheduling, guard, target path, merge policy, and artifact record are defined at `mde/generation/awspsm-to-artifacts/awspsm2artifacts.egx:138`. The rendered content is defined by `infrastructure/env-json.egl` under `mde/generation/awspsm-to-artifacts/templates/`.
+The scheduling, guard, target path, merge policy, and artifact record are defined at `methodology/modeling-framework/generation/awspsm-to-artifacts/awspsm2artifacts.egx:138`. The rendered content is defined by `infrastructure/env-json.egl` under `methodology/modeling-framework/generation/awspsm-to-artifacts/templates/`.
 
 ---
 
@@ -210,7 +210,7 @@ The scheduling, guard, target path, merge policy, and artifact record are define
 **Source context:** ``, `shared PSM generation context` 
 **Template:**`infrastructure/default-env-json.egl` 
 **Target path expression:**`"env/local.json"` 
-**EGX source:**`mde/generation/awspsm-to-artifacts/awspsm2artifacts.egx:154`
+**EGX source:**`methodology/modeling-framework/generation/awspsm-to-artifacts/awspsm2artifacts.egx:154`
 
 ### Why this generation rule exists
 
@@ -242,7 +242,7 @@ First evaluate the guard: `not AWSPSMCORE!AwsStage.all.exists(stageObj | stageOb
 
 ### Authoritative sources
 
-The scheduling, guard, target path, merge policy, and artifact record are defined at `mde/generation/awspsm-to-artifacts/awspsm2artifacts.egx:154`. The rendered content is defined by `infrastructure/default-env-json.egl` under `mde/generation/awspsm-to-artifacts/templates/`.
+The scheduling, guard, target path, merge policy, and artifact record are defined at `methodology/modeling-framework/generation/awspsm-to-artifacts/awspsm2artifacts.egx:154`. The rendered content is defined by `infrastructure/default-env-json.egl` under `methodology/modeling-framework/generation/awspsm-to-artifacts/templates/`.
 
 ---
 
@@ -251,7 +251,7 @@ The scheduling, guard, target path, merge policy, and artifact record are define
 **Source context:** ``, `shared PSM generation context` 
 **Template:**`infrastructure/default-env-json.egl` 
 **Target path expression:**`"env/dev.json"` 
-**EGX source:**`mde/generation/awspsm-to-artifacts/awspsm2artifacts.egx:168`
+**EGX source:**`methodology/modeling-framework/generation/awspsm-to-artifacts/awspsm2artifacts.egx:168`
 
 ### Why this generation rule exists
 
@@ -283,7 +283,7 @@ First evaluate the guard: `not AWSPSMCORE!AwsStage.all.exists(stageObj | stageOb
 
 ### Authoritative sources
 
-The scheduling, guard, target path, merge policy, and artifact record are defined at `mde/generation/awspsm-to-artifacts/awspsm2artifacts.egx:168`. The rendered content is defined by `infrastructure/default-env-json.egl` under `mde/generation/awspsm-to-artifacts/templates/`.
+The scheduling, guard, target path, merge policy, and artifact record are defined at `methodology/modeling-framework/generation/awspsm-to-artifacts/awspsm2artifacts.egx:168`. The rendered content is defined by `infrastructure/default-env-json.egl` under `methodology/modeling-framework/generation/awspsm-to-artifacts/templates/`.
 
 ---
 
@@ -292,7 +292,7 @@ The scheduling, guard, target path, merge policy, and artifact record are define
 **Source context:** ``, `shared PSM generation context` 
 **Template:**`infrastructure/default-env-json.egl` 
 **Target path expression:**`"env/test.json"` 
-**EGX source:**`mde/generation/awspsm-to-artifacts/awspsm2artifacts.egx:182`
+**EGX source:**`methodology/modeling-framework/generation/awspsm-to-artifacts/awspsm2artifacts.egx:182`
 
 ### Why this generation rule exists
 
@@ -324,7 +324,7 @@ First evaluate the guard: `not AWSPSMCORE!AwsStage.all.exists(stageObj | stageOb
 
 ### Authoritative sources
 
-The scheduling, guard, target path, merge policy, and artifact record are defined at `mde/generation/awspsm-to-artifacts/awspsm2artifacts.egx:182`. The rendered content is defined by `infrastructure/default-env-json.egl` under `mde/generation/awspsm-to-artifacts/templates/`.
+The scheduling, guard, target path, merge policy, and artifact record are defined at `methodology/modeling-framework/generation/awspsm-to-artifacts/awspsm2artifacts.egx:182`. The rendered content is defined by `infrastructure/default-env-json.egl` under `methodology/modeling-framework/generation/awspsm-to-artifacts/templates/`.
 
 ---
 
@@ -333,7 +333,7 @@ The scheduling, guard, target path, merge policy, and artifact record are define
 **Source context:** ``, `shared PSM generation context` 
 **Template:**`infrastructure/default-env-json.egl` 
 **Target path expression:**`"env/staging.json"` 
-**EGX source:**`mde/generation/awspsm-to-artifacts/awspsm2artifacts.egx:196`
+**EGX source:**`methodology/modeling-framework/generation/awspsm-to-artifacts/awspsm2artifacts.egx:196`
 
 ### Why this generation rule exists
 
@@ -365,7 +365,7 @@ First evaluate the guard: `not AWSPSMCORE!AwsStage.all.exists(stageObj | stageOb
 
 ### Authoritative sources
 
-The scheduling, guard, target path, merge policy, and artifact record are defined at `mde/generation/awspsm-to-artifacts/awspsm2artifacts.egx:196`. The rendered content is defined by `infrastructure/default-env-json.egl` under `mde/generation/awspsm-to-artifacts/templates/`.
+The scheduling, guard, target path, merge policy, and artifact record are defined at `methodology/modeling-framework/generation/awspsm-to-artifacts/awspsm2artifacts.egx:196`. The rendered content is defined by `infrastructure/default-env-json.egl` under `methodology/modeling-framework/generation/awspsm-to-artifacts/templates/`.
 
 ---
 
@@ -374,7 +374,7 @@ The scheduling, guard, target path, merge policy, and artifact record are define
 **Source context:** ``, `shared PSM generation context` 
 **Template:**`infrastructure/default-env-json.egl` 
 **Target path expression:**`"env/prod.example.json"` 
-**EGX source:**`mde/generation/awspsm-to-artifacts/awspsm2artifacts.egx:210`
+**EGX source:**`methodology/modeling-framework/generation/awspsm-to-artifacts/awspsm2artifacts.egx:210`
 
 ### Why this generation rule exists
 
@@ -406,7 +406,7 @@ First evaluate the guard: `not AWSPSMCORE!AwsStage.all.exists(stageObj | stageOb
 
 ### Authoritative sources
 
-The scheduling, guard, target path, merge policy, and artifact record are defined at `mde/generation/awspsm-to-artifacts/awspsm2artifacts.egx:210`. The rendered content is defined by `infrastructure/default-env-json.egl` under `mde/generation/awspsm-to-artifacts/templates/`.
+The scheduling, guard, target path, merge policy, and artifact record are defined at `methodology/modeling-framework/generation/awspsm-to-artifacts/awspsm2artifacts.egx:210`. The rendered content is defined by `infrastructure/default-env-json.egl` under `methodology/modeling-framework/generation/awspsm-to-artifacts/templates/`.
 
 ---
 
@@ -415,7 +415,7 @@ The scheduling, guard, target path, merge policy, and artifact record are define
 **Source context:** ``, `shared PSM generation context` 
 **Template:**`infrastructure/iam-policy-rationale.egl` 
 **Target path expression:**`"generated/reports/iam-policy-rationale.md"` 
-**EGX source:**`mde/generation/awspsm-to-artifacts/awspsm2artifacts.egx:902`
+**EGX source:**`methodology/modeling-framework/generation/awspsm-to-artifacts/awspsm2artifacts.egx:902`
 
 ### Why this generation rule exists
 
@@ -443,7 +443,7 @@ Verify that the PSM root and the source objects expected by the template exist, 
 
 ### Authoritative sources
 
-The scheduling, guard, target path, merge policy, and artifact record are defined at `mde/generation/awspsm-to-artifacts/awspsm2artifacts.egx:902`. The rendered content is defined by `infrastructure/iam-policy-rationale.egl` under `mde/generation/awspsm-to-artifacts/templates/`.
+The scheduling, guard, target path, merge policy, and artifact record are defined at `methodology/modeling-framework/generation/awspsm-to-artifacts/awspsm2artifacts.egx:902`. The rendered content is defined by `infrastructure/iam-policy-rationale.egl` under `methodology/modeling-framework/generation/awspsm-to-artifacts/templates/`.
 
 ---
 

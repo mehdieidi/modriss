@@ -9,9 +9,9 @@ unreadable canvas.
 The abstract syntax remains defined by the Emfatic sources and combined Ecore metamodels. Visual
 syntax is configured in:
 
-- `mde/notation/cim.cvs.json` (CVS v2, primary for CIM when present)
-- `mde/notation/pim.cvs.json` (phase 2)
-- `mde/notation/psm.cvs.json` (phase 3)
+- `methodology/modeling-framework/notation/cim.cvs.json` (CVS v2, primary for CIM when present)
+- `methodology/modeling-framework/notation/pim.cvs.json` (phase 2)
+- `methodology/modeling-framework/notation/psm.cvs.json` (phase 3)
 - `packages/java/platform-modeling/src/main/resources/modeling/cim-ui-metadata.json` (G6 v1 fallback)
 - `packages/java/platform-modeling/src/main/resources/modeling/pim-ui-metadata.json`
 - `packages/java/platform-modeling/src/main/resources/modeling/psm-ui-metadata.json`

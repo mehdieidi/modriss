@@ -2,7 +2,7 @@
 
 The kernel rules protect invariants that every DSML relies on: stable identity, traceability, and a usable correspondence between model elements. They run in each level's entry profile, so a model that is meaningful at CIM is still required to remain addressable and traceable after refinement.
 
-Source profile: `mde/validation/shared/kernel-constraints.evl`.
+Source profile: `methodology/modeling-framework/validation/shared/kernel-constraints.evl`.
 
 ## Reading these rules
 
@@ -14,7 +14,7 @@ Each entry preserves the actual EVL guard and check. Treat the guard as the appl
 
 **Context:** `KERNEL!ModelElement`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/shared/kernel-constraints.evl:4`
+**Source:** `methodology/modeling-framework/validation/shared/kernel-constraints.evl:4`
 
 ### Why this rule exists
 
@@ -52,7 +52,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `KERNEL!TraceLink`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/shared/kernel-constraints.evl:13`
+**Source:** `methodology/modeling-framework/validation/shared/kernel-constraints.evl:13`
 
 ### Why this rule exists
 

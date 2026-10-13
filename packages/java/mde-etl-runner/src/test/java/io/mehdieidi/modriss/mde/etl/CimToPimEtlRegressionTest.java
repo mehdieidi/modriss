@@ -56,8 +56,8 @@ final class CimToPimEtlRegressionTest {
   private static Path findRepositoryRoot() {
     Path current = Path.of(System.getProperty("user.dir")).toAbsolutePath().normalize();
     while (current != null) {
-      if (Files.isDirectory(current.resolve("mde/metamodels"))
-          && Files.isDirectory(current.resolve("mde/transformations"))) {
+      if (Files.isDirectory(current.resolve("methodology/modeling-framework/metamodels"))
+          && Files.isDirectory(current.resolve("methodology/modeling-framework/transformations"))) {
         return current;
       }
       current = current.getParent();
@@ -73,8 +73,10 @@ final class CimToPimEtlRegressionTest {
    */
   @Test
   void executesCimToPimTransformationForRepresentativeBusinessModel() throws Exception {
-    Path cimMetamodel = REPOSITORY_ROOT.resolve("mde/metamodels/cim/cim-combined.ecore");
-    Path pimMetamodel = REPOSITORY_ROOT.resolve("mde/metamodels/pim/pim-combined.ecore");
+    Path cimMetamodel =
+        REPOSITORY_ROOT.resolve("methodology/modeling-framework/metamodels/cim/cim-combined.ecore");
+    Path pimMetamodel =
+        REPOSITORY_ROOT.resolve("methodology/modeling-framework/metamodels/pim/pim-combined.ecore");
     Path cimModel = tempDir.resolve("order-cim.xmi");
     Path pimModel = tempDir.resolve("order-pim.xmi");
 
@@ -82,8 +84,9 @@ final class CimToPimEtlRegressionTest {
 
     EtlExecutionRequest request =
         new EtlExecutionRequest(
-            REPOSITORY_ROOT.resolve("mde/transformations/cim-to-pim/cim-to-pim.etl"),
-            REPOSITORY_ROOT.resolve("mde/transformations/cim-to-pim"),
+            REPOSITORY_ROOT.resolve(
+                "methodology/modeling-framework/transformations/cim-to-pim/cim-to-pim.etl"),
+            REPOSITORY_ROOT.resolve("methodology/modeling-framework/transformations/cim-to-pim"),
             List.of(
                 EtlModelConfiguration.source(
                     "CIM", CimToPimDefaults.SOURCE_ALIASES, cimModel, List.of(cimMetamodel)),
@@ -128,8 +131,10 @@ final class CimToPimEtlRegressionTest {
    */
   @Test
   void preservesRelationshipTargetMultiplicityAcrossPimProjections() throws Exception {
-    Path cimMetamodel = REPOSITORY_ROOT.resolve("mde/metamodels/cim/cim-combined.ecore");
-    Path pimMetamodel = REPOSITORY_ROOT.resolve("mde/metamodels/pim/pim-combined.ecore");
+    Path cimMetamodel =
+        REPOSITORY_ROOT.resolve("methodology/modeling-framework/metamodels/cim/cim-combined.ecore");
+    Path pimMetamodel =
+        REPOSITORY_ROOT.resolve("methodology/modeling-framework/metamodels/pim/pim-combined.ecore");
     Path cimModel = tempDir.resolve("relationship-cardinality-cim.xmi");
     Path pimModel = tempDir.resolve("relationship-cardinality-pim.xmi");
 
@@ -182,8 +187,9 @@ final class CimToPimEtlRegressionTest {
   @Test
   void transformsClimateReliefSampleThroughDefaultProfileWithSpecCompletenessShape()
       throws Exception {
-    Path pimMetamodel = REPOSITORY_ROOT.resolve("mde/metamodels/pim/pim-combined.ecore");
-    Path sampleModel = REPOSITORY_ROOT.resolve("mde/samples/cim.xmi");
+    Path pimMetamodel =
+        REPOSITORY_ROOT.resolve("methodology/modeling-framework/metamodels/pim/pim-combined.ecore");
+    Path sampleModel = REPOSITORY_ROOT.resolve("methodology/modeling-framework/samples/cim.xmi");
     Path pimModel = tempDir.resolve("climate-relief-grants-pim.xmi");
 
     EtlExecutionReport report =
@@ -293,7 +299,8 @@ final class CimToPimEtlRegressionTest {
         new EpsilonEvlValidator()
             .validate(
                 EvlValidationRequest.forRoot(
-                    REPOSITORY_ROOT.resolve("mde/validation/pim/pim-semantic-validation.evl"),
+                    REPOSITORY_ROOT.resolve(
+                        "methodology/modeling-framework/validation/pim/pim-semantic-validation.evl"),
                     List.of(
                         FileEvlModelConfiguration.readOnly(
                             "PIM", List.of("KERNEL"), pimModel, List.of(pimMetamodel))),
@@ -313,8 +320,10 @@ final class CimToPimEtlRegressionTest {
    */
   @Test
   void coversCrossBoundaryRelationshipAndReviewBacklogRules() throws Exception {
-    Path cimMetamodel = REPOSITORY_ROOT.resolve("mde/metamodels/cim/cim-combined.ecore");
-    Path pimMetamodel = REPOSITORY_ROOT.resolve("mde/metamodels/pim/pim-combined.ecore");
+    Path cimMetamodel =
+        REPOSITORY_ROOT.resolve("methodology/modeling-framework/metamodels/cim/cim-combined.ecore");
+    Path pimMetamodel =
+        REPOSITORY_ROOT.resolve("methodology/modeling-framework/metamodels/pim/pim-combined.ecore");
     Path cimModel = tempDir.resolve("coverage-cim.xmi");
     Path pimModel = tempDir.resolve("coverage-pim.xmi");
 
@@ -322,8 +331,9 @@ final class CimToPimEtlRegressionTest {
 
     EtlExecutionRequest request =
         new EtlExecutionRequest(
-            REPOSITORY_ROOT.resolve("mde/transformations/cim-to-pim/cim-to-pim.etl"),
-            REPOSITORY_ROOT.resolve("mde/transformations/cim-to-pim"),
+            REPOSITORY_ROOT.resolve(
+                "methodology/modeling-framework/transformations/cim-to-pim/cim-to-pim.etl"),
+            REPOSITORY_ROOT.resolve("methodology/modeling-framework/transformations/cim-to-pim"),
             List.of(
                 EtlModelConfiguration.source(
                     "CIM", CimToPimDefaults.SOURCE_ALIASES, cimModel, List.of(cimMetamodel)),
@@ -419,8 +429,10 @@ final class CimToPimEtlRegressionTest {
    */
   @Test
   void createsReviewablePlaceholderArtifactsForCimWithoutServiceBoundaries() throws Exception {
-    Path cimMetamodel = REPOSITORY_ROOT.resolve("mde/metamodels/cim/cim-combined.ecore");
-    Path pimMetamodel = REPOSITORY_ROOT.resolve("mde/metamodels/pim/pim-combined.ecore");
+    Path cimMetamodel =
+        REPOSITORY_ROOT.resolve("methodology/modeling-framework/metamodels/cim/cim-combined.ecore");
+    Path pimMetamodel =
+        REPOSITORY_ROOT.resolve("methodology/modeling-framework/metamodels/pim/pim-combined.ecore");
     Path cimModel = tempDir.resolve("minimal-cim.xmi");
     Path pimModel = tempDir.resolve("minimal-pim.xmi");
 
@@ -475,17 +487,19 @@ final class CimToPimEtlRegressionTest {
    */
   @Test
   void generatedOutputsCoverEveryCimToPimTransformationRuleFamily() throws Exception {
-    Path pimMetamodel = REPOSITORY_ROOT.resolve("mde/metamodels/pim/pim-combined.ecore");
+    Path pimMetamodel =
+        REPOSITORY_ROOT.resolve("methodology/modeling-framework/metamodels/pim/pim-combined.ecore");
     Path samplePim = tempDir.resolve("sample-rule-family-coverage.pim.xmi");
     executeOrFail(
         CimToPimDefaults.request(
             REPOSITORY_ROOT,
-            REPOSITORY_ROOT.resolve("mde/samples/cim.xmi"),
+            REPOSITORY_ROOT.resolve("methodology/modeling-framework/samples/cim.xmi"),
             samplePim,
             true,
             true));
 
-    Path cimMetamodel = REPOSITORY_ROOT.resolve("mde/metamodels/cim/cim-combined.ecore");
+    Path cimMetamodel =
+        REPOSITORY_ROOT.resolve("methodology/modeling-framework/metamodels/cim/cim-combined.ecore");
     Path branchCim = tempDir.resolve("branch-rule-family-coverage.cim.xmi");
     Path branchPim = tempDir.resolve("branch-rule-family-coverage.pim.xmi");
     createCoverageCimModel(cimMetamodel, branchCim);
@@ -573,8 +587,10 @@ final class CimToPimEtlRegressionTest {
    */
   @Test
   void eolHelperLibrariesProduceExpectedSemanticArtifacts() throws Exception {
-    Path cimMetamodel = REPOSITORY_ROOT.resolve("mde/metamodels/cim/cim-combined.ecore");
-    Path pimMetamodel = REPOSITORY_ROOT.resolve("mde/metamodels/pim/pim-combined.ecore");
+    Path cimMetamodel =
+        REPOSITORY_ROOT.resolve("methodology/modeling-framework/metamodels/cim/cim-combined.ecore");
+    Path pimMetamodel =
+        REPOSITORY_ROOT.resolve("methodology/modeling-framework/metamodels/pim/pim-combined.ecore");
     Path cimModel = tempDir.resolve("helper-semantics-cim.xmi");
     Path pimModel = tempDir.resolve("helper-semantics-pim.xmi");
 

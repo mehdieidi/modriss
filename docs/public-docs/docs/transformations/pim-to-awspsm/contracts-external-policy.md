@@ -2,7 +2,7 @@
 
 Contract and external-policy binding creates AWS-side structured documents and monitoring resources from PIM schemas, event types, business rules, decision models, external adapters, and alert policies. These documents are the bridge between provider-independent meaning and generated OpenAPI/JSON/ASL/IAM-facing artifacts.
 
-Source module: `mde/transformations/pim-to-awspsm/contracts-external-policy.etl`.
+Source module: `methodology/modeling-framework/transformations/pim-to-awspsm/contracts-external-policy.etl`.
 
 ## Reading this page
 
@@ -14,32 +14,32 @@ A transformation rule determines whether a source element contributes to the tar
 
 Supporting operations also shape the transformation. They derive defaults, create secondary resources, cache correspondences, and resolve relationships after the main rule runs.
 
-| Operation                                      | Role                                                 | Source                                                                |
-| ---------------------------------------------- | ---------------------------------------------------- | --------------------------------------------------------------------- |
-| `renderJsonSchema`                             | Renders render json schema.                          | `mde/transformations/pim-to-awspsm/contracts-external-policy.etl:129` |
-| `eventContractJson`                            | Computes event contract json.                        | `mde/transformations/pim-to-awspsm/contracts-external-policy.etl:134` |
-| `businessRuleDocumentJson`                     | Computes business rule document json.                | `mde/transformations/pim-to-awspsm/contracts-external-policy.etl:144` |
-| `applyFunctionPolicies`                        | Computes apply function policies.                    | `mde/transformations/pim-to-awspsm/contracts-external-policy.etl:153` |
-| `applyIdempotency`                             | Computes apply idempotency.                          | `mde/transformations/pim-to-awspsm/contracts-external-policy.etl:168` |
-| `applyDataProtectionPolicies`                  | Computes apply data protection policies.             | `mde/transformations/pim-to-awspsm/contracts-external-policy.etl:183` |
-| `applyObservability`                           | Computes apply observability.                        | `mde/transformations/pim-to-awspsm/contracts-external-policy.etl:201` |
-| `createPolicyAlarm`                            | Creates policy alarm.                                | `mde/transformations/pim-to-awspsm/contracts-external-policy.etl:238` |
-| `applySecurityPolicies`                        | Computes apply security policies.                    | `mde/transformations/pim-to-awspsm/contracts-external-policy.etl:260` |
-| `createLambdaAlarm`                            | Creates lambda alarm.                                | `mde/transformations/pim-to-awspsm/contracts-external-policy.etl:275` |
-| `createLambdaDeadLetterConfig`                 | Creates lambda dead letter config.                   | `mde/transformations/pim-to-awspsm/contracts-external-policy.etl:298` |
-| `isHttpAdapter`                                | Returns whether the receiver is http adapter.        | `mde/transformations/pim-to-awspsm/contracts-external-policy.etl:320` |
-| `createEventBridgeConnectionAndApiDestination` | Creates event bridge connection and api destination. | `mde/transformations/pim-to-awspsm/contracts-external-policy.etl:330` |
-| `endpointOf`                                   | Computes endpoint of.                                | `mde/transformations/pim-to-awspsm/contracts-external-policy.etl:361` |
-| `createConnectionAuthParameters`               | Creates connection auth parameters.                  | `mde/transformations/pim-to-awspsm/contracts-external-policy.etl:369` |
-| `credentialSecretValue`                        | Computes credential secret value.                    | `mde/transformations/pim-to-awspsm/contracts-external-policy.etl:409` |
-| `credentialReferenceName`                      | Computes credential reference name.                  | `mde/transformations/pim-to-awspsm/contracts-external-policy.etl:414` |
-| `firstCredentialName`                          | Computes first credential name.                      | `mde/transformations/pim-to-awspsm/contracts-external-policy.etl:433` |
-| `firstCredentialValue`                         | Computes first credential value.                     | `mde/transformations/pim-to-awspsm/contracts-external-policy.etl:441` |
-| `inferConnectionAuthType`                      | Derives infer connection auth type.                  | `mde/transformations/pim-to-awspsm/contracts-external-policy.etl:453` |
-| `endpointFromDescription`                      | Computes endpoint from description.                  | `mde/transformations/pim-to-awspsm/contracts-external-policy.etl:464` |
-| `inferMetricNamespace`                         | Derives infer metric namespace.                      | `mde/transformations/pim-to-awspsm/contracts-external-policy.etl:476` |
-| `parseComparison`                              | Converts the receiver to parse comparison.           | `mde/transformations/pim-to-awspsm/contracts-external-policy.etl:484` |
-| `parseThreshold`                               | Converts the receiver to parse threshold.            | `mde/transformations/pim-to-awspsm/contracts-external-policy.etl:499` |
+| Operation                                      | Role                                                 | Source                                                                                           |
+| ---------------------------------------------- | ---------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| `renderJsonSchema`                             | Renders render json schema.                          | `methodology/modeling-framework/transformations/pim-to-awspsm/contracts-external-policy.etl:129` |
+| `eventContractJson`                            | Computes event contract json.                        | `methodology/modeling-framework/transformations/pim-to-awspsm/contracts-external-policy.etl:134` |
+| `businessRuleDocumentJson`                     | Computes business rule document json.                | `methodology/modeling-framework/transformations/pim-to-awspsm/contracts-external-policy.etl:144` |
+| `applyFunctionPolicies`                        | Computes apply function policies.                    | `methodology/modeling-framework/transformations/pim-to-awspsm/contracts-external-policy.etl:153` |
+| `applyIdempotency`                             | Computes apply idempotency.                          | `methodology/modeling-framework/transformations/pim-to-awspsm/contracts-external-policy.etl:168` |
+| `applyDataProtectionPolicies`                  | Computes apply data protection policies.             | `methodology/modeling-framework/transformations/pim-to-awspsm/contracts-external-policy.etl:183` |
+| `applyObservability`                           | Computes apply observability.                        | `methodology/modeling-framework/transformations/pim-to-awspsm/contracts-external-policy.etl:201` |
+| `createPolicyAlarm`                            | Creates policy alarm.                                | `methodology/modeling-framework/transformations/pim-to-awspsm/contracts-external-policy.etl:238` |
+| `applySecurityPolicies`                        | Computes apply security policies.                    | `methodology/modeling-framework/transformations/pim-to-awspsm/contracts-external-policy.etl:260` |
+| `createLambdaAlarm`                            | Creates lambda alarm.                                | `methodology/modeling-framework/transformations/pim-to-awspsm/contracts-external-policy.etl:275` |
+| `createLambdaDeadLetterConfig`                 | Creates lambda dead letter config.                   | `methodology/modeling-framework/transformations/pim-to-awspsm/contracts-external-policy.etl:298` |
+| `isHttpAdapter`                                | Returns whether the receiver is http adapter.        | `methodology/modeling-framework/transformations/pim-to-awspsm/contracts-external-policy.etl:320` |
+| `createEventBridgeConnectionAndApiDestination` | Creates event bridge connection and api destination. | `methodology/modeling-framework/transformations/pim-to-awspsm/contracts-external-policy.etl:330` |
+| `endpointOf`                                   | Computes endpoint of.                                | `methodology/modeling-framework/transformations/pim-to-awspsm/contracts-external-policy.etl:361` |
+| `createConnectionAuthParameters`               | Creates connection auth parameters.                  | `methodology/modeling-framework/transformations/pim-to-awspsm/contracts-external-policy.etl:369` |
+| `credentialSecretValue`                        | Computes credential secret value.                    | `methodology/modeling-framework/transformations/pim-to-awspsm/contracts-external-policy.etl:409` |
+| `credentialReferenceName`                      | Computes credential reference name.                  | `methodology/modeling-framework/transformations/pim-to-awspsm/contracts-external-policy.etl:414` |
+| `firstCredentialName`                          | Computes first credential name.                      | `methodology/modeling-framework/transformations/pim-to-awspsm/contracts-external-policy.etl:433` |
+| `firstCredentialValue`                         | Computes first credential value.                     | `methodology/modeling-framework/transformations/pim-to-awspsm/contracts-external-policy.etl:441` |
+| `inferConnectionAuthType`                      | Derives infer connection auth type.                  | `methodology/modeling-framework/transformations/pim-to-awspsm/contracts-external-policy.etl:453` |
+| `endpointFromDescription`                      | Computes endpoint from description.                  | `methodology/modeling-framework/transformations/pim-to-awspsm/contracts-external-policy.etl:464` |
+| `inferMetricNamespace`                         | Derives infer metric namespace.                      | `methodology/modeling-framework/transformations/pim-to-awspsm/contracts-external-policy.etl:476` |
+| `parseComparison`                              | Converts the receiver to parse comparison.           | `methodology/modeling-framework/transformations/pim-to-awspsm/contracts-external-policy.etl:484` |
+| `parseThreshold`                               | Converts the receiver to parse threshold.            | `methodology/modeling-framework/transformations/pim-to-awspsm/contracts-external-policy.etl:499` |
 
 ---
 
@@ -47,7 +47,7 @@ Supporting operations also shape the transformation. They derive defaults, creat
 
 **Source:** `s` to `CONTRACTS!Schema`  
 **Target:** `d` to `KERNEL!StructuredDocument`  
-**Source location:** `mde/transformations/pim-to-awspsm/contracts-external-policy.etl:2`
+**Source location:** `methodology/modeling-framework/transformations/pim-to-awspsm/contracts-external-policy.etl:2`
 
 ### Why this rule exists
 
@@ -71,7 +71,7 @@ Verify that the schema is present and semantically complete, then rerun the tran
 
 ### Authoritative source
 
-See the complete ETL rule at `mde/transformations/pim-to-awspsm/contracts-external-policy.etl:2`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
+See the complete ETL rule at `methodology/modeling-framework/transformations/pim-to-awspsm/contracts-external-policy.etl:2`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
 
 ---
 
@@ -79,7 +79,7 @@ See the complete ETL rule at `mde/transformations/pim-to-awspsm/contracts-extern
 
 **Source:** `e` to `CONTRACTS!EventType`  
 **Target:** `d` to `KERNEL!StructuredDocument`  
-**Source location:** `mde/transformations/pim-to-awspsm/contracts-external-policy.etl:16`
+**Source location:** `methodology/modeling-framework/transformations/pim-to-awspsm/contracts-external-policy.etl:16`
 
 ### Why this rule exists
 
@@ -103,7 +103,7 @@ Verify that the event type is present and semantically complete, then rerun the 
 
 ### Authoritative source
 
-See the complete ETL rule at `mde/transformations/pim-to-awspsm/contracts-external-policy.etl:16`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
+See the complete ETL rule at `methodology/modeling-framework/transformations/pim-to-awspsm/contracts-external-policy.etl:16`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
 
 ---
 
@@ -111,7 +111,7 @@ See the complete ETL rule at `mde/transformations/pim-to-awspsm/contracts-extern
 
 **Source:** `b` to `POLICY!BusinessRule`  
 **Target:** `d` to `KERNEL!StructuredDocument`  
-**Source location:** `mde/transformations/pim-to-awspsm/contracts-external-policy.etl:29`
+**Source location:** `methodology/modeling-framework/transformations/pim-to-awspsm/contracts-external-policy.etl:29`
 
 ### Why this rule exists
 
@@ -135,7 +135,7 @@ Verify that the business rule is present and semantically complete, then rerun t
 
 ### Authoritative source
 
-See the complete ETL rule at `mde/transformations/pim-to-awspsm/contracts-external-policy.etl:29`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
+See the complete ETL rule at `methodology/modeling-framework/transformations/pim-to-awspsm/contracts-external-policy.etl:29`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
 
 ---
 
@@ -143,7 +143,7 @@ See the complete ETL rule at `mde/transformations/pim-to-awspsm/contracts-extern
 
 **Source:** `dm` to `POLICY!DecisionModel`  
 **Target:** `n` to `AWSPSMCORE!AwsNativeResource`  
-**Source location:** `mde/transformations/pim-to-awspsm/contracts-external-policy.etl:42`
+**Source location:** `methodology/modeling-framework/transformations/pim-to-awspsm/contracts-external-policy.etl:42`
 
 ### Why this rule exists
 
@@ -168,7 +168,7 @@ Start with the manual decision(s) `DECISION_MODEL_IMPLEMENTATION_REQUIRED` and c
 
 ### Authoritative source
 
-See the complete ETL rule at `mde/transformations/pim-to-awspsm/contracts-external-policy.etl:42`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
+See the complete ETL rule at `methodology/modeling-framework/transformations/pim-to-awspsm/contracts-external-policy.etl:42`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
 
 ---
 
@@ -176,7 +176,7 @@ See the complete ETL rule at `mde/transformations/pim-to-awspsm/contracts-extern
 
 **Source:** `a` to `EXTERNAL!ExternalAdapter`  
 **Target:** `n` to `AWSPSMCORE!AwsNativeResource`  
-**Source location:** `mde/transformations/pim-to-awspsm/contracts-external-policy.etl:60`
+**Source location:** `methodology/modeling-framework/transformations/pim-to-awspsm/contracts-external-policy.etl:60`
 
 ### Why this rule exists
 
@@ -201,7 +201,7 @@ Start with the manual decision(s) `EXTERNAL_ADAPTER_ENDPOINT_REQUIRED, EXTERNAL_
 
 ### Authoritative source
 
-See the complete ETL rule at `mde/transformations/pim-to-awspsm/contracts-external-policy.etl:60`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
+See the complete ETL rule at `methodology/modeling-framework/transformations/pim-to-awspsm/contracts-external-policy.etl:60`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
 
 ---
 
@@ -209,7 +209,7 @@ See the complete ETL rule at `mde/transformations/pim-to-awspsm/contracts-extern
 
 **Source:** `a` to `POLICY!AlertPolicy`  
 **Target:** `alarm` to `AWSPSMOBSERVABILITY!CloudWatchAlarm`  
-**Source location:** `mde/transformations/pim-to-awspsm/contracts-external-policy.etl:99`
+**Source location:** `methodology/modeling-framework/transformations/pim-to-awspsm/contracts-external-policy.etl:99`
 
 ### Why this rule exists
 
@@ -234,6 +234,6 @@ Start with the manual decision(s) `ALARM_THRESHOLD_REQUIRED` and complete the re
 
 ### Authoritative source
 
-See the complete ETL rule at `mde/transformations/pim-to-awspsm/contracts-external-policy.etl:99`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
+See the complete ETL rule at `methodology/modeling-framework/transformations/pim-to-awspsm/contracts-external-policy.etl:99`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
 
 ---

@@ -58,8 +58,8 @@ class EpsilonEvlValidatorTest {
   private static Path findRepositoryRoot() {
     Path current = Path.of(System.getProperty("user.dir")).toAbsolutePath().normalize();
     while (current != null) {
-      if (Files.isDirectory(current.resolve("mde/metamodels"))
-          && Files.isDirectory(current.resolve("mde/validation/psm"))) {
+      if (Files.isDirectory(current.resolve("methodology/modeling-framework/metamodels"))
+          && Files.isDirectory(current.resolve("methodology/modeling-framework/validation/psm"))) {
         return current;
       }
       current = current.getParent();
@@ -183,19 +183,21 @@ class EpsilonEvlValidatorTest {
    */
   @Test
   void validatesRepositoryPsmSampleWithReadinessBacklog() throws Exception {
-    Path psmSample = REPOSITORY_ROOT.resolve("mde/samples/psm.xmi");
+    Path psmSample = REPOSITORY_ROOT.resolve("methodology/modeling-framework/samples/psm.xmi");
     EvlValidationReport report =
         new EpsilonEvlValidator()
             .validate(
                 EvlValidationRequest.forRoot(
-                    REPOSITORY_ROOT.resolve("mde/validation/psm/psm-semantic-validation.evl"),
+                    REPOSITORY_ROOT.resolve(
+                        "methodology/modeling-framework/validation/psm/psm-semantic-validation.evl"),
                     List.of(
                         FileEvlModelConfiguration.readOnly(
                             "AWSPSM",
                             List.of("AWSPSMENUMS", "KERNEL"),
                             psmSample,
                             List.of(
-                                REPOSITORY_ROOT.resolve("mde/metamodels/psm/psm-combined.ecore")))),
+                                REPOSITORY_ROOT.resolve(
+                                    "methodology/modeling-framework/metamodels/psm/psm-combined.ecore")))),
                     true));
 
     assertEquals(EvlValidationStatus.SUCCEEDED, report.status());

@@ -56,7 +56,7 @@ def main() -> int:
 
     run([python_executable(), "-m", "unittest", "discover", "-s", "scripts/tests"])
 
-    run(["node", "mde/process/tools/validate-coverage.mjs"])
+    run(["node", "methodology/process/tools/validate-coverage.mjs"])
 
     if not args.skip_tests:
         test_cmd = [maven(), "test"]

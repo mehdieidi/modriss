@@ -2,7 +2,7 @@
 
 Integration views are explicit wiring records used to inspect and validate how AWS resources connect across service boundaries.
 
-Source: `mde/metamodels/psm/awspsm-integrations.emf`.
+Source: `methodology/modeling-framework/metamodels/psm/awspsm-integrations.emf`.
 
 ## `AwsRelationshipView`
 

@@ -19,11 +19,13 @@ import org.junit.jupiter.api.parallel.ResourceLock;
 class PimSemanticValidationTest {
 
   private static final Path REPOSITORY_ROOT = findRepositoryRoot();
-  private static final Path PIM_SAMPLE = REPOSITORY_ROOT.resolve("mde/samples/pim.xmi");
+  private static final Path PIM_SAMPLE =
+      REPOSITORY_ROOT.resolve("methodology/modeling-framework/samples/pim.xmi");
   private static final Path PIM_EVL =
-      REPOSITORY_ROOT.resolve("mde/validation/pim/pim-semantic-validation.evl");
+      REPOSITORY_ROOT.resolve(
+          "methodology/modeling-framework/validation/pim/pim-semantic-validation.evl");
   private static final Path PIM_ECORE =
-      REPOSITORY_ROOT.resolve("mde/metamodels/pim/pim-combined.ecore");
+      REPOSITORY_ROOT.resolve("methodology/modeling-framework/metamodels/pim/pim-combined.ecore");
   private static final List<String> ALIASES = List.of("KERNEL");
 
   private static final String SERVICE_ID = "f9c24e2e-c321-40b5-b153-2ca6a604cb4f";
@@ -102,10 +104,12 @@ class PimSemanticValidationTest {
     Files.createDirectories(evlRoot.resolve("lib"));
     Files.createDirectories(evlRoot.resolve("../shared").normalize());
     Files.copy(
-        REPOSITORY_ROOT.resolve("mde/validation/pim/lib/pim-validation-helpers.eol"),
+        REPOSITORY_ROOT.resolve(
+            "methodology/modeling-framework/validation/pim/lib/pim-validation-helpers.eol"),
         evlRoot.resolve("lib/pim-validation-helpers.eol"));
     Files.copy(
-        REPOSITORY_ROOT.resolve("mde/validation/shared/shared-validation-helpers.eol"),
+        REPOSITORY_ROOT.resolve(
+            "methodology/modeling-framework/validation/shared/shared-validation-helpers.eol"),
         evlRoot.resolve("../shared/shared-validation-helpers.eol").normalize());
     Path evl = evlRoot.resolve("helper-contract.evl");
     Files.writeString(
@@ -915,8 +919,8 @@ context PIM!PIMModel {
   private static Path findRepositoryRoot() {
     Path current = Path.of(System.getProperty("user.dir")).toAbsolutePath().normalize();
     while (current != null) {
-      if (Files.isDirectory(current.resolve("mde/metamodels"))
-          && Files.isDirectory(current.resolve("mde/validation/pim"))) {
+      if (Files.isDirectory(current.resolve("methodology/modeling-framework/metamodels"))
+          && Files.isDirectory(current.resolve("methodology/modeling-framework/validation/pim"))) {
         return current;
       }
       current = current.getParent();

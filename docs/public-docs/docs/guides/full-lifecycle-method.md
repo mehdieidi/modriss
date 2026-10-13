@@ -2,7 +2,7 @@
 
 The MODRISS methodology comprises a development process and a modeling framework. This guide documents the process component. It organizes work across CIM, PIM, and PSM modeling, artifact production, release, operations, change, and retirement. The modeling framework defines the languages and technical facilities used by that work.
 
-The maintained process is described in [`mde/process/software-development-process.md`](https://github.com/mehdieidi/modriss/blob/main/mde/process/software-development-process.md). The machine-readable definitions are in [`mde/process/definitions/`](https://github.com/mehdieidi/modriss/tree/main/mde/process/definitions). Those sources define the roles, work products, dependencies, and conditions used by the process.
+The maintained process is described in [`methodology/process/software-development-process.md`](https://github.com/mehdieidi/modriss/blob/main/methodology/process/software-development-process.md). The machine-readable definitions are in [`methodology/process/definitions/`](https://github.com/mehdieidi/modriss/tree/main/methodology/process/definitions). Those sources define the roles, work products, dependencies, and conditions used by the process.
 
 For operational use, continue with the complete [Development and Delivery reference](../process-reference/development-delivery.md), the [Operations and Maintenance reference](../process-reference/operations-maintenance.md), and the [reusable method-content catalogs](../process-reference/index.md). These pages give detailed instructions, responsibilities, inputs, outputs, review conditions, guidance, and gates for every canonical process item.
 

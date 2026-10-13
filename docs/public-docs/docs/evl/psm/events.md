@@ -2,7 +2,7 @@
 
 EventBridge rules validate the provider-specific event graph: patterns and schedules are not mixed accidentally, targets are complete and unique, roles and connections match their integration type, and retry/dead-letter behavior is not omitted from critical delivery paths.
 
-Source profile: `mde/validation/psm/rules/events.evl`.
+Source profile: `methodology/modeling-framework/validation/psm/rules/events.evl`.
 
 ## Reading these rules
 
@@ -14,7 +14,7 @@ Each entry preserves the actual EVL guard and check. Treat the guard as the appl
 
 **Context:** `AWSPSM!EventBridgeRule`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/psm/rules/events.evl:8`
+**Source:** `methodology/modeling-framework/validation/psm/rules/events.evl:8`
 
 ### Why this rule exists
 
@@ -52,7 +52,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `AWSPSM!EventBridgeRule`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/psm/rules/events.evl:14`
+**Source:** `methodology/modeling-framework/validation/psm/rules/events.evl:14`
 
 ### Why this rule exists
 
@@ -90,7 +90,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `AWSPSM!EventBridgeRule`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/psm/rules/events.evl:20`
+**Source:** `methodology/modeling-framework/validation/psm/rules/events.evl:20`
 
 ### Why this rule exists
 
@@ -128,7 +128,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `AWSPSM!EventBridgeRule`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/psm/rules/events.evl:26`
+**Source:** `methodology/modeling-framework/validation/psm/rules/events.evl:26`
 
 ### Why this rule exists
 
@@ -166,7 +166,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `AWSPSM!EventBridgeTarget`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/psm/rules/events.evl:36`
+**Source:** `methodology/modeling-framework/validation/psm/rules/events.evl:36`
 
 ### Why this rule exists
 
@@ -204,7 +204,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `AWSPSM!EventBridgeTarget`  
 **Classification:** Advisory critique (warning)  
-**Source:** `mde/validation/psm/rules/events.evl:42`
+**Source:** `methodology/modeling-framework/validation/psm/rules/events.evl:42`
 
 ### Why this rule exists
 
@@ -244,7 +244,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 **Context:** `AWSPSM!EventBridgeTarget`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/psm/rules/events.evl:49`
+**Source:** `methodology/modeling-framework/validation/psm/rules/events.evl:49`
 
 ### Why this rule exists
 
@@ -284,7 +284,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `AWSPSM!EventBridgeTarget`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/psm/rules/events.evl:56`
+**Source:** `methodology/modeling-framework/validation/psm/rules/events.evl:56`
 
 ### Why this rule exists
 
@@ -324,7 +324,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `AWSPSM!AwsRetryPolicy`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/psm/rules/events.evl:66`
+**Source:** `methodology/modeling-framework/validation/psm/rules/events.evl:66`
 
 ### Why this rule exists
 
@@ -362,7 +362,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `AWSPSM!EventBridgeSchedule`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/psm/rules/events.evl:76`
+**Source:** `methodology/modeling-framework/validation/psm/rules/events.evl:76`
 
 ### Why this rule exists
 
@@ -400,7 +400,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `AWSPSM!EventBridgeSchedule`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/psm/rules/events.evl:82`
+**Source:** `methodology/modeling-framework/validation/psm/rules/events.evl:82`
 
 ### Why this rule exists
 
@@ -438,7 +438,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `AWSPSM!EventBridgePipe`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/psm/rules/events.evl:91`
+**Source:** `methodology/modeling-framework/validation/psm/rules/events.evl:91`
 
 ### Why this rule exists
 
@@ -476,7 +476,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `AWSPSM!EventBridgeApiDestination`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/psm/rules/events.evl:102`
+**Source:** `methodology/modeling-framework/validation/psm/rules/events.evl:102`
 
 ### Why this rule exists
 
@@ -514,7 +514,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `AWSPSM!EventBridgeConnection`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/psm/rules/events.evl:111`
+**Source:** `methodology/modeling-framework/validation/psm/rules/events.evl:111`
 
 ### Why this rule exists
 

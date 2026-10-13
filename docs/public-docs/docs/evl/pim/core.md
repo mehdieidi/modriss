@@ -2,7 +2,7 @@
 
 PIM core rules protect the provider-independent architecture's identity, portability, naming, traceability, and explanation. They are the guard against a PIM that is structurally valid but already assumes an AWS resource or has lost its business origin.
 
-Source profile: `mde/validation/pim/rules/core.evl`.
+Source profile: `methodology/modeling-framework/validation/pim/rules/core.evl`.
 
 ## Reading these rules
 
@@ -14,7 +14,7 @@ Each entry preserves the actual EVL guard and check. Treat the guard as the appl
 
 **Context:** `PIM!PIMModel`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/pim/rules/core.evl:8`
+**Source:** `methodology/modeling-framework/validation/pim/rules/core.evl:8`
 
 ### Why this rule exists
 
@@ -52,7 +52,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `PIM!PIMModel`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/pim/rules/core.evl:14`
+**Source:** `methodology/modeling-framework/validation/pim/rules/core.evl:14`
 
 ### Why this rule exists
 
@@ -90,7 +90,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `PIM!PIMModel`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/pim/rules/core.evl:20`
+**Source:** `methodology/modeling-framework/validation/pim/rules/core.evl:20`
 
 ### Why this rule exists
 
@@ -128,7 +128,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `PIM!PIMModel`  
 **Classification:** Advisory critique (warning)  
-**Source:** `mde/validation/pim/rules/core.evl:30`
+**Source:** `methodology/modeling-framework/validation/pim/rules/core.evl:30`
 
 ### Why this rule exists
 
@@ -166,7 +166,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 **Context:** `PIM!PIMModel`  
 **Classification:** Advisory critique (warning)  
-**Source:** `mde/validation/pim/rules/core.evl:35`
+**Source:** `methodology/modeling-framework/validation/pim/rules/core.evl:35`
 
 ### Why this rule exists
 
@@ -204,7 +204,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 **Context:** `KERNEL!ModelElement`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/pim/rules/core.evl:48`
+**Source:** `methodology/modeling-framework/validation/pim/rules/core.evl:48`
 
 ### Why this rule exists
 
@@ -242,7 +242,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `KERNEL!ModelElement`  
 **Classification:** Advisory critique (warning)  
-**Source:** `mde/validation/pim/rules/core.evl:54`
+**Source:** `methodology/modeling-framework/validation/pim/rules/core.evl:54`
 
 ### Why this rule exists
 
@@ -282,7 +282,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 **Context:** `KERNEL!TraceableElement`  
 **Classification:** Advisory critique (warning)  
-**Source:** `mde/validation/pim/rules/core.evl:68`
+**Source:** `methodology/modeling-framework/validation/pim/rules/core.evl:68`
 
 ### Why this rule exists
 
@@ -322,7 +322,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 **Context:** `KERNEL!TraceableElement`  
 **Classification:** Advisory critique (warning)  
-**Source:** `mde/validation/pim/rules/core.evl:82`
+**Source:** `methodology/modeling-framework/validation/pim/rules/core.evl:82`
 
 ### Why this rule exists
 

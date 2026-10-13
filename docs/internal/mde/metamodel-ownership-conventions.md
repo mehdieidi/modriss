@@ -60,8 +60,8 @@ Nested under non-service parents:
 
 ## Audit workflow
 
-1. Run `python mde/metamodels/tools/audit-ownership.py` after metamodel edits
-2. Review `mde/metamodels/ownership-audit.csv` for `review:` candidates
+1. Run `python methodology/modeling-framework/metamodels/tools/audit-ownership.py` after metamodel edits
+2. Review `methodology/modeling-framework/metamodels/ownership-audit.csv` for `review:` candidates
 3. Fix genuinely unreachable concrete types or duplicate containment semantics; a
    `multiple-containment-candidate` is not automatically a defect because one
    classifier may have alternative valid parents (for example, nested PSM

@@ -49,7 +49,7 @@ flowchart LR
     evl["EpsilonEvlValidator"]
     etl["EpsilonEtlExecutor"]
     egx["EpsilonEgxGenerator"]
-    assets["mde/ repository assets"]
+    assets["methodology/ repository assets"]
     storage[("PostgreSQL")]
 
     frontend --> modelService
@@ -75,10 +75,10 @@ flowchart TB
     evlcli["tools/mde-evl-cli<br/>Run repository EVL profiles"]
     etlcli["tools/mde-etl-cli<br/>Run repository ETL profiles"]
     m2tcli["tools/mde-m2t-cli<br/>Run PSM artifact generation"]
-    metamodels["mde/metamodels"]
-    validations["mde/validation"]
-    transformations["mde/transformations"]
-    generation["mde/generation"]
+    metamodels["methodology/modeling-framework/metamodels"]
+    validations["methodology/modeling-framework/validation"]
+    transformations["methodology/modeling-framework/transformations"]
+    generation["methodology/modeling-framework/generation"]
 
     mdecli --> metamodels
     evlcli --> validations

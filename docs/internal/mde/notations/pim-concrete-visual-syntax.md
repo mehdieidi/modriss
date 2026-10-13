@@ -2,12 +2,12 @@
 
 This document records the concrete syntax decisions for the Platform Independent
 Model (PIM) DSML. The executable configuration is
-[`mde/notation/pim.cvs.json`](../mde/notation/pim.cvs.json); this document explains
+[`methodology/modeling-framework/notation/pim.cvs.json`](../methodology/modeling-framework/notation/pim.cvs.json); this document explains
 why its views, palettes, containers, notation, and relationship rules are shaped
 the way they are.
 
 The design is based on the combined PIM Ecore model generated from the Emfatic
-sources in [`mde/metamodels/pim`](../mde/metamodels/pim), especially the root
+sources in [`methodology/modeling-framework/metamodels/pim`](../methodology/modeling-framework/metamodels/pim), especially the root
 model, deployment, API, compute, contracts, data, integration, workflow, policy,
 security, configuration, and external-integration packages. It changes notation
 only; it does not change the PIM abstract syntax or semantic validation rules.

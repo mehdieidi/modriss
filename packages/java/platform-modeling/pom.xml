@@ -8,21 +8,21 @@
         <directory>src/main/resources</directory>
       </resource>
       <resource>
-        <directory>../../../mde/metamodels/cim</directory>
+        <directory>../../../methodology/modeling-framework/metamodels/cim</directory>
         <includes>
           <include>cim-combined.ecore</include>
         </includes>
         <targetPath>modeling/metamodels/cim</targetPath>
       </resource>
       <resource>
-        <directory>../../../mde/metamodels/pim</directory>
+        <directory>../../../methodology/modeling-framework/metamodels/pim</directory>
         <includes>
           <include>pim-combined.ecore</include>
         </includes>
         <targetPath>modeling/metamodels/pim</targetPath>
       </resource>
       <resource>
-        <directory>../../../mde/metamodels/psm</directory>
+        <directory>../../../methodology/modeling-framework/metamodels/psm</directory>
         <includes>
           <include>psm-combined.ecore</include>
         </includes>

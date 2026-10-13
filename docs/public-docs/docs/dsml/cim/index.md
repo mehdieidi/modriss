@@ -30,7 +30,7 @@ The CIM language is also independent of the assistant. The LLM-based assistant m
 
 ## How to read the CIM reference
 
-The eight `.emf` files are combined into `mde/metamodels/cim/cim-combined.ecore`. The `.emf` declarations are the abstract-syntax authority. EVL adds semantic rules and critiques; it does not add classes or features to the metamodel. ETL and EOL show which CIM features influence refinement and how the transformation resolves or records uncertainty.
+The eight `.emf` files are combined into `methodology/modeling-framework/metamodels/cim/cim-combined.ecore`. The `.emf` declarations are the abstract-syntax authority. EVL adds semantic rules and critiques; it does not add classes or features to the metamodel. ETL and EOL show which CIM features influence refinement and how the transformation resolves or records uncertainty.
 
 In the relationship tables:
 
@@ -63,9 +63,9 @@ The order matters because the concepts reinforce one another. A command becomes 
 
 ## Semantic validation and refinement
 
-The CIM EVL entry point is `mde/validation/cim/cim-semantic-validation.evl`. It imports rules for core traceability, organization intent, domain data, behavior, process and policy, and governance/readiness. Constraints report semantic errors. Critiques report warnings about weak explanation, missing ownership, incomplete traceability, or insufficient transformation readiness.
+The CIM EVL entry point is `methodology/modeling-framework/validation/cim/cim-semantic-validation.evl`. It imports rules for core traceability, organization intent, domain data, behavior, process and policy, and governance/readiness. Constraints report semantic errors. Critiques report warnings about weak explanation, missing ownership, incomplete traceability, or insufficient transformation readiness.
 
-The CIM-to-PIM entry point is `mde/transformations/cim-to-pim/cim-to-pim.etl`. Its rules are divided by concern. Business capabilities and bounded contexts seed services; actors and roles seed principals; entities and aggregates seed schemas and data stores; commands and queries seed functions and routes; events seed event types and flows; processes and policies seed workflows and policy functions; governance elements seed security, privacy, compliance, resilience, observability, and data-protection policies. The transformation also creates trace links and readiness findings so that a generated PIM remains explainable.
+The CIM-to-PIM entry point is `methodology/modeling-framework/transformations/cim-to-pim/cim-to-pim.etl`. Its rules are divided by concern. Business capabilities and bounded contexts seed services; actors and roles seed principals; entities and aggregates seed schemas and data stores; commands and queries seed functions and routes; events seed event types and flows; processes and policies seed workflows and policy functions; governance elements seed security, privacy, compliance, resilience, observability, and data-protection policies. The transformation also creates trace links and readiness findings so that a generated PIM remains explainable.
 
 ## Additional resources
 
@@ -73,4 +73,4 @@ The CIM-to-PIM entry point is `mde/transformations/cim-to-pim/cim-to-pim.etl`. I
 - [CIM-to-PIM transformation overview](../../transformations/cim-to-pim/index.md)
 - [CIM EVL validation overview](../../evl/index.md)
 - [Kernel reference](../shared-kernel.md)
-- [Sample CIM model](https://github.com/mehdieidi/modriss/blob/main/mde/samples/cim.xmi)
+- [Sample CIM model](https://github.com/mehdieidi/modriss/blob/main/methodology/modeling-framework/samples/cim.xmi)

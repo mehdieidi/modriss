@@ -4,7 +4,7 @@ The kernel is the common semantic foundation of CIM, PIM, and PSM. It gives elem
 
 The kernel is an Ecore package with namespace URI `https://modriss.org/kernel/1.0`. Each DSML imports it instead of reproducing these concepts. An inherited feature such as `rationale` therefore has the same structural meaning in a CIM command, a PIM function, and a PSM Lambda resource.
 
-Source: `mde/metamodels/shared/kernel.emf`.
+Source: `methodology/modeling-framework/metamodels/shared/kernel.emf`.
 
 ## How to read this reference
 

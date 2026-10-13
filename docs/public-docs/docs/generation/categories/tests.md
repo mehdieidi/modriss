@@ -24,7 +24,7 @@ The category contains 8 EGX generation rules and 8 EGL templates.
 **Source context:** `awsFn`, `AWSPSMCOMPUTE!AwsLambdaFunction`  
 **Template:** `tests/unit-test-go.egl`  
 **Target path expression:** `awsFn.unitTestPath(emitCtx())`  
-**EGX source:** `mde/generation/awspsm-to-artifacts/awspsm2artifacts.egx:302`
+**EGX source:** `methodology/modeling-framework/generation/awspsm-to-artifacts/awspsm2artifacts.egx:302`
 
 ### Why this generation rule exists
 
@@ -54,7 +54,7 @@ First evaluate the guard: `emitCtx().get("enableTests") = true`. If it is false,
 
 ### Authoritative sources
 
-The scheduling, guard, target path, merge policy, and artifact record are defined at `mde/generation/awspsm-to-artifacts/awspsm2artifacts.egx:302`. The rendered content is defined by `tests/unit-test-go.egl` under `mde/generation/awspsm-to-artifacts/templates/`.
+The scheduling, guard, target path, merge policy, and artifact record are defined at `methodology/modeling-framework/generation/awspsm-to-artifacts/awspsm2artifacts.egx:302`. The rendered content is defined by `tests/unit-test-go.egl` under `methodology/modeling-framework/generation/awspsm-to-artifacts/templates/`.
 
 ---
 
@@ -63,7 +63,7 @@ The scheduling, guard, target path, merge policy, and artifact record are define
 **Source context:** `awsFn`, `AWSPSMCOMPUTE!AwsLambdaFunction`  
 **Template:** `tests/integration-test.egl`  
 **Target path expression:** `awsFn.integrationTestPath(emitCtx())`  
-**EGX source:** `mde/generation/awspsm-to-artifacts/awspsm2artifacts.egx:319`
+**EGX source:** `methodology/modeling-framework/generation/awspsm-to-artifacts/awspsm2artifacts.egx:319`
 
 ### Why this generation rule exists
 
@@ -93,7 +93,7 @@ First evaluate the guard: `emitCtx().get("enableTests") = true`. If it is false,
 
 ### Authoritative sources
 
-The scheduling, guard, target path, merge policy, and artifact record are defined at `mde/generation/awspsm-to-artifacts/awspsm2artifacts.egx:319`. The rendered content is defined by `tests/integration-test.egl` under `mde/generation/awspsm-to-artifacts/templates/`.
+The scheduling, guard, target path, merge policy, and artifact record are defined at `methodology/modeling-framework/generation/awspsm-to-artifacts/awspsm2artifacts.egx:319`. The rendered content is defined by `tests/integration-test.egl` under `methodology/modeling-framework/generation/awspsm-to-artifacts/templates/`.
 
 ---
 
@@ -102,7 +102,7 @@ The scheduling, guard, target path, merge policy, and artifact record are define
 **Source context:** `stateMachineObj`, `AWSPSMWORKFLOW!StepFunctionStateMachine`  
 **Template:** `tests/workflow-test.egl`  
 **Target path expression:** `stateMachineObj.workflowTestPath(emitCtx())`  
-**EGX source:** `mde/generation/awspsm-to-artifacts/awspsm2artifacts.egx:336`
+**EGX source:** `methodology/modeling-framework/generation/awspsm-to-artifacts/awspsm2artifacts.egx:336`
 
 ### Why this generation rule exists
 
@@ -132,7 +132,7 @@ First evaluate the guard: `emitCtx().get("enableTests") = true and stateMachineO
 
 ### Authoritative sources
 
-The scheduling, guard, target path, merge policy, and artifact record are defined at `mde/generation/awspsm-to-artifacts/awspsm2artifacts.egx:336`. The rendered content is defined by `tests/workflow-test.egl` under `mde/generation/awspsm-to-artifacts/templates/`.
+The scheduling, guard, target path, merge policy, and artifact record are defined at `methodology/modeling-framework/generation/awspsm-to-artifacts/awspsm2artifacts.egx:336`. The rendered content is defined by `tests/workflow-test.egl` under `methodology/modeling-framework/generation/awspsm-to-artifacts/templates/`.
 
 ---
 
@@ -141,7 +141,7 @@ The scheduling, guard, target path, merge policy, and artifact record are define
 **Source context:** ``, `shared PSM generation context` 
 **Template:**`tests/fixtures-readme.egl` 
 **Target path expression:**`"tests/fixtures/README.md"` 
-**EGX source:**`mde/generation/awspsm-to-artifacts/awspsm2artifacts.egx:474`
+**EGX source:**`methodology/modeling-framework/generation/awspsm-to-artifacts/awspsm2artifacts.egx:474`
 
 ### Why this generation rule exists
 
@@ -173,7 +173,7 @@ First evaluate the guard: `emitCtx().get("enableTests") = true`. If it is false,
 
 ### Authoritative sources
 
-The scheduling, guard, target path, merge policy, and artifact record are defined at `mde/generation/awspsm-to-artifacts/awspsm2artifacts.egx:474`. The rendered content is defined by `tests/fixtures-readme.egl` under `mde/generation/awspsm-to-artifacts/templates/`.
+The scheduling, guard, target path, merge policy, and artifact record are defined at `methodology/modeling-framework/generation/awspsm-to-artifacts/awspsm2artifacts.egx:474`. The rendered content is defined by `tests/fixtures-readme.egl` under `methodology/modeling-framework/generation/awspsm-to-artifacts/templates/`.
 
 ---
 
@@ -182,7 +182,7 @@ The scheduling, guard, target path, merge policy, and artifact record are define
 **Source context:** ``, `shared PSM generation context` 
 **Template:**`tests/contract-test.egl` 
 **Target path expression:**`"tests/contract/generated_contracts_test." + emitCtx().testExtension()` 
-**EGX source:**`mde/generation/awspsm-to-artifacts/awspsm2artifacts.egx:585`
+**EGX source:**`methodology/modeling-framework/generation/awspsm-to-artifacts/awspsm2artifacts.egx:585`
 
 ### Why this generation rule exists
 
@@ -212,7 +212,7 @@ First evaluate the guard: `emitCtx().get("enableTests") = true`. If it is false,
 
 ### Authoritative sources
 
-The scheduling, guard, target path, merge policy, and artifact record are defined at `mde/generation/awspsm-to-artifacts/awspsm2artifacts.egx:585`. The rendered content is defined by `tests/contract-test.egl` under `mde/generation/awspsm-to-artifacts/templates/`.
+The scheduling, guard, target path, merge policy, and artifact record are defined at `methodology/modeling-framework/generation/awspsm-to-artifacts/awspsm2artifacts.egx:585`. The rendered content is defined by `tests/contract-test.egl` under `methodology/modeling-framework/generation/awspsm-to-artifacts/templates/`.
 
 ---
 
@@ -221,7 +221,7 @@ The scheduling, guard, target path, merge policy, and artifact record are define
 **Source context:** ``, `shared PSM generation context` 
 **Template:**`tests/event-test.egl` 
 **Target path expression:**`"tests/events/generated_events_test." + emitCtx().testExtension()` 
-**EGX source:**`mde/generation/awspsm-to-artifacts/awspsm2artifacts.egx:597`
+**EGX source:**`methodology/modeling-framework/generation/awspsm-to-artifacts/awspsm2artifacts.egx:597`
 
 ### Why this generation rule exists
 
@@ -251,7 +251,7 @@ First evaluate the guard: `emitCtx().get("enableTests") = true`. If it is false,
 
 ### Authoritative sources
 
-The scheduling, guard, target path, merge policy, and artifact record are defined at `mde/generation/awspsm-to-artifacts/awspsm2artifacts.egx:597`. The rendered content is defined by `tests/event-test.egl` under `mde/generation/awspsm-to-artifacts/templates/`.
+The scheduling, guard, target path, merge policy, and artifact record are defined at `methodology/modeling-framework/generation/awspsm-to-artifacts/awspsm2artifacts.egx:597`. The rendered content is defined by `tests/event-test.egl` under `methodology/modeling-framework/generation/awspsm-to-artifacts/templates/`.
 
 ---
 
@@ -260,7 +260,7 @@ The scheduling, guard, target path, merge policy, and artifact record are define
 **Source context:** ``, `shared PSM generation context` 
 **Template:**`tests/security-test.egl` 
 **Target path expression:**`"tests/e2e/security_generated_test." + emitCtx().testExtension()` 
-**EGX source:**`mde/generation/awspsm-to-artifacts/awspsm2artifacts.egx:609`
+**EGX source:**`methodology/modeling-framework/generation/awspsm-to-artifacts/awspsm2artifacts.egx:609`
 
 ### Why this generation rule exists
 
@@ -290,7 +290,7 @@ First evaluate the guard: `emitCtx().get("enableTests") = true`. If it is false,
 
 ### Authoritative sources
 
-The scheduling, guard, target path, merge policy, and artifact record are defined at `mde/generation/awspsm-to-artifacts/awspsm2artifacts.egx:609`. The rendered content is defined by `tests/security-test.egl` under `mde/generation/awspsm-to-artifacts/templates/`.
+The scheduling, guard, target path, merge policy, and artifact record are defined at `methodology/modeling-framework/generation/awspsm-to-artifacts/awspsm2artifacts.egx:609`. The rendered content is defined by `tests/security-test.egl` under `methodology/modeling-framework/generation/awspsm-to-artifacts/templates/`.
 
 ---
 
@@ -299,7 +299,7 @@ The scheduling, guard, target path, merge policy, and artifact record are define
 **Source context:** ``, `shared PSM generation context` 
 **Template:**`tests/e2e-test.egl` 
 **Target path expression:**`"tests/e2e/generated_flows_test." + emitCtx().testExtension()` 
-**EGX source:**`mde/generation/awspsm-to-artifacts/awspsm2artifacts.egx:621`
+**EGX source:**`methodology/modeling-framework/generation/awspsm-to-artifacts/awspsm2artifacts.egx:621`
 
 ### Why this generation rule exists
 
@@ -329,7 +329,7 @@ First evaluate the guard: `emitCtx().get("enableTests") = true`. If it is false,
 
 ### Authoritative sources
 
-The scheduling, guard, target path, merge policy, and artifact record are defined at `mde/generation/awspsm-to-artifacts/awspsm2artifacts.egx:621`. The rendered content is defined by `tests/e2e-test.egl` under `mde/generation/awspsm-to-artifacts/templates/`.
+The scheduling, guard, target path, merge policy, and artifact record are defined at `methodology/modeling-framework/generation/awspsm-to-artifacts/awspsm2artifacts.egx:621`. The rendered content is defined by `tests/e2e-test.egl` under `methodology/modeling-framework/generation/awspsm-to-artifacts/templates/`.
 
 ---
 

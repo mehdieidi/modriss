@@ -269,9 +269,19 @@ class ClimateReliefSampleXmiImportTest {
   @Test
   void rawEmfLoadOfClimateReliefSample() throws Exception {
     Path sample =
-        Path.of("..", "..", "..", "mde", "samples", "cim.xmi").normalize().toAbsolutePath();
+        Path.of("..", "..", "..", "methodology", "modeling-framework", "samples", "cim.xmi")
+            .normalize()
+            .toAbsolutePath();
     Path metamodel =
-        Path.of("..", "..", "..", "mde", "metamodels", "cim", "cim-combined.ecore")
+        Path.of(
+                "..",
+                "..",
+                "..",
+                "methodology",
+                "modeling-framework",
+                "metamodels",
+                "cim",
+                "cim-combined.ecore")
             .normalize()
             .toAbsolutePath();
 

@@ -2,7 +2,7 @@
 
 Relationship-view rules check that the generated integration picture agrees with the deployable resources and permissions it claims to summarize. They are consistency checks across resources, not substitutes for the resource-specific rules.
 
-Source profile: `mde/validation/psm/rules/relationships.evl`.
+Source profile: `methodology/modeling-framework/validation/psm/rules/relationships.evl`.
 
 ## Reading these rules
 
@@ -14,7 +14,7 @@ Each entry preserves the actual EVL guard and check. Treat the guard as the appl
 
 **Context:** `AWSPSM!AwsRelationshipView`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/psm/rules/relationships.evl:8`
+**Source:** `methodology/modeling-framework/validation/psm/rules/relationships.evl:8`
 
 ### Why this rule exists
 
@@ -52,7 +52,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `AWSPSM!ApiGatewayLambdaIntegrationView`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/psm/rules/relationships.evl:17`
+**Source:** `methodology/modeling-framework/validation/psm/rules/relationships.evl:17`
 
 ### Why this rule exists
 
@@ -90,7 +90,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `AWSPSM!ApiGatewayLambdaIntegrationView`  
 **Classification:** Advisory critique (warning)  
-**Source:** `mde/validation/psm/rules/relationships.evl:24`
+**Source:** `methodology/modeling-framework/validation/psm/rules/relationships.evl:24`
 
 ### Why this rule exists
 
@@ -128,7 +128,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 **Context:** `AWSPSM!EventBridgeLambdaTargetView`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/psm/rules/relationships.evl:33`
+**Source:** `methodology/modeling-framework/validation/psm/rules/relationships.evl:33`
 
 ### Why this rule exists
 
@@ -166,7 +166,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `AWSPSM!EventBridgeLambdaTargetView`  
 **Classification:** Advisory critique (warning)  
-**Source:** `mde/validation/psm/rules/relationships.evl:40`
+**Source:** `methodology/modeling-framework/validation/psm/rules/relationships.evl:40`
 
 ### Why this rule exists
 
@@ -204,7 +204,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 **Context:** `AWSPSM!SnsLambdaSubscriptionView`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/psm/rules/relationships.evl:49`
+**Source:** `methodology/modeling-framework/validation/psm/rules/relationships.evl:49`
 
 ### Why this rule exists
 
@@ -242,7 +242,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `AWSPSM!SnsLambdaSubscriptionView`  
 **Classification:** Advisory critique (warning)  
-**Source:** `mde/validation/psm/rules/relationships.evl:56`
+**Source:** `methodology/modeling-framework/validation/psm/rules/relationships.evl:56`
 
 ### Why this rule exists
 
@@ -280,7 +280,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 **Context:** `AWSPSM!SqsLambdaEventSourceView`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/psm/rules/relationships.evl:65`
+**Source:** `methodology/modeling-framework/validation/psm/rules/relationships.evl:65`
 
 ### Why this rule exists
 
@@ -318,7 +318,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `AWSPSM!StepFunctionEventBridgeTargetView`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/psm/rules/relationships.evl:75`
+**Source:** `methodology/modeling-framework/validation/psm/rules/relationships.evl:75`
 
 ### Why this rule exists
 

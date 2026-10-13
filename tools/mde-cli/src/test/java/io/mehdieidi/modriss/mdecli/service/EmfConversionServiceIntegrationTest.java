@@ -64,7 +64,7 @@ class EmfConversionServiceIntegrationTest {
   @Test
   void convertsSampleCimDirectoryIntoCombinedEcore() throws Exception {
     Path projectRoot = findProjectRoot();
-    Path inputDirectory = projectRoot.resolve("mde/metamodels/cim");
+    Path inputDirectory = projectRoot.resolve("methodology/modeling-framework/metamodels/cim");
     Path output = Files.createTempDirectory("mde-cli-cim-").resolve("cim-combined.ecore");
 
     ConversionReport report =
@@ -100,7 +100,7 @@ class EmfConversionServiceIntegrationTest {
   @Test
   void convertsModularSingleFileWithoutLeakingTempUris() throws Exception {
     Path projectRoot = findProjectRoot();
-    Path input = projectRoot.resolve("mde/metamodels/cim/cim-root.emf");
+    Path input = projectRoot.resolve("methodology/modeling-framework/metamodels/cim/cim-root.emf");
     Path outputDirectory = Files.createTempDirectory("mde-cli-single-cim-");
     Path output = outputDirectory.resolve("cim-root.ecore");
 
@@ -130,7 +130,10 @@ class EmfConversionServiceIntegrationTest {
         Stream.iterate(
             Path.of("").toAbsolutePath().normalize(), path -> path != null, Path::getParent)) {
       return parents
-          .filter(path -> Files.exists(path.resolve("mde/metamodels/cim/cim-root.emf")))
+          .filter(
+              path ->
+                  Files.exists(
+                      path.resolve("methodology/modeling-framework/metamodels/cim/cim-root.emf")))
           .findFirst()
           .orElseThrow(
               () ->

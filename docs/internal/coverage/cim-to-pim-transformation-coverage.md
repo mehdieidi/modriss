@@ -1,7 +1,7 @@
 # CIM-to-PIM Transformation Coverage
 
 This document traces semantic test coverage for the CIM-to-PIM ETL transformation under
-`mde/transformations/cim-to-pim`.
+`methodology/modeling-framework/transformations/cim-to-pim`.
 
 The transformation is implemented in Eclipse Epsilon ETL, whose official documentation describes ETL
 as a rule-based, modular model-to-model transformation language for multiple source and target
@@ -9,15 +9,15 @@ models: <https://eclipse.dev/epsilon/doc/etl/>.
 
 ## Scope
 
-- Transformation: `mde/transformations/cim-to-pim/cim-to-pim.etl`
+- Transformation: `methodology/modeling-framework/transformations/cim-to-pim/cim-to-pim.etl`
 - Helper libraries:
-  - `mde/transformations/cim-to-pim/lib/common.eol`
-  - `mde/transformations/cim-to-pim/lib/mapping.eol`
-  - `mde/transformations/cim-to-pim/lib/pim-builders.eol`
-  - `mde/transformations/cim-to-pim/lib/resolution.eol`
-  - `mde/transformations/cim-to-pim/lib/trace-readiness.eol`
-- Source metamodel: `mde/metamodels/cim/cim-combined.ecore`
-- Target metamodel: `mde/metamodels/pim/pim-combined.ecore`
+  - `methodology/modeling-framework/transformations/cim-to-pim/lib/common.eol`
+  - `methodology/modeling-framework/transformations/cim-to-pim/lib/mapping.eol`
+  - `methodology/modeling-framework/transformations/cim-to-pim/lib/pim-builders.eol`
+  - `methodology/modeling-framework/transformations/cim-to-pim/lib/resolution.eol`
+  - `methodology/modeling-framework/transformations/cim-to-pim/lib/trace-readiness.eol`
+- Source metamodel: `methodology/modeling-framework/metamodels/cim/cim-combined.ecore`
+- Target metamodel: `methodology/modeling-framework/metamodels/pim/pim-combined.ecore`
 - Test class:
   `packages/java/mde-etl-runner/src/test/java/io/mehdieidi/modriss/mde/etl/CimToPimEtlRegressionTest.java`
 - Verification command:

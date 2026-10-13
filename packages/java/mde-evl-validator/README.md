@@ -59,14 +59,14 @@ human-facing reason and fix guidance, for example `[PIM-API-001] ... Fix: ...`.
 
 ```java
 EvlValidationRequest request = EvlValidationRequest.forRoot(
-        repositoryRoot.resolve("mde/validation/pim"),
+        repositoryRoot.resolve("methodology/modeling-framework/validation/pim"),
         List.of(FileEvlModelConfiguration.readOnly(
                 "PIM",
                 List.of("KERNEL"),
                 repositoryRoot.resolve("model.xmi"),
                 List.of(
-                        repositoryRoot.resolve("mde/metamodels/pim.ecore"),
-                        repositoryRoot.resolve("mde/metamodels/kernel.ecore")))),
+                        repositoryRoot.resolve("methodology/modeling-framework/metamodels/pim.ecore"),
+                        repositoryRoot.resolve("methodology/modeling-framework/metamodels/kernel.ecore")))),
         true);
 
 try{

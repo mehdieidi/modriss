@@ -65,9 +65,13 @@ public final class PimToAwsPsmDefaults {
       Path targetModel,
       boolean overwriteOutput,
       boolean captureOutput) {
-    Path module = repositoryRoot.resolve("mde/transformations/pim-to-awspsm/pim-to-awspsm.etl");
-    Path pimMetamodel = repositoryRoot.resolve("mde/metamodels/pim/pim-combined.ecore");
-    Path awsPsmMetamodel = repositoryRoot.resolve("mde/metamodels/psm/psm-combined.ecore");
+    Path module =
+        repositoryRoot.resolve(
+            "methodology/modeling-framework/transformations/pim-to-awspsm/pim-to-awspsm.etl");
+    Path pimMetamodel =
+        repositoryRoot.resolve("methodology/modeling-framework/metamodels/pim/pim-combined.ecore");
+    Path awsPsmMetamodel =
+        repositoryRoot.resolve("methodology/modeling-framework/metamodels/psm/psm-combined.ecore");
     boolean readTarget = !overwriteOutput && targetModel.toFile().isFile();
 
     return new EtlExecutionRequest(

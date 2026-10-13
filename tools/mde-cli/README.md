@@ -60,14 +60,14 @@ For a standalone Emfatic file:
 
 ```powershell
 java -jar tools/mde-cli/target/mde-cli-0.0.1-SNAPSHOT.jar `
-  mde/metamodels/cim/cim-types.emf
+  methodology/modeling-framework/metamodels/cim/cim-types.emf
 ```
 
 Specify the output explicitly:
 
 ```powershell
 java -jar tools/mde-cli/target/mde-cli-0.0.1-SNAPSHOT.jar `
-  mde/metamodels/cim/cim-kernel.emf `
+  methodology/modeling-framework/metamodels/cim/cim-kernel.emf `
   --output build/cim-kernel.ecore `
   --overwrite
 ```
@@ -81,8 +81,8 @@ For a directory that contains several Emfatic files representing one modular met
 
 ```powershell
 java -jar tools/mde-cli/target/mde-cli-0.0.1-SNAPSHOT.jar `
-  mde/metamodels/cim `
-  --root mde/metamodels/cim/cim-root.emf `
+  methodology/modeling-framework/metamodels/cim `
+  --root methodology/modeling-framework/metamodels/cim/cim-root.emf `
   --output build/cim-combined.ecore `
   --overwrite
 ```
@@ -118,7 +118,7 @@ Default output paths:
 Examples:
 
 - `cim-kernel.emf` -> `cim-kernel.ecore`
-- `mde/metamodels/cim/` -> `mde/metamodels/cim/cim-combined.ecore`
+- `methodology/modeling-framework/metamodels/cim/` -> `methodology/modeling-framework/metamodels/cim/cim-combined.ecore`
 
 ## Diagnostics
 
@@ -157,8 +157,8 @@ Use `--log-file` to write a detailed machine-readable and human-readable executi
 
 ```powershell
 java -jar tools/mde-cli/target/mde-cli-0.0.1-SNAPSHOT.jar `
-  mde/metamodels/cim `
-  --root mde/metamodels/cim/cim-root.emf `
+  methodology/modeling-framework/metamodels/cim `
+  --root methodology/modeling-framework/metamodels/cim/cim-root.emf `
   --output build/cim-combined.ecore `
   --overwrite `
   --verbose `
@@ -185,7 +185,7 @@ The report file includes:
 The tool has been verified against the sample modular CIM metamodel in:
 
 ```text
-mde/metamodels/cim/
+methodology/modeling-framework/metamodels/cim/
 ```
 
 Verified scenarios include:

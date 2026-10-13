@@ -2,7 +2,7 @@
 
 Contract rules protect the boundaries through which functions, APIs, events, and messages communicate. They require meaningful input/output shape, typed fields, compatible versions, and explicit handling for sensitive or externally sourced schemas.
 
-Source profile: `mde/validation/pim/rules/contracts.evl`.
+Source profile: `methodology/modeling-framework/validation/pim/rules/contracts.evl`.
 
 ## Reading these rules
 
@@ -14,7 +14,7 @@ Each entry preserves the actual EVL guard and check. Treat the guard as the appl
 
 **Context:** `PIM!FunctionContract`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/pim/rules/contracts.evl:8`
+**Source:** `methodology/modeling-framework/validation/pim/rules/contracts.evl:8`
 
 ### Why this rule exists
 
@@ -52,7 +52,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `PIM!FunctionContract`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/pim/rules/contracts.evl:14`
+**Source:** `methodology/modeling-framework/validation/pim/rules/contracts.evl:14`
 
 ### Why this rule exists
 
@@ -92,7 +92,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `PIM!FunctionContract`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/pim/rules/contracts.evl:21`
+**Source:** `methodology/modeling-framework/validation/pim/rules/contracts.evl:21`
 
 ### Why this rule exists
 
@@ -132,7 +132,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `PIM!FunctionContract`  
 **Classification:** Advisory critique (warning)  
-**Source:** `mde/validation/pim/rules/contracts.evl:28`
+**Source:** `methodology/modeling-framework/validation/pim/rules/contracts.evl:28`
 
 ### Why this rule exists
 
@@ -172,7 +172,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 **Context:** `PIM!FunctionContract`  
 **Classification:** Advisory critique (warning)  
-**Source:** `mde/validation/pim/rules/contracts.evl:35`
+**Source:** `methodology/modeling-framework/validation/pim/rules/contracts.evl:35`
 
 ### Why this rule exists
 
@@ -212,7 +212,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 **Context:** `PIM!Schema`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/pim/rules/contracts.evl:46`
+**Source:** `methodology/modeling-framework/validation/pim/rules/contracts.evl:46`
 
 ### Why this rule exists
 
@@ -250,7 +250,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `PIM!Schema`  
 **Classification:** Advisory critique (warning)  
-**Source:** `mde/validation/pim/rules/contracts.evl:52`
+**Source:** `methodology/modeling-framework/validation/pim/rules/contracts.evl:52`
 
 ### Why this rule exists
 
@@ -288,7 +288,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 **Context:** `PIM!Schema`  
 **Classification:** Advisory critique (warning)  
-**Source:** `mde/validation/pim/rules/contracts.evl:58`
+**Source:** `methodology/modeling-framework/validation/pim/rules/contracts.evl:58`
 
 ### Why this rule exists
 
@@ -328,7 +328,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 **Context:** `PIM!SchemaField`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/pim/rules/contracts.evl:69`
+**Source:** `methodology/modeling-framework/validation/pim/rules/contracts.evl:69`
 
 ### Why this rule exists
 
@@ -368,7 +368,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `PIM!SchemaField`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/pim/rules/contracts.evl:76`
+**Source:** `methodology/modeling-framework/validation/pim/rules/contracts.evl:76`
 
 ### Why this rule exists
 
@@ -408,7 +408,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `PIM!SchemaField`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/pim/rules/contracts.evl:83`
+**Source:** `methodology/modeling-framework/validation/pim/rules/contracts.evl:83`
 
 ### Why this rule exists
 
@@ -448,7 +448,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `PIM!SchemaField`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/pim/rules/contracts.evl:90`
+**Source:** `methodology/modeling-framework/validation/pim/rules/contracts.evl:90`
 
 ### Why this rule exists
 
@@ -488,7 +488,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `PIM!SchemaField`  
 **Classification:** Advisory critique (warning)  
-**Source:** `mde/validation/pim/rules/contracts.evl:97`
+**Source:** `methodology/modeling-framework/validation/pim/rules/contracts.evl:97`
 
 ### Why this rule exists
 
@@ -528,7 +528,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 **Context:** `PIM!SchemaField`  
 **Classification:** Advisory critique (warning)  
-**Source:** `mde/validation/pim/rules/contracts.evl:104`
+**Source:** `methodology/modeling-framework/validation/pim/rules/contracts.evl:104`
 
 ### Why this rule exists
 
@@ -568,7 +568,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 **Context:** `PIM!SchemaConstraint`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/pim/rules/contracts.evl:115`
+**Source:** `methodology/modeling-framework/validation/pim/rules/contracts.evl:115`
 
 ### Why this rule exists
 

@@ -26,16 +26,16 @@ java -jar tools/mde-etl-cli/target/mde-etl-cli-0.0.1-SNAPSHOT.jar cim-to-pim \
 
 ```bash
 java -jar tools/mde-etl-cli/target/mde-etl-cli-0.0.1-SNAPSHOT.jar run \
-  --module mde/transformations/cim-to-pim/cim-to-pim.etl \
+  --module methodology/modeling-framework/transformations/cim-to-pim/cim-to-pim.etl \
   --source-model input.xmi \
   --target-model output.xmi \
-  --source-metamodel mde/metamodels/cim/cim-combined.ecore \
-  --target-metamodel mde/metamodels/pim/pim-combined.ecore \
+  --source-metamodel methodology/modeling-framework/metamodels/cim/cim-combined.ecore \
+  --target-metamodel methodology/modeling-framework/metamodels/pim/pim-combined.ecore \
   --source-name CIM \
   --source-aliases CIM,CIMORG,CIMDOMAIN,CIMBEHAVIOR,CIMPROCESS,CIMGOV,CIMTRANSFORM \
   --target-name PIM \
   --target-aliases PIM,DEPLOY,COMPUTE,API,CONTRACTS,DATA,INTEGRATION,WORKFLOW,EXTERNAL,POLICY,SECURITY,CONFIG,KERNEL,PIMTYPES
 ```
 
-See also [`mde/transformations/pim-to-awspsm/README.md`](../../mde/transformations/pim-to-awspsm/README.md)
+See also [`methodology/modeling-framework/transformations/pim-to-awspsm/README.md`](../../methodology/modeling-framework/transformations/pim-to-awspsm/README.md)
 for the PIM→PSM profile.

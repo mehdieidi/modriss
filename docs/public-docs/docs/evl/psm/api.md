@@ -2,7 +2,7 @@
 
 API Gateway rules verify that the concrete API graph has routes, integrations, authorizers, certificates, stages, logs, metrics, throttles, and credentials that agree with one another. They catch provider-level omissions that a PIM API contract cannot see.
 
-Source profile: `mde/validation/psm/rules/api.evl`.
+Source profile: `methodology/modeling-framework/validation/psm/rules/api.evl`.
 
 ## Reading these rules
 
@@ -14,7 +14,7 @@ Each entry preserves the actual EVL guard and check. Treat the guard as the appl
 
 **Context:** `AWSPSM!ApiGatewayApi`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/psm/rules/api.evl:8`
+**Source:** `methodology/modeling-framework/validation/psm/rules/api.evl:8`
 
 ### Why this rule exists
 
@@ -52,7 +52,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `AWSPSM!ApiGatewayApi`  
 **Classification:** Advisory critique (warning)  
-**Source:** `mde/validation/psm/rules/api.evl:14`
+**Source:** `methodology/modeling-framework/validation/psm/rules/api.evl:14`
 
 ### Why this rule exists
 
@@ -90,7 +90,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 **Context:** `AWSPSM!ApiGatewayApi`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/psm/rules/api.evl:20`
+**Source:** `methodology/modeling-framework/validation/psm/rules/api.evl:20`
 
 ### Why this rule exists
 
@@ -130,7 +130,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `AWSPSM!ApiGatewayApi`  
 **Classification:** Advisory critique (warning)  
-**Source:** `mde/validation/psm/rules/api.evl:27`
+**Source:** `methodology/modeling-framework/validation/psm/rules/api.evl:27`
 
 ### Why this rule exists
 
@@ -170,7 +170,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 **Context:** `AWSPSM!HttpApiRoute`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/psm/rules/api.evl:37`
+**Source:** `methodology/modeling-framework/validation/psm/rules/api.evl:37`
 
 ### Why this rule exists
 
@@ -208,7 +208,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `AWSPSM!RestApiRoute`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/psm/rules/api.evl:46`
+**Source:** `methodology/modeling-framework/validation/psm/rules/api.evl:46`
 
 ### Why this rule exists
 
@@ -246,7 +246,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `AWSPSM!WebSocketRoute`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/psm/rules/api.evl:55`
+**Source:** `methodology/modeling-framework/validation/psm/rules/api.evl:55`
 
 ### Why this rule exists
 
@@ -284,7 +284,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `AWSPSM!ApiGatewayRoute`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/psm/rules/api.evl:64`
+**Source:** `methodology/modeling-framework/validation/psm/rules/api.evl:64`
 
 ### Why this rule exists
 
@@ -322,7 +322,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `AWSPSM!ApiGatewayRoute`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/psm/rules/api.evl:70`
+**Source:** `methodology/modeling-framework/validation/psm/rules/api.evl:70`
 
 ### Why this rule exists
 
@@ -360,7 +360,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `AWSPSM!ApiGatewayRoute`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/psm/rules/api.evl:79`
+**Source:** `methodology/modeling-framework/validation/psm/rules/api.evl:79`
 
 ### Why this rule exists
 
@@ -398,7 +398,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `AWSPSM!ApiGatewayRoute`  
 **Classification:** Advisory critique (warning)  
-**Source:** `mde/validation/psm/rules/api.evl:85`
+**Source:** `methodology/modeling-framework/validation/psm/rules/api.evl:85`
 
 ### Why this rule exists
 
@@ -438,7 +438,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 **Context:** `AWSPSM!ApiGatewayIntegration`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/psm/rules/api.evl:95`
+**Source:** `methodology/modeling-framework/validation/psm/rules/api.evl:95`
 
 ### Why this rule exists
 
@@ -476,7 +476,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `AWSPSM!ApiGatewayIntegration`  
 **Classification:** Advisory critique (warning)  
-**Source:** `mde/validation/psm/rules/api.evl:101`
+**Source:** `methodology/modeling-framework/validation/psm/rules/api.evl:101`
 
 ### Why this rule exists
 
@@ -516,7 +516,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 **Context:** `AWSPSM!ApiGatewayIntegration`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/psm/rules/api.evl:108`
+**Source:** `methodology/modeling-framework/validation/psm/rules/api.evl:108`
 
 ### Why this rule exists
 
@@ -556,7 +556,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `AWSPSM!ApiGatewayStage`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/psm/rules/api.evl:118`
+**Source:** `methodology/modeling-framework/validation/psm/rules/api.evl:118`
 
 ### Why this rule exists
 
@@ -596,7 +596,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `AWSPSM!ApiGatewayStage`  
 **Classification:** Advisory critique (warning)  
-**Source:** `mde/validation/psm/rules/api.evl:125`
+**Source:** `methodology/modeling-framework/validation/psm/rules/api.evl:125`
 
 ### Why this rule exists
 
@@ -636,7 +636,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 **Context:** `AWSPSM!JwtAuthorizer`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/psm/rules/api.evl:135`
+**Source:** `methodology/modeling-framework/validation/psm/rules/api.evl:135`
 
 ### Why this rule exists
 
@@ -674,7 +674,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `AWSPSM!CognitoAuthorizer`  
 **Classification:** Advisory critique (warning)  
-**Source:** `mde/validation/psm/rules/api.evl:144`
+**Source:** `methodology/modeling-framework/validation/psm/rules/api.evl:144`
 
 ### Why this rule exists
 
@@ -712,7 +712,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 **Context:** `AWSPSM!LambdaAuthorizer`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/psm/rules/api.evl:153`
+**Source:** `methodology/modeling-framework/validation/psm/rules/api.evl:153`
 
 ### Why this rule exists
 
@@ -750,7 +750,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `AWSPSM!ApiGatewayDomainName`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/psm/rules/api.evl:162`
+**Source:** `methodology/modeling-framework/validation/psm/rules/api.evl:162`
 
 ### Why this rule exists
 
@@ -788,7 +788,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `AWSPSM!ApiGatewayUsagePlanKey`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/psm/rules/api.evl:171`
+**Source:** `methodology/modeling-framework/validation/psm/rules/api.evl:171`
 
 ### Why this rule exists
 

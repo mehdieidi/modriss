@@ -15,12 +15,15 @@ docs/
 infra/
   grafana/                 Dashboard definitions
   prometheus/              Alert rule definitions
-mde/
-  metamodels/              Emfatic and combined Ecore
-  validation/              EVL validation profiles
-  transformations/         ETL/EOL model transformations
-  generation/              EGX/EGL artifact generation
-  samples/                 XMI samples and case study
+methodology/
+  process/                 Process definitions, method library, and coverage matrices
+  modeling-framework/
+    metamodels/            Emfatic and combined Ecore
+    notation/              Concrete visual syntax definitions
+    validation/            EVL validation profiles
+    transformations/       ETL/EOL model transformations
+    generation/            EGX/EGL artifact generation
+    samples/               XMI samples and case study
 packages/
   java/
     platform-kernel/         Kernel types (PlatformException, ModelLevel)

@@ -3,9 +3,9 @@ name: modriss
 # This file contains the environment-neutral MODRISS stack. The root compose.yaml includes it
 # together with the development overlay; production uses it with compose.prod.yaml.
 #
-# The repository's mde directory is mounted into the backend so CVS activation writes the active
-# notation directly into the Git-tracked working tree. Backups are written below mde/notation/backup.
-# After changing files under mde/ (transformations, validation, metamodels), recreate the backend
+# The repository's methodology directory is mounted into the backend so CVS activation writes the active
+# notation directly into the Git-tracked working tree. Backups are written below methodology/modeling-framework/notation/backup.
+# After changing files under methodology/ (transformations, validation, metamodels), recreate the backend
 # container so the mounted files are reloaded:
 #   docker compose up --build --force-recreate backend
 #
@@ -78,7 +78,7 @@ services:
       LOGGING_FILE_NAME: /app/logs/backend.log
       MODRISS_CADDY_LOG_ROOT: /app/caddy-logs
     volumes:
-      - ../mde:/app/mde
+      - ../methodology:/app/methodology
       - modriss-backend-uploads:/app/uploads
       - modriss-backend-logs:/app/logs
       - modriss-caddy-logs:/app/caddy-logs:ro

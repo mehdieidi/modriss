@@ -61,7 +61,7 @@ the storage data field, including requiredness and collection cardinality.
 
 ## Resolution
 
-Implemented the ETL fixes in `mde/transformations/cim-to-pim/domain-data.etl`, added the focused
+Implemented the ETL fixes in `methodology/modeling-framework/transformations/cim-to-pim/domain-data.etl`, added the focused
 regression test, and synchronized the checked-in PIM fixtures. The live frontend-facing REST
 workflow was rerun after the fix; the regenerated PIM model passed structural and semantic
 validation and produced the corrected relationship projections.

@@ -2,7 +2,7 @@
 
 Networking rules verify that VPC attachments have subnets and security groups, modeled IDs do not contradict typed references, private connectivity assumptions are supported, DNS is enabled, and public administrative ingress is reviewed.
 
-Source profile: `mde/validation/psm/rules/networking.evl`.
+Source profile: `methodology/modeling-framework/validation/psm/rules/networking.evl`.
 
 ## Reading these rules
 
@@ -14,7 +14,7 @@ Each entry preserves the actual EVL guard and check. Treat the guard as the appl
 
 **Context:** `AWSPSM!VpcAttachmentConfig`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/psm/rules/networking.evl:8`
+**Source:** `methodology/modeling-framework/validation/psm/rules/networking.evl:8`
 
 ### Why this rule exists
 
@@ -52,7 +52,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `AWSPSM!VpcAttachmentConfig`  
 **Classification:** Advisory critique (warning)  
-**Source:** `mde/validation/psm/rules/networking.evl:14`
+**Source:** `methodology/modeling-framework/validation/psm/rules/networking.evl:14`
 
 ### Why this rule exists
 
@@ -92,7 +92,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 **Context:** `AWSPSM!VpcAttachmentConfig`  
 **Classification:** Advisory critique (warning)  
-**Source:** `mde/validation/psm/rules/networking.evl:21`
+**Source:** `methodology/modeling-framework/validation/psm/rules/networking.evl:21`
 
 ### Why this rule exists
 
@@ -132,7 +132,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 **Context:** `AWSPSM!Vpc`  
 **Classification:** Advisory critique (warning)  
-**Source:** `mde/validation/psm/rules/networking.evl:31`
+**Source:** `methodology/modeling-framework/validation/psm/rules/networking.evl:31`
 
 ### Why this rule exists
 
@@ -170,7 +170,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 **Context:** `AWSPSM!SecurityGroupRule`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/psm/rules/networking.evl:40`
+**Source:** `methodology/modeling-framework/validation/psm/rules/networking.evl:40`
 
 ### Why this rule exists
 
@@ -208,7 +208,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `AWSPSM!SecurityGroupRule`  
 **Classification:** Advisory critique (warning)  
-**Source:** `mde/validation/psm/rules/networking.evl:47`
+**Source:** `methodology/modeling-framework/validation/psm/rules/networking.evl:47`
 
 ### Why this rule exists
 

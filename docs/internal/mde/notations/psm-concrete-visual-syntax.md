@@ -3,7 +3,7 @@
 ## Scope and design goal
 
 This document records the PSM concrete visual syntax decisions implemented in
-[`mde/notation/psm.cvs.json`](../mde/notation/psm.cvs.json). The goal is to make AWS
+[`methodology/modeling-framework/notation/psm.cvs.json`](../methodology/modeling-framework/notation/psm.cvs.json). The goal is to make AWS
 platform models understandable at three different scales:
 
 1. an account and deployment architecture,
@@ -16,7 +16,7 @@ creates a standalone/deployable resource in the current view or creates a child 
 the container that is currently open. Configuration values that do not improve a
 topology diagram stay in the attributes/details pane.
 
-The analysis used all PSM Emfatic sources under `mde/metamodels/psm`, the shared
+The analysis used all PSM Emfatic sources under `methodology/modeling-framework/metamodels/psm`, the shared
 kernel metamodel, and the generated `psm-combined.ecore`. The runtime merge in
 `ModelingConfigService` remains authoritative for structural fields, containment
 legality, abstract-type expansion, and contained-only inference.

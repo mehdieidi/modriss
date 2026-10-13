@@ -12,7 +12,7 @@ refine it, transform it to PSM, and review the second backlog.
 ### F-001: CIM XMI import rejects the checked-in CIM fixture
 
 - **Observed:** `POST /api/cim/import?projectId=...&format=xmi` with
-  `mde/samples/smart-makerspace-operations/smart-makerspace.cim.xmi` returns HTTP 400:
+  `methodology/modeling-framework/samples/smart-makerspace-operations/smart-makerspace.cim.xmi` returns HTTP 400:
   `Uploaded model is not valid XMI: Value 'org.eclipse.emf.ecore.impl.DynamicEObjectImpl...`
   `BusinessEvent` ... `is not legal.`
 - **Impact:** A model exported or supplied as XMI cannot reliably enter the frontend modeling

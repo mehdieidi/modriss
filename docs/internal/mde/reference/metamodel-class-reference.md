@@ -4,7 +4,7 @@ Auto-generated reference for every class in the CIM, PIM, and PSM metamodels.
 For each class this document lists whether it is abstract, which other concepts
 reference it (`ref`), which concepts contain it (`val`), and its direct supertypes.
 
-> Source: `mde/metamodels/**/*.emf`
+> Source: `methodology/modeling-framework/metamodels/**/*.emf`
 
 ## CIM (Computation-Independent Model)
 

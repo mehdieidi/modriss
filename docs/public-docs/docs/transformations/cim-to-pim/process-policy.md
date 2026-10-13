@@ -2,7 +2,7 @@
 
 Process and policy refinement preserves the difference between business intent and execution structure. Policies become handler functions or architecture policies, decision tables become choice logic, processes become workflows, and process steps/transitions become a typed PIM graph. Non-functional requirements are routed into the PIM policy that can enforce them, while unsupported ambiguity becomes a visible readiness or manual decision.
 
-Source module: `mde/transformations/cim-to-pim/process-policy.etl`.
+Source module: `methodology/modeling-framework/transformations/cim-to-pim/process-policy.etl`.
 
 ## Reading this page
 
@@ -14,18 +14,18 @@ A transformation rule determines whether a source element contributes to the tar
 
 Supporting operations also shape the transformation. They derive defaults, create secondary resources, cache correspondences, and resolve relationships after the main rule runs.
 
-| Operation                        | Role                                                   | Source                                                  |
-| -------------------------------- | ------------------------------------------------------ | ------------------------------------------------------- |
-| `shouldGenerateWorkflow`         | Returns whether the receiver should generate workflow. | `mde/transformations/cim-to-pim/process-policy.etl:9`   |
-| `workflowStepFor`                | Computes workflow step for.                            | `mde/transformations/cim-to-pim/process-policy.etl:18`  |
-| `firstIntegerText`               | Computes first integer text.                           | `mde/transformations/cim-to-pim/process-policy.etl:35`  |
-| `secondsFromDurationExpression`  | Computes seconds from duration expression.             | `mde/transformations/cim-to-pim/process-policy.etl:55`  |
-| `cloneKernelExpression`          | Computes clone kernel expression.                      | `mde/transformations/cim-to-pim/process-policy.etl:72`  |
-| `cloneConditionExpression`       | Computes clone condition expression.                   | `mde/transformations/cim-to-pim/process-policy.etl:88`  |
-| `createPolicyContextSchema`      | Creates policy context schema.                         | `mde/transformations/cim-to-pim/process-policy.etl:96`  |
-| `createHumanTaskInputSchema`     | Creates human task input schema.                       | `mde/transformations/cim-to-pim/process-policy.etl:114` |
-| `createHumanTaskOutputSchema`    | Creates human task output schema.                      | `mde/transformations/cim-to-pim/process-policy.etl:133` |
-| `preferredTemporalRoutingTarget` | Computes preferred temporal routing target.            | `mde/transformations/cim-to-pim/process-policy.etl:833` |
+| Operation                        | Role                                                   | Source                                                                             |
+| -------------------------------- | ------------------------------------------------------ | ---------------------------------------------------------------------------------- |
+| `shouldGenerateWorkflow`         | Returns whether the receiver should generate workflow. | `methodology/modeling-framework/transformations/cim-to-pim/process-policy.etl:9`   |
+| `workflowStepFor`                | Computes workflow step for.                            | `methodology/modeling-framework/transformations/cim-to-pim/process-policy.etl:18`  |
+| `firstIntegerText`               | Computes first integer text.                           | `methodology/modeling-framework/transformations/cim-to-pim/process-policy.etl:35`  |
+| `secondsFromDurationExpression`  | Computes seconds from duration expression.             | `methodology/modeling-framework/transformations/cim-to-pim/process-policy.etl:55`  |
+| `cloneKernelExpression`          | Computes clone kernel expression.                      | `methodology/modeling-framework/transformations/cim-to-pim/process-policy.etl:72`  |
+| `cloneConditionExpression`       | Computes clone condition expression.                   | `methodology/modeling-framework/transformations/cim-to-pim/process-policy.etl:88`  |
+| `createPolicyContextSchema`      | Creates policy context schema.                         | `methodology/modeling-framework/transformations/cim-to-pim/process-policy.etl:96`  |
+| `createHumanTaskInputSchema`     | Creates human task input schema.                       | `methodology/modeling-framework/transformations/cim-to-pim/process-policy.etl:114` |
+| `createHumanTaskOutputSchema`    | Creates human task output schema.                      | `methodology/modeling-framework/transformations/cim-to-pim/process-policy.etl:133` |
+| `preferredTemporalRoutingTarget` | Computes preferred temporal routing target.            | `methodology/modeling-framework/transformations/cim-to-pim/process-policy.etl:833` |
 
 ---
 
@@ -33,7 +33,7 @@ Supporting operations also shape the transformation. They derive defaults, creat
 
 **Source:** `pol` to `CIMPROCESS!Policy`  
 **Target:** `fn` to `COMPUTE!Function`  
-**Source location:** `mde/transformations/cim-to-pim/process-policy.etl:152`
+**Source location:** `methodology/modeling-framework/transformations/cim-to-pim/process-policy.etl:152`
 
 ### Why this rule exists
 
@@ -65,7 +65,7 @@ The trace record is the best first diagnostic: it tells you whether the target w
 
 ### Authoritative source
 
-See the complete ETL rule at `mde/transformations/cim-to-pim/process-policy.etl:152`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
+See the complete ETL rule at `methodology/modeling-framework/transformations/cim-to-pim/process-policy.etl:152`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
 
 ---
 
@@ -73,7 +73,7 @@ See the complete ETL rule at `mde/transformations/cim-to-pim/process-policy.etl:
 
 **Source:** `pol` to `CIMPROCESS!Policy`  
 **Target:** `p` to `POLICY!CompliancePolicy`  
-**Source location:** `mde/transformations/cim-to-pim/process-policy.etl:226`
+**Source location:** `methodology/modeling-framework/transformations/cim-to-pim/process-policy.etl:226`
 
 ### Why this rule exists
 
@@ -104,7 +104,7 @@ The trace record is the best first diagnostic: it tells you whether the target w
 
 ### Authoritative source
 
-See the complete ETL rule at `mde/transformations/cim-to-pim/process-policy.etl:226`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
+See the complete ETL rule at `methodology/modeling-framework/transformations/cim-to-pim/process-policy.etl:226`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
 
 ---
 
@@ -112,7 +112,7 @@ See the complete ETL rule at `mde/transformations/cim-to-pim/process-policy.etl:
 
 **Source:** `dt` to `CIMPROCESS!DecisionTable`  
 **Target:** `fn` to `COMPUTE!Function`  
-**Source location:** `mde/transformations/cim-to-pim/process-policy.etl:242`
+**Source location:** `methodology/modeling-framework/transformations/cim-to-pim/process-policy.etl:242`
 
 ### Why this rule exists
 
@@ -141,7 +141,7 @@ The trace record is the best first diagnostic: it tells you whether the target w
 
 ### Authoritative source
 
-See the complete ETL rule at `mde/transformations/cim-to-pim/process-policy.etl:242`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
+See the complete ETL rule at `methodology/modeling-framework/transformations/cim-to-pim/process-policy.etl:242`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
 
 ---
 
@@ -149,7 +149,7 @@ See the complete ETL rule at `mde/transformations/cim-to-pim/process-policy.etl:
 
 **Source:** `dt` to `CIMPROCESS!DecisionTable`  
 **Target:** `dm` to `POLICY!DecisionModel`  
-**Source location:** `mde/transformations/cim-to-pim/process-policy.etl:314`
+**Source location:** `methodology/modeling-framework/transformations/cim-to-pim/process-policy.etl:314`
 
 ### Why this rule exists
 
@@ -178,7 +178,7 @@ The trace record is the best first diagnostic: it tells you whether the target w
 
 ### Authoritative source
 
-See the complete ETL rule at `mde/transformations/cim-to-pim/process-policy.etl:314`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
+See the complete ETL rule at `methodology/modeling-framework/transformations/cim-to-pim/process-policy.etl:314`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
 
 ---
 
@@ -186,7 +186,7 @@ See the complete ETL rule at `mde/transformations/cim-to-pim/process-policy.etl:
 
 **Source:** `bp` to `CIMPROCESS!BusinessProcess`  
 **Target:** `wf` to `WORKFLOW!Workflow`  
-**Source location:** `mde/transformations/cim-to-pim/process-policy.etl:373`
+**Source location:** `methodology/modeling-framework/transformations/cim-to-pim/process-policy.etl:373`
 
 ### Why this rule exists
 
@@ -217,7 +217,7 @@ The trace record is the best first diagnostic: it tells you whether the target w
 
 ### Authoritative source
 
-See the complete ETL rule at `mde/transformations/cim-to-pim/process-policy.etl:373`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
+See the complete ETL rule at `methodology/modeling-framework/transformations/cim-to-pim/process-policy.etl:373`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
 
 ---
 
@@ -225,7 +225,7 @@ See the complete ETL rule at `mde/transformations/cim-to-pim/process-policy.etl:
 
 **Source:** `s` to `CIMPROCESS!StartStep`  
 **Target:** `ws` to `WORKFLOW!StartStep`  
-**Source location:** `mde/transformations/cim-to-pim/process-policy.etl:400`
+**Source location:** `methodology/modeling-framework/transformations/cim-to-pim/process-policy.etl:400`
 
 ### Why this rule exists
 
@@ -253,7 +253,7 @@ The trace record is the best first diagnostic: it tells you whether the target w
 
 ### Authoritative source
 
-See the complete ETL rule at `mde/transformations/cim-to-pim/process-policy.etl:400`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
+See the complete ETL rule at `methodology/modeling-framework/transformations/cim-to-pim/process-policy.etl:400`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
 
 ---
 
@@ -261,7 +261,7 @@ See the complete ETL rule at `mde/transformations/cim-to-pim/process-policy.etl:
 
 **Source:** `s` to `CIMPROCESS!EndStep`  
 **Target:** `ws` to `WORKFLOW!SuccessEndStep`  
-**Source location:** `mde/transformations/cim-to-pim/process-policy.etl:415`
+**Source location:** `methodology/modeling-framework/transformations/cim-to-pim/process-policy.etl:415`
 
 ### Why this rule exists
 
@@ -289,7 +289,7 @@ The trace record is the best first diagnostic: it tells you whether the target w
 
 ### Authoritative source
 
-See the complete ETL rule at `mde/transformations/cim-to-pim/process-policy.etl:415`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
+See the complete ETL rule at `methodology/modeling-framework/transformations/cim-to-pim/process-policy.etl:415`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
 
 ---
 
@@ -297,7 +297,7 @@ See the complete ETL rule at `mde/transformations/cim-to-pim/process-policy.etl:
 
 **Source:** `s` to `CIMPROCESS!DecisionStep`  
 **Target:** `ws` to `WORKFLOW!ChoiceStep`  
-**Source location:** `mde/transformations/cim-to-pim/process-policy.etl:430`
+**Source location:** `methodology/modeling-framework/transformations/cim-to-pim/process-policy.etl:430`
 
 ### Why this rule exists
 
@@ -325,7 +325,7 @@ The trace record is the best first diagnostic: it tells you whether the target w
 
 ### Authoritative source
 
-See the complete ETL rule at `mde/transformations/cim-to-pim/process-policy.etl:430`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
+See the complete ETL rule at `methodology/modeling-framework/transformations/cim-to-pim/process-policy.etl:430`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
 
 ---
 
@@ -333,7 +333,7 @@ See the complete ETL rule at `mde/transformations/cim-to-pim/process-policy.etl:
 
 **Source:** `s` to `CIMPROCESS!ProcessStep`  
 **Target:** `ws` to `WORKFLOW!WaitStep`  
-**Source location:** `mde/transformations/cim-to-pim/process-policy.etl:456`
+**Source location:** `methodology/modeling-framework/transformations/cim-to-pim/process-policy.etl:456`
 
 ### Why this rule exists
 
@@ -365,7 +365,7 @@ The trace record is the best first diagnostic: it tells you whether the target w
 
 ### Authoritative source
 
-See the complete ETL rule at `mde/transformations/cim-to-pim/process-policy.etl:456`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
+See the complete ETL rule at `methodology/modeling-framework/transformations/cim-to-pim/process-policy.etl:456`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
 
 ---
 
@@ -373,7 +373,7 @@ See the complete ETL rule at `mde/transformations/cim-to-pim/process-policy.etl:
 
 **Source:** `s` to `CIMPROCESS!ProcessStep`  
 **Target:** `ws` to `WORKFLOW!TaskStep`  
-**Source location:** `mde/transformations/cim-to-pim/process-policy.etl:480`
+**Source location:** `methodology/modeling-framework/transformations/cim-to-pim/process-policy.etl:480`
 
 ### Why this rule exists
 
@@ -407,7 +407,7 @@ The trace record is the best first diagnostic: it tells you whether the target w
 
 ### Authoritative source
 
-See the complete ETL rule at `mde/transformations/cim-to-pim/process-policy.etl:480`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
+See the complete ETL rule at `methodology/modeling-framework/transformations/cim-to-pim/process-policy.etl:480`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
 
 ---
 
@@ -415,7 +415,7 @@ See the complete ETL rule at `mde/transformations/cim-to-pim/process-policy.etl:
 
 **Source:** `t` to `CIMPROCESS!ProcessTransition`  
 **Target:** `wt` to `WORKFLOW!WorkflowTransition`  
-**Source location:** `mde/transformations/cim-to-pim/process-policy.etl:546`
+**Source location:** `methodology/modeling-framework/transformations/cim-to-pim/process-policy.etl:546`
 
 ### Why this rule exists
 
@@ -442,7 +442,7 @@ The trace record is the best first diagnostic: it tells you whether the target w
 
 ### Authoritative source
 
-See the complete ETL rule at `mde/transformations/cim-to-pim/process-policy.etl:546`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
+See the complete ETL rule at `methodology/modeling-framework/transformations/cim-to-pim/process-policy.etl:546`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
 
 ---
 
@@ -450,7 +450,7 @@ See the complete ETL rule at `mde/transformations/cim-to-pim/process-policy.etl:
 
 **Source:** `ex` to `CIMPROCESS!ExceptionScenario`  
 **Target:** `eh` to `WORKFLOW!ErrorHandler`  
-**Source location:** `mde/transformations/cim-to-pim/process-policy.etl:658`
+**Source location:** `methodology/modeling-framework/transformations/cim-to-pim/process-policy.etl:658`
 
 ### Why this rule exists
 
@@ -478,7 +478,7 @@ The trace record is the best first diagnostic: it tells you whether the target w
 
 ### Authoritative source
 
-See the complete ETL rule at `mde/transformations/cim-to-pim/process-policy.etl:658`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
+See the complete ETL rule at `methodology/modeling-framework/transformations/cim-to-pim/process-policy.etl:658`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
 
 ---
 
@@ -486,7 +486,7 @@ See the complete ETL rule at `mde/transformations/cim-to-pim/process-policy.etl:
 
 **Source:** `sc` to `CIMGOV!SecurityConstraint`  
 **Target:** `sec` to `SECURITY!SecurityPolicy`, `auth` to `SECURITY!AuthPolicy`, `authz` to `SECURITY!AuthorizationPolicy`  
-**Source location:** `mde/transformations/cim-to-pim/process-policy.etl:675`
+**Source location:** `methodology/modeling-framework/transformations/cim-to-pim/process-policy.etl:675`
 
 ### Why this rule exists
 
@@ -516,7 +516,7 @@ The trace record is the best first diagnostic: it tells you whether the target w
 
 ### Authoritative source
 
-See the complete ETL rule at `mde/transformations/cim-to-pim/process-policy.etl:675`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
+See the complete ETL rule at `methodology/modeling-framework/transformations/cim-to-pim/process-policy.etl:675`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
 
 ---
 
@@ -524,7 +524,7 @@ See the complete ETL rule at `mde/transformations/cim-to-pim/process-policy.etl:
 
 **Source:** `tc` to `CIMPROCESS!TemporalConstraint`  
 **Target:** `timeout` to `POLICY!TimeoutPolicy`, `ordering` to `POLICY!OrderingPolicy`  
-**Source location:** `mde/transformations/cim-to-pim/process-policy.etl:754`
+**Source location:** `methodology/modeling-framework/transformations/cim-to-pim/process-policy.etl:754`
 
 ### Why this rule exists
 
@@ -554,7 +554,7 @@ The trace record is the best first diagnostic: it tells you whether the target w
 
 ### Authoritative source
 
-See the complete ETL rule at `mde/transformations/cim-to-pim/process-policy.etl:754`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
+See the complete ETL rule at `methodology/modeling-framework/transformations/cim-to-pim/process-policy.etl:754`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
 
 ---
 
@@ -562,7 +562,7 @@ See the complete ETL rule at `mde/transformations/cim-to-pim/process-policy.etl:
 
 **Source:** `nfr` to `CIMGOV!NonFunctionalRequirement`  
 **Target:** `pol` to `POLICY!ResiliencePolicy`, `backup` to `POLICY!BackupPolicy`  
-**Source location:** `mde/transformations/cim-to-pim/process-policy.etl:855`
+**Source location:** `methodology/modeling-framework/transformations/cim-to-pim/process-policy.etl:855`
 
 ### Why this rule exists
 
@@ -595,7 +595,7 @@ The trace record is the best first diagnostic: it tells you whether the target w
 
 ### Authoritative source
 
-See the complete ETL rule at `mde/transformations/cim-to-pim/process-policy.etl:855`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
+See the complete ETL rule at `methodology/modeling-framework/transformations/cim-to-pim/process-policy.etl:855`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
 
 ---
 
@@ -603,7 +603,7 @@ See the complete ETL rule at `mde/transformations/cim-to-pim/process-policy.etl:
 
 **Source:** `nfr` to `CIMGOV!NonFunctionalRequirement`  
 **Target:** `pol` to `POLICY!TimeoutPolicy`, `concurrency` to `POLICY!ConcurrencyPolicy`, `cache` to `POLICY!CachePolicy`, `rateLimit` to `POLICY!RateLimitPolicy`  
-**Source location:** `mde/transformations/cim-to-pim/process-policy.etl:897`
+**Source location:** `methodology/modeling-framework/transformations/cim-to-pim/process-policy.etl:897`
 
 ### Why this rule exists
 
@@ -638,7 +638,7 @@ The trace record is the best first diagnostic: it tells you whether the target w
 
 ### Authoritative source
 
-See the complete ETL rule at `mde/transformations/cim-to-pim/process-policy.etl:897`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
+See the complete ETL rule at `methodology/modeling-framework/transformations/cim-to-pim/process-policy.etl:897`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
 
 ---
 
@@ -646,7 +646,7 @@ See the complete ETL rule at `mde/transformations/cim-to-pim/process-policy.etl:
 
 **Source:** `nfr` to `CIMGOV!NonFunctionalRequirement`  
 **Target:** `pol` to `POLICY!ObservabilityConfig`  
-**Source location:** `mde/transformations/cim-to-pim/process-policy.etl:957`
+**Source location:** `methodology/modeling-framework/transformations/cim-to-pim/process-policy.etl:957`
 
 ### Why this rule exists
 
@@ -678,7 +678,7 @@ The trace record is the best first diagnostic: it tells you whether the target w
 
 ### Authoritative source
 
-See the complete ETL rule at `mde/transformations/cim-to-pim/process-policy.etl:957`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
+See the complete ETL rule at `methodology/modeling-framework/transformations/cim-to-pim/process-policy.etl:957`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
 
 ---
 
@@ -686,7 +686,7 @@ See the complete ETL rule at `mde/transformations/cim-to-pim/process-policy.etl:
 
 **Source:** `nfr` to `CIMGOV!NonFunctionalRequirement`  
 **Target:** `pol` to `POLICY!CostPolicy`  
-**Source location:** `mde/transformations/cim-to-pim/process-policy.etl:1022`
+**Source location:** `methodology/modeling-framework/transformations/cim-to-pim/process-policy.etl:1022`
 
 ### Why this rule exists
 
@@ -717,7 +717,7 @@ The trace record is the best first diagnostic: it tells you whether the target w
 
 ### Authoritative source
 
-See the complete ETL rule at `mde/transformations/cim-to-pim/process-policy.etl:1022`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
+See the complete ETL rule at `methodology/modeling-framework/transformations/cim-to-pim/process-policy.etl:1022`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
 
 ---
 
@@ -725,7 +725,7 @@ See the complete ETL rule at `mde/transformations/cim-to-pim/process-policy.etl:
 
 **Source:** `nfr` to `CIMGOV!NonFunctionalRequirement`  
 **Target:** `pol` to `POLICY!DataQualityPolicy`  
-**Source location:** `mde/transformations/cim-to-pim/process-policy.etl:1042`
+**Source location:** `methodology/modeling-framework/transformations/cim-to-pim/process-policy.etl:1042`
 
 ### Why this rule exists
 
@@ -756,7 +756,7 @@ The trace record is the best first diagnostic: it tells you whether the target w
 
 ### Authoritative source
 
-See the complete ETL rule at `mde/transformations/cim-to-pim/process-policy.etl:1042`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
+See the complete ETL rule at `methodology/modeling-framework/transformations/cim-to-pim/process-policy.etl:1042`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
 
 ---
 
@@ -764,7 +764,7 @@ See the complete ETL rule at `mde/transformations/cim-to-pim/process-policy.etl:
 
 **Source:** `nfr` to `CIMGOV!NonFunctionalRequirement`  
 **Target:** `pol` to `POLICY!CompliancePolicy`  
-**Source location:** `mde/transformations/cim-to-pim/process-policy.etl:1066`
+**Source location:** `methodology/modeling-framework/transformations/cim-to-pim/process-policy.etl:1066`
 
 ### Why this rule exists
 
@@ -795,6 +795,6 @@ The trace record is the best first diagnostic: it tells you whether the target w
 
 ### Authoritative source
 
-See the complete ETL rule at `mde/transformations/cim-to-pim/process-policy.etl:1066`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
+See the complete ETL rule at `methodology/modeling-framework/transformations/cim-to-pim/process-policy.etl:1066`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
 
 ---

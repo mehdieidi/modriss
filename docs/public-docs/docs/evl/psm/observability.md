@@ -2,7 +2,7 @@
 
 CloudWatch rules require alarms and metrics to have the information needed to act on them. Production observability is treated as an operational control: a metric without a threshold or an alarm without an action is not meaningful protection.
 
-Source profile: `mde/validation/psm/rules/observability.evl`.
+Source profile: `methodology/modeling-framework/validation/psm/rules/observability.evl`.
 
 ## Reading these rules
 
@@ -14,7 +14,7 @@ Each entry preserves the actual EVL guard and check. Treat the guard as the appl
 
 **Context:** `AWSPSM!CloudWatchLogGroup`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/psm/rules/observability.evl:8`
+**Source:** `methodology/modeling-framework/validation/psm/rules/observability.evl:8`
 
 ### Why this rule exists
 
@@ -54,7 +54,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `AWSPSM!CloudWatchLogGroup`  
 **Classification:** Advisory critique (warning)  
-**Source:** `mde/validation/psm/rules/observability.evl:15`
+**Source:** `methodology/modeling-framework/validation/psm/rules/observability.evl:15`
 
 ### Why this rule exists
 
@@ -94,7 +94,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 **Context:** `AWSPSM!CloudWatchAlarm`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/psm/rules/observability.evl:25`
+**Source:** `methodology/modeling-framework/validation/psm/rules/observability.evl:25`
 
 ### Why this rule exists
 
@@ -132,7 +132,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `AWSPSM!CloudWatchAlarm`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/psm/rules/observability.evl:31`
+**Source:** `methodology/modeling-framework/validation/psm/rules/observability.evl:31`
 
 ### Why this rule exists
 
@@ -170,7 +170,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `AWSPSM!CloudWatchAlarm`  
 **Classification:** Advisory critique (warning)  
-**Source:** `mde/validation/psm/rules/observability.evl:40`
+**Source:** `methodology/modeling-framework/validation/psm/rules/observability.evl:40`
 
 ### Why this rule exists
 
@@ -210,7 +210,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 **Context:** `AWSPSM!CloudWatchCompositeAlarm`  
 **Classification:** Advisory critique (warning)  
-**Source:** `mde/validation/psm/rules/observability.evl:50`
+**Source:** `methodology/modeling-framework/validation/psm/rules/observability.evl:50`
 
 ### Why this rule exists
 

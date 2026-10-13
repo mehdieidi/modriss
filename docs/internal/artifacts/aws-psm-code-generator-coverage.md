@@ -1,6 +1,6 @@
 # PSM Code Generator Coverage
 
-This matrix tracks the PSM model-to-text generator in `mde/generation/awspsm-to-artifacts`.
+This matrix tracks the PSM model-to-text generator in `methodology/modeling-framework/generation/awspsm-to-artifacts`.
 The coverage surface is the EGX rule set plus the EGL/EOL helper logic reached by those rules.
 
 PSM chatbot generation is currently out of scope. If a future assistant path produces PSM output,

@@ -2,7 +2,7 @@
 
 Behavior refinement is where a command, query, event, or error acquires an executable PIM boundary. Commands and queries become functions and, when appropriate, API routes; events acquire versioned event types and schemas; business errors become reusable error schemas. The rules also carry authorization, idempotency, correlation, error, and access-pattern intent rather than reducing business behavior to names.
 
-Source module: `mde/transformations/cim-to-pim/behavior-contracts.etl`.
+Source module: `methodology/modeling-framework/transformations/cim-to-pim/behavior-contracts.etl`.
 
 ## Reading this page
 
@@ -14,11 +14,11 @@ A transformation rule determines whether a source element contributes to the tar
 
 Supporting operations also shape the transformation. They derive defaults, create secondary resources, cache correspondences, and resolve relationships after the main rule runs.
 
-| Operation      | Role                    | Source                                                     |
-| -------------- | ----------------------- | ---------------------------------------------------------- |
-| `commandPath`  | Computes command path.  | `mde/transformations/cim-to-pim/behavior-contracts.etl:9`  |
-| `queryPath`    | Computes query path.    | `mde/transformations/cim-to-pim/behavior-contracts.etl:36` |
-| `eventSubject` | Computes event subject. | `mde/transformations/cim-to-pim/behavior-contracts.etl:48` |
+| Operation      | Role                    | Source                                                                                |
+| -------------- | ----------------------- | ------------------------------------------------------------------------------------- |
+| `commandPath`  | Computes command path.  | `methodology/modeling-framework/transformations/cim-to-pim/behavior-contracts.etl:9`  |
+| `queryPath`    | Computes query path.    | `methodology/modeling-framework/transformations/cim-to-pim/behavior-contracts.etl:36` |
+| `eventSubject` | Computes event subject. | `methodology/modeling-framework/transformations/cim-to-pim/behavior-contracts.etl:48` |
 
 ---
 
@@ -26,7 +26,7 @@ Supporting operations also shape the transformation. They derive defaults, creat
 
 **Source:** `e` to `CIMBEHAVIOR!BusinessError`  
 **Target:** `s` to `CONTRACTS!Schema`  
-**Source location:** `mde/transformations/cim-to-pim/behavior-contracts.etl:57`
+**Source location:** `methodology/modeling-framework/transformations/cim-to-pim/behavior-contracts.etl:57`
 
 ### Why this rule exists
 
@@ -53,7 +53,7 @@ The trace record is the best first diagnostic: it tells you whether the target w
 
 ### Authoritative source
 
-See the complete ETL rule at `mde/transformations/cim-to-pim/behavior-contracts.etl:57`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
+See the complete ETL rule at `methodology/modeling-framework/transformations/cim-to-pim/behavior-contracts.etl:57`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
 
 ---
 
@@ -61,7 +61,7 @@ See the complete ETL rule at `mde/transformations/cim-to-pim/behavior-contracts.
 
 **Source:** `e` to `CIMBEHAVIOR!BusinessEvent`  
 **Target:** `et` to `CONTRACTS!EventType`, `schema` to `CONTRACTS!Schema`  
-**Source location:** `mde/transformations/cim-to-pim/behavior-contracts.etl:76`
+**Source location:** `methodology/modeling-framework/transformations/cim-to-pim/behavior-contracts.etl:76`
 
 ### Why this rule exists
 
@@ -89,7 +89,7 @@ The trace record is the best first diagnostic: it tells you whether the target w
 
 ### Authoritative source
 
-See the complete ETL rule at `mde/transformations/cim-to-pim/behavior-contracts.etl:76`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
+See the complete ETL rule at `methodology/modeling-framework/transformations/cim-to-pim/behavior-contracts.etl:76`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
 
 ---
 
@@ -97,7 +97,7 @@ See the complete ETL rule at `mde/transformations/cim-to-pim/behavior-contracts.
 
 **Source:** `cmd` to `CIMBEHAVIOR!Command`  
 **Target:** `fn` to `COMPUTE!Function`  
-**Source location:** `mde/transformations/cim-to-pim/behavior-contracts.etl:114`
+**Source location:** `methodology/modeling-framework/transformations/cim-to-pim/behavior-contracts.etl:114`
 
 ### Why this rule exists
 
@@ -125,7 +125,7 @@ The trace record is the best first diagnostic: it tells you whether the target w
 
 ### Authoritative source
 
-See the complete ETL rule at `mde/transformations/cim-to-pim/behavior-contracts.etl:114`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
+See the complete ETL rule at `methodology/modeling-framework/transformations/cim-to-pim/behavior-contracts.etl:114`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
 
 ---
 
@@ -133,7 +133,7 @@ See the complete ETL rule at `mde/transformations/cim-to-pim/behavior-contracts.
 
 **Source:** `cmd` to `CIMBEHAVIOR!Command`  
 **Target:** `route` to `API!ApiRoute`  
-**Source location:** `mde/transformations/cim-to-pim/behavior-contracts.etl:178`
+**Source location:** `methodology/modeling-framework/transformations/cim-to-pim/behavior-contracts.etl:178`
 
 ### Why this rule exists
 
@@ -166,7 +166,7 @@ The trace record is the best first diagnostic: it tells you whether the target w
 
 ### Authoritative source
 
-See the complete ETL rule at `mde/transformations/cim-to-pim/behavior-contracts.etl:178`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
+See the complete ETL rule at `methodology/modeling-framework/transformations/cim-to-pim/behavior-contracts.etl:178`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
 
 ---
 
@@ -174,7 +174,7 @@ See the complete ETL rule at `mde/transformations/cim-to-pim/behavior-contracts.
 
 **Source:** `q` to `CIMBEHAVIOR!Query`  
 **Target:** `fn` to `COMPUTE!Function`  
-**Source location:** `mde/transformations/cim-to-pim/behavior-contracts.etl:270`
+**Source location:** `methodology/modeling-framework/transformations/cim-to-pim/behavior-contracts.etl:270`
 
 ### Why this rule exists
 
@@ -202,7 +202,7 @@ The trace record is the best first diagnostic: it tells you whether the target w
 
 ### Authoritative source
 
-See the complete ETL rule at `mde/transformations/cim-to-pim/behavior-contracts.etl:270`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
+See the complete ETL rule at `methodology/modeling-framework/transformations/cim-to-pim/behavior-contracts.etl:270`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
 
 ---
 
@@ -210,7 +210,7 @@ See the complete ETL rule at `mde/transformations/cim-to-pim/behavior-contracts.
 
 **Source:** `q` to `CIMBEHAVIOR!Query`  
 **Target:** `route` to `API!ApiRoute`  
-**Source location:** `mde/transformations/cim-to-pim/behavior-contracts.etl:312`
+**Source location:** `methodology/modeling-framework/transformations/cim-to-pim/behavior-contracts.etl:312`
 
 ### Why this rule exists
 
@@ -239,7 +239,7 @@ The trace record is the best first diagnostic: it tells you whether the target w
 
 ### Authoritative source
 
-See the complete ETL rule at `mde/transformations/cim-to-pim/behavior-contracts.etl:312`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
+See the complete ETL rule at `methodology/modeling-framework/transformations/cim-to-pim/behavior-contracts.etl:312`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
 
 ---
 
@@ -247,7 +247,7 @@ See the complete ETL rule at `mde/transformations/cim-to-pim/behavior-contracts.
 
 **Source:** `q` to `CIMBEHAVIOR!Query`  
 **Target:** `ap` to `DATA!AccessPattern`  
-**Source location:** `mde/transformations/cim-to-pim/behavior-contracts.etl:381`
+**Source location:** `methodology/modeling-framework/transformations/cim-to-pim/behavior-contracts.etl:381`
 
 ### Why this rule exists
 
@@ -280,6 +280,6 @@ The trace record is the best first diagnostic: it tells you whether the target w
 
 ### Authoritative source
 
-See the complete ETL rule at `mde/transformations/cim-to-pim/behavior-contracts.etl:381`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
+See the complete ETL rule at `methodology/modeling-framework/transformations/cim-to-pim/behavior-contracts.etl:381`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
 
 ---

@@ -2,7 +2,7 @@
 
 PIM readiness rules separate a model that can be transformed from one that is ready to be deployed or called production-ready. They reconcile checks, findings, manual decisions, blockers, and remediation rather than treating a single status flag as evidence.
 
-Source profile: `mde/validation/pim/rules/readiness.evl`.
+Source profile: `methodology/modeling-framework/validation/pim/rules/readiness.evl`.
 
 ## Reading these rules
 
@@ -14,7 +14,7 @@ Each entry preserves the actual EVL guard and check. Treat the guard as the appl
 
 **Context:** `KERNEL!TraceLink`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/pim/rules/readiness.evl:8`
+**Source:** `methodology/modeling-framework/validation/pim/rules/readiness.evl:8`
 
 ### Why this rule exists
 
@@ -52,7 +52,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `KERNEL!ProductionReadinessAssessment`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/pim/rules/readiness.evl:19`
+**Source:** `methodology/modeling-framework/validation/pim/rules/readiness.evl:19`
 
 ### Why this rule exists
 
@@ -92,7 +92,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `KERNEL!ReadinessFinding`  
 **Classification:** Advisory critique (warning)  
-**Source:** `mde/validation/pim/rules/readiness.evl:33`
+**Source:** `methodology/modeling-framework/validation/pim/rules/readiness.evl:33`
 
 ### Why this rule exists
 
@@ -130,7 +130,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 **Context:** `KERNEL!ReadinessCheck`  
 **Classification:** Advisory critique (warning)  
-**Source:** `mde/validation/pim/rules/readiness.evl:43`
+**Source:** `methodology/modeling-framework/validation/pim/rules/readiness.evl:43`
 
 ### Why this rule exists
 
@@ -170,7 +170,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 **Context:** `KERNEL!ManualDecision`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/pim/rules/readiness.evl:54`
+**Source:** `methodology/modeling-framework/validation/pim/rules/readiness.evl:54`
 
 ### Why this rule exists
 
@@ -210,7 +210,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `KERNEL!ManualDecision`  
 **Classification:** Advisory critique (warning)  
-**Source:** `mde/validation/pim/rules/readiness.evl:61`
+**Source:** `methodology/modeling-framework/validation/pim/rules/readiness.evl:61`
 
 ### Why this rule exists
 

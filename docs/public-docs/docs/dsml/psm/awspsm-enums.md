@@ -2,7 +2,7 @@
 
 The PSM uses enumerations wherever a deployment decision has a controlled AWS or CloudFormation vocabulary. These values are part of the abstract syntax. They prevent a model from silently changing meaning through a spelling variation and give EVL, ETL, and generation a stable value to inspect.
 
-Source: `mde/metamodels/psm/awspsm-enums.emf`.
+Source: `methodology/modeling-framework/metamodels/psm/awspsm-enums.emf`.
 
 The values below describe the choices available to the model. A value can still be inappropriate in a particular context. For example, a `PRIVATE` API endpoint needs a compatible network and resource design, while `SNAPSHOT` only makes sense for resource types that support snapshots.
 

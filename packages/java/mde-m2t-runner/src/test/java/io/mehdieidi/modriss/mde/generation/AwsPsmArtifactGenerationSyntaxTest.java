@@ -24,7 +24,7 @@ final class AwsPsmArtifactGenerationSyntaxTest {
 
   /** Root directory containing the EGX coordinator and EGL templates. */
   private static final Path GENERATOR_ROOT =
-      REPOSITORY_ROOT.resolve("mde/generation/awspsm-to-artifacts");
+      REPOSITORY_ROOT.resolve("methodology/modeling-framework/generation/awspsm-to-artifacts");
 
   /** Coverage report that inventories the generator surface. */
   private static final Path COVERAGE_REPORT =

@@ -90,9 +90,9 @@ mvn -pl packages/java/platform-assistant -am test
 
 For modeling, metamodel, EVL, ETL, or generation changes:
 
-1. Edit files under `mde/` or the MDE runner packages.
+1. Edit files under `methodology/` or the MDE runner packages.
 2. Run the matching focused CLI, backend test, or sample workflow.
-3. Rebuild the backend container before testing through Compose because `mde/` is copied into the
+3. Rebuild the backend container before testing through Compose because `methodology/` is copied into the
    backend image.
 
 ```powershell

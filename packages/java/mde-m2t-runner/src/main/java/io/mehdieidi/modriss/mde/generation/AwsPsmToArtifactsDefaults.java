@@ -44,8 +44,10 @@ public final class AwsPsmToArtifactsDefaults {
       Path outputDirectory,
       boolean failIfOutputDirectoryIsNotEmpty,
       boolean captureOutput) {
-    Path generatorRoot = repositoryRoot.resolve("mde/generation/awspsm-to-artifacts");
-    Path psmMetamodel = repositoryRoot.resolve("mde/metamodels/psm/psm-combined.ecore");
+    Path generatorRoot =
+        repositoryRoot.resolve("methodology/modeling-framework/generation/awspsm-to-artifacts");
+    Path psmMetamodel =
+        repositoryRoot.resolve("methodology/modeling-framework/metamodels/psm/psm-combined.ecore");
     return new EgxGenerationRequest(
         generatorRoot.resolve("awspsm2artifacts.egx"),
         generatorRoot.resolve("templates"),

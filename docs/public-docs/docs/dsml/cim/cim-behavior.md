@@ -1,6 +1,6 @@
 # CIM behavior
 
-Source: `mde/metamodels/cim/cim-behavior.emf`.
+Source: `methodology/modeling-framework/metamodels/cim/cim-behavior.emf`.
 
 The behavior module distinguishes an intention to change business state from a request to read information and from a fact that has already occurred. That distinction is central to CIM-to-PIM refinement. Commands can seed functions and, when appropriate, API routes. Queries can seed read functions, routes, and access patterns. Events can seed event types, channels, subscriptions, and integration flows. Errors and conditions explain the boundaries around these behaviors.
 

@@ -50,9 +50,13 @@ public final class CimToPimDefaults {
       Path targetModel,
       boolean overwriteOutput,
       boolean captureOutput) {
-    Path module = repositoryRoot.resolve("mde/transformations/cim-to-pim/cim-to-pim.etl");
-    Path cimMetamodel = repositoryRoot.resolve("mde/metamodels/cim/cim-combined.ecore");
-    Path pimMetamodel = repositoryRoot.resolve("mde/metamodels/pim/pim-combined.ecore");
+    Path module =
+        repositoryRoot.resolve(
+            "methodology/modeling-framework/transformations/cim-to-pim/cim-to-pim.etl");
+    Path cimMetamodel =
+        repositoryRoot.resolve("methodology/modeling-framework/metamodels/cim/cim-combined.ecore");
+    Path pimMetamodel =
+        repositoryRoot.resolve("methodology/modeling-framework/metamodels/pim/pim-combined.ecore");
     boolean readTarget = !overwriteOutput && targetModel.toFile().isFile();
 
     return new EtlExecutionRequest(

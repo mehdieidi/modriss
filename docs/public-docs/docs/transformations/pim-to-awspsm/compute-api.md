@@ -2,7 +2,7 @@
 
 Compute and API binding converts provider-independent execution into Lambda and API Gateway resources. The rules choose HTTP API versus REST API, materialize routes after their parent API exists, infer conservative operational settings, carry contracts into OpenAPI models, and emit explicit manual decisions where PIM intent cannot safely determine AWS implementation.
 
-Source module: `mde/transformations/pim-to-awspsm/compute-api.etl`.
+Source module: `methodology/modeling-framework/transformations/pim-to-awspsm/compute-api.etl`.
 
 ## Reading this page
 
@@ -14,48 +14,48 @@ A transformation rule determines whether a source element contributes to the tar
 
 Supporting operations also shape the transformation. They derive defaults, create secondary resources, cache correspondences, and resolve relationships after the main rule runs.
 
-| Operation                     | Role                                                                                   | Source                                                  |
-| ----------------------------- | -------------------------------------------------------------------------------------- | ------------------------------------------------------- |
-| `apiForRoute`                 | Resolves the owning PIM API for a route.                                               | `mde/transformations/pim-to-awspsm/compute-api.etl:151` |
-| `materializeApiRoutes`        | Creates any API routes that were skipped because API resources were not available yet. | `mde/transformations/pim-to-awspsm/compute-api.etl:183` |
-| `createHttpApiRouteFrom`      | Creates http api route from.                                                           | `mde/transformations/pim-to-awspsm/compute-api.etl:206` |
-| `createRestApiRouteFrom`      | Creates rest api route from.                                                           | `mde/transformations/pim-to-awspsm/compute-api.etl:239` |
-| `inferMemoryMb`               | Derives infer memory mb.                                                               | `mde/transformations/pim-to-awspsm/compute-api.etl:269` |
-| `inferTimeoutSeconds`         | Derives infer timeout seconds.                                                         | `mde/transformations/pim-to-awspsm/compute-api.etl:286` |
-| `inferReservedConcurrency`    | Derives infer reserved concurrency.                                                    | `mde/transformations/pim-to-awspsm/compute-api.etl:307` |
-| `createLambdaTracing`         | Creates lambda tracing.                                                                | `mde/transformations/pim-to-awspsm/compute-api.etl:315` |
-| `createLambdaLogging`         | Creates lambda logging.                                                                | `mde/transformations/pim-to-awspsm/compute-api.etl:325` |
-| `createLambdaEnvironment`     | Creates lambda environment.                                                            | `mde/transformations/pim-to-awspsm/compute-api.etl:337` |
-| `resourceNameEnv`             | Computes resource name env.                                                            | `mde/transformations/pim-to-awspsm/compute-api.etl:379` |
-| `createLambdaRole`            | Creates lambda role.                                                                   | `mde/transformations/pim-to-awspsm/compute-api.etl:390` |
-| `createVpcAttachmentDecision` | Creates vpc attachment decision.                                                       | `mde/transformations/pim-to-awspsm/compute-api.etl:403` |
-| `routeNeedsAuth`              | Computes route needs auth.                                                             | `mde/transformations/pim-to-awspsm/compute-api.etl:416` |
-| `inferAuthorizationType`      | Derives infer authorization type.                                                      | `mde/transformations/pim-to-awspsm/compute-api.etl:421` |
-| `applyAuthorizerFallback`     | Computes apply authorizer fallback.                                                    | `mde/transformations/pim-to-awspsm/compute-api.etl:464` |
-| `mapHttpMethod`               | Computes map http method.                                                              | `mde/transformations/pim-to-awspsm/compute-api.etl:478` |
-| `inferRouteTimeoutMillis`     | Derives infer route timeout millis.                                                    | `mde/transformations/pim-to-awspsm/compute-api.etl:504` |
-| `createApiIntegration`        | Creates api integration.                                                               | `mde/transformations/pim-to-awspsm/compute-api.etl:512` |
-| `requiresRestApi`             | Returns whether the receiver requires rest api.                                        | `mde/transformations/pim-to-awspsm/compute-api.etl:548` |
-| `createApiStages`             | Creates api stages.                                                                    | `mde/transformations/pim-to-awspsm/compute-api.etl:553` |
-| `fillApiStage`                | Computes fill api stage.                                                               | `mde/transformations/pim-to-awspsm/compute-api.etl:577` |
-| `createApiAuthorizer`         | Creates api authorizer.                                                                | `mde/transformations/pim-to-awspsm/compute-api.etl:605` |
-| `findAuthorizerFor`           | Resolves find authorizer for.                                                          | `mde/transformations/pim-to-awspsm/compute-api.etl:656` |
-| `createCors`                  | Creates cors.                                                                          | `mde/transformations/pim-to-awspsm/compute-api.etl:668` |
-| `schemaRefJson`               | Computes schema ref json.                                                              | `mde/transformations/pim-to-awspsm/compute-api.etl:703` |
-| `attachOpenApiModels`         | Adds or records attach open api models.                                                | `mde/transformations/pim-to-awspsm/compute-api.etl:711` |
-| `createRequestModel`          | Creates request model.                                                                 | `mde/transformations/pim-to-awspsm/compute-api.etl:724` |
-| `createResponseModel`         | Creates response model.                                                                | `mde/transformations/pim-to-awspsm/compute-api.etl:736` |
-| `generateOpenApi`             | Computes generate open api.                                                            | `mde/transformations/pim-to-awspsm/compute-api.etl:748` |
-| `openApiSchemas`              | Computes open api schemas.                                                             | `mde/transformations/pim-to-awspsm/compute-api.etl:765` |
-| `addSchemaOnce`               | Adds or records schema once.                                                           | `mde/transformations/pim-to-awspsm/compute-api.etl:785` |
-| `openApiRequestBody`          | Computes open api request body.                                                        | `mde/transformations/pim-to-awspsm/compute-api.etl:792` |
-| `openApiResponses`            | Computes open api responses.                                                           | `mde/transformations/pim-to-awspsm/compute-api.etl:802` |
-| `statusForError`              | Computes status for error.                                                             | `mde/transformations/pim-to-awspsm/compute-api.etl:821` |
-| `openApiSecurity`             | Computes open api security.                                                            | `mde/transformations/pim-to-awspsm/compute-api.etl:832` |
-| `scopesJson`                  | Computes scopes json.                                                                  | `mde/transformations/pim-to-awspsm/compute-api.etl:846` |
-| `openApiSecuritySchemes`      | Computes open api security schemes.                                                    | `mde/transformations/pim-to-awspsm/compute-api.etl:857` |
-| `createApiKeyAndUsagePlan`    | Creates api key and usage plan.                                                        | `mde/transformations/pim-to-awspsm/compute-api.etl:865` |
-| `secretValue`                 | Computes secret value.                                                                 | `mde/transformations/pim-to-awspsm/compute-api.etl:905` |
+| Operation                     | Role                                                                                   | Source                                                                             |
+| ----------------------------- | -------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
+| `apiForRoute`                 | Resolves the owning PIM API for a route.                                               | `methodology/modeling-framework/transformations/pim-to-awspsm/compute-api.etl:151` |
+| `materializeApiRoutes`        | Creates any API routes that were skipped because API resources were not available yet. | `methodology/modeling-framework/transformations/pim-to-awspsm/compute-api.etl:183` |
+| `createHttpApiRouteFrom`      | Creates http api route from.                                                           | `methodology/modeling-framework/transformations/pim-to-awspsm/compute-api.etl:206` |
+| `createRestApiRouteFrom`      | Creates rest api route from.                                                           | `methodology/modeling-framework/transformations/pim-to-awspsm/compute-api.etl:239` |
+| `inferMemoryMb`               | Derives infer memory mb.                                                               | `methodology/modeling-framework/transformations/pim-to-awspsm/compute-api.etl:269` |
+| `inferTimeoutSeconds`         | Derives infer timeout seconds.                                                         | `methodology/modeling-framework/transformations/pim-to-awspsm/compute-api.etl:286` |
+| `inferReservedConcurrency`    | Derives infer reserved concurrency.                                                    | `methodology/modeling-framework/transformations/pim-to-awspsm/compute-api.etl:307` |
+| `createLambdaTracing`         | Creates lambda tracing.                                                                | `methodology/modeling-framework/transformations/pim-to-awspsm/compute-api.etl:315` |
+| `createLambdaLogging`         | Creates lambda logging.                                                                | `methodology/modeling-framework/transformations/pim-to-awspsm/compute-api.etl:325` |
+| `createLambdaEnvironment`     | Creates lambda environment.                                                            | `methodology/modeling-framework/transformations/pim-to-awspsm/compute-api.etl:337` |
+| `resourceNameEnv`             | Computes resource name env.                                                            | `methodology/modeling-framework/transformations/pim-to-awspsm/compute-api.etl:379` |
+| `createLambdaRole`            | Creates lambda role.                                                                   | `methodology/modeling-framework/transformations/pim-to-awspsm/compute-api.etl:390` |
+| `createVpcAttachmentDecision` | Creates vpc attachment decision.                                                       | `methodology/modeling-framework/transformations/pim-to-awspsm/compute-api.etl:403` |
+| `routeNeedsAuth`              | Computes route needs auth.                                                             | `methodology/modeling-framework/transformations/pim-to-awspsm/compute-api.etl:416` |
+| `inferAuthorizationType`      | Derives infer authorization type.                                                      | `methodology/modeling-framework/transformations/pim-to-awspsm/compute-api.etl:421` |
+| `applyAuthorizerFallback`     | Computes apply authorizer fallback.                                                    | `methodology/modeling-framework/transformations/pim-to-awspsm/compute-api.etl:464` |
+| `mapHttpMethod`               | Computes map http method.                                                              | `methodology/modeling-framework/transformations/pim-to-awspsm/compute-api.etl:478` |
+| `inferRouteTimeoutMillis`     | Derives infer route timeout millis.                                                    | `methodology/modeling-framework/transformations/pim-to-awspsm/compute-api.etl:504` |
+| `createApiIntegration`        | Creates api integration.                                                               | `methodology/modeling-framework/transformations/pim-to-awspsm/compute-api.etl:512` |
+| `requiresRestApi`             | Returns whether the receiver requires rest api.                                        | `methodology/modeling-framework/transformations/pim-to-awspsm/compute-api.etl:548` |
+| `createApiStages`             | Creates api stages.                                                                    | `methodology/modeling-framework/transformations/pim-to-awspsm/compute-api.etl:553` |
+| `fillApiStage`                | Computes fill api stage.                                                               | `methodology/modeling-framework/transformations/pim-to-awspsm/compute-api.etl:577` |
+| `createApiAuthorizer`         | Creates api authorizer.                                                                | `methodology/modeling-framework/transformations/pim-to-awspsm/compute-api.etl:605` |
+| `findAuthorizerFor`           | Resolves find authorizer for.                                                          | `methodology/modeling-framework/transformations/pim-to-awspsm/compute-api.etl:656` |
+| `createCors`                  | Creates cors.                                                                          | `methodology/modeling-framework/transformations/pim-to-awspsm/compute-api.etl:668` |
+| `schemaRefJson`               | Computes schema ref json.                                                              | `methodology/modeling-framework/transformations/pim-to-awspsm/compute-api.etl:703` |
+| `attachOpenApiModels`         | Adds or records attach open api models.                                                | `methodology/modeling-framework/transformations/pim-to-awspsm/compute-api.etl:711` |
+| `createRequestModel`          | Creates request model.                                                                 | `methodology/modeling-framework/transformations/pim-to-awspsm/compute-api.etl:724` |
+| `createResponseModel`         | Creates response model.                                                                | `methodology/modeling-framework/transformations/pim-to-awspsm/compute-api.etl:736` |
+| `generateOpenApi`             | Computes generate open api.                                                            | `methodology/modeling-framework/transformations/pim-to-awspsm/compute-api.etl:748` |
+| `openApiSchemas`              | Computes open api schemas.                                                             | `methodology/modeling-framework/transformations/pim-to-awspsm/compute-api.etl:765` |
+| `addSchemaOnce`               | Adds or records schema once.                                                           | `methodology/modeling-framework/transformations/pim-to-awspsm/compute-api.etl:785` |
+| `openApiRequestBody`          | Computes open api request body.                                                        | `methodology/modeling-framework/transformations/pim-to-awspsm/compute-api.etl:792` |
+| `openApiResponses`            | Computes open api responses.                                                           | `methodology/modeling-framework/transformations/pim-to-awspsm/compute-api.etl:802` |
+| `statusForError`              | Computes status for error.                                                             | `methodology/modeling-framework/transformations/pim-to-awspsm/compute-api.etl:821` |
+| `openApiSecurity`             | Computes open api security.                                                            | `methodology/modeling-framework/transformations/pim-to-awspsm/compute-api.etl:832` |
+| `scopesJson`                  | Computes scopes json.                                                                  | `methodology/modeling-framework/transformations/pim-to-awspsm/compute-api.etl:846` |
+| `openApiSecuritySchemes`      | Computes open api security schemes.                                                    | `methodology/modeling-framework/transformations/pim-to-awspsm/compute-api.etl:857` |
+| `createApiKeyAndUsagePlan`    | Creates api key and usage plan.                                                        | `methodology/modeling-framework/transformations/pim-to-awspsm/compute-api.etl:865` |
+| `secretValue`                 | Computes secret value.                                                                 | `methodology/modeling-framework/transformations/pim-to-awspsm/compute-api.etl:905` |
 
 ---
 
@@ -63,7 +63,7 @@ Supporting operations also shape the transformation. They derive defaults, creat
 
 **Source:** `f` to `COMPUTE!Function`  
 **Target:** `l` to `AWSPSMCOMPUTE!AwsLambdaFunction`  
-**Source location:** `mde/transformations/pim-to-awspsm/compute-api.etl:2`
+**Source location:** `methodology/modeling-framework/transformations/pim-to-awspsm/compute-api.etl:2`
 
 ### Why this rule exists
 
@@ -88,7 +88,7 @@ Start with the manual decision(s) `LAMBDA_BUSINESS_LOGIC_IMPLEMENTATION_REQUIRED
 
 ### Authoritative source
 
-See the complete ETL rule at `mde/transformations/pim-to-awspsm/compute-api.etl:2`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
+See the complete ETL rule at `methodology/modeling-framework/transformations/pim-to-awspsm/compute-api.etl:2`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
 
 ---
 
@@ -96,7 +96,7 @@ See the complete ETL rule at `mde/transformations/pim-to-awspsm/compute-api.etl:
 
 **Source:** `api` to `API!Api`  
 **Target:** `g` to `AWSPSMAPI!HttpApi`  
-**Source location:** `mde/transformations/pim-to-awspsm/compute-api.etl:69`
+**Source location:** `methodology/modeling-framework/transformations/pim-to-awspsm/compute-api.etl:69`
 
 ### Why this rule exists
 
@@ -124,7 +124,7 @@ Verify the api instance first: the guard shown above must evaluate to true for t
 
 ### Authoritative source
 
-See the complete ETL rule at `mde/transformations/pim-to-awspsm/compute-api.etl:69`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
+See the complete ETL rule at `methodology/modeling-framework/transformations/pim-to-awspsm/compute-api.etl:69`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
 
 ---
 
@@ -132,7 +132,7 @@ See the complete ETL rule at `mde/transformations/pim-to-awspsm/compute-api.etl:
 
 **Source:** `api` to `API!Api`  
 **Target:** `g` to `AWSPSMAPI!RestApi`  
-**Source location:** `mde/transformations/pim-to-awspsm/compute-api.etl:101`
+**Source location:** `methodology/modeling-framework/transformations/pim-to-awspsm/compute-api.etl:101`
 
 ### Why this rule exists
 
@@ -160,7 +160,7 @@ Verify the api instance first: the guard shown above must evaluate to true for t
 
 ### Authoritative source
 
-See the complete ETL rule at `mde/transformations/pim-to-awspsm/compute-api.etl:101`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
+See the complete ETL rule at `methodology/modeling-framework/transformations/pim-to-awspsm/compute-api.etl:101`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
 
 ---
 
@@ -168,7 +168,7 @@ See the complete ETL rule at `mde/transformations/pim-to-awspsm/compute-api.etl:
 
 **Source:** `api` to `API!Api`  
 **Target:** `n` to `AWSPSMCORE!AwsNativeResource`  
-**Source location:** `mde/transformations/pim-to-awspsm/compute-api.etl:132`
+**Source location:** `methodology/modeling-framework/transformations/pim-to-awspsm/compute-api.etl:132`
 
 ### Why this rule exists
 
@@ -197,7 +197,7 @@ Start with the manual decision(s) `API_STYLE_UNSUPPORTED_DIRECTLY` and complete 
 
 ### Authoritative source
 
-See the complete ETL rule at `mde/transformations/pim-to-awspsm/compute-api.etl:132`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
+See the complete ETL rule at `methodology/modeling-framework/transformations/pim-to-awspsm/compute-api.etl:132`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
 
 ---
 
@@ -205,7 +205,7 @@ See the complete ETL rule at `mde/transformations/pim-to-awspsm/compute-api.etl:
 
 **Source:** `r` to `API!ApiRoute`  
 **Target:** `gr` to `AWSPSMAPI!HttpApiRoute`  
-**Source location:** `mde/transformations/pim-to-awspsm/compute-api.etl:163`
+**Source location:** `methodology/modeling-framework/transformations/pim-to-awspsm/compute-api.etl:163`
 
 ### Why this rule exists
 
@@ -233,7 +233,7 @@ Verify the api route instance first: the guard shown above must evaluate to true
 
 ### Authoritative source
 
-See the complete ETL rule at `mde/transformations/pim-to-awspsm/compute-api.etl:163`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
+See the complete ETL rule at `methodology/modeling-framework/transformations/pim-to-awspsm/compute-api.etl:163`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
 
 ---
 
@@ -241,7 +241,7 @@ See the complete ETL rule at `mde/transformations/pim-to-awspsm/compute-api.etl:
 
 **Source:** `r` to `API!ApiRoute`  
 **Target:** `gr` to `AWSPSMAPI!RestApiRoute`  
-**Source location:** `mde/transformations/pim-to-awspsm/compute-api.etl:173`
+**Source location:** `methodology/modeling-framework/transformations/pim-to-awspsm/compute-api.etl:173`
 
 ### Why this rule exists
 
@@ -269,6 +269,6 @@ Verify the api route instance first: the guard shown above must evaluate to true
 
 ### Authoritative source
 
-See the complete ETL rule at `mde/transformations/pim-to-awspsm/compute-api.etl:173`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
+See the complete ETL rule at `methodology/modeling-framework/transformations/pim-to-awspsm/compute-api.etl:173`. The purpose and observable effects of the rule are summarized here. Consult the ETL body for exact assignments and helper calls.
 
 ---

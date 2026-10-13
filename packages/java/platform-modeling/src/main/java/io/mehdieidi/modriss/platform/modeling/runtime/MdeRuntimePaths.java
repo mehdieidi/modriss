@@ -57,7 +57,8 @@ public final class MdeRuntimePaths {
    * @return validation asset directory
    */
   public Path validationRoot(ModelLevel level) {
-    return resolveConfiguredRoot(options.validationRoot(), "mde/validation")
+    return resolveConfiguredRoot(
+            options.validationRoot(), "methodology/modeling-framework/validation")
         .resolve(level.apiName())
         .normalize();
   }
@@ -83,7 +84,8 @@ public final class MdeRuntimePaths {
    * @return metamodel file path
    */
   public Path metamodelFile(ModelLevel level) {
-    Path root = resolveConfiguredRoot(options.metamodelRoot(), "mde/metamodels");
+    Path root =
+        resolveConfiguredRoot(options.metamodelRoot(), "methodology/modeling-framework/metamodels");
     return root.resolve(level.apiName())
         .resolve(
             switch (level) {
@@ -100,7 +102,8 @@ public final class MdeRuntimePaths {
    * @return transformation directory
    */
   public Path cimToPimRoot() {
-    return resolveConfiguredRoot(options.transformationRoot(), "mde/transformations")
+    return resolveConfiguredRoot(
+            options.transformationRoot(), "methodology/modeling-framework/transformations")
         .resolve("cim-to-pim")
         .normalize();
   }
@@ -111,7 +114,8 @@ public final class MdeRuntimePaths {
    * @return transformation directory
    */
   public Path pimToAwsPsmRoot() {
-    return resolveConfiguredRoot(options.transformationRoot(), "mde/transformations")
+    return resolveConfiguredRoot(
+            options.transformationRoot(), "methodology/modeling-framework/transformations")
         .resolve("pim-to-awspsm")
         .normalize();
   }
@@ -122,7 +126,8 @@ public final class MdeRuntimePaths {
    * @return generation directory
    */
   public Path generationRoot() {
-    return resolveConfiguredRoot(options.generationRoot(), "mde/generation")
+    return resolveConfiguredRoot(
+            options.generationRoot(), "methodology/modeling-framework/generation")
         .resolve("awspsm-to-artifacts")
         .normalize();
   }
@@ -133,7 +138,7 @@ public final class MdeRuntimePaths {
    * @return notation directory containing {@code *.cvs.json} files
    */
   public Path notationRoot() {
-    return resolveConfiguredRoot(null, "mde/notation").normalize();
+    return resolveConfiguredRoot(null, "methodology/modeling-framework/notation").normalize();
   }
 
   /**
@@ -142,7 +147,7 @@ public final class MdeRuntimePaths {
    * @return methodology directory
    */
   public Path methodologyRoot() {
-    return resolveConfiguredRoot(null, "mde/process").normalize();
+    return resolveConfiguredRoot(null, "methodology/process").normalize();
   }
 
   /**
@@ -212,15 +217,29 @@ public final class MdeRuntimePaths {
    * @return {@code true} when all required assets exist
    */
   private boolean isRepositoryRoot(Path root) {
-    return Files.isRegularFile(root.resolve("mde/validation/cim/cim-semantic-validation.evl"))
-        && Files.isRegularFile(root.resolve("mde/validation/pim/pim-semantic-validation.evl"))
-        && Files.isRegularFile(root.resolve("mde/validation/psm/psm-semantic-validation.evl"))
-        && Files.isRegularFile(root.resolve("mde/transformations/cim-to-pim/cim-to-pim.etl"))
-        && Files.isRegularFile(root.resolve("mde/transformations/pim-to-awspsm/pim-to-awspsm.etl"))
+    return Files.isRegularFile(
+            root.resolve(
+                "methodology/modeling-framework/validation/cim/cim-semantic-validation.evl"))
         && Files.isRegularFile(
-            root.resolve("mde/generation/awspsm-to-artifacts/awspsm2artifacts.egx"))
-        && Files.isRegularFile(root.resolve("mde/metamodels/cim/cim-combined.ecore"))
-        && Files.isRegularFile(root.resolve("mde/metamodels/pim/pim-combined.ecore"))
-        && Files.isRegularFile(root.resolve("mde/metamodels/psm/psm-combined.ecore"));
+            root.resolve(
+                "methodology/modeling-framework/validation/pim/pim-semantic-validation.evl"))
+        && Files.isRegularFile(
+            root.resolve(
+                "methodology/modeling-framework/validation/psm/psm-semantic-validation.evl"))
+        && Files.isRegularFile(
+            root.resolve(
+                "methodology/modeling-framework/transformations/cim-to-pim/cim-to-pim.etl"))
+        && Files.isRegularFile(
+            root.resolve(
+                "methodology/modeling-framework/transformations/pim-to-awspsm/pim-to-awspsm.etl"))
+        && Files.isRegularFile(
+            root.resolve(
+                "methodology/modeling-framework/generation/awspsm-to-artifacts/awspsm2artifacts.egx"))
+        && Files.isRegularFile(
+            root.resolve("methodology/modeling-framework/metamodels/cim/cim-combined.ecore"))
+        && Files.isRegularFile(
+            root.resolve("methodology/modeling-framework/metamodels/pim/pim-combined.ecore"))
+        && Files.isRegularFile(
+            root.resolve("methodology/modeling-framework/metamodels/psm/psm-combined.ecore"));
   }
 }

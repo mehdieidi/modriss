@@ -27,7 +27,7 @@ class DeterministicGeneratedIdentityIntegrationTest {
 
   @Test
   void identicalCimToPimRunsProduceIdenticalGeneratedIds() throws Exception {
-    Path source = REPOSITORY_ROOT.resolve("mde/samples/cim.xmi");
+    Path source = REPOSITORY_ROOT.resolve("methodology/modeling-framework/samples/cim.xmi");
     Path first = tempDir.resolve("first.pim.xmi");
     Path second = tempDir.resolve("second.pim.xmi");
 
@@ -39,7 +39,7 @@ class DeterministicGeneratedIdentityIntegrationTest {
 
   @Test
   void identicalPimToAwsPsmRunsProduceIdenticalGeneratedIds() throws Exception {
-    Path source = REPOSITORY_ROOT.resolve("mde/samples/pim.xmi");
+    Path source = REPOSITORY_ROOT.resolve("methodology/modeling-framework/samples/pim.xmi");
     Path first = tempDir.resolve("first.awspsm.xmi");
     Path second = tempDir.resolve("second.awspsm.xmi");
 
@@ -51,7 +51,7 @@ class DeterministicGeneratedIdentityIntegrationTest {
 
   @Test
   void generatedAwsPsmIdsAreUniqueEvenWhenManyTrustPoliciesAreCreated() throws Exception {
-    Path source = REPOSITORY_ROOT.resolve("mde/samples/pim.xmi");
+    Path source = REPOSITORY_ROOT.resolve("methodology/modeling-framework/samples/pim.xmi");
     Path target = tempDir.resolve("unique.awspsm.xmi");
 
     execute(PimToAwsPsmDefaults.request(REPOSITORY_ROOT, source, target, true, true));
@@ -65,7 +65,7 @@ class DeterministicGeneratedIdentityIntegrationTest {
 
   @Test
   void renamingCimSourceWithoutChangingItsIdPreservesPimIdentities() throws Exception {
-    Path source = REPOSITORY_ROOT.resolve("mde/samples/cim.xmi");
+    Path source = REPOSITORY_ROOT.resolve("methodology/modeling-framework/samples/cim.xmi");
     Path renamedSource = tempDir.resolve("renamed.cim.xmi");
     Path originalTarget = tempDir.resolve("original-name.pim.xmi");
     Path renamedTarget = tempDir.resolve("renamed.pim.xmi");
@@ -85,7 +85,7 @@ class DeterministicGeneratedIdentityIntegrationTest {
 
   @Test
   void renamingPimSourceWithoutChangingItsIdPreservesAwsPsmIdentities() throws Exception {
-    Path source = REPOSITORY_ROOT.resolve("mde/samples/pim.xmi");
+    Path source = REPOSITORY_ROOT.resolve("methodology/modeling-framework/samples/pim.xmi");
     Path renamedSource = tempDir.resolve("renamed.pim.xmi");
     Path originalTarget = tempDir.resolve("original-name.awspsm.xmi");
     Path renamedTarget = tempDir.resolve("renamed.awspsm.xmi");
@@ -180,7 +180,7 @@ class DeterministicGeneratedIdentityIntegrationTest {
   private static Path findRepositoryRoot() {
     Path current = Path.of(System.getProperty("user.dir")).toAbsolutePath().normalize();
     while (current != null) {
-      if (Files.isDirectory(current.resolve("mde/metamodels"))) {
+      if (Files.isDirectory(current.resolve("methodology/modeling-framework/metamodels"))) {
         return current;
       }
       current = current.getParent();

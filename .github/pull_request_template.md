@@ -15,7 +15,7 @@
 - [ ] `python scripts/verify.py` passes locally
 - [ ] OpenAPI updated (`docs/api/openapi/openapi.yaml`) if REST endpoints changed
 - [ ] Flyway migration added if PostgreSQL schema changed
-- [ ] Sample models under `mde/samples/` updated if validation rules changed
+- [ ] Sample models under `methodology/modeling-framework/samples/` updated if validation rules changed
 - [ ] Public docs / diagrams updated when behavior or architecture changed
 - [ ] Architecture or guide docs updated for significant design decisions (`docs/diagrams/`, `docs/public-docs/`, `docs/internal/`)
 

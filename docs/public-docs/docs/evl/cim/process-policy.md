@@ -2,7 +2,7 @@
 
 Process and policy rules check that a business journey has a real beginning, completion, responsibility, branching logic, timing, and recovery story. They are deliberately stricter about meaning than about implementation: a process can be technology-neutral, but it cannot be ownerless or impossible to complete.
 
-Source profile: `mde/validation/cim/rules/process-policy.evl`.
+Source profile: `methodology/modeling-framework/validation/cim/rules/process-policy.evl`.
 
 ## Reading these rules
 
@@ -14,7 +14,7 @@ Each entry preserves the actual EVL guard and check. Treat the guard as the appl
 
 **Context:** `CIM!BusinessProcess`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/cim/rules/process-policy.evl:8`
+**Source:** `methodology/modeling-framework/validation/cim/rules/process-policy.evl:8`
 
 ### Why this rule exists
 
@@ -52,7 +52,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `CIM!BusinessProcess`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/cim/rules/process-policy.evl:18`
+**Source:** `methodology/modeling-framework/validation/cim/rules/process-policy.evl:18`
 
 ### Why this rule exists
 
@@ -90,7 +90,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `CIM!BusinessProcess`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/cim/rules/process-policy.evl:28`
+**Source:** `methodology/modeling-framework/validation/cim/rules/process-policy.evl:28`
 
 ### Why this rule exists
 
@@ -130,7 +130,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `CIM!BusinessProcess`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/cim/rules/process-policy.evl:37`
+**Source:** `methodology/modeling-framework/validation/cim/rules/process-policy.evl:37`
 
 ### Why this rule exists
 
@@ -170,7 +170,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `CIM!BusinessProcess`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/cim/rules/process-policy.evl:46`
+**Source:** `methodology/modeling-framework/validation/cim/rules/process-policy.evl:46`
 
 ### Why this rule exists
 
@@ -208,7 +208,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `CIM!BusinessProcess`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/cim/rules/process-policy.evl:57`
+**Source:** `methodology/modeling-framework/validation/cim/rules/process-policy.evl:57`
 
 ### Why this rule exists
 
@@ -244,7 +244,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `CIM!BusinessProcess`  
 **Classification:** Advisory critique (warning)  
-**Source:** `mde/validation/cim/rules/process-policy.evl:68`
+**Source:** `methodology/modeling-framework/validation/cim/rules/process-policy.evl:68`
 
 ### Why this rule exists
 
@@ -284,7 +284,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 **Context:** `CIM!ProcessStep`  
 **Classification:** Advisory critique (warning)  
-**Source:** `mde/validation/cim/rules/process-policy.evl:81`
+**Source:** `methodology/modeling-framework/validation/cim/rules/process-policy.evl:81`
 
 ### Why this rule exists
 
@@ -324,7 +324,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 **Context:** `CIM!StartStep`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/cim/rules/process-policy.evl:93`
+**Source:** `methodology/modeling-framework/validation/cim/rules/process-policy.evl:93`
 
 ### Why this rule exists
 
@@ -362,7 +362,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `CIM!EndStep`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/cim/rules/process-policy.evl:104`
+**Source:** `methodology/modeling-framework/validation/cim/rules/process-policy.evl:104`
 
 ### Why this rule exists
 
@@ -400,7 +400,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `CIM!CommandStep`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/cim/rules/process-policy.evl:115`
+**Source:** `methodology/modeling-framework/validation/cim/rules/process-policy.evl:115`
 
 ### Why this rule exists
 
@@ -438,7 +438,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `CIM!QueryStep`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/cim/rules/process-policy.evl:126`
+**Source:** `methodology/modeling-framework/validation/cim/rules/process-policy.evl:126`
 
 ### Why this rule exists
 
@@ -476,7 +476,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `CIM!EventStep`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/cim/rules/process-policy.evl:137`
+**Source:** `methodology/modeling-framework/validation/cim/rules/process-policy.evl:137`
 
 ### Why this rule exists
 
@@ -514,7 +514,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `CIM!PolicyStep`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/cim/rules/process-policy.evl:148`
+**Source:** `methodology/modeling-framework/validation/cim/rules/process-policy.evl:148`
 
 ### Why this rule exists
 
@@ -552,7 +552,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `CIM!HumanTaskStep`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/cim/rules/process-policy.evl:159`
+**Source:** `methodology/modeling-framework/validation/cim/rules/process-policy.evl:159`
 
 ### Why this rule exists
 
@@ -590,7 +590,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `CIM!ExternalInteractionStep`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/cim/rules/process-policy.evl:172`
+**Source:** `methodology/modeling-framework/validation/cim/rules/process-policy.evl:172`
 
 ### Why this rule exists
 
@@ -628,7 +628,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `CIM!ExternalInteractionStep`  
 **Classification:** Advisory critique (warning)  
-**Source:** `mde/validation/cim/rules/process-policy.evl:182`
+**Source:** `methodology/modeling-framework/validation/cim/rules/process-policy.evl:182`
 
 ### Why this rule exists
 
@@ -666,7 +666,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 **Context:** `CIM!DecisionStep`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/cim/rules/process-policy.evl:193`
+**Source:** `methodology/modeling-framework/validation/cim/rules/process-policy.evl:193`
 
 ### Why this rule exists
 
@@ -704,7 +704,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `CIM!DecisionStep`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/cim/rules/process-policy.evl:203`
+**Source:** `methodology/modeling-framework/validation/cim/rules/process-policy.evl:203`
 
 ### Why this rule exists
 
@@ -742,7 +742,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `CIM!WaitStep`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/cim/rules/process-policy.evl:214`
+**Source:** `methodology/modeling-framework/validation/cim/rules/process-policy.evl:214`
 
 ### Why this rule exists
 
@@ -780,7 +780,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `CIM!ProcessTransition`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/cim/rules/process-policy.evl:228`
+**Source:** `methodology/modeling-framework/validation/cim/rules/process-policy.evl:228`
 
 ### Why this rule exists
 
@@ -818,7 +818,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `CIM!ProcessTransition`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/cim/rules/process-policy.evl:236`
+**Source:** `methodology/modeling-framework/validation/cim/rules/process-policy.evl:236`
 
 ### Why this rule exists
 
@@ -856,7 +856,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `CIM!ProcessTransition`  
 **Classification:** Advisory critique (warning)  
-**Source:** `mde/validation/cim/rules/process-policy.evl:246`
+**Source:** `methodology/modeling-framework/validation/cim/rules/process-policy.evl:246`
 
 ### Why this rule exists
 
@@ -896,7 +896,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 **Context:** `CIM!DecisionTable`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/cim/rules/process-policy.evl:259`
+**Source:** `methodology/modeling-framework/validation/cim/rules/process-policy.evl:259`
 
 ### Why this rule exists
 
@@ -932,7 +932,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `CIM!DecisionTable`  
 **Classification:** Advisory critique (warning)  
-**Source:** `mde/validation/cim/rules/process-policy.evl:270`
+**Source:** `methodology/modeling-framework/validation/cim/rules/process-policy.evl:270`
 
 ### Why this rule exists
 
@@ -972,7 +972,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 **Context:** `CIM!DecisionRule`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/cim/rules/process-policy.evl:283`
+**Source:** `methodology/modeling-framework/validation/cim/rules/process-policy.evl:283`
 
 ### Why this rule exists
 
@@ -1010,7 +1010,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `CIM!DecisionRule`  
 **Classification:** Advisory critique (warning)  
-**Source:** `mde/validation/cim/rules/process-policy.evl:293`
+**Source:** `methodology/modeling-framework/validation/cim/rules/process-policy.evl:293`
 
 ### Why this rule exists
 
@@ -1048,7 +1048,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 **Context:** `CIM!Policy`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/cim/rules/process-policy.evl:305`
+**Source:** `methodology/modeling-framework/validation/cim/rules/process-policy.evl:305`
 
 ### Why this rule exists
 
@@ -1086,7 +1086,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `CIM!Policy`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/cim/rules/process-policy.evl:316`
+**Source:** `methodology/modeling-framework/validation/cim/rules/process-policy.evl:316`
 
 ### Why this rule exists
 
@@ -1124,7 +1124,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `CIM!Policy`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/cim/rules/process-policy.evl:328`
+**Source:** `methodology/modeling-framework/validation/cim/rules/process-policy.evl:328`
 
 ### Why this rule exists
 
@@ -1164,7 +1164,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `CIM!Policy`  
 **Classification:** Advisory critique (warning)  
-**Source:** `mde/validation/cim/rules/process-policy.evl:339`
+**Source:** `methodology/modeling-framework/validation/cim/rules/process-policy.evl:339`
 
 ### Why this rule exists
 
@@ -1204,7 +1204,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 **Context:** `CIM!ExceptionScenario`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/cim/rules/process-policy.evl:352`
+**Source:** `methodology/modeling-framework/validation/cim/rules/process-policy.evl:352`
 
 ### Why this rule exists
 
@@ -1242,7 +1242,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `CIM!ExceptionScenario`  
 **Classification:** Advisory critique (warning)  
-**Source:** `mde/validation/cim/rules/process-policy.evl:362`
+**Source:** `methodology/modeling-framework/validation/cim/rules/process-policy.evl:362`
 
 ### Why this rule exists
 
@@ -1282,7 +1282,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 **Context:** `CIM!TemporalConstraint`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `mde/validation/cim/rules/process-policy.evl:375`
+**Source:** `methodology/modeling-framework/validation/cim/rules/process-policy.evl:375`
 
 ### Why this rule exists
 
@@ -1320,7 +1320,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `CIM!TemporalConstraint`  
 **Classification:** Advisory critique (warning)  
-**Source:** `mde/validation/cim/rules/process-policy.evl:384`
+**Source:** `methodology/modeling-framework/validation/cim/rules/process-policy.evl:384`
 
 ### Why this rule exists
 

@@ -6,7 +6,7 @@ This reference explains the semantic validation layer of the three serverless DS
 
 Structural conformance can tell us that a `WorkflowStep` has an `orderIndex` of the right Ecore type. It cannot tell us that the workflow has an entry point, that a task invokes exactly one action, or that a terminal state has no successor. Those are semantic relationships and assumptions; EVL is where this project makes them explicit.
 
-Every entry below is one actual `constraint` or `critique` from `mde/validation/`. The reference keeps the source guard, check, diagnostic, and referenced features visible so a modeller can move from explanation to authoritative implementation without ambiguity.
+Every entry below is one actual `constraint` or `critique` from `methodology/modeling-framework/validation/`. The reference keeps the source guard, check, diagnostic, and referenced features visible so a modeller can move from explanation to authoritative implementation without ambiguity.
 
 ## Constraint versus critique
 
@@ -21,12 +21,12 @@ A guard does not make a rule weaker; it says which variant the rule is about. Fo
 
 ## Validation entry points
 
-| Profile | Entry EVL                                        | Scope                                                                                                               | Rules |
-| ------- | ------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------- | ----: |
-| Kernel  | `mde/validation/shared/kernel-constraints.evl`   | Identity and traceability invariants imported by the level profiles                                                 |     2 |
-| CIM     | `mde/validation/cim/cim-semantic-validation.evl` | Business intent, domain, behavior, process, policy, governance, and readiness                                       |   158 |
-| PIM     | `mde/validation/pim/pim-semantic-validation.evl` | Provider-independent serverless architecture, contracts, integration, security, workflow, policy, and readiness     |   185 |
-| PSM     | `mde/validation/psm/psm-semantic-validation.evl` | AWS resources, SAM/CloudFormation, Lambda, APIs, events, storage, security, workflow, networking, and relationships |   201 |
+| Profile | Entry EVL                                                                   | Scope                                                                                                               | Rules |
+| ------- | --------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- | ----: |
+| Kernel  | `methodology/modeling-framework/validation/shared/kernel-constraints.evl`   | Identity and traceability invariants imported by the level profiles                                                 |     2 |
+| CIM     | `methodology/modeling-framework/validation/cim/cim-semantic-validation.evl` | Business intent, domain, behavior, process, policy, governance, and readiness                                       |   158 |
+| PIM     | `methodology/modeling-framework/validation/pim/pim-semantic-validation.evl` | Provider-independent serverless architecture, contracts, integration, security, workflow, policy, and readiness     |   185 |
+| PSM     | `methodology/modeling-framework/validation/psm/psm-semantic-validation.evl` | AWS resources, SAM/CloudFormation, Lambda, APIs, events, storage, security, workflow, networking, and relationships |   201 |
 
 The level entry files import the kernel rules and their concern-specific modules. Validate a model after structural parsing/conformance and before the transformation or generation gate that depends on its semantics.
 
