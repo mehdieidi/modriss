@@ -64,10 +64,6 @@ layering, or security posture.
 - Deployment and observability: `deploy/`, `infra/`
 - Tooling configuration: `config/`
 
-## Security
-
-Report vulnerabilities privately. See [SECURITY.md](SECURITY.md).
-
 ## License
 
 By contributing, you agree that your contributions are licensed under the

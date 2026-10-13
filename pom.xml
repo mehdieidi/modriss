@@ -223,7 +223,7 @@
       </dependency>
     </dependencies>
   </dependencyManagement>
-  <description>Model-Driven Low-Code Platform for Serverless Software Development.</description>
+  <description>AI-assisted model-driven methodology for serverless software development.</description>
   <groupId>io.mehdieidi</groupId>
 
   <modelVersion>4.0.0</modelVersion>

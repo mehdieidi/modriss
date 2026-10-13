@@ -1,30 +1,44 @@
-# Only backend reactor/build inputs and the OpenAPI spec belong in this context.
+# Start with an empty build context, then allow only backend build inputs.
 **
+
+# Maven reactor root.
 !pom.xml
+
+# Backend application and shared Java sources.
 !apps/
 !apps/backend/
 !apps/backend/**
 !packages/
 !packages/java/
 !packages/java/**
+
+# Maven tool-module descriptors.
 !tools/
 !tools/*/
 !tools/*/pom.xml
+
+# Configuration and modeling inputs.
 !config/
 !config/**
 !methodology/
 !methodology/**
+
+# OpenAPI source used by the backend build.
 !docs/
 !docs/api/
 !docs/api/openapi/
 !docs/api/openapi/openapi.yaml
+
+# Runtime image definition.
 !deploy/
 !deploy/Dockerfile
 
-**/target
-**/node_modules
+# Keep generated files and nested repositories out of the context.
 **/.git
+**/node_modules
+**/target
 methodology/modeling-framework/notation/backup
-# Never send real environment files to BuildKit, including nested module files.
+
+# Exclude environment files and variants from every directory.
 **/.env
 **/.env.*

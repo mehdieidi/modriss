@@ -27,16 +27,16 @@ mvnw.cmd text eol=crlf
 *.xml text eol=lf
 *.yaml text eol=lf
 *.yml text eol=lf
-*.emf text
-*.emfatic text
-*.evl text
-*.etl text
-*.egl text
-*.egx text
-*.eol text
-*.xmi text
-*.model text
-*.flexmi text
+*.emf text eol=lf
+*.emfatic text eol=lf
+*.evl text eol=lf
+*.etl text eol=lf
+*.egl text eol=lf
+*.egx text eol=lf
+*.eol text eol=lf
+*.xmi text eol=lf
+*.model text eol=lf
+*.flexmi text eol=lf
 
 # Binary files
 *.jar binary
