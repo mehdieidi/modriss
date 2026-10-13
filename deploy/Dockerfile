@@ -29,6 +29,7 @@ COPY apps/backend/src apps/backend/src
 COPY packages/java packages/java
 COPY config config
 COPY methodology methodology
+COPY docs/api/openapi/openapi.yaml docs/api/openapi/
 RUN --mount=type=cache,id=modriss-maven,target=/root/.m2,sharing=locked \
     mvn -pl apps/backend -am package -Dmaven.test.skip=true
 

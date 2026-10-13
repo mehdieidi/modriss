@@ -12,6 +12,13 @@
         <directory>src/main/resources</directory>
       </resource>
       <resource>
+        <directory>${project.basedir}/../../docs/api/openapi</directory>
+        <targetPath>static</targetPath>
+        <includes>
+          <include>openapi.yaml</include>
+        </includes>
+      </resource>
+      <resource>
         <directory>../../packages/java/platform-storage-postgres/src/main/resources/db/migration</directory>
         <targetPath>db/migration</targetPath>
         <includes>
@@ -39,6 +46,11 @@
   </build>
 
   <dependencies>
+    <dependency>
+      <groupId>org.webjars</groupId>
+      <artifactId>swagger-ui</artifactId>
+      <version>5.33.2</version>
+    </dependency>
     <dependency>
       <artifactId>platform-assistant</artifactId>
       <groupId>${project.groupId}</groupId>
@@ -170,7 +182,6 @@
     <dependency>
       <groupId>tools.jackson.dataformat</groupId>
       <artifactId>jackson-dataformat-yaml</artifactId>
-      <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.testcontainers</groupId>

@@ -1,4 +1,4 @@
-# Only backend reactor/build inputs belong in this context.
+# Only backend reactor/build inputs and the OpenAPI spec belong in this context.
 **
 !pom.xml
 !apps/
@@ -14,6 +14,10 @@
 !config/**
 !methodology/
 !methodology/**
+!docs/
+!docs/api/
+!docs/api/openapi/
+!docs/api/openapi/openapi.yaml
 !deploy/
 !deploy/Dockerfile
 

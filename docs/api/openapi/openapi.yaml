@@ -2,7 +2,30 @@ openapi: 3.1.0
 info:
   title: MODRISS Backend API
   version: 0.0.1
-  description: REST API for authentication, projects, CIM/PIM/PSM models, transformations, artifacts, modeling metadata, and diagram layout.
+  description: >-
+    Interactive reference for the MODRISS backend. Most endpoints require the `X-Auth-Token`
+    header. Register and verify an account, sign in at `/api/auth/login`, then copy the returned
+    token into **Authorize** in Swagger UI; enter the token as-is, without a `Bearer` prefix.
+
+    A guest token can be created with `/api/auth/guest`. Guest accounts are isolated and have a
+    configurable assistant prompt limit. Registration, password recovery, and email verification
+    are public flows and do not require a token. Session tokens last 30 days by default; the server
+    can override this duration.
+
+    Model writes use optimistic concurrency. Send the current `expectedRevision` when replacing or
+    patching a stored model; stale revisions return `409 Conflict`. MDE transformations and stored
+    validation can run asynchronously: `202 Accepted` responses include a job identifier and
+    polling location. Poll the returned job endpoint for status and results.
+
+    Assistant messages create durable turns and return `202 Accepted`. Subscribe to the session
+    event stream for live updates, or poll turn status and replay durable events after a disconnect.
+    Assistant generated actions, proposals, checkpoints, and committed model output are gated only
+    by structural Ecore/EMF conformance. EVL semantic validation is available through explicit
+    model-validation workflows and is not run by assistant apply, repair, or commit paths.
+
+    Errors use the `ApiErrorResponse` shape. Its `errorId` is a correlation identifier that can be
+    supplied to support when investigating a failed request. Model imports and assistant attachments
+    use multipart form data; model and project exports return downloadable files.
   license:
     name: MIT
     identifier: MIT
@@ -13,33 +36,60 @@ security:
   - AuthToken: []
 tags:
   - name: Health
-    description: Backend status checks.
+    description: Public liveness and readiness information for the backend API.
   - name: Auth
-    description: User registration, login, session, and profile endpoints.
+    description: >-
+      Public registration, email verification, password reset, guest session creation, and
+      authenticated profile and session management. Login and guest creation return the
+      `X-Auth-Token` value used by protected endpoints.
   - name: Projects
-    description: Project records, active models, and membership.
+    description: >-
+      Project CRUD, project downloads, and membership management. Project owners control project
+      membership and can invite existing users by email.
   - name: Models
-    description: CIM, PIM, and PSM model CRUD, validation, import, and export.
+    description: >-
+      CIM, PIM, and PSM model CRUD, views, validation, import, and export. Stored model writes use
+      optimistic concurrency through `expectedRevision`. Structural validation checks Ecore/EMF
+      conformance; the general validation endpoints run the user-requested model validation rules.
   - name: Transformations
-    description: MDE transformations and job tracking.
+    description: >-
+      Model-to-model and model-to-artifact transformations. Long-running work is accepted as an MDE
+      job; use its job ID to poll status and retrieve generated models, artifacts, diagnostics, and
+      timing details.
   - name: Synchronizations
-    description: Pending three-way model synchronization conflict resolution.
+    description: >-
+      Three-way synchronization sessions for generated model changes. Inspect conflicts, record
+      per-conflict or batch resolutions, then finalize the session to validate and commit the merge.
   - name: Artifacts
-    description: Generated artifact records, files, and downloads.
+    description: Generated artifact metadata, file access and updates, ZIP downloads, and lineage.
   - name: Modeling
-    description: Modeling UI configuration and layout services.
+    description: Modeling metadata, methodology content, metamodel coverage, and diagram layout.
   - name: Assistant
     description: >-
       Unified durable AI modeling assistant sessions, turns, checkpoints, source provenance, and
-      SSE replay. Clients do not select an internal agent/conceptual strategy. Assistant commits
-      are gated by structural Ecore/EMF conformance; EVL remains a separate user-initiated API.
-  - name: Future
-    description: Planned feature placeholders that currently return 501.
+      SSE replay. Clients do not select an internal agent or generation strategy. Message requests
+      require an idempotency key in the JSON body. Use `attachmentIds` to attach previously uploaded
+      files. A `202 Accepted` response means the durable turn was queued; it does not mean the model
+      change has completed. Follow events or poll the turn status. Assistant generated output is
+      gated only by structural Ecore/EMF conformance; EVL semantic validation remains a separate
+      explicit model-validation workflow.
+  - name: Impact
+    description: Upstream and downstream impact analysis for model elements and generated artifacts.
+  - name: Admin
+    description: >-
+      Administrative inspection and operations. Read access requires an `ADMIN`, `OPERATOR`, or
+      `VIEWER` role. Mutations that require an operator accept `ADMIN` or `OPERATOR`; owner-level
+      actions require `ADMIN`. Administrative routes also require the standard `X-Auth-Token`.
+  - name: Telemetry
+    description: Public ingestion of browser telemetry and page-visit events.
+  - name: Theme
+    description: Public retrieval of the active frontend theme profile.
 paths:
   /api/health:
     get:
       tags: [Health]
       summary: Get backend health
+      description: Returns the backend health state, service name, and current timestamp.
       security: []
       responses:
         "200":
@@ -82,6 +132,9 @@ paths:
     post:
       tags: [Auth]
       summary: Create an auth session
+      description: >-
+        Verifies credentials and returns a session token. Pass the token in `X-Auth-Token` on
+        protected requests. An unverified account cannot sign in.
       security: []
       requestBody:
         required: true
@@ -134,6 +187,7 @@ paths:
     post:
       tags: [Auth]
       summary: Verify an account email address
+      description: Completes email verification with the one-time token from the verification email.
       security: []
       requestBody:
         required: true
@@ -177,6 +231,9 @@ paths:
     post:
       tags: [Auth]
       summary: Set a password from a reset link
+      description: >-
+        Replaces the account password using the one-time reset token and revokes all active
+        sessions. Passwords must contain at least eight characters.
       security: []
       requestBody:
         required: true
@@ -206,6 +263,7 @@ paths:
     get:
       tags: [Auth]
       summary: Get current user
+      description: Returns the user associated with the supplied `X-Auth-Token`.
       responses:
         "200":
           description: Current user
@@ -218,6 +276,7 @@ paths:
     put:
       tags: [Auth]
       summary: Update current user profile
+      description: Updates the current user's display name.
       requestBody:
         required: true
         content:
@@ -239,6 +298,7 @@ paths:
     post:
       tags: [Auth]
       summary: End the current auth session
+      description: Invalidates the session token supplied in `X-Auth-Token`.
       responses:
         "200":
           description: Session ended
@@ -248,6 +308,7 @@ paths:
     get:
       tags: [Projects]
       summary: List projects visible to the current user
+      description: Returns projects owned by or shared with the authenticated user.
       responses:
         "200":
           description: Projects
@@ -262,6 +323,7 @@ paths:
     post:
       tags: [Projects]
       summary: Create a project
+      description: Creates a project owned by the authenticated user.
       requestBody:
         required: true
         content:
@@ -285,6 +347,7 @@ paths:
     get:
       tags: [Projects]
       summary: Get a project
+      description: Returns project details, active model references, and members visible to the caller.
       responses:
         "200":
           description: Project
@@ -301,6 +364,7 @@ paths:
     put:
       tags: [Projects]
       summary: Update a project
+      description: Replaces the project name, description, and active model references.
       requestBody:
         required: true
         content:
@@ -323,6 +387,7 @@ paths:
     delete:
       tags: [Projects]
       summary: Delete a project
+      description: Deletes a project when the authenticated user has owner access.
       responses:
         "200":
           description: Project deleted
@@ -336,6 +401,7 @@ paths:
     get:
       tags: [Projects]
       summary: Download project ZIP
+      description: Downloads a ZIP archive containing the project models and associated exported files.
       responses:
         "200":
           description: Project ZIP archive
@@ -360,6 +426,7 @@ paths:
     get:
       tags: [Projects]
       summary: List project members
+      description: Lists users who currently have access to the project and their project roles.
       responses:
         "200":
           description: Project members
@@ -379,6 +446,7 @@ paths:
     post:
       tags: [Projects]
       summary: Invite an existing user to a project
+      description: Adds an already registered user to the project using the requested role.
       requestBody:
         required: true
         content:
@@ -411,6 +479,7 @@ paths:
     put:
       tags: [Projects]
       summary: Update a project member role
+      description: Replaces the project role assigned to an existing member.
       requestBody:
         required: true
         content:
@@ -435,6 +504,7 @@ paths:
     delete:
       tags: [Projects]
       summary: Revoke project access
+      description: Removes a member from the project. Project owners cannot remove themselves through this endpoint.
       responses:
         "200":
           description: Access revoked
@@ -450,10 +520,12 @@ paths:
     get:
       tags: [Models]
       summary: List CIM, PIM, or PSM model summaries
+      description: Returns models at the requested modeling level, optionally restricted to one project.
       parameters:
         - name: projectId
           in: query
           required: false
+          description: Restrict the model list to this project when supplied.
           schema:
             type: string
       responses:
@@ -470,6 +542,7 @@ paths:
     post:
       tags: [Models]
       summary: Create a CIM, PIM, or PSM model
+      description: Creates a model in the supplied project and returns its current revision.
       requestBody:
         required: true
         content:
@@ -496,6 +569,15 @@ paths:
     get:
       tags: [Models]
       summary: Get a stored model
+      description: Returns the model JSON and, by default, its saved views.
+      parameters:
+        - name: includeViews
+          in: query
+          required: false
+          description: Set to false to omit persisted views from the response.
+          schema:
+            type: boolean
+            default: true
       responses:
         "200":
           description: Model
@@ -512,13 +594,15 @@ paths:
     put:
       tags: [Models]
       summary: Replace a stored model
-      description: Requires `expectedRevision`; returns 409 if the model has changed.
+      description: >-
+        Replaces the model JSON and optionally its name. `expectedRevision` is required and must
+        match the current stored revision; stale revisions return `409 Conflict`.
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/SaveModelRequest"
+              $ref: "#/components/schemas/UpdateModelRequest"
       responses:
         "200":
           description: Updated model summary
@@ -537,7 +621,9 @@ paths:
     patch:
       tags: [Models]
       summary: Patch a stored model
-      description: Supports JSON Pointer `add`, `replace`, and `remove` operations. Root replacement is not supported.
+      description: >-
+        Applies JSON Pointer `add`, `replace`, and `remove` operations. Root replacement is not
+        supported. `expectedRevision` is required; stale revisions return `409 Conflict`.
       requestBody:
         required: true
         content:
@@ -562,6 +648,7 @@ paths:
     delete:
       tags: [Models]
       summary: Delete a stored model
+      description: Permanently deletes the stored model at this level and ID.
       responses:
         "200":
           description: Model deleted
@@ -577,12 +664,16 @@ paths:
     post:
       tags: [Models]
       summary: Validate unsaved model JSON
+      description: >-
+        Runs the explicit model-validation workflow against the supplied unsaved model. This is a
+        user-initiated validation operation; its semantic findings are not used as assistant commit
+        gates.
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/SaveModelRequest"
+              $ref: "#/components/schemas/ModelValidationRequest"
       responses:
         "200":
           description: Validation result
@@ -600,12 +691,13 @@ paths:
     post:
       tags: [Models]
       summary: Validate unsaved model JSON for structural Ecore/EMF conformance
+      description: Checks only structural Ecore/EMF conformance and reports structural findings.
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/SaveModelRequest"
+              $ref: "#/components/schemas/ModelValidationRequest"
       responses:
         "200":
           description: Structural validation result
@@ -624,6 +716,9 @@ paths:
     post:
       tags: [Models]
       summary: Validate a stored model
+      description: >-
+        Runs the explicit model-validation workflow against the latest stored revision. This
+        user-initiated operation may include semantic validation findings.
       responses:
         "200":
           description: Validation result
@@ -644,6 +739,7 @@ paths:
     post:
       tags: [Models]
       summary: Validate a stored model for structural Ecore/EMF conformance
+      description: Checks only structural Ecore/EMF conformance for the latest stored revision.
       responses:
         "200":
           description: Structural validation result
@@ -664,6 +760,9 @@ paths:
     post:
       tags: [Models]
       summary: Submit asynchronous validation for a stored model
+      description: >-
+        Queues model validation as an MDE job. Use the optional expected revision to reject stale
+        input, and poll the returned job location for status and results.
       parameters:
         - $ref: "#/components/parameters/IdempotencyKey"
       requestBody:
@@ -695,8 +794,9 @@ paths:
     post:
       tags: [Models]
       summary: Export unsaved model JSON
+      description: Downloads an unsaved model as JSON or XMI. `format` defaults to `json`.
       requestBody:
-        required: false
+        required: true
         content:
           application/json:
             schema:
@@ -726,8 +826,9 @@ paths:
     post:
       tags: [Models]
       summary: Export a stored model
+      description: Downloads the stored model as JSON or XMI. `format` defaults to `json`.
       requestBody:
-        required: false
+        required: true
         content:
           application/json:
             schema:
@@ -760,6 +861,10 @@ paths:
     post:
       tags: [Models]
       summary: Import model JSON or XMI
+      description: >-
+        Uploads a model file as multipart form data and stages the imported model in the selected
+        project. `format` defaults to `json`; use `xmi` for XMI input. The server enforces the
+        configured upload-size limit.
       requestBody:
         required: true
         content:
@@ -796,6 +901,9 @@ paths:
     post:
       tags: [Transformations]
       summary: Generate a PIM model from a CIM model
+      description: >-
+        Queues a CIM-to-PIM transformation job using the source model revision in the request.
+        The optional idempotency key replays the original job for an identical request.
       parameters:
         - $ref: "#/components/parameters/IdempotencyKey"
       requestBody:
@@ -815,6 +923,9 @@ paths:
     post:
       tags: [Transformations]
       summary: Generate a PSM model from a PIM model
+      description: >-
+        Queues a PIM-to-PSM transformation job using the source model revision in the request.
+        The optional idempotency key replays the original job for an identical request.
       parameters:
         - $ref: "#/components/parameters/IdempotencyKey"
       requestBody:
@@ -834,6 +945,9 @@ paths:
     post:
       tags: [Transformations]
       summary: Generate deployable artifacts from a PSM model
+      description: >-
+        Queues artifact generation from the requested PSM revision. The response includes a job ID
+        and polling location; use the job resource to inspect generated artifacts and diagnostics.
       parameters:
         - $ref: "#/components/parameters/IdempotencyKey"
       requestBody:
@@ -861,6 +975,7 @@ paths:
     get:
       tags: [Transformations]
       summary: Get a transformation job
+      description: Returns current job status, progress, diagnostics, timing data, and any result IDs.
       responses:
         "200":
           description: Job record
@@ -884,6 +999,7 @@ paths:
     post:
       tags: [Transformations]
       summary: Cancel a transformation job
+      description: Requests cancellation of a queued or running job and returns its updated job record.
       responses:
         "200":
           description: Cancelled job record
@@ -910,6 +1026,7 @@ paths:
     get:
       tags: [Synchronizations]
       summary: Get a pending model synchronization session and its conflicts
+      description: Returns the working revision, detected conflicts, and resolutions recorded so far.
       responses:
         "200":
           description: Pending synchronization session
@@ -922,6 +1039,7 @@ paths:
     delete:
       tags: [Synchronizations]
       summary: Cancel a pending model synchronization session
+      description: Deletes an uncommitted synchronization session and its pending resolutions.
       responses:
         "204":
           description: Synchronization session cancelled
@@ -940,6 +1058,7 @@ paths:
     post:
       tags: [Synchronizations]
       summary: Record a resolution for one model conflict
+      description: Records the selected resolution for a single conflict and returns the updated session.
       requestBody:
         required: true
         content:
@@ -968,6 +1087,7 @@ paths:
     post:
       tags: [Synchronizations]
       summary: Record multiple conflict resolutions in one session update
+      description: Records a batch of conflict resolutions atomically and returns the updated session.
       requestBody:
         required: true
         content:
@@ -996,6 +1116,9 @@ paths:
     post:
       tags: [Synchronizations]
       summary: Validate and commit a fully resolved synchronization session
+      description: >-
+        Applies the selected resolutions, validates the merged model, and commits it when the target
+        revision has not changed. An unresolved conflict or stale target revision returns a conflict.
       responses:
         "200":
           description: Synchronized working model
@@ -1009,10 +1132,12 @@ paths:
     get:
       tags: [Artifacts]
       summary: List artifacts for a project
+      description: Returns artifact metadata and file paths without loading each artifact's model or file contents.
       parameters:
         - name: projectId
           in: query
           required: true
+          description: Project whose artifacts should be listed.
           schema:
             type: string
       responses:
@@ -1023,7 +1148,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: "#/components/schemas/ArtifactRecord"
+                  $ref: "#/components/schemas/ArtifactSummary"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -1034,6 +1159,7 @@ paths:
     get:
       tags: [Artifacts]
       summary: Get an artifact
+      description: Returns artifact metadata, generated model JSON, and the artifact file map.
       responses:
         "200":
           description: Artifact
@@ -1053,11 +1179,13 @@ paths:
       - name: path
         in: query
         required: true
+        description: Artifact-relative file path to read.
         schema:
           type: string
     get:
       tags: [Artifacts]
       summary: Read an artifact file
+      description: Returns the UTF-8 text content at the artifact-relative `path` query parameter.
       responses:
         "200":
           description: File contents
@@ -1079,6 +1207,7 @@ paths:
     put:
       tags: [Artifacts]
       summary: Save or replace an artifact file
+      description: Creates or replaces one text file at the requested artifact-relative path.
       requestBody:
         required: true
         content:
@@ -1106,6 +1235,7 @@ paths:
     get:
       tags: [Artifacts]
       summary: Download an artifact as a ZIP archive
+      description: Downloads the generated model and all artifact files as a ZIP archive.
       responses:
         "200":
           description: ZIP archive
@@ -1128,6 +1258,7 @@ paths:
     get:
       tags: [Modeling]
       summary: Get modeling palette and UI metadata
+      description: Returns the palette, metamodel metadata, and editor configuration used by modeling clients.
       security: []
       responses:
         "200":
@@ -1141,6 +1272,7 @@ paths:
     get:
       tags: [Modeling]
       summary: Get modeling methodology process for a level
+      description: Returns the process definition for CIM, PIM, PSM, artifact generation, or the end-to-end workflow.
       security: []
       parameters:
         - name: level
@@ -1161,6 +1293,7 @@ paths:
     get:
       tags: [Modeling]
       summary: Get the consolidated SPEM method-content library
+      description: Returns roles, tasks, work products, guidance, and process components for the methodology explorer.
       security: []
       responses:
         "200":
@@ -1174,6 +1307,7 @@ paths:
     get:
       tags: [Modeling]
       summary: Get metamodel coverage for a modeling process level
+      description: Returns the mapping between process steps and concepts represented by the selected level's metamodel.
       security: []
       parameters:
         - name: level
@@ -1194,6 +1328,7 @@ paths:
     post:
       tags: [Modeling]
       summary: Auto-layout diagram nodes and edges
+      description: Computes node coordinates and edge routes for an unsaved diagram without persisting the result.
       security: []
       requestBody:
         required: true
@@ -1212,6 +1347,9 @@ paths:
     post:
       tags: [Modeling]
       summary: Lazily auto-layout and persist one stored model view
+      description: >-
+        Computes and stores positions for one existing model view. Existing positions are retained
+        unless `force=true`. The mutation increments the stored model revision.
       parameters:
         - name: level
           in: path
@@ -1232,12 +1370,14 @@ paths:
         - name: force
           in: query
           required: false
+          description: Recalculate and replace any existing layout when true.
           schema:
             type: boolean
             default: false
         - name: strategy
           in: query
           required: false
+          description: Layout algorithm to apply. The current supported strategy is layered.
           schema:
             type: string
             enum: [LAYERED]
@@ -1245,12 +1385,25 @@ paths:
       responses:
         "200":
           description: Persisted view layout result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StoredViewLayoutResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
         "400":
           $ref: "#/components/responses/BadRequest"
   /api/{level}/{id}/views/{viewId}:
     get:
       tags: [Models]
       summary: Get one stored model view
+      description: Returns the saved JSON view for the specified model and view identifier.
       parameters:
         - name: level
           in: path
@@ -1271,6 +1424,9 @@ paths:
       responses:
         "200":
           description: Stored view
+          content:
+            application/json:
+              schema: {}
         "401":
           $ref: "#/components/responses/Unauthorized"
         "404":
@@ -1279,6 +1435,9 @@ paths:
     get:
       tags: [Impact]
       summary: Analyze model element impact
+      description: >-
+        Returns the focal element, traceable upstream sources, downstream dependents, and connected
+        peers discovered across the model's project.
       parameters:
         - name: level
           in: path
@@ -1299,6 +1458,10 @@ paths:
       responses:
         "200":
           description: Element impact graph containing focal element, upstream chain, downstream tree, and connected peers
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ElementImpactResponse"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "404":
@@ -1307,6 +1470,7 @@ paths:
     get:
       tags: [Impact]
       summary: Analyze generated artifact lineage
+      description: Returns artifact metadata and the ordered model ancestors used to generate it.
       parameters:
         - name: artifactId
           in: path
@@ -1316,6 +1480,10 @@ paths:
       responses:
         "200":
           description: Artifact metadata and ordered upstream model ancestors
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ArtifactImpactResponse"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "404":
@@ -1324,10 +1492,25 @@ paths:
     get:
       tags: [Assistant]
       summary: List recent assistant conversations
+      description: >-
+        Lists up to 30 recent conversations for a project and CIM or PIM level. `days` sets the
+        lookback window and defaults to 3.
       parameters:
-        - { name: projectId, in: query, required: true, schema: { type: string } }
-        - { name: level, in: query, required: true, schema: { type: string, enum: [cim, pim] } }
-        - { name: days, in: query, required: false, schema: { type: integer, default: 3 } }
+        - name: projectId
+          in: query
+          required: true
+          description: Project whose assistant conversations should be listed.
+          schema: { type: string }
+        - name: level
+          in: query
+          required: true
+          description: Assistant-supported modeling level.
+          schema: { type: string, enum: [cim, pim] }
+        - name: days
+          in: query
+          required: false
+          description: Number of days to look back; defaults to 3.
+          schema: { type: integer, default: 3 }
       responses:
         "200":
           description: Recent conversations
@@ -1342,7 +1525,9 @@ paths:
     post:
       tags: [Assistant]
       summary: Create assistant session
-      description: Creates or resumes a CIM/PIM assistant session. PSM returns HTTP 422.
+      description: >-
+        Creates a CIM/PIM assistant session, resumes the requested session when possible, or starts
+        a fresh session when `forceNew` is true. PSM is not supported and returns HTTP 422.
       requestBody:
         required: true
         content:
@@ -1368,6 +1553,7 @@ paths:
     delete:
       tags: [Assistant]
       summary: Clear assistant session memory
+      description: Clears the assistant's in-memory state for the session. Durable model records remain available.
       responses:
         "200":
           description: Session cleared
@@ -1413,6 +1599,9 @@ paths:
     post:
       tags: [Assistant]
       summary: Upload assistant attachment
+      description: >-
+        Uploads a text or JSON source file for use in a later assistant message. Supported extensions
+        are `.md`, `.txt`, and `.json`; the backend enforces its configured upload limit.
       requestBody:
         required: true
         content:
@@ -1447,9 +1636,17 @@ paths:
     get:
       tags: [Assistant]
       summary: Open assistant SSE event stream
+      description: >-
+        Opens a live server-sent event connection for the session. The stream is intended for live
+        updates; use the durable turn event endpoint to replay events after a reconnect.
       responses:
         "200":
           description: Server-sent event stream
+          content:
+            text/event-stream:
+              schema:
+                type: string
+                description: UTF-8 server-sent events.
         "401":
           $ref: "#/components/responses/Unauthorized"
   /api/chatbot/sessions/{sessionId}/thread:
@@ -1462,9 +1659,14 @@ paths:
     get:
       tags: [Assistant]
       summary: Get durable assistant thread history
+      description: Returns recent messages, current workflow state, provider metadata, and any active turn.
       responses:
         "200":
           description: Assistant thread snapshot
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AssistantThreadResponse"
         "401":
           $ref: "#/components/responses/Unauthorized"
   /api/chatbot/turns/{turnId}:
@@ -1477,6 +1679,7 @@ paths:
     get:
       tags: [Assistant]
       summary: Get durable assistant turn status
+      description: Polls the persisted state, checkpoints, provenance, and progress of one assistant turn.
       responses:
         "200":
           description: Durable turn status
@@ -1496,11 +1699,14 @@ paths:
     post:
       tags: [Assistant]
       summary: Persist cancellation for a durable turn
+      description: Requests cancellation of the authenticated user's queued or running turn.
       responses:
         "202":
           description: Cancellation accepted
         "401":
           $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
   /api/chatbot/turns/{turnId}/continue:
     parameters:
       - name: turnId
@@ -1511,6 +1717,7 @@ paths:
     post:
       tags: [Assistant]
       summary: Continue remaining work from a saved turn
+      description: Resumes a partial or paused turn and returns the accepted continuation state.
       responses:
         "202":
           description: Continuation accepted
@@ -1520,6 +1727,10 @@ paths:
                 $ref: "#/components/schemas/TurnAcceptedResponse"
         "401":
           $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
   /api/chatbot/turns/{turnId}/undo:
     parameters:
       - name: turnId
@@ -1530,6 +1741,9 @@ paths:
     post:
       tags: [Assistant]
       summary: Apply a safe inverse checkpoint
+      description: >-
+        Applies the inverse of a safe persisted checkpoint if the model has not changed since that
+        checkpoint. Returns `409 Conflict` when an inverse cannot be applied safely.
       responses:
         "200":
           description: Checkpoint undone
@@ -1539,6 +1753,12 @@ paths:
                 $ref: "#/components/schemas/TurnUndoResponse"
         "401":
           $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "503":
+          description: Durable checkpoint undo is unavailable.
   /api/chatbot/turns/{turnId}/confirm:
     parameters:
       - name: turnId
@@ -1549,6 +1769,9 @@ paths:
     post:
       tags: [Assistant]
       summary: Confirm a pending destructive assistant batch
+      description: >-
+        Explicitly confirms a turn in `NEEDS_CONFIRMATION` state. Confirmation creates a new
+        durable turn; it does not apply the destructive change synchronously.
       responses:
         "202":
           description: Confirmed turn accepted
@@ -1558,6 +1781,10 @@ paths:
                 $ref: "#/components/schemas/TurnAcceptedResponse"
         "401":
           $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
   /api/chatbot/turns/{turnId}/events:
     parameters:
       - name: turnId
@@ -1568,47 +1795,115 @@ paths:
     get:
       tags: [Assistant]
       summary: Replay authenticated durable assistant events
+      description: >-
+        Streams persisted events for one turn. On reconnect send the last received event ID in
+        `Last-Event-ID`; `eventCursor` provides a query-parameter cursor when the header is not
+        available. The response ends after the turn reaches a terminal state.
+      parameters:
+        - name: Last-Event-ID
+          in: header
+          required: false
+          description: Resume after the latest event ID received by the client.
+          schema:
+            type: integer
+            format: int64
+        - name: eventCursor
+          in: query
+          required: false
+          description: Resume after this event ID when Last-Event-ID is not supplied.
+          schema:
+            type: integer
+            format: int64
+            default: 0
       responses:
         "200":
           description: Server-sent event stream
+          content:
+            text/event-stream:
+              schema:
+                type: string
+                description: >-
+                  Each event uses its durable event ID as the SSE id, its event type as the SSE
+                  event name, and a JSON event record as data.
         "401":
           $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
   /api/admin/me:
     get:
       tags: [Admin]
       summary: Get current admin identity
+      description: Returns the authenticated account and its assigned administrative workspace roles.
       responses:
         "200":
           description: Current admin identity
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminMe"
         "401":
           $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
   /api/admin/bootstrap:
     post:
       tags: [Admin]
       summary: Bootstrap the first admin user
+      description: >-
+        Grants the initial `ADMIN` role to the authenticated user. This operation is available only
+        while bootstrap is enabled, the configured email allowlist contains the user, the supplied
+        bootstrap token is valid, and no admin role has been created yet. It is a one-time setup.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BootstrapRequest"
       responses:
-        "200":
-          description: Bootstrap result
+        "204":
+          description: Initial administrator role granted
+        "400":
+          $ref: "#/components/responses/BadRequest"
         "401":
           $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "409":
+          $ref: "#/components/responses/Conflict"
   /api/admin/overview:
     get:
       tags: [Admin]
       summary: Get admin overview
+      description: Returns aggregate user, project, model, artifact, MDE job, and assistant-turn counts.
       responses:
         "200":
           description: Admin overview
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminOverview"
         "401":
           $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
   /api/admin/users:
     get:
       tags: [Admin]
       summary: List users
+      description: Returns user and guest account summaries, session counts, project counts, roles, and disabled status.
       responses:
         "200":
           description: Users
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AdminUserSummary"
         "401":
           $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
   /api/admin/users/{id}:
     parameters:
       - name: id
@@ -1619,14 +1914,32 @@ paths:
     get:
       tags: [Admin]
       summary: Get user detail
+      description: Includes the user's project memberships and active session metadata.
       responses:
         "200":
           description: User detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminUserDetail"
         "401":
           $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
     delete:
       tags: [Admin]
       summary: Permanently delete a guest account and its owned projects
+      description: >-
+        Owner-level action. Only guest accounts can be deleted through this endpoint. The optional
+        reason is recorded in the administrative audit log.
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReasonRequest"
       responses:
         "204":
           description: Guest deleted
@@ -1634,6 +1947,10 @@ paths:
           $ref: "#/components/responses/BadRequest"
         "401":
           $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
   /api/admin/users/{id}/roles:
     parameters:
       - name: id
@@ -1644,11 +1961,26 @@ paths:
     post:
       tags: [Admin]
       summary: Grant a user role
+      description: >-
+        Owner-level action. Supported roles are `ADMIN`, `OPERATOR`, and `VIEWER`. Guest accounts
+        cannot receive administrative roles. The optional reason is recorded in the audit log.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RoleRequest"
       responses:
-        "200":
+        "204":
           description: Role granted
+        "400":
+          $ref: "#/components/responses/BadRequest"
         "401":
           $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
   /api/admin/users/{id}/roles/revoke:
     parameters:
       - name: id
@@ -1659,11 +1991,28 @@ paths:
     post:
       tags: [Admin]
       summary: Revoke a user role
+      description: >-
+        Owner-level action. The acting administrator cannot revoke their own `ADMIN` role. The
+        optional reason is recorded in the audit log.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RoleRequest"
       responses:
-        "200":
+        "204":
           description: Role revoked
+        "400":
+          $ref: "#/components/responses/BadRequest"
         "401":
           $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
   /api/admin/users/{id}/disable:
     parameters:
       - name: id
@@ -1674,11 +2023,24 @@ paths:
     post:
       tags: [Admin]
       summary: Disable a user
+      description: Owner-level action. The optional reason is recorded in the administrative audit log.
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReasonRequest"
       responses:
-        "200":
+        "204":
           description: User disabled
         "401":
           $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
   /api/admin/users/{id}/enable:
     parameters:
       - name: id
@@ -1689,11 +2051,22 @@ paths:
     post:
       tags: [Admin]
       summary: Enable a user
+      description: Owner-level action. The optional reason is recorded in the administrative audit log.
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReasonRequest"
       responses:
-        "200":
+        "204":
           description: User enabled
         "401":
           $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
   /api/admin/users/{id}/sessions/revoke:
     parameters:
       - name: id
@@ -1704,38 +2077,78 @@ paths:
     post:
       tags: [Admin]
       summary: Revoke user sessions
+      description: >-
+        Operator-level action that invalidates all current sessions for the user. The optional
+        reason is recorded in the administrative audit log.
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReasonRequest"
       responses:
-        "200":
+        "204":
           description: Sessions revoked
         "401":
           $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
   /api/admin/projects:
     get:
       tags: [Admin]
       summary: List projects
+      description: Returns project ownership and aggregate member, model, artifact, and job counts.
       responses:
         "200":
           description: Projects
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AdminProjectSummary"
         "401":
           $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
   /api/admin/models:
     get:
       tags: [Admin]
       summary: List models
+      description: Returns model revision and metamodel migration information across all projects.
       responses:
         "200":
           description: Models
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AdminModelSummary"
         "401":
           $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
   /api/admin/jobs:
     get:
       tags: [Admin]
       summary: List jobs
+      description: Returns MDE job ownership, operation, status, progress, and lifecycle timestamps.
       responses:
         "200":
           description: Jobs
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AdminJobSummary"
         "401":
           $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
   /api/admin/jobs/{id}/cancel:
     parameters:
       - name: id
@@ -1746,20 +2159,40 @@ paths:
     post:
       tags: [Admin]
       summary: Cancel a job
+      description: >-
+        Operator-level action. A queued or running MDE job is marked cancelled. The optional reason
+        is recorded in the administrative audit log.
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReasonRequest"
       responses:
-        "202":
-          description: Job cancellation accepted
+        "204":
+          description: Cancellation request recorded
         "401":
           $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
   /api/admin/assistant/turns:
     get:
       tags: [Admin]
       summary: List assistant turns
+      description: Returns durable assistant turn states, project and user ownership, and provider/token usage totals.
       responses:
         "200":
           description: Assistant turns
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AdminAssistantTurnSummary"
         "401":
           $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
   /api/admin/assistant/turns/{id}/cancel:
     parameters:
       - name: id
@@ -1770,43 +2203,84 @@ paths:
     post:
       tags: [Admin]
       summary: Cancel an assistant turn
+      description: >-
+        Operator-level action that persists a cancellation request for a durable assistant turn.
+        The optional reason is recorded in the administrative audit log.
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReasonRequest"
       responses:
-        "202":
-          description: Assistant turn cancellation accepted
+        "204":
+          description: Cancellation request recorded
         "401":
           $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
   /api/admin/audit-events:
     get:
       tags: [Admin]
       summary: List audit events
+      description: Returns administrative actions with actor, target, reason, request ID, and serialized event details.
       responses:
         "200":
           description: Audit events
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AdminAuditEvent"
         "401":
           $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
   /api/admin/metrics-summary:
     get:
       tags: [Admin]
       summary: Get metrics summary
+      description: Returns counts by MDE job status together with the aggregate admin overview.
       responses:
         "200":
           description: Metrics summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminMetricsSummary"
         "401":
           $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
   /api/telemetry/frontend:
     post:
       tags: [Telemetry]
       summary: Record browser telemetry and page views
+      description: >-
+        Accepts a low-volume browser event. Events with `kind=page_view` are also recorded in
+        visit analytics. User-agent and request metadata are collected by the server.
       security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FrontendTelemetryEvent"
       responses:
         "202":
           description: Telemetry accepted
+        "400":
+          $ref: "#/components/responses/BadRequest"
   /api/chatbot/turns/{turnId}/rebase:
     parameters:
       - { name: turnId, in: path, required: true, schema: { type: string } }
     post:
       tags: [Assistant]
       summary: Rebase a non-overlapping durable assistant turn
+      description: >-
+        Resumes a conflicted turn against the caller's current model revision. Rebase succeeds only
+        when intervening edits do not overlap the turn's changes.
       requestBody:
         required: true
         content:
@@ -1820,6 +2294,12 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/TurnAcceptedResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
   /api/chatbot/turns/{turnId}/checkpoints/{checkpointId}/rollback:
     parameters:
       - { name: turnId, in: path, required: true, schema: { type: string } }
@@ -1827,6 +2307,7 @@ paths:
     post:
       tags: [Assistant]
       summary: Roll back a durable assistant checkpoint
+      description: Applies the safe inverse patch for one checkpoint if the model is still at the expected revision.
       responses:
         "200":
           description: Checkpoint rolled back
@@ -1834,12 +2315,21 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/TurnUndoResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "503":
+          description: Durable checkpoint undo is unavailable.
   /api/chatbot/turns/{turnId}/feedback:
     parameters:
       - { name: turnId, in: path, required: true, schema: { type: string } }
     post:
       tags: [Assistant]
       summary: Record assistant-turn feedback
+      description: Records a binary accepted/rejected signal for the completed assistant turn.
       requestBody:
         required: true
         content:
@@ -1848,6 +2338,10 @@ paths:
               $ref: "#/components/schemas/TurnFeedbackRequest"
       responses:
         "202": { description: Feedback accepted }
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
   /api/chatbot/sessions/{sessionId}/proposals/{proposalId}:
     parameters:
       - { name: sessionId, in: path, required: true, schema: { type: string } }
@@ -1855,8 +2349,18 @@ paths:
     get:
       tags: [Assistant]
       summary: Get a legacy applied assistant proposal
+      description: Returns an applied legacy proposal, including its structural validation summary and reversible patch data.
       responses:
-        "200": { description: Assistant proposal }
+        "200":
+          description: Assistant proposal
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AssistantProposal"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
   /api/chatbot/sessions/{sessionId}/proposals/{proposalId}/undo:
     parameters:
       - { name: sessionId, in: path, required: true, schema: { type: string } }
@@ -1864,78 +2368,298 @@ paths:
     post:
       tags: [Assistant]
       summary: Undo a legacy applied assistant proposal
+      description: Applies the inverse patch for an already-applied legacy proposal.
       responses:
-        "200": { description: Proposal undone }
+        "200":
+          description: Proposal undone
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AssistantMessageResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
   /api/admin/assistant/turns/{id}/provider-calls:
     get:
       tags: [Admin]
       summary: List provider calls for an assistant turn
+      description: Returns provider/model metadata and the full prompts submitted for each provider call.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
       responses:
-        "200": { description: Provider-call audit }
+        "200":
+          description: Provider calls and the prompts sent to each provider
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AdminAssistantProviderCallPrompt"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
   /api/admin/landing-page-visits:
     get:
       tags: [Admin]
       summary: List landing page visits
+      description: Returns landing-page visits with request, browser, device, country, and referrer information.
       responses:
-        "200": { description: Landing page visits }
+        "200":
+          description: Landing page visit events
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AdminLandingPageVisit"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
   /api/admin/page-visits:
     get:
       tags: [Admin]
       summary: List recent visits across all browser applications
+      description: Returns recent page visits across applications with request, browser, device, and country information.
       responses:
-        "200": { description: Page visits with application, path, and country }
+        "200":
+          description: Page visits with application, path, and country
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AdminPageVisit"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
   /api/admin/notation/{level}:
+    parameters:
+      - name: level
+        in: path
+        required: true
+        description: Notation level to read or activate.
+        schema:
+          type: string
+          enum: [cim, pim, psm]
     get:
       tags: [Admin]
       summary: Get notation configuration
+      description: Returns the active CVS v2 notation document for the requested level.
       responses:
-        "200": { description: Notation configuration }
+        "200":
+          description: CVS notation document for the requested modeling level
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
     post:
       tags: [Admin]
       summary: Update notation configuration
+      description: Owner-level action. Saves and activates the supplied CVS v2 notation document.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/NotationSaveRequest"
       responses:
-        "200": { description: Notation configuration updated }
+        "200":
+          description: Notation document activated and backup file created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotationActivationResult"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
   /api/admin/theme-profiles:
     get:
       tags: [Admin]
       summary: List theme profiles
+      description: Returns built-in and custom profiles, including active light and dark scheme indicators.
       responses:
-        "200": { description: Theme profiles }
+        "200":
+          description: Theme profiles and their active scheme status
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ThemeState"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
     post:
       tags: [Admin]
       summary: Create a theme profile
+      description: Owner-level action.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ThemeProfileRequest"
       responses:
-        "200": { description: Theme profile created }
+        "200":
+          description: Created theme profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ThemeState"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
   /api/admin/theme-profiles/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
     post:
       tags: [Admin]
       summary: Update a theme profile
+      description: Owner-level action. Built-in and active profiles cannot be edited.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ThemeProfileRequest"
       responses:
-        "200": { description: Theme profile updated }
+        "200":
+          description: Updated theme profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ThemeState"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
   /api/admin/theme-profiles/{id}/activate:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
     post:
       tags: [Admin]
       summary: Activate a theme profile
+      description: Owner-level action. Activates this profile for the requested color scheme.
+      parameters:
+        - name: scheme
+          in: query
+          required: false
+          description: Color scheme to activate.
+          schema:
+            type: string
+            enum: [dark, light]
+            default: dark
       responses:
-        "200": { description: Theme profile activated }
+        "200":
+          description: Activated theme profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ThemeState"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
   /api/admin/theme-profiles/{id}/delete:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
     post:
       tags: [Admin]
       summary: Delete a theme profile
+      description: Owner-level action. Built-in and currently active profiles cannot be deleted.
       responses:
-        "200": { description: Theme profile deleted }
+        "204":
+          description: Theme profile deleted
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
   /api/admin/user-login-events:
     get:
       tags: [Admin]
       summary: List user login events
+      description: Returns login events with account, request, browser, device, IP, and country metadata.
       responses:
-        "200": { description: User login events }
+        "200":
+          description: Recorded user login events
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AdminUserLoginEvent"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
   /api/theme:
     get:
-      tags: [Admin]
+      tags: [Theme]
       summary: Get active theme
+      description: Returns the currently active theme tokens for the requested color scheme.
+      security: []
+      parameters:
+        - name: scheme
+          in: query
+          required: false
+          description: Color scheme to retrieve.
+          schema:
+            type: string
+            enum: [dark, light]
+            default: dark
       responses:
-        "200": { description: Active theme }
+        "200":
+          description: Active theme profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ThemeState"
 components:
   securitySchemes:
     AuthToken:
@@ -1947,24 +2671,28 @@ components:
       name: id
       in: path
       required: true
+      description: Identifier of the project to access.
       schema:
         type: string
     ModelId:
       name: id
       in: path
       required: true
+      description: Identifier of the model at the path's modeling level.
       schema:
         type: string
     ArtifactId:
       name: id
       in: path
       required: true
+      description: Identifier of the generated artifact.
       schema:
         type: string
     ModelLevelPath:
       name: level
       in: path
       required: true
+      description: Modeling abstraction level selected by this request.
       schema:
         type: string
         enum: [cim, pim, psm]
@@ -2090,6 +2818,10 @@ components:
     RegisterRequest:
       type: object
       required: [email, password, displayName]
+      example:
+        email: dev@example.com
+        password: ExamplePassword123
+        displayName: Dev Example
       properties:
         email:
           type: string
@@ -2110,6 +2842,9 @@ components:
     LoginRequest:
       type: object
       required: [email, password]
+      example:
+        email: dev@example.com
+        password: ExamplePassword123
       properties:
         email:
           type: string
@@ -2117,6 +2852,10 @@ components:
         password:
           type: string
           minLength: 8
+        publicIp:
+          type: string
+          maxLength: 45
+          description: Optional client-reported IP used for login analytics.
     PasswordResetRequest:
       type: object
       required: [email]
@@ -2183,9 +2922,8 @@ components:
         id:
           type: string
         email:
-          type: string
+          type: [string, "null"]
           format: email
-          nullable: true
         displayName:
           type: string
         guest:
@@ -2193,6 +2931,9 @@ components:
     SaveProjectRequest:
       type: object
       required: [name]
+      example:
+        name: Order management
+        description: Modeling workspace for the order management system.
       properties:
         name:
           type: string
@@ -2278,7 +3019,23 @@ components:
         expectedRevision:
           type: integer
           format: int64
-          description: Required for PUT updates.
+          description: Expected current revision; required when replacing a stored model.
+    ModelValidationRequest:
+      type: object
+      required: [model]
+      properties:
+        model:
+          description: Unsaved CIM, PIM, or PSM model JSON to validate.
+    UpdateModelRequest:
+      allOf:
+        - $ref: "#/components/schemas/SaveModelRequest"
+        - type: object
+          required: [expectedRevision]
+          properties:
+            expectedRevision:
+              type: integer
+              format: int64
+              description: Current stored revision required for optimistic concurrency.
     PatchModelRequest:
       type: object
       required: [expectedRevision]
@@ -2381,8 +3138,7 @@ components:
           type: string
           enum: [APPLIED, CONFLICTS, BOOTSTRAP_REQUIRED, VALIDATION_FAILED]
         sessionId:
-          type: string
-          nullable: true
+          type: [string, "null"]
         targetModelId: { type: string }
         incomingChanges: { type: integer }
         preservedUserChanges: { type: integer }
@@ -2505,6 +3261,10 @@ components:
     CreateAssistantSessionRequest:
       type: object
       required: [modelType, projectId]
+      example:
+        modelType: cim
+        modelName: Retail ordering
+        projectId: project-123
       properties:
         modelType:
           type: string
@@ -2522,8 +3282,9 @@ components:
       properties:
         sessionId: { type: string }
         modelId:
-          type: string
-          nullable: true
+          type: [string, "null"]
+        modelName:
+          type: [string, "null"]
     AssistantConversation:
       type: object
       properties:
@@ -2535,6 +3296,14 @@ components:
     AssistantMessageRequest:
       type: object
       required: [message, idempotencyKey]
+      example:
+        message: Add a customer and an order to the model.
+        modelId: model-123
+        expectedRevision: 4
+        activeView: CIM
+        selectedElementIds: []
+        attachmentIds: []
+        idempotencyKey: turn-2026-10-13-001
       description: >-
         Unified chatbot request. model/revision and selection are authoritative structural context;
         they are not hints for a client-selected modeling engine.
@@ -2559,6 +3328,7 @@ components:
             type: string
         attachmentIds:
           type: array
+          maxItems: 3
           items:
             type: string
         attachmentName:
@@ -2566,6 +3336,7 @@ components:
           description: Optional inline attachment name. Prefer uploaded attachmentIds for files.
         attachmentContent:
           type: string
+          maxLength: 120000
           description: Optional inline text attachment content.
         idempotencyKey:
           type: string
@@ -2768,6 +3539,9 @@ components:
     TransformRequest:
       type: object
       required: [sourceModelId]
+      example:
+        sourceModelId: model-123
+        expectedRevision: 4
       properties:
         sourceModelId:
           type: string
@@ -3062,3 +3836,587 @@ components:
         y:
           type: number
           format: double
+    BootstrapRequest:
+      type: object
+      required: [bootstrapToken]
+      properties:
+        bootstrapToken:
+          type: string
+          description: One-time bootstrap secret configured by the server operator.
+    RoleRequest:
+      type: object
+      required: [role]
+      example:
+        role: OPERATOR
+        reason: On-call support access.
+      properties:
+        role:
+          type: string
+          enum: [ADMIN, OPERATOR, VIEWER]
+        reason:
+          type: string
+          description: Optional reason stored in the administrative audit log.
+    ReasonRequest:
+      type: object
+      properties:
+        reason:
+          type: string
+          description: Optional reason stored in the administrative audit log.
+    NotationSaveRequest:
+      type: object
+      required: [document]
+      properties:
+        document:
+          type: object
+          additionalProperties: true
+          description: CVS v2 notation document for the requested CIM, PIM, or PSM level.
+        reason:
+          type: string
+          description: Optional reason stored in the administrative audit log.
+    NotationActivationResult:
+      type: object
+      required: [activeFile, backupFile, activatedAt]
+      properties:
+        activeFile:
+          type: string
+        backupFile:
+          type: string
+        activatedAt:
+          type: string
+          format: date-time
+    ThemeProfileRequest:
+      type: object
+      required: [name, tokens]
+      properties:
+        name:
+          type: string
+          maxLength: 80
+        description:
+          type: string
+        tokens:
+          type: object
+          minProperties: 1
+          additionalProperties:
+            type: string
+          description: Theme token names mapped to CSS color or value strings.
+    ThemeState:
+      type: object
+      required: [id, name, tokens, builtIn, active, activeLight, activeDark]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        tokens:
+          type: object
+          additionalProperties:
+            type: string
+        builtIn:
+          type: boolean
+        active:
+          type: boolean
+        activeLight:
+          type: boolean
+        activeDark:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    AdminMe:
+      type: object
+      required: [id, email, displayName, roles]
+      properties:
+        id:
+          type: string
+        email:
+          type: string
+          format: email
+        displayName:
+          type: string
+        roles:
+          type: array
+          items:
+            type: string
+            enum: [ADMIN, OPERATOR, VIEWER]
+    AdminOverview:
+      type: object
+      required:
+        [
+          users,
+          guestUsers,
+          disabledUsers,
+          activeSessions,
+          projects,
+          models,
+          artifacts,
+          activeJobs,
+          failedJobs,
+          activeAssistantTurns,
+          failedAssistantTurns,
+        ]
+      properties:
+        users: { type: integer, format: int64 }
+        guestUsers: { type: integer, format: int64 }
+        disabledUsers: { type: integer, format: int64 }
+        activeSessions: { type: integer, format: int64 }
+        projects: { type: integer, format: int64 }
+        models: { type: integer, format: int64 }
+        artifacts: { type: integer, format: int64 }
+        activeJobs: { type: integer, format: int64 }
+        failedJobs: { type: integer, format: int64 }
+        activeAssistantTurns: { type: integer, format: int64 }
+        failedAssistantTurns: { type: integer, format: int64 }
+    AdminUserSummary:
+      type: object
+      required:
+        [
+          id,
+          displayName,
+          guest,
+          guestPromptLimit,
+          guestPromptsUsed,
+          activeSessions,
+          projectCount,
+          adminRoles,
+          disabled,
+          createdAt,
+          updatedAt,
+        ]
+      properties:
+        id: { type: string }
+        email: { type: [string, "null"], format: email }
+        displayName: { type: string }
+        guest: { type: boolean }
+        guestPromptLimit: { type: integer }
+        guestPromptsUsed: { type: integer }
+        activeSessions: { type: integer, format: int64 }
+        projectCount: { type: integer, format: int64 }
+        adminRoles:
+          type: array
+          items: { type: string, enum: [ADMIN, OPERATOR, VIEWER] }
+        disabled: { type: boolean }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+    AdminUserDetail:
+      type: object
+      required: [user, projects, sessions]
+      properties:
+        user: { $ref: "#/components/schemas/AdminUserSummary" }
+        projects:
+          type: array
+          items: { $ref: "#/components/schemas/AdminUserProject" }
+        sessions:
+          type: array
+          items: { $ref: "#/components/schemas/AdminSessionSummary" }
+    AdminUserProject:
+      type: object
+      required: [id, name, role, updatedAt]
+      properties:
+        id: { type: string }
+        name: { type: string }
+        role: { type: string }
+        updatedAt: { type: string, format: date-time }
+    AdminSessionSummary:
+      type: object
+      required: [tokenPreview, createdAt, expiresAt]
+      properties:
+        tokenPreview:
+          type: string
+          description: Masked token preview; the full session token is never returned.
+        createdAt: { type: string, format: date-time }
+        expiresAt: { type: string, format: date-time }
+    AdminProjectSummary:
+      type: object
+      required:
+        [
+          id,
+          name,
+          ownerUserId,
+          memberCount,
+          modelCount,
+          artifactCount,
+          jobCount,
+          createdAt,
+          updatedAt,
+        ]
+      properties:
+        id: { type: string }
+        name: { type: string }
+        description: { type: string }
+        ownerUserId: { type: string }
+        ownerEmail: { type: string, format: email }
+        memberCount: { type: integer, format: int64 }
+        modelCount: { type: integer, format: int64 }
+        artifactCount: { type: integer, format: int64 }
+        jobCount: { type: integer, format: int64 }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+    AdminModelSummary:
+      type: object
+      required: [id, projectId, level, name, revision, createdAt, updatedAt]
+      properties:
+        id: { type: string }
+        projectId: { type: string }
+        projectName: { type: string }
+        level: { $ref: "#/components/schemas/ModelLevel" }
+        name: { type: string }
+        revision: { type: integer, format: int64 }
+        metamodelVersion: { type: string }
+        migrationState: { type: string }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+    AdminJobSummary:
+      type: object
+      required: [id, projectId, userId, operation, status, progressPercent, createdAt]
+      properties:
+        id: { type: string }
+        projectId: { type: string }
+        projectName: { type: string }
+        userId: { type: string }
+        userEmail: { type: string, format: email }
+        operation: { type: string }
+        status: { type: string }
+        progressPercent: { type: integer, minimum: 0, maximum: 100 }
+        sourceLevel: { $ref: "#/components/schemas/ModelLevel" }
+        createdAt: { type: string, format: date-time }
+        startedAt: { type: [string, "null"], format: date-time }
+        finishedAt: { type: [string, "null"], format: date-time }
+    AdminAssistantTurnSummary:
+      type: object
+      required:
+        [
+          id,
+          threadId,
+          projectId,
+          userId,
+          level,
+          state,
+          providerCalls,
+          promptTokens,
+          completionTokens,
+          acceptedAt,
+        ]
+      properties:
+        id: { type: string }
+        threadId: { type: string }
+        projectId: { type: string }
+        projectName: { type: string }
+        userId: { type: string }
+        userEmail: { type: string, format: email }
+        level: { type: string, enum: [cim, pim] }
+        modelId: { type: string }
+        state: { type: string }
+        providerCalls: { type: integer, format: int64 }
+        promptTokens: { type: integer, format: int64 }
+        completionTokens: { type: integer, format: int64 }
+        acceptedAt: { type: string, format: date-time }
+        startedAt: { type: [string, "null"], format: date-time }
+        completedAt: { type: [string, "null"], format: date-time }
+    AdminAssistantProviderCallPrompt:
+      type: object
+      required: [id, provider, model, startedAt, systemPrompt, userPrompt]
+      properties:
+        id: { type: integer, format: int64 }
+        provider: { type: string }
+        model: { type: string }
+        startedAt: { type: string, format: date-time }
+        systemPrompt: { type: string, description: Full system prompt sent to the provider. }
+        userPrompt: { type: string, description: Full user prompt sent to the provider. }
+    AdminAuditEvent:
+      type: object
+      required: [id, action, targetType, targetId, reason, details, requestId, createdAt]
+      properties:
+        id: { type: string }
+        actorId: { type: string }
+        actorEmail: { type: string, format: email }
+        action: { type: string }
+        targetType: { type: string }
+        targetId: { type: string }
+        reason: { type: string }
+        details: { type: string, description: JSON-encoded audit detail object. }
+        requestId: { type: string }
+        createdAt: { type: string, format: date-time }
+    AdminUserLoginEvent:
+      type: object
+      required:
+        [
+          id,
+          userId,
+          email,
+          displayName,
+          ipAddress,
+          country,
+          os,
+          browser,
+          device,
+          userAgent,
+          requestId,
+          occurredAt,
+        ]
+      properties:
+        id: { type: string }
+        userId: { type: string }
+        email: { type: string, format: email }
+        displayName: { type: string }
+        ipAddress: { type: string }
+        country: { type: string }
+        os: { type: string }
+        browser: { type: string }
+        device: { type: string }
+        userAgent: { type: string }
+        requestId: { type: string }
+        occurredAt: { type: string, format: date-time }
+    AdminLandingPageVisit:
+      type: object
+      required:
+        [
+          id,
+          ipAddress,
+          country,
+          os,
+          browser,
+          device,
+          userAgent,
+          path,
+          referrer,
+          requestId,
+          occurredAt,
+        ]
+      properties:
+        id: { type: string }
+        ipAddress: { type: string }
+        country: { type: string }
+        os: { type: string }
+        browser: { type: string }
+        device: { type: string }
+        userAgent: { type: string }
+        path: { type: string }
+        referrer: { type: string }
+        requestId: { type: string }
+        occurredAt: { type: string, format: date-time }
+    AdminPageVisit:
+      allOf:
+        - $ref: "#/components/schemas/AdminLandingPageVisit"
+        - type: object
+          required: [app]
+          properties:
+            app: { type: string }
+    AdminMetricsSummary:
+      type: object
+      required: [jobStatusCounts, overview]
+      properties:
+        jobStatusCounts:
+          type: object
+          additionalProperties:
+            type: integer
+            format: int64
+        overview:
+          $ref: "#/components/schemas/AdminOverview"
+    ArtifactSummary:
+      type: object
+      required: [id, projectId, name, filePaths, createdAt, updatedAt]
+      properties:
+        id: { type: string }
+        projectId: { type: string }
+        name: { type: string }
+        filePaths:
+          type: array
+          items: { type: string }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+    StoredViewLayoutResponse:
+      type: object
+      required: [modelId, level, revision, view, layoutApplied, nodeCount, edgeCount, warnings]
+      properties:
+        modelId: { type: string }
+        level: { $ref: "#/components/schemas/ModelLevel" }
+        revision: { type: integer, format: int64 }
+        view:
+          description: Persisted model view JSON after applying layout.
+        layoutApplied: { type: boolean }
+        nodeCount: { type: integer }
+        edgeCount: { type: integer }
+        warnings:
+          type: array
+          items: { type: string }
+    ElementImpactResponse:
+      type: object
+      required: [focalElement, upstream, downstream, connectedElements]
+      properties:
+        focalElement: { $ref: "#/components/schemas/ImpactElement" }
+        upstream:
+          type: array
+          items: { $ref: "#/components/schemas/ImpactElement" }
+        downstream:
+          type: array
+          items: { $ref: "#/components/schemas/ImpactElement" }
+        connectedElements:
+          type: array
+          items: { $ref: "#/components/schemas/ImpactElement" }
+    ImpactElement:
+      type: object
+      properties:
+        modelId: { type: string }
+        modelType: { type: string }
+        modelName: { type: string }
+        sourceModelId: { type: string }
+        elementId: { type: string }
+        elementType: { type: string }
+        elementName: { type: string }
+        relationship: { type: string }
+    ArtifactImpactResponse:
+      type: object
+      required: [ancestors]
+      properties:
+        modelId: { type: string }
+        modelType: { type: string }
+        modelName: { type: string }
+        metadata:
+          description: Artifact metadata JSON.
+        ancestors:
+          type: array
+          items: { $ref: "#/components/schemas/ModelAncestor" }
+    ModelAncestor:
+      type: object
+      properties:
+        id: { type: string }
+        type: { type: string }
+        name: { type: string }
+    FrontendTelemetryEvent:
+      type: object
+      required: [app, kind]
+      example:
+        app: editor
+        kind: page_view
+        url: /projects/project-123
+        attributes:
+          referrer: https://example.com/
+      properties:
+        app:
+          type: string
+          maxLength: 40
+          description: Browser application identifier.
+        kind:
+          type: string
+          maxLength: 40
+          description: Event kind; `page_view` events are added to visit analytics.
+        message: { type: string, maxLength: 300 }
+        url: { type: string, maxLength: 300 }
+        durationMs: { type: integer, format: int64, minimum: 0 }
+        attributes:
+          type: object
+          maxProperties: 20
+          additionalProperties:
+            type: string
+            maxLength: 120
+        occurredAt:
+          type: string
+          format: date-time
+          description: Optional client event time; the server records receipt time separately.
+    AssistantWorkflowState:
+      type: string
+      enum: [EXPLAINED, APPLIED, UNDONE, WAITING_FOR_CHOICE, FAILED]
+    AssistantProviderMetadata:
+      type: object
+      properties:
+        provider: { type: string }
+        baseUrl: { type: string, format: uri }
+        proxy: { type: string }
+        model: { type: string }
+    AssistantActiveTurn:
+      type: object
+      required: [turnId, state, eventCursor]
+      properties:
+        turnId: { type: string }
+        state: { $ref: "#/components/schemas/AssistantTurnState" }
+        eventCursor: { type: integer, format: int64 }
+    AssistantThreadMessage:
+      type: object
+      required: [role, content]
+      properties:
+        role: { type: string, enum: [user, assistant] }
+        content: { type: string }
+    AssistantThreadResponse:
+      type: object
+      required: [messages, workflowState]
+      properties:
+        messages:
+          type: array
+          items: { $ref: "#/components/schemas/AssistantThreadMessage" }
+        workflowState: { $ref: "#/components/schemas/AssistantWorkflowState" }
+        provider: { $ref: "#/components/schemas/AssistantProviderMetadata" }
+        activeTurn: { $ref: "#/components/schemas/AssistantActiveTurn" }
+    AssistantMessageResponse:
+      type: object
+      properties:
+        assistantMessage: { type: string }
+        modelId: { type: string }
+        revision: { type: integer, format: int64 }
+        model:
+          description: Optional model JSON. Currently withheld by the backend.
+        proposal: { $ref: "#/components/schemas/AssistantProposal" }
+        workflowState: { $ref: "#/components/schemas/AssistantWorkflowState" }
+        activity: { $ref: "#/components/schemas/AssistantActivity" }
+    AssistantActivity:
+      type: object
+      properties:
+        stage: { type: string }
+        message: { type: string }
+        workflowState: { $ref: "#/components/schemas/AssistantWorkflowState" }
+    AssistantProposal:
+      type: object
+      description: >-
+        Audited legacy assistant change proposal. Its validation preview records structural
+        Ecore/EMF conformance and does not assert EVL semantic validity.
+      properties:
+        id: { type: string }
+        affectedElements:
+          type: array
+          items: { type: string }
+        patch: { $ref: "#/components/schemas/SemanticModelPatch" }
+        inversePatch:
+          type: array
+          items: { $ref: "#/components/schemas/ModelPatchOperation" }
+        validation: { $ref: "#/components/schemas/AssistantValidationSummary" }
+        riskLevel: { type: string, enum: [LOW, MEDIUM, HIGH] }
+        citations:
+          type: array
+          items: { type: string }
+        createdAt: { type: string, format: date-time }
+    SemanticModelPatch:
+      type: object
+      properties:
+        operations:
+          type: array
+          items: { $ref: "#/components/schemas/SemanticModelOperation" }
+    SemanticModelOperation:
+      type: object
+      properties:
+        type: { type: string, enum: [ADD_ELEMENT, CONNECT_ELEMENTS, SET_ATTRIBUTE, DELETE_ELEMENT] }
+        targetElementId: { type: string }
+        elementType: { type: string }
+        attributes:
+          description: Operation attributes JSON.
+        sourceElementId: { type: string }
+        referenceName: { type: string }
+    AssistantValidationSummary:
+      type: object
+      properties:
+        structurallyValid: { type: boolean }
+        mandatoryPassed: { type: boolean }
+        optionalIssues: { type: integer }
+        issues:
+          type: array
+          items: { $ref: "#/components/schemas/AssistantValidationIssue" }
+    AssistantValidationIssue:
+      type: object
+      properties:
+        severity: { type: string }
+        constraint: { type: string }
+        elementId: { type: string }
+        message: { type: string }
