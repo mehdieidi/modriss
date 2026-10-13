@@ -18,6 +18,7 @@ Open <http://127.0.0.1:8082>. Backend origin:
 
 ```text
 js/              application modules (auth, canvas, chat, model-ops, ...)
+tests/           Node.js tests for frontend modules
 css/             stylesheets
 vendor/antv/     vendored G6 build
 vendor/monaco/   vendored Monaco Editor build

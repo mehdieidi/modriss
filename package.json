@@ -19,7 +19,7 @@
     "lint:eslint": "eslint --config config/eslint.config.js \"apps/**/*.js\"",
     "lint:markdown": "markdownlint-cli2 \"**/*.md\" \"!.idea/**\" \"!**/node_modules/**\" \"!**/target/**\" \"!**/vendor/**\" \"!methodology/modeling-framework/samples/**/generated-project/**\"",
     "lint:stylelint": "stylelint --config config/stylelintrc.json \"apps/**/*.css\"",
-    "test:frontend": "node --test tests/frontend/*.test.mjs",
+    "test:frontend": "node --test apps/frontend/tests/*.test.mjs",
     "docker:up": "docker compose up --build",
     "docker:down": "docker compose down",
     "docker:up:deploy": "./scripts/deploy-prod.sh",

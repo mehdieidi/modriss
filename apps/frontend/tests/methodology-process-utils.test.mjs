@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { renderableLoopEdges } from "../../apps/frontend/js/methodology-process-utils.js";
+import { renderableLoopEdges } from "../js/methodology-process-utils.js";
 
 test("keeps loop and rework edges whose endpoints are visible", () => {
   const nodes = new Map([

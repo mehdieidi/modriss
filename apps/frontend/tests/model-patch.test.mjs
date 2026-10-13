@@ -8,7 +8,7 @@ globalThis.document = {
   getElementById: () => null,
 };
 
-const { buildModelPatch } = await import("../../apps/frontend/js/model-patch.js");
+const { buildModelPatch } = await import("../js/model-patch.js");
 
 test("uses add for optional graph layout properties", () => {
   const previous = {

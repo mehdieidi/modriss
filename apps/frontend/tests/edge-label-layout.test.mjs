@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { declutterEdgeLabels } from "../../apps/frontend/js/graph-editor/edge-label-layout.js";
+import { declutterEdgeLabels } from "../js/graph-editor/edge-label-layout.js";
 
 function edge(id, y, emphasized = {}) {
   return {

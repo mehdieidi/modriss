@@ -8,21 +8,21 @@ globalThis.document = {
   getElementById: () => null,
 };
 
-const { state } = await import("../../apps/frontend/js/state.js");
-const { applyModelingRuntimeConfig } = await import("../../apps/frontend/js/config.js");
+const { state } = await import("../js/state.js");
+const { applyModelingRuntimeConfig } = await import("../js/config.js");
 const {
   modelingRelationshipElementTypes,
   initializeModelingRuntimeState,
-} = await import("../../apps/frontend/js/modeling-config-data.js");
+} = await import("../js/modeling-config-data.js");
 const {
   relationshipSemanticCopy,
   semanticGraphHasChanges,
-} = await import("../../apps/frontend/js/model-utils.js");
+} = await import("../js/model-utils.js");
 const {
   serializeGraphAndViewsInto,
   serializeGraphAndViewsIntoAsync,
-} = await import("../../apps/frontend/js/graph-store.js");
-const { buildSaveRootFromBase } = await import("../../apps/frontend/js/diagram.js");
+} = await import("../js/graph-store.js");
+const { buildSaveRootFromBase } = await import("../js/diagram.js");
 
 const modelingConfig = {
   levelOrder: ["pim"],
@@ -284,7 +284,7 @@ test("projects a contained transition to an edge without losing its terminal end
       },
     ],
   };
-  const { installGraphAndViews } = await import("../../apps/frontend/js/graph-store.js");
+  const { installGraphAndViews } = await import("../js/graph-store.js");
   const installed = installGraphAndViews("cim", model, "process-model", {
     skipFragments: true,
     skipClientLayout: true,
@@ -397,7 +397,7 @@ test("does not rebuild semantic root for a layout-only graph projection", async 
       relationships: [],
     },
   };
-  const { installGraphAndViews } = await import("../../apps/frontend/js/graph-store.js");
+  const { installGraphAndViews } = await import("../js/graph-store.js");
   installGraphAndViews("pim", model, "generated-pim", { skipClientLayout: true });
   const saved = structuredClone(model);
   await serializeGraphAndViewsIntoAsync(saved, { syncView: false });
@@ -424,7 +424,7 @@ test("detects a removed semantic object as a graph change", async () => {
       relationships: [],
     },
   };
-  const { installGraphAndViews } = await import("../../apps/frontend/js/graph-store.js");
+  const { installGraphAndViews } = await import("../js/graph-store.js");
   installGraphAndViews("pim", model, "removed-object-model", { skipClientLayout: true });
   state.graph.elementsById.delete("topic-removed");
 
@@ -508,7 +508,7 @@ test("preserves non-diagram nested containments after an unrelated generated PIM
       },
     ],
   };
-  const { installGraphAndViews } = await import("../../apps/frontend/js/graph-store.js");
+  const { installGraphAndViews } = await import("../js/graph-store.js");
   installGraphAndViews("pim", model, "generated-pim");
   state.graph.elementsById.get("workflow-1").executionSemantics = "manually refined";
   // A contained semantic helper can also have a relationship projection for a focused view.
@@ -591,7 +591,7 @@ test("emits one required PSM policy statement when it also has a relationship pr
       },
     ],
   };
-  const { installGraphAndViews } = await import("../../apps/frontend/js/graph-store.js");
+  const { installGraphAndViews } = await import("../js/graph-store.js");
   installGraphAndViews("psm", model, "generated-psm");
   state.graph.relationshipsById.set(
     "statement-1",
@@ -628,7 +628,7 @@ test("restores scoped required containment from the graph ownership index", asyn
     eClass: "AwsPsmModel",
     documents: [{ eClass: "IamPolicyDocument", id: "document-1", statements: [] }],
   };
-  const { installGraphAndViews } = await import("../../apps/frontend/js/graph-store.js");
+  const { installGraphAndViews } = await import("../js/graph-store.js");
   installGraphAndViews("psm", model, "scoped-psm");
   state.graph.parentByChild.set("statement-1", "document-1");
   state.graph.elementsById.set("statement-1", {
@@ -643,7 +643,7 @@ test("restores scoped required containment from the graph ownership index", asyn
   });
 
   const saved = structuredClone(model);
-  const { serializeGraphAndViewsIntoAsync } = await import("../../apps/frontend/js/graph-store.js");
+  const { serializeGraphAndViewsIntoAsync } = await import("../js/graph-store.js");
   await serializeGraphAndViewsIntoAsync(saved, { syncView: false });
 
   assert.deepEqual(saved.documents[0].statements.map((item) => item.id), ["statement-1"]);
@@ -720,7 +720,7 @@ test("serializes a newly drawn contained transition under its common semantic ow
     ],
   };
   const { installGraphAndViews, addConnectionToGraphAndActiveView } = await import(
-    "../../apps/frontend/js/graph-store.js"
+    "../js/graph-store.js"
   );
   installGraphAndViews("cim", model, "process-model");
 
@@ -793,7 +793,7 @@ test("preserves required decision rule expressions during async save", async () 
       }],
     }],
   };
-  const { installGraphAndViews } = await import("../../apps/frontend/js/graph-store.js");
+  const { installGraphAndViews } = await import("../js/graph-store.js");
   installGraphAndViews("pim", model, "decision-pim");
   const saved = structuredClone(model);
   await serializeGraphAndViewsIntoAsync(saved, { syncView: false });
@@ -837,7 +837,7 @@ test("keeps explicit view canvas selections exact instead of expanding Ecore sub
     ],
   };
   const { installGraphAndViews, selectElementIdsForView } = await import(
-    "../../apps/frontend/js/graph-store.js"
+    "../js/graph-store.js"
   );
   const installed = installGraphAndViews("cim", model, "requirements-model");
   const view = [...installed.views.byId.values()].find((item) => item.definitionId === "requirements");
@@ -888,7 +888,7 @@ test("retains saved routes for view-only edges whose semantic endpoints still ex
       edges: [route, { relationshipId: "deleted-reference", sourceElementId: "a", targetElementId: "deleted" }],
     }],
   };
-  const { installGraphAndViews } = await import("../../apps/frontend/js/graph-store.js");
+  const { installGraphAndViews } = await import("../js/graph-store.js");
   const installed = installGraphAndViews("cim", model, "layout-model");
   assert.equal(installed.graph.relationshipsById.has(route.relationshipId), false);
   assert.deepEqual(installed.views.byId.get("saved-overview").edges, [route]);
