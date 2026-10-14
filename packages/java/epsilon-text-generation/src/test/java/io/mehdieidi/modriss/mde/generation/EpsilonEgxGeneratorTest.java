@@ -113,6 +113,55 @@ final class EpsilonEgxGeneratorTest {
     throw new IllegalStateException("Could not locate repository root from user.dir.");
   }
 
+  /** Short local paths retain deployment names and preserve protected code from legacy paths. */
+  @Test
+  void shortensArtifactPathsAndPreservesLegacyProtectedRegions() throws Exception {
+    Path sourceModel = tempDir.resolve("short-paths.xmi");
+    Path output = tempDir.resolve("short-paths-project");
+    createRepresentativeAwsPsmModel(sourceModel);
+    String deploymentName = "dev-bounded-asynchronous-csv-exports-applycasefunction-lambda";
+    Files.writeString(
+        sourceModel,
+        Files.readString(sourceModel)
+            .replace("name=\"Order Handler\"", "name=\"ApplyCaseFunction\"")
+            .replace("functionName=\"order-handler\"", "functionName=\"" + deploymentName + "\""));
+    generateOrFail(
+        AwsPsmToArtifactsDefaults.request(REPOSITORY_ROOT, sourceModel, output, true, true));
+    Path handler = output.resolve("src/functions/apply-case/handler.go");
+    assertTrue(Files.exists(handler));
+    assertTrue(Files.exists(output.resolve("src/functions/apply-case/schema.json")));
+    assertTrue(Files.readString(output.resolve("template.yaml")).contains("bin/apply-case"));
+    assertTrue(Files.readString(output.resolve("template.yaml")).contains(deploymentName));
+    assertTrue(
+        Files.readString(output.resolve("scripts/build.ps1"))
+            .contains("./src/functions/apply-case"));
+    assertTrue(
+        Files.readString(output.resolve("tests/unit/apply-case_test.go"))
+            .contains("../../src/functions/apply-case/handler.go"));
+
+    // Emulate an export produced by the previous naming convention, with developer code added.
+    String text = Files.readString(handler);
+    int begin = text.indexOf("protected region ");
+    int contentStart = text.indexOf('\n', begin) + 1;
+    int end = text.indexOf("protected region ", contentStart);
+    int endMarkerStart = text.lastIndexOf("/*", end);
+    assertTrue(begin >= 0 && endMarkerStart > contentStart);
+    String custom = "// developer code survives the path migration";
+    Files.writeString(
+        handler, text.substring(0, contentStart) + custom + "\n" + text.substring(endMarkerStart));
+    Path legacyDirectory = output.resolve("src/functions/" + deploymentName);
+    Files.move(handler.getParent(), legacyDirectory);
+    Path trace = output.resolve("generated/trace/artifact-trace.json");
+    Files.writeString(
+        trace,
+        Files.readString(trace)
+            .replace("src/functions/apply-case/", "src/functions/" + deploymentName + "/"));
+    generateOrFail(
+        AwsPsmToArtifactsDefaults.request(REPOSITORY_ROOT, sourceModel, output, false, true));
+    assertTrue(Files.readString(handler).contains(custom));
+    assertFalse(Files.exists(legacyDirectory.resolve("handler.go")));
+  }
+
   /** Ensures a missing EGX module is reported as a validation diagnostic. */
   @Test
   void reportsMissingEgxModuleAsValidationDiagnostic() {

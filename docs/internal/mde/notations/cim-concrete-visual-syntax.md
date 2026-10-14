@@ -218,6 +218,10 @@ examples are:
 - behavior: `TARGET_CAPABILITY`, `TARGET_AGGREGATE`, `PRECONDITIONS`,
   `EXPECTED_EVENTS`, `REJECTION_EVENTS`, `POSSIBLE_ERRORS`, `READS`,
   `PAYLOAD`, and `AFFECTS`;
+- entity information: `ATTRIBUTES`, `IDENTITY_ATTRIBUTES`, and
+  `PRIMARY_IDENTITY_ATTRIBUTE` connect `DomainEntity` to `InformationItem`
+  in the Domain Model view. These type-specific rules expose the entity's
+  fields and identity while retaining inspector editing of the references;
 - process/policy: `TRIGGERED_BY`, `USES_COMMAND`, `USES_QUERY`,
   `USES_EVENT`, `USES_POLICY`, `RESPONSIBLE_ROLES`, `GUARDED_BY`,
   `DECISION_TABLE`, `RESULTING_COMMANDS`, and `RESULTING_EVENTS`;
@@ -237,8 +241,8 @@ The inspector remains the authoritative editing surface for:
 
 - command/query input and output lists, event payload details, and information
   item attributes;
-- entity identity attributes, primary identity, value-object equality
-  attributes, and source-of-truth/retention/validation properties;
+- value-object attributes and equality attributes, and
+  source-of-truth/retention/validation properties;
 - multiplicities, expressions, policy text, authorization rules, and temporal
   expressions;
 - inverse references and technical kernel references;

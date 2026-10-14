@@ -95,7 +95,26 @@
       "targetType": "*"
     }
   ],
-  "relationshipRules": [],
+  "relationshipRules": [
+    {
+      "sourceType": "DomainEntity",
+      "targetType": "InformationItem",
+      "feature": "attributes",
+      "allowedKinds": ["ATTRIBUTES"]
+    },
+    {
+      "sourceType": "DomainEntity",
+      "targetType": "InformationItem",
+      "feature": "identityAttributes",
+      "allowedKinds": ["IDENTITY_ATTRIBUTES"]
+    },
+    {
+      "sourceType": "DomainEntity",
+      "targetType": "InformationItem",
+      "feature": "primaryIdentityAttribute",
+      "allowedKinds": ["PRIMARY_IDENTITY_ATTRIBUTE"]
+    }
+  ],
   "relationshipKinds": [
     "CONTAINS",
     "CONTAINS_COMMAND",
@@ -110,6 +129,9 @@
     "CONSTRAINS",
     "ATTACHED_TO",
     "DOMAIN_RELATIONSHIP",
+    "ATTRIBUTES",
+    "IDENTITY_ATTRIBUTES",
+    "PRIMARY_IDENTITY_ATTRIBUTE",
     "ROOT",
     "MEMBER",
     "TRANSITION",
@@ -205,6 +227,9 @@
     "CONSTRAINS": "constrains",
     "ATTACHED_TO": "attached to",
     "DOMAIN_RELATIONSHIP": "relationship",
+    "ATTRIBUTES": "has attribute",
+    "IDENTITY_ATTRIBUTES": "has identity attribute",
+    "PRIMARY_IDENTITY_ATTRIBUTE": "has primary identity attribute",
     "ROOT": "root",
     "MEMBER": "member",
     "TRANSITION": "transition",
@@ -274,6 +299,14 @@
     "TRACE": "trace"
   },
   "relationshipVisualRules": [
+    {
+      "matchKinds": ["ATTRIBUTES", "IDENTITY_ATTRIBUTES", "PRIMARY_IDENTITY_ATTRIBUTE"],
+      "stroke": {
+        "light": "#0891b2",
+        "dark": "#22d3ee"
+      },
+      "markerEnd": "arrow"
+    },
     {
       "matchKinds": ["CONFLICTS_WITH"],
       "className": "edge-conflict",
@@ -517,6 +550,26 @@
         "linkType": "OTHER",
         "confidence": ""
       }
+    }
+  ],
+  "semanticReferenceRules": [
+    {
+      "sourceType": "DomainEntity",
+      "targetType": "InformationItem",
+      "feature": "attributes",
+      "kind": "ATTRIBUTES"
+    },
+    {
+      "sourceType": "DomainEntity",
+      "targetType": "InformationItem",
+      "feature": "identityAttributes",
+      "kind": "IDENTITY_ATTRIBUTES"
+    },
+    {
+      "sourceType": "DomainEntity",
+      "targetType": "InformationItem",
+      "feature": "primaryIdentityAttribute",
+      "kind": "PRIMARY_IDENTITY_ATTRIBUTE"
     }
   ],
   "semanticReferenceKindMappings": {
@@ -1846,6 +1899,9 @@
       ],
       "relationshipKinds": [
         "DOMAIN_RELATIONSHIP",
+        "ATTRIBUTES",
+        "IDENTITY_ATTRIBUTES",
+        "PRIMARY_IDENTITY_ATTRIBUTE",
         "ROOT",
         "MEMBER",
         "CONTAINS",

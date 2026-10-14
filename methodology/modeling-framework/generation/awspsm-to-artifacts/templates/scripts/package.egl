@@ -9,7 +9,7 @@ bash scripts/build.sh
 [% for (stackObj in awsRoot.stacks.sortBy(stackObj | stackObj.stackName)) { %]
 sam build \
   --template-file "[%= stackObj.stackTemplatePath() %]" \
-  --build-dir ".aws-sam/[%= stackObj.stackName.toSlug() %]"
+  --build-dir ".aws-sam/[%= stackObj.stackSlug() %]"
 [% } %]
 
 case "$stage_text" in
@@ -17,8 +17,8 @@ case "$stage_text" in
   [%= stageObj.stageSlug() %])
 [% for (stackObj in awsRoot.stacks.select(stackObj | stageObj.deploysStacks.includes(stackObj) or stageObj.deploysStacks.isEmpty()).sortBy(stackObj | stackObj.stackName)) { %]
     sam package \
-      --template-file ".aws-sam/[%= stackObj.stackName.toSlug() %]/template.yaml" \
-      --output-template-file "packaged-[%= stageObj.stageSlug() %]-[%= stackObj.stackName.toSlug() %].yaml" \
+      --template-file ".aws-sam/[%= stackObj.stackSlug() %]/template.yaml" \
+      --output-template-file "packaged-[%= stageObj.stageSlug() %]-[%= stackObj.stackSlug() %].yaml" \
       --region "[%= stageObj.region.orElseText(awsRoot.defaultRegion.orElseText("us-east-1")) %]" \
       --resolve-s3
 [% } %]

@@ -379,7 +379,7 @@ public final class ModelingConfigService {
             type ->
                 !standalonePaletteElement(elementsByType.get(type), standalonePaletteRoles)
                     && !(scopeTypes.contains(type)
-                        && paletteEntryTypeAllowed(elementsByType.get(type))));
+                        && scopedCanvasElement(elementsByType.get(type))));
       } else if (!configuredPalette.isEmpty()) {
         for (String type : configuredPalette) {
           Map<String, Object> element = elementsByType.get(type);
@@ -450,6 +450,14 @@ public final class ModelingConfigService {
 
   private boolean paletteEntryTypeAllowed(Map<String, Object> element) {
     return Boolean.TRUE.equals(element.get("creatable"))
+        && !Boolean.TRUE.equals(element.get("abstract"))
+        && !Boolean.TRUE.equals(element.get("relationshipElement"))
+        && !Boolean.TRUE.equals(element.get("supportOnly"));
+  }
+
+  /** Allows explicitly scoped detail nodes to be displayed without making them draggable. */
+  private boolean scopedCanvasElement(Map<String, Object> element) {
+    return element != null
         && !Boolean.TRUE.equals(element.get("abstract"))
         && !Boolean.TRUE.equals(element.get("relationshipElement"))
         && !Boolean.TRUE.equals(element.get("supportOnly"));

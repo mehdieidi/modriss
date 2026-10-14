@@ -33,7 +33,7 @@ operation AWSPSM!AwsPsmModel defaultEmitContext() : Map {
 /** Creates default stage name. */
 operation AWSPSM!AwsPsmModel defaultStageName() : String {
   if (self.stages.notEmpty()) {
-    return self.stages.first().stageName;
+    return self.stages.first().stageSlug();
   }
   return "dev";
 }

@@ -150,19 +150,19 @@ operation AWSPSMCORE!AwsResource cfnLogicalId() : String {
 @cached
 /** Computes function slug. */
 operation AWSPSMCOMPUTE!AwsLambdaFunction functionSlug() : String {
-  return firstText(self.functionName, firstText(self.logicalId, self.name)).toSlug();
+  return artifactPathNaming.name(self, "function", AWSPSMCOMPUTE!AwsLambdaFunction.all);
 }
 
 @cached
 /** Computes api slug. */
 operation AWSPSMAPI!ApiGatewayApi apiSlug() : String {
-  return firstText(self.apiName, firstText(self.logicalId, self.name)).toSlug();
+  return artifactPathNaming.name(self, "api", AWSPSMAPI!ApiGatewayApi.all);
 }
 
 @cached
 /** Computes workflow slug. */
 operation AWSPSMWORKFLOW!StepFunctionStateMachine workflowSlug() : String {
-  return firstText(self.stateMachineName, firstText(self.logicalId, self.name)).toSlug();
+  return artifactPathNaming.name(self, "workflow", AWSPSMWORKFLOW!StepFunctionStateMachine.all);
 }
 
 @cached
@@ -198,19 +198,22 @@ operation AWSPSMSTORAGE!S3Bucket bucketSlug() : String {
 @cached
 /** Computes stack slug. */
 operation AWSPSMCORE!SamStack stackSlug() : String {
-  return firstText(self.stackName, self.name).toSlug();
+  return artifactPathNaming.name(self, "stack", AWSPSMCORE!SamStack.all);
 }
 
 @cached
 /** Computes stage slug. */
 operation AWSPSMCORE!AwsStage stageSlug() : String {
-  return firstText(self.stageName, self.name).toSlug();
+  return artifactPathNaming.name(self, "stage", AWSPSMCORE!AwsStage.all);
 }
 
 @cached
 /** Computes stack template path. */
 operation AWSPSMCORE!SamStack stackTemplatePath() : String {
   if (self.templatePath.isPresent()) {
+    if (self.generatedByTransformation.isDefined() and self.generatedByTransformation and self.templatePath.length() > 48 and self.templatePath.startsWith("template-") and not self.templatePath.contains("/") and not self.templatePath.contains("\\")) {
+      return artifactPathNaming.preservePath("template-" + self.stackSlug() + ".yaml", self.templatePath, self.stableKey(), "SAM_TEMPLATE");
+    }
     return self.templatePath;
   }
   return "template.yaml";

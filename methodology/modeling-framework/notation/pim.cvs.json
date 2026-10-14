@@ -442,6 +442,10 @@
     "ENVIRONMENT_VARIABLES",
     "INPUT_SCHEMAS",
     "OUTPUT_SCHEMAS",
+    "REQUEST_SCHEMAS",
+    "RESPONSE_SCHEMAS",
+    "ERROR_SCHEMAS",
+    "USES_SCHEMA",
     "USED_BY_FUNCTIONS",
     "EXPOSED_BY_ROUTES",
     "TARGETS",
@@ -493,6 +497,10 @@
     "ENVIRONMENT_VARIABLES": "has environment variables",
     "INPUT_SCHEMAS": "uses input schemas",
     "OUTPUT_SCHEMAS": "uses output schemas",
+    "REQUEST_SCHEMAS": "uses request schemas",
+    "RESPONSE_SCHEMAS": "uses response schemas",
+    "ERROR_SCHEMAS": "uses error schemas",
+    "USES_SCHEMA": "uses schema",
     "USED_BY_FUNCTIONS": "used by functions",
     "EXPOSED_BY_ROUTES": "exposed by routes",
     "TARGETS": "targets",
@@ -502,6 +510,21 @@
     "TRACE": "trace"
   },
   "relationshipVisualRules": [
+    {
+      "matchKinds": [
+        "INPUT_SCHEMAS",
+        "OUTPUT_SCHEMAS",
+        "REQUEST_SCHEMAS",
+        "RESPONSE_SCHEMAS",
+        "ERROR_SCHEMAS",
+        "USES_SCHEMA"
+      ],
+      "stroke": {
+        "light": "#0891b2",
+        "dark": "#22d3ee"
+      },
+      "markerEnd": "arrow"
+    },
     {
       "matchKinds": ["CONTAINS", "OWNS", "DEPLOYS", "DEPLOYS_TO"],
       "className": "edge-domain-ownership",
@@ -1030,6 +1053,15 @@
     }
   ],
   "semanticReferenceKindMappings": {
+    "requestSchema": "REQUEST_SCHEMAS",
+    "requestSchemas": "REQUEST_SCHEMAS",
+    "responseSchema": "RESPONSE_SCHEMAS",
+    "responseSchemas": "RESPONSE_SCHEMAS",
+    "inputSchema": "INPUT_SCHEMAS",
+    "outputSchema": "OUTPUT_SCHEMAS",
+    "errorSchema": "ERROR_SCHEMAS",
+    "errorSchemas": "ERROR_SCHEMAS",
+    "schema": "USES_SCHEMA",
     "functionIntegration": "ROUTES_TO",
     "workflowIntegration": "ORCHESTRATES",
     "auth": "AUTHORIZED_BY",
@@ -1063,8 +1095,6 @@
     "cors",
     "rateLimit",
     "observability",
-    "requestSchema",
-    "responseSchema",
     "authorization",
     "timeout",
     "environmentVariables",
@@ -1078,10 +1108,6 @@
     "usedForCredentials",
     "secret",
     "objectSchema",
-    "inputSchema",
-    "outputSchema",
-    "errorSchemas",
-    "schema",
     "producedBy",
     "consumedBy",
     "emittedEvents",
@@ -2974,16 +3000,32 @@
       "displayName": "API Surface",
       "viewType": "API_SURFACE",
       "palette": ["ServerlessService", "Schema"],
-      "relationshipKinds": ["ROUTES_TO", "ORCHESTRATES", "INVOKES", "AUTHORIZED_BY", "ATTACHED_TO"],
+      "scopeTypes": ["Api", "ApiRoute", "ApiContract", "ErrorMapping"],
+      "relationshipKinds": [
+        "ROUTES_TO",
+        "ORCHESTRATES",
+        "INVOKES",
+        "AUTHORIZED_BY",
+        "ATTACHED_TO",
+        "REQUEST_SCHEMAS",
+        "RESPONSE_SCHEMAS",
+        "ERROR_SCHEMAS"
+      ],
       "layoutHint": "TABLE",
-      "canvas": ["ServerlessService", "Schema"]
+      "canvas": ["ServerlessService", "Api", "ApiRoute", "ApiContract", "ErrorMapping", "Schema"]
     },
     {
       "id": "pim-contract-catalog",
       "displayName": "Contract Catalog",
       "viewType": "CONTRACT_CATALOG",
       "palette": ["Schema", "EventType"],
-      "relationshipKinds": ["PUBLISHES", "SUBSCRIBES_TO", "ROUTES_TO", "ATTACHED_TO"],
+      "relationshipKinds": [
+        "PUBLISHES",
+        "SUBSCRIBES_TO",
+        "ROUTES_TO",
+        "ATTACHED_TO",
+        "USES_SCHEMA"
+      ],
       "layoutHint": "TABLE",
       "canvas": ["Schema", "EventType"]
     },
@@ -2991,7 +3033,8 @@
       "id": "pim-function-trigger",
       "displayName": "Function and Trigger View",
       "viewType": "FUNCTION_TRIGGER",
-      "palette": ["ServerlessService", "ExternalEndpoint"],
+      "palette": ["ServerlessService", "ExternalEndpoint", "Schema"],
+      "scopeTypes": ["Function", "FunctionContract"],
       "relationshipKinds": [
         "TRIGGERS",
         "INVOKES",
@@ -3001,17 +3044,20 @@
         "SUBSCRIBES_TO",
         "CALLS_ADAPTERS",
         "USES_SECRET",
+        "INPUT_SCHEMAS",
+        "OUTPUT_SCHEMAS",
+        "ERROR_SCHEMAS",
         "ATTACHED_TO",
         "EXTERNAL_CALL"
       ],
       "layoutHint": "DEFAULT_LAYERED",
-      "canvas": ["ServerlessService", "ExternalEndpoint"]
+      "canvas": ["ServerlessService", "Function", "FunctionContract", "ExternalEndpoint", "Schema"]
     },
     {
       "id": "pim-event-integration",
       "displayName": "Event and Flow View",
       "viewType": "EVENT_INTEGRATION",
-      "palette": ["ServerlessService", "EventType", "ExternalEndpoint"],
+      "palette": ["ServerlessService", "EventType", "ExternalEndpoint", "Schema"],
       "relationshipKinds": [
         "REQUEST_RESPONSE",
         "PUBLISHES",
@@ -3019,19 +3065,21 @@
         "TRIGGERS",
         "EVENT_FLOW",
         "MESSAGE_FLOW",
+        "USES_SCHEMA",
         "PUB_SUB",
         "ORCHESTRATES",
         "EXTERNAL_CALL",
         "INVOKES"
       ],
       "layoutHint": "EVENT_FLOW",
-      "canvas": ["ServerlessService", "EventType", "ExternalEndpoint"]
+      "canvas": ["ServerlessService", "EventType", "ExternalEndpoint", "Schema"]
     },
     {
       "id": "pim-data-design",
       "displayName": "Data and Storage View",
       "viewType": "DATA_DESIGN",
-      "palette": ["ServerlessService", "Schema"],
+      "palette": ["ServerlessService"],
+      "scopeTypes": ["DataStore", "ObjectStore", "DataModel", "AccessPattern"],
       "relationshipKinds": [
         "READS",
         "WRITES",
@@ -3043,7 +3091,7 @@
         "ATTACHED_TO"
       ],
       "layoutHint": "TABLE",
-      "canvas": ["ServerlessService", "Schema"]
+      "canvas": ["ServerlessService", "DataStore", "ObjectStore", "DataModel", "AccessPattern"]
     },
     {
       "id": "pim-policy-observability",

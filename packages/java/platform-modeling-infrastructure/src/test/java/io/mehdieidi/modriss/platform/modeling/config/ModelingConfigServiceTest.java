@@ -267,10 +267,15 @@ class ModelingConfigServiceTest {
       List<Map<String, Object>> views = listOfMaps(level.get("views"));
       assertFalse(views.isEmpty(), key.toUpperCase() + " must define at least one view");
       for (Map<String, Object> view : views) {
-        assertEquals(
-            stringList(view.get("palette")),
-            stringList(view.get("canvas")),
-            key.toUpperCase() + " palette/canvas mismatch for " + view.get("id"));
+        assertTrue(
+            stringList(view.get("canvas")).containsAll(stringList(view.get("palette"))),
+            key.toUpperCase() + " palette must be visible for " + view.get("id"));
+        for (String type : stringList(view.get("canvas"))) {
+          assertTrue(
+              stringList(view.get("palette")).contains(type)
+                  || stringList(view.get("scopeTypes")).contains(type),
+              key.toUpperCase() + " unscoped canvas detail for " + view.get("id") + ":" + type);
+        }
       }
       for (Map<String, Object> container : listOfMaps(level.get("containers"))) {
         assertEquals(
@@ -318,6 +323,46 @@ class ModelingConfigServiceTest {
                                 .containsAll(stringList(edgeRule.get("matchKinds")))),
             key.toUpperCase() + " edge object is not connectable: " + edgeRule.get("eClass"));
       }
+    }
+  }
+
+  /** Contract and storage views display owned details without offering root-level creation. */
+  @Test
+  void displaysPimSchemaConsumersAndStorageDetailsWithoutMakingThemDraggable() {
+    Map<String, Object> pim = level("pim");
+    List<Map<String, Object>> views = listOfMaps(pim.get("views"));
+    Map<String, List<String>> detailsByView =
+        Map.of(
+            "pim-api-surface", List.of("ApiContract", "ApiRoute"),
+            "pim-function-trigger", List.of("FunctionContract", "Function"),
+            "pim-data-design", List.of("DataStore", "ObjectStore", "DataModel", "AccessPattern"));
+    detailsByView.forEach(
+        (viewId, details) -> {
+          Map<String, Object> view =
+              views.stream()
+                  .filter(item -> viewId.equals(item.get("id")))
+                  .findFirst()
+                  .orElseThrow();
+          assertTrue(stringList(view.get("canvas")).containsAll(details), viewId);
+          for (String type : details) {
+            assertFalse(stringList(view.get("palette")).contains(type), viewId + ":" + type);
+          }
+        });
+    Map<String, Object> storageView =
+        views.stream()
+            .filter(view -> "pim-data-design".equals(view.get("id")))
+            .findFirst()
+            .orElseThrow();
+    assertFalse(stringList(storageView.get("canvas")).contains("Schema"));
+    for (String viewId :
+        List.of(
+            "pim-api-surface",
+            "pim-function-trigger",
+            "pim-event-integration",
+            "pim-contract-catalog")) {
+      Map<String, Object> view =
+          views.stream().filter(item -> viewId.equals(item.get("id"))).findFirst().orElseThrow();
+      assertTrue(stringList(view.get("canvas")).contains("Schema"), viewId);
     }
   }
 

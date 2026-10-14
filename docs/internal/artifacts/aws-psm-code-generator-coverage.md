@@ -7,6 +7,27 @@ PSM chatbot generation is currently out of scope. If a future assistant path pro
 the project boundary still requires structural Ecore/EMF gating only. These explicit generator
 tests do not invoke EVL semantic validation.
 
+## Local artifact names
+
+Local paths use readable stems of at most 32 characters. Transformed resources use
+their modeled operation or concept name rather than an AWS name containing the
+stage and project prefix. Camel-case words are separated, redundant function and
+Lambda suffixes are removed, and Windows device names are avoided. Names that are
+still too long, or collide after normalization, receive a stable eight-character
+hash suffix. Existing short explicit names are retained.
+
+The same naming policy is used for handler and schema folders, binary folders,
+tests, OpenAPI files, ASL files, structured documents, event fixtures, environment
+files, and stack build directories. SAM properties, build scripts, tests, and
+trace reports reference the resulting paths consistently. AWS deployment names
+and logical IDs retain their modeled values. Explicit template paths are honored;
+long automatically transformed `template-*.yaml` paths are shortened.
+
+When paths change during regeneration, the previous artifact trace identifies
+files by artifact kind and source identity. Protected-region files are copied to
+their new paths before EGL merges developer content. Obsolete generated files are
+then removed by the existing cleanup step; unrelated files remain untouched.
+
 ## Executable Coverage
 
 The primary tests are in `packages/java/epsilon-text-generation/src/test/java/io/mehdieidi/modriss/mde/generation`.

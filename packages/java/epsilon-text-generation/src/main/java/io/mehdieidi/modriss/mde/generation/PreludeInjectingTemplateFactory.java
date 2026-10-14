@@ -10,12 +10,23 @@ import org.eclipse.epsilon.egl.incremental.IncrementalitySettings;
 import org.eclipse.epsilon.egl.internal.IEglModule;
 import org.eclipse.epsilon.egl.spec.EglTemplateSpecification;
 import org.eclipse.epsilon.egl.traceability.Template;
+import org.eclipse.epsilon.eol.execute.context.Variable;
 
 /** EGL template factory that prepends shared library imports to every template before parsing. */
 final class PreludeInjectingTemplateFactory extends EglFileGeneratingTemplateFactory {
 
   /** EOL import block injected into every EGL template. */
   private final String eglPrelude;
+
+  private ArtifactPathNaming artifactPathNaming;
+
+  /** Shares the per-run naming namespace with every EGL template. */
+  void setArtifactPathNaming(ArtifactPathNaming artifactPathNaming) {
+    this.artifactPathNaming = artifactPathNaming;
+    getContext()
+        .getFrameStack()
+        .putGlobal(Variable.createReadOnlyVariable("artifactPathNaming", artifactPathNaming));
+  }
 
   /**
    * Creates a factory for the requested output root and library import root.
@@ -77,7 +88,11 @@ final class PreludeInjectingTemplateFactory extends EglFileGeneratingTemplateFac
    */
   @Override
   protected EglTemplate createTemplate(EglTemplateSpecification spec) throws Exception {
-    return super.createTemplate(new PreludeTemplateSpecification(spec, eglPrelude));
+    EglTemplate template = super.createTemplate(new PreludeTemplateSpecification(spec, eglPrelude));
+    if (artifactPathNaming != null) {
+      template.populate("artifactPathNaming", artifactPathNaming);
+    }
+    return template;
   }
 
   /**

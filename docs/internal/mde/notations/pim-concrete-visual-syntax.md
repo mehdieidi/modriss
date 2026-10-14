@@ -73,25 +73,34 @@ edge.
 
 ## 3. Views and global palettes
 
-Every view has an explicit `palette` and `canvas` containing the same user-creatable
-surface types. This keeps the palette and the initial canvas vocabulary coherent.
-Types that are only reachable through service or other containment are not placed
-in a global palette; the user reaches them by opening their owner.
+Every view has an explicit `palette` for creation and `canvas` for display.
+Concern-specific canvases can also show contained consumers through `scopeTypes`:
+API routes and contracts, functions and their contracts, and storage details.
+These elements remain owned by their service, API, function, or store; their
+creation palettes remain inside those owners.
 
-| View                                                        | Global palette and canvas                                                                                                 | Main question                                                                                     | Edge layers                                                                                                                                                |
-| ----------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **PIM Overview** (`pim-architecture-overview`)              | `ServerlessService`, `ExternalEndpoint`, `IdentityProvider`, `BusinessRule`, `DecisionModel`, `Secret`, `Environment`     | What are the major service, external, governance, identity, and environment concepts?             | Ownership/deployment, API and execution, data/event movement, flows, policy attachment, mapping, trace.                                                    |
-| **Service Landscape** (`pim-service-landscape`)             | `ServerlessService`, `DeploymentUnit`, `Environment`                                                                      | Which services are deployed together and to which environments?                                   | `OWNS`, `DEPLOYS`, `DEPLOYS_TO`, `CONTAINS`, membership variants.                                                                                          |
-| **API Surface** (`pim-api-surface`)                         | `ServerlessService`, `Schema`                                                                                             | Which services expose API surfaces and which schemas matter to those surfaces?                    | `ROUTES_TO`, `ORCHESTRATES`, `INVOKES`, `AUTHORIZED_BY`, `ATTACHED_TO`. Open a service to edit APIs and routes.                                            |
-| **Contract Catalog** (`pim-contract-catalog`)               | `Schema`, `EventType`                                                                                                     | What are the reusable message and data contracts?                                                 | Publish/subscribe and selected contract attachment links. Fields and contract bindings remain tables/chips.                                                |
-| **Function and Trigger** (`pim-function-trigger`)           | `ServerlessService`, `ExternalEndpoint`                                                                                   | How do service functions execute, access data, consume/produce events, and call external systems? | `TRIGGERS`, `INVOKES`, `READS`, `WRITES`, `PUBLISHES`, `SUBSCRIBES_TO`, `CALLS_ADAPTERS`, `USES_SECRET`, `EXTERNAL_CALL`, `ATTACHED_TO`.                   |
-| **Event and Flow** (`pim-event-integration`)                | `ServerlessService`, `EventType`, `ExternalEndpoint`                                                                      | How do event channels, schedules, and flow objects connect the architecture?                      | Request/response, event, message, pub/sub, orchestration, external-call, trigger, publish, subscribe, and invoke edges.                                    |
-| **Data and Storage** (`pim-data-design`)                    | `ServerlessService`, `Schema`                                                                                             | Which services own storage and how is data read, written, exposed, or changed?                    | `READS`, `WRITES`, `APPEND`, `DELETE`, `DATA_ACCESS`, `USED_BY_FUNCTIONS`, `EXPOSED_BY_ROUTES`, `ATTACHED_TO`.                                             |
-| **Policy and Observability** (`pim-policy-observability`)   | Concrete root policies, business rules, decision models, resilience policies, and observability configurations            | What constraints, decisions, resilience controls, and operational signals govern the design?      | `ATTACHED_TO`, `CONSTRAINS`, `USED_BY_FUNCTIONS`, `EXPOSED_BY_ROUTES`, `AUTHORIZED_BY`. Nested policy settings open inside their owning policy.            |
-| **Workflow** (`pim-workflow-designer`)                      | Scoped `Workflow` palette/canvas                                                                                          | What is the process sequence, branching, error handling, and orchestration behavior?              | `TRANSITION`, `INVOKES`, `ORCHESTRATES`, `EXTERNAL_CALL`, `TRIGGERS`. The workflow scope permits a contained workflow to be selected as the entry surface. |
-| **Security** (`pim-security-policy`)                        | `IdentityProvider`, `Principal`, security policies, `Secret`                                                              | Who can access what, through which identity and authorization policy?                             | `PERMISSION`, `AUTHORIZED_BY`, `USES_SECRET`, `ATTACHED_TO`, `CONSTRAINS`. Permissions are drawn edges, not loose palette nodes.                           |
-| **Configuration and Secrets** (`pim-configuration-secrets`) | `ConfigurationSet`, `Secret`, `Environment`                                                                               | Which configuration sets and secrets apply to which environments and configurable elements?       | `HAS_ENV`, `USES_SECRET`, `ATTACHED_TO`, `DEPLOYS_TO`. Parameters and variables are edited inside a configuration set.                                     |
-| **Trace and Readiness** (`pim-readiness-traceability`)      | `TraceModel`, `ProductionReadinessAssessment`, `ImplementationProfile`, `PlatformCapability`, `PlatformMappingAssessment` | Is the PIM model traceable, implementable, and ready for its target platform?                     | `TRACE`, `MAPS_TO`, `ATTACHED_TO`, `CONSTRAINS`. Findings/checks/decisions stay on the readiness board and in the inspector.                               |
+| View                                                        | Global palette and canvas                                                                                                 | Main question                                                                                | Edge layers                                                                                                                                                |
+| ----------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **PIM Overview** (`pim-architecture-overview`)              | `ServerlessService`, `ExternalEndpoint`, `IdentityProvider`, `BusinessRule`, `DecisionModel`, `Secret`, `Environment`     | What are the major service, external, governance, identity, and environment concepts?        | Ownership/deployment, API and execution, data/event movement, flows, policy attachment, mapping, trace.                                                    |
+| **Service Landscape** (`pim-service-landscape`)             | `ServerlessService`, `DeploymentUnit`, `Environment`                                                                      | Which services are deployed together and to which environments?                              | `OWNS`, `DEPLOYS`, `DEPLOYS_TO`, `CONTAINS`, membership variants.                                                                                          |
+| **API Surface** (`pim-api-surface`)                         | Palette: `ServerlessService`, `Schema`; canvas also includes `Api`, `ApiRoute`, `ApiContract`, `ErrorMapping`             | Which APIs and routes use each request, response, or error schema?                           | API execution, authorization, and schema bindings.                                                                                                         |
+| **Contract Catalog** (`pim-contract-catalog`)               | `Schema`, `EventType`                                                                                                     | What are the reusable message and data contracts?                                            | Event schema bindings and selected contract attachment links. Fields remain schema-local detail.                                                           |
+| **Function and Trigger** (`pim-function-trigger`)           | Palette: `ServerlessService`, `ExternalEndpoint`, `Schema`; canvas also includes `Function`, `FunctionContract`           | How do functions execute and which input, output, and error schemas do they use?             | Execution, data access, events, external calls, and function schema bindings.                                                                              |
+| **Event and Flow** (`pim-event-integration`)                | `ServerlessService`, `EventType`, `ExternalEndpoint`, `Schema`                                                            | How do events and flows connect the architecture and which payload schemas do events use?    | Event and message movement, invocation, and event schema bindings.                                                                                         |
+| **Data and Storage** (`pim-data-design`)                    | Palette: `ServerlessService`; canvas also includes `DataStore`, `ObjectStore`, `DataModel`, `AccessPattern`               | Which stores and data models persist data and which access patterns use them?                | `READS`, `WRITES`, `APPEND`, `DELETE`, `DATA_ACCESS`, `USED_BY_FUNCTIONS`, `EXPOSED_BY_ROUTES`, `ATTACHED_TO`.                                             |
+| **Policy and Observability** (`pim-policy-observability`)   | Concrete root policies, business rules, decision models, resilience policies, and observability configurations            | What constraints, decisions, resilience controls, and operational signals govern the design? | `ATTACHED_TO`, `CONSTRAINS`, `USED_BY_FUNCTIONS`, `EXPOSED_BY_ROUTES`, `AUTHORIZED_BY`. Nested policy settings open inside their owning policy.            |
+| **Workflow** (`pim-workflow-designer`)                      | Scoped `Workflow` palette/canvas                                                                                          | What is the process sequence, branching, error handling, and orchestration behavior?         | `TRANSITION`, `INVOKES`, `ORCHESTRATES`, `EXTERNAL_CALL`, `TRIGGERS`. The workflow scope permits a contained workflow to be selected as the entry surface. |
+| **Security** (`pim-security-policy`)                        | `IdentityProvider`, `Principal`, security policies, `Secret`                                                              | Who can access what, through which identity and authorization policy?                        | `PERMISSION`, `AUTHORIZED_BY`, `USES_SECRET`, `ATTACHED_TO`, `CONSTRAINS`. Permissions are drawn edges, not loose palette nodes.                           |
+| **Configuration and Secrets** (`pim-configuration-secrets`) | `ConfigurationSet`, `Secret`, `Environment`                                                                               | Which configuration sets and secrets apply to which environments and configurable elements?  | `HAS_ENV`, `USES_SECRET`, `ATTACHED_TO`, `DEPLOYS_TO`. Parameters and variables are edited inside a configuration set.                                     |
+| **Trace and Readiness** (`pim-readiness-traceability`)      | `TraceModel`, `ProductionReadinessAssessment`, `ImplementationProfile`, `PlatformCapability`, `PlatformMappingAssessment` | Is the PIM model traceable, implementable, and ready for its target platform?                | `TRACE`, `MAPS_TO`, `ATTACHED_TO`, `CONSTRAINS`. Findings/checks/decisions stay on the readiness board and in the inspector.                               |
+
+The API Surface canvas includes APIs, routes, contracts, error mappings, and
+schemas, with request, response, and error schema edges. Function and Trigger
+includes functions, function contracts, and schemas, with input, output, and
+error schema edges. Event and Flow and Contract Catalog show event types with
+their schemas. Contract Catalog remains the central collection of reusable
+schemas. Data and Storage displays services, data stores, object stores, data
+models, and access patterns; schema creation belongs to the contract views.
 
 The overview is deliberately not a projection of every PIM EClass. Service-owned
 elements appear in the service landscape and concern-specific views through their
@@ -176,18 +185,17 @@ abstract syntax without forcing relationship records onto the node palette.
 
 ### References kept in the inspector or as chips
 
-Schema bindings (`requestSchema`, `responseSchema`, function and API contract
-schema references), policy settings (`timeout`, `resilience`, `observability`,
+Nested schema-field bindings, object metadata schema collections,
+policy settings (`timeout`, `resilience`, `observability`,
 rate limits, CORS, and security-policy collections), configuration internals,
 event/channel indexes, inverse producer/consumer collections, and expression or
 metadata objects stay in the inspector. They are still navigable and editable;
 they simply do not create a line for every implementation binding.
 
-This is especially important for schemas and policy references. A route may use
-several schemas and policies, and a schema may be reused by many routes. Showing
-all of those links on every global canvas produces a hairball. The API and contract
-views expose the high-level surface, while the route/API inspector provides the
-exact binding lists.
+Schema bindings remain editable in the inspector and appear as labeled edges in
+the API, function, event, and contract views. These views expose the consumers
+alongside the reusable schema nodes. The Data and Storage view keeps its focus
+on persistence structures; `DataModel.schema` remains available in the inspector.
 
 The configuration also excludes the old invalid semantic kinds
 `PERMISSION_TARGET`, `USES_ROUTE`, `USES_ROLE`, and `WRITES_LOGS_TO`. Those strings

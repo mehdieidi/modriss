@@ -33,7 +33,8 @@ operation AWSPSMCOMPUTE!AwsLambdaFunction functionPathSegment(profileMap : Map) 
 
 /** Computes handler path. */
 operation AWSPSMCOMPUTE!AwsLambdaFunction handlerPath(profileMap : Map) : String {
-  return "src/functions/" + self.functionPathSegment(profileMap) + "/handler." + profileMap.sourceExtension();
+  var legacySlug = firstText(self.functionName, firstText(self.logicalId, self.name)).toSlug();
+  return artifactPathNaming.preservePath("src/functions/" + self.functionPathSegment(profileMap) + "/handler." + profileMap.sourceExtension(), "src/functions/" + legacySlug + "/handler." + profileMap.sourceExtension(), self.stableKey(), "LAMBDA_HANDLER");
 }
 
 /** Computes local schema path. */
@@ -59,18 +60,21 @@ operation AWSPSMCOMPUTE!AwsLambdaFunction generatedCodeUri(profileMap : Map) : S
 /** Computes unit test path. */
 operation AWSPSMCOMPUTE!AwsLambdaFunction unitTestPath(profileMap : Map) : String {
   var extText = profileMap.testExtension();
-  return "tests/unit/" + self.functionSlug() + "_test." + extText;
+  var legacySlug = firstText(self.functionName, firstText(self.logicalId, self.name)).toSlug();
+  return artifactPathNaming.preservePath("tests/unit/" + self.functionSlug() + "_test." + extText, "tests/unit/" + legacySlug + "_test." + extText, self.stableKey(), "UNIT_TEST");
 }
 
 /** Computes integration test path. */
 operation AWSPSMCOMPUTE!AwsLambdaFunction integrationTestPath(profileMap : Map) : String {
   var extText = profileMap.testExtension();
-  return "tests/integration/" + self.functionSlug() + "_integration_test." + extText;
+  var legacySlug = firstText(self.functionName, firstText(self.logicalId, self.name)).toSlug();
+  return artifactPathNaming.preservePath("tests/integration/" + self.functionSlug() + "_integration_test." + extText, "tests/integration/" + legacySlug + "_integration_test." + extText, self.stableKey(), "INTEGRATION_TEST");
 }
 
 /** Computes open api path. */
 operation AWSPSMAPI!ApiGatewayApi openApiPath() : String {
-  return "openapi/" + self.apiSlug() + ".openapi.yaml";
+  var legacySlug = firstText(self.apiName, firstText(self.logicalId, self.name)).toSlug();
+  return artifactPathNaming.preservePath("openapi/" + self.apiSlug() + ".openapi.yaml", "openapi/" + legacySlug + ".openapi.yaml", self.stableKey(), "OPENAPI");
 }
 
 /** Renders asl path. */
@@ -80,7 +84,7 @@ operation AWSPSMWORKFLOW!StepFunctionStateMachine aslPath() : String {
 
 /** Computes document path. */
 operation KERNEL!StructuredDocument documentPath() : String {
-  var baseName = firstText(self.name, self.id).toSlug();
+  var baseName = artifactPathNaming.name(self, "document", KERNEL!StructuredDocument.all);
   if (self.id.isPresent() and self.id.startsWith("schema_doc_")) {
     return "schemas/contracts/" + baseName + ".schema.json";
   }
@@ -105,15 +109,19 @@ operation KERNEL!StructuredDocument documentPath() : String {
 /** Computes workflow test path. */
 operation AWSPSMWORKFLOW!StepFunctionStateMachine workflowTestPath(profileMap : Map) : String {
   var extText = profileMap.testExtension();
-  return "tests/workflows/" + self.workflowSlug() + "_workflow_test." + extText;
+  var legacySlug = firstText(self.stateMachineName, firstText(self.logicalId, self.name)).toSlug();
+  return artifactPathNaming.preservePath("tests/workflows/" + self.workflowSlug() + "_workflow_test." + extText, "tests/workflows/" + legacySlug + "_workflow_test." + extText, self.stableKey(), "WORKFLOW_TEST");
 }
 
 /** Computes fixture slug. */
 operation KERNEL!TraceableElement fixtureSlug(fallbackText : String) : String {
-  if (self.id.isPresent()) {
-    return self.id.toSlug();
+  if (self.isKindOf(AWSPSMEVENTS!EventBridgeRule)) {
+    return artifactPathNaming.name(self, "event-fixture", AWSPSMEVENTS!EventBridgeRule.all);
   }
-  return fallbackText.toSlug();
+  if (self.isKindOf(AWSPSMMESSAGING!SqsQueue)) {
+    return artifactPathNaming.name(self, "queue-fixture", AWSPSMMESSAGING!SqsQueue.all);
+  }
+  return artifactPathNaming.name(self, "topic-fixture", AWSPSMMESSAGING!SnsTopic.all);
 }
 
 /** Computes event fixture path. */

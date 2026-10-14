@@ -38,7 +38,9 @@ import org.eclipse.epsilon.egl.EgxModule;
 import org.eclipse.epsilon.emc.emf.InMemoryEmfModel;
 import org.eclipse.epsilon.eol.exceptions.EolRuntimeException;
 import org.eclipse.epsilon.eol.exceptions.models.EolModelLoadingException;
+import org.eclipse.epsilon.eol.execute.context.Variable;
 import org.eclipse.epsilon.eol.models.IModel;
+import org.eclipse.epsilon.eol.types.EolAnyType;
 
 /**
  * Executes Epsilon EGX modules against isolated in-memory EMF resources and returns a structured
@@ -218,6 +220,13 @@ public final class EpsilonEgxGenerator {
       phaseStarted = System.nanoTime();
       Set<String> previousGeneratedPaths = generatedArtifactPaths(request.outputDirectory());
       validateExistingProtectedRegions(request.outputDirectory());
+      ArtifactPathNaming artifactPathNaming =
+          new ArtifactPathNaming(request.outputDirectory(), previousGeneratedPaths);
+      factory.setArtifactPathNaming(artifactPathNaming);
+      module
+          .getContext()
+          .getFrameStack()
+          .putGlobal(new Variable("artifactPathNaming", artifactPathNaming, EolAnyType.Instance));
       executeModule(module);
       phaseTiming.addExecute(System.nanoTime() - phaseStarted);
       phaseStarted = System.nanoTime();
