@@ -11,12 +11,15 @@ import {
   activeView,
   ensureViewContentAsync,
   installGraphAndViewsAsync,
+  persistentActiveViewId,
   restoreTabGraphState,
   saveCurrentTabGraphState,
   setActiveViewId,
   syncActiveViewFromVisibleGraph,
 } from "./graph-store.js";
 import { materializeActiveView, viewNeedsAutoLayout } from "./view-materializer.js";
+import { activateIssueTarget } from "./issue-navigation.js";
+import { ensureReadableLayout } from "./layout-engine.js";
 import { nodeSizeForDiagram } from "./graph-editor/g6-style.js";
 import {
   iconAnchorBoundsFromNodeRect,
@@ -24,6 +27,7 @@ import {
   routePointOnIconAnchor,
 } from "./graph-editor/icon-node-metrics.js";
 import {
+  clearCanvasFocus,
   fitViewportToDiagram,
   renderDiagram,
   renderDiagramAsync,
@@ -465,7 +469,7 @@ function viewPatchOperations(payload) {
 }
 
 async function persistViewForBackendLayout(view, { refresh = false } = {}) {
-  if (!state.modelId || !view?.id) {
+  if (!state.modelId || !view?.id || view._temporaryIssueView) {
     return false;
   }
   if (storedModelHasView(view.id) && !refresh) {
@@ -1627,6 +1631,13 @@ export async function switchTab(type) {
     closeImpactPanel();
   }
 
+  if (type !== state.activeType && activeView()?._temporaryIssueView) {
+    const returnViewId = persistentActiveViewId();
+    clearCanvasFocus();
+    setActiveViewId(returnViewId);
+    materializeActiveView();
+  }
+
   // Save current diagram tab state before switching
   if (state.activeType !== "artifact" && state.tabs[state.activeType]) {
     syncActiveViewFromVisibleGraph();
@@ -1809,6 +1820,19 @@ async function runAutoLayoutCurrentDiagram({
     if (status) {
       setStatus("No active view to arrange.");
     }
+    return;
+  }
+
+  if (view._temporaryIssueView) {
+    const sizes = state.diagram.nodes.map((node) => nodeSizeForDiagram(state.activeType, node));
+    ensureReadableLayout(state.diagram.nodes, state.diagram.connections, {
+      width: Math.max(...sizes.map((size) => size.width)),
+      height: Math.max(...sizes.map((size) => size.height)),
+    });
+    syncActiveViewFromVisibleGraph();
+    await renderDiagramAsync({ full: true });
+    await fitViewportToDiagram({ fit: true });
+    if (status) setStatus("Temporary view arranged.");
     return;
   }
 
@@ -2184,125 +2208,30 @@ export async function undoLastEdit() {
 
 bindValidationCenterUi();
 
-function issueTargetCandidates(id) {
-  const candidates = [];
-  let current = String(id || "").trim();
-  const seen = new Set();
-  while (current && !seen.has(current)) {
-    candidates.push(current);
-    seen.add(current);
-    current =
-      state.graph?.parentByChild instanceof Map
-        ? String(state.graph.parentByChild.get(current) || "").trim()
-        : "";
-  }
-  return candidates;
-}
-
-function viewContainingIssueTarget(ids) {
-  const candidates = Array.isArray(ids) ? ids : [ids];
-  if (!candidates.length || !(state.views?.byId instanceof Map)) {
-    return null;
-  }
-  for (const view of state.views.byId.values()) {
-    const hasNode =
-      Array.isArray(view?.nodes) &&
-      view.nodes.some((node) => candidates.includes(String(node?.elementId || node?.id || "")));
-    if (hasNode) {
-      return view;
-    }
-    const viewRelationships = Array.isArray(view?.edges) ? view.edges : view?.relationships;
-    const hasRelationship =
-      Array.isArray(viewRelationships) &&
-      viewRelationships.some((relationship) =>
-        candidates.includes(String(relationship?.relationshipId || relationship?.id || "")),
-      );
-    if (hasRelationship) {
-      return view;
-    }
-  }
-  return null;
-}
-
-async function activateViewForIssueTarget(ids) {
-  const view = viewContainingIssueTarget(ids);
-  if (!view || view.id === state.views.activeViewId) {
-    return false;
-  }
-  if (!setActiveViewId(view.id)) {
-    return false;
-  }
-  state.diagram = materializeActiveView();
-  await renderDiagramAsync({ full: true });
-  renderViewWorkbench();
-  await fitViewportToDiagram({ fit: true, frames: 3 });
-  return true;
-}
-
 async function locateIssueTarget(detail) {
-  const ids = Array.isArray(detail.targetIds) ? detail.targetIds : [];
-  const id = String(detail.id || ids[0] || "").trim();
-  const issueName = String(detail.elementName || "")
-    .trim()
-    .toLowerCase();
-  const issueType = String(detail.elementType || "")
-    .trim()
-    .toLowerCase();
-  const candidates = [...new Set(ids.flatMap((candidate) => issueTargetCandidates(candidate)))];
-  if (id && !candidates.length) {
-    candidates.push(...issueTargetCandidates(id));
-  }
-  await activateViewForIssueTarget(candidates);
-
-  for (const candidate of candidates) {
-    if (state.nodesById?.has(candidate)) {
-      openAttributePanel(candidate);
-      if (state.diagram.nodes.some((node) => node.id === candidate)) {
-        scrollToNodeAndHighlight(candidate);
-      }
-      setStatus("Located issue element.");
-      return;
-    }
-  }
-  for (const candidate of candidates) {
-    if (state.diagram.nodes.some((node) => node.id === candidate)) {
-      scrollToNodeAndHighlight(candidate);
-      setStatus(
-        candidate === id
-          ? "Located issue element on canvas."
-          : "Located containing element on canvas.",
-      );
-      return;
-    }
-  }
-  for (const candidate of candidates) {
-    if (state.diagram.connections.some((edge) => edge.id === candidate)) {
-      scrollToConnectionAndHighlight(candidate);
-      setStatus(
-        candidate === id
-          ? "Located issue connection on canvas."
-          : "Located containing connection on canvas.",
-      );
-      return;
-    }
-  }
-
-  const byName = state.diagram.nodes.find((node) => {
-    const nodeLabel = String(node.label || "")
-      .trim()
-      .toLowerCase();
-    const nodeType = String(node.type || "")
-      .trim()
-      .toLowerCase();
-    return issueName && nodeLabel === issueName && (!issueType || nodeType === issueType);
-  });
-  if (byName) {
-    scrollToNodeAndHighlight(byName.id);
-    setStatus("Located related element on canvas.");
+  const target = activateIssueTarget(detail);
+  if (!target) {
+    setStatus("This issue has no model element to locate. Review its details in the issue board.");
     return;
   }
-
-  setStatus("This issue has no model element to locate. Review its details in the issue board.");
+  if (target.changedView) {
+    state.diagram = materializeActiveView();
+    renderPalette();
+    await renderDiagramAsync({ full: true });
+    renderViewWorkbench();
+  }
+  if (state.views.activeViewId !== target.viewId) return;
+  if (target.kind === "connection") {
+    scrollToConnectionAndHighlight(target.id);
+  } else {
+    openAttributePanel(target.id);
+    scrollToNodeAndHighlight(target.id);
+  }
+  setStatus(
+    target.temporary
+      ? "Located issue target in a temporary view. Use Back to return."
+      : "Located issue target on canvas.",
+  );
 }
 
 let locateIssueTargetBound = false;

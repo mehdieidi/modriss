@@ -10,6 +10,7 @@ import {
   addNodeToGraphAndActiveView,
   persistNodePositionInActiveView,
   prepareViewNodeIndex,
+  setActiveViewId,
   syncActiveViewFromVisibleGraph,
 } from "./graph-store.js";
 import {
@@ -993,7 +994,7 @@ export function openContainerFocus(elementId) {
   if (!node || !isContainerElement(node)) {
     return false;
   }
-  const previousViewId = state.views.activeViewId;
+  const previousViewId = activeView()?._returnViewId || state.views.activeViewId;
   const focusPolicy = modelingContainerFocusPolicy(state.activeType);
   const focusViewId = focusViewIdFor(node.id, "container");
   const focusView =
@@ -1004,7 +1005,7 @@ export function openContainerFocus(elementId) {
     prepareViewNodeIndex(focusView);
     state.views.byId.set(focusView.id, focusView);
   }
-  state.views.activeViewId = focusView.id;
+  setActiveViewId(focusView.id);
   focusStack().push({
     typeKey: state.activeType,
     elementId: node.id,
@@ -1043,7 +1044,7 @@ export function openNeighborhoodFocus(elementId, depth = 1) {
     setStatus("This element has no connected neighbors in the current model.");
     return false;
   }
-  const previousViewId = state.views.activeViewId;
+  const previousViewId = activeView()?._returnViewId || state.views.activeViewId;
   const normalizedDepth = Math.max(1, Math.min(2, Number(depth) || 1));
   const focusViewId = focusViewIdFor(node.id, `neighborhood-${normalizedDepth}`);
   const focusView =
@@ -1054,7 +1055,7 @@ export function openNeighborhoodFocus(elementId, depth = 1) {
     prepareViewNodeIndex(focusView);
     state.views.byId.set(focusView.id, focusView);
   }
-  state.views.activeViewId = focusView.id;
+  setActiveViewId(focusView.id);
   focusStack().push({
     typeKey: state.activeType,
     elementId: node.id,
@@ -1081,10 +1082,11 @@ export function closeCanvasFocus() {
     return false;
   }
   focusStack().pop();
-  state.views.activeViewId =
+  const previousViewId =
     focus.previousViewId && state.views.byId.has(focus.previousViewId)
       ? focus.previousViewId
       : state.views.byId.keys().next().value || null;
+  setActiveViewId(previousViewId);
   materializeActiveView();
   syncCanvasFocusChrome();
   void renderDiagramAsync({ full: true });
@@ -2550,6 +2552,7 @@ export function renderDiagramAsync(options = {}) {
 }
 
 async function renderDiagramNow({ full = false } = {}) {
+  syncCanvasFocusChrome();
   if (!isModelingLevel(state.activeType)) {
     return;
   }

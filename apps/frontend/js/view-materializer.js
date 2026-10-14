@@ -181,14 +181,7 @@ function materializeViewGraph(view, elementIds, relationshipIds) {
   return { nodes, connections };
 }
 
-export function materializeActiveView() {
-  reconcileGraphRelationshipsIfDirty(state.activeType);
-  const view = activeView();
-  if (!view) {
-    state.visibleGraph = emptyDiagram(state.activeType);
-    state.diagram = state.visibleGraph;
-    return state.visibleGraph;
-  }
+export function visibleIdsForView(view) {
   const elementIds = selectElementIdsForView(state.graph, view, state.activeType);
   let relationshipIds = selectRelationshipIdsForView(state.graph, view, elementIds);
   const visibleElementIds = pruneIsolatedGeneratedNodes(
@@ -200,6 +193,18 @@ export function materializeActiveView() {
   if (visibleElementIds.length !== elementIds.length) {
     relationshipIds = selectRelationshipIdsForView(state.graph, view, visibleElementIds);
   }
+  return { elementIds, visibleElementIds, relationshipIds };
+}
+
+export function materializeActiveView() {
+  reconcileGraphRelationshipsIfDirty(state.activeType);
+  const view = activeView();
+  if (!view) {
+    state.visibleGraph = emptyDiagram(state.activeType);
+    state.diagram = state.visibleGraph;
+    return state.visibleGraph;
+  }
+  const { elementIds, visibleElementIds, relationshipIds } = visibleIdsForView(view);
   const visibleElementIdSet = new Set(visibleElementIds);
   const visible = materializeViewGraph(view, visibleElementIds, relationshipIds);
   const materializedNodeIds = new Set(visible.nodes.map((node) => node.id));

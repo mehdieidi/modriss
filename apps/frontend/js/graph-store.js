@@ -1559,6 +1559,11 @@ function shouldExcludeContainedElementFromView(graph, view, elementId, element, 
 
 export function selectElementIdsForView(graph, view, typeKey) {
   const hidden = new Set(safeArray(view?.hidden?.elementIds));
+  if (view?._temporaryIssueView) {
+    return safeArray(view.nodes)
+      .map((node) => node.elementId)
+      .filter((id) => graph.elementsById.has(id) && !hidden.has(id));
+  }
   const pinned = new Set(safeArray(view?.pinnedElementIds).map(String));
   const filterTypes = surfaceElementTypesForView(view);
   const hasExplicitCanvas = Array.isArray(view?.canvas);
@@ -1715,6 +1720,20 @@ export function selectElementIdsForView(graph, view, typeKey) {
 
 export function selectRelationshipIdsForView(graph, view, elementIds, typeKey = state.activeType) {
   const hidden = new Set(safeArray(view?.hidden?.relationshipIds));
+  if (view?._temporaryIssueView) {
+    const visibleElements = new Set(elementIds);
+    return safeArray(view.edges)
+      .filter((edge) => edge.visible !== false && !hidden.has(edge.relationshipId))
+      .map((edge) => edge.relationshipId)
+      .filter((id) => {
+        const relationship = graph.relationshipsById.get(id);
+        return (
+          relationship &&
+          visibleElements.has(relationship.sourceElementId) &&
+          visibleElements.has(relationship.targetElementId)
+        );
+      });
+  }
   const filterKinds = new Set(
     safeArray(view?.filters?.relationshipKinds)
       .map((kind) =>
@@ -2048,7 +2067,9 @@ export function isNamedInstanceView(typeKey, view) {
 }
 
 function sanitizeWorkbenchViews(views, typeKey) {
-  return safeArray(views).filter((view) => !isNamedInstanceView(typeKey, view));
+  return safeArray(views).filter(
+    (view) => !view._temporaryIssueView && !isNamedInstanceView(typeKey, view),
+  );
 }
 
 function _generateViews(typeKey, graph, modelName) {
@@ -2704,12 +2725,48 @@ export function activeView() {
   return state.views.byId.get(state.views.activeViewId) || null;
 }
 
+export function persistentActiveViewId({ unwindFocus = false } = {}) {
+  let view = activeView();
+  const seen = new Set();
+  while (view && !seen.has(view.id)) {
+    seen.add(view.id);
+    const focus = safeArray(state.canvasFocusStack).find((entry) => entry.focusViewId === view.id);
+    const returnId = view._temporaryIssueView
+      ? view._returnViewId
+      : unwindFocus && isFocusView(view)
+        ? focus?.previousViewId
+        : null;
+    if (!view._temporaryIssueView && !(unwindFocus && isFocusView(view))) {
+      return view.id;
+    }
+    view = state.views.byId.get(returnId);
+  }
+  return [...state.views.byId.values()].find((entry) => !entry._temporaryIssueView)?.id || null;
+}
+
+function discardTemporaryIssueViews(keepViewId) {
+  for (const view of state.views.byId.values()) {
+    if (!view._temporaryIssueView || view.id === keepViewId) continue;
+    for (const other of state.views.byId.values()) {
+      if (other._returnViewId === view.id) other._returnViewId = view._returnViewId;
+    }
+    state.canvasFocusStack = safeArray(state.canvasFocusStack)
+      .filter((entry) => entry.focusViewId !== view.id)
+      .map((entry) =>
+        entry.previousViewId === view.id ? { ...entry, previousViewId: view._returnViewId } : entry,
+      );
+    state.views.byId.delete(view.id);
+  }
+}
+
 export function setActiveViewId(viewId) {
   if (!state.views.byId.has(viewId)) {
     return false;
   }
   syncActiveViewFromVisibleGraph();
+  discardTemporaryIssueViews(viewId);
   state.views.activeViewId = viewId;
+  state.issueLocateTargetId = null;
   state.selectedRootModel = false;
   state.selectedNodeId = null;
   state.selectedNodeIds = new Set();
@@ -2725,7 +2782,7 @@ export function saveCurrentTabGraphState(typeKey = state.activeType) {
   tab.graph = serializeRuntimeGraph();
   tab.views = serializeRuntimeViews();
   tab.fragments = serializeRuntimeFragments();
-  tab.activeViewId = state.views.activeViewId;
+  tab.activeViewId = persistentActiveViewId();
 }
 
 export async function saveCurrentTabGraphStateAsync(typeKey = state.activeType) {
@@ -2740,7 +2797,7 @@ export async function saveCurrentTabGraphStateAsync(typeKey = state.activeType) 
   tab.views = serializeRuntimeViews();
   await yieldToMain();
   tab.fragments = serializeRuntimeFragments();
-  tab.activeViewId = state.views.activeViewId;
+  tab.activeViewId = persistentActiveViewId();
 }
 
 export function restoreTabGraphState(typeKey = state.activeType) {
@@ -3022,12 +3079,7 @@ export function serializeGraphAndViewsInto(
   root.fragments = serializeRuntimeFragments();
   const views = serializeRuntimeViews();
   root.views = views;
-  const currentView = activeView();
-  const focusStack = Array.isArray(state.canvasFocusStack) ? state.canvasFocusStack : [];
-  const focusBaseViewId = focusStack[focusStack.length - 1]?.previousViewId;
-  root.activeViewId = isFocusView(currentView)
-    ? focusBaseViewId || views[0]?.id || null
-    : state.views.activeViewId;
+  root.activeViewId = persistentActiveViewId({ unwindFocus: true });
   root.traceLinks = graph.traceLinks;
   // `assumptions` is a semantic CIM root containment as well as a graph projection field.
   // An imported model can have semantic assumptions while the graph projection intentionally
@@ -3073,12 +3125,7 @@ export async function serializeGraphAndViewsIntoAsync(
   await yieldToMain();
   const views = await serializeRuntimeViewsAsync();
   root.views = views;
-  const currentView = activeView();
-  const focusStack = Array.isArray(state.canvasFocusStack) ? state.canvasFocusStack : [];
-  const focusBaseViewId = focusStack[focusStack.length - 1]?.previousViewId;
-  root.activeViewId = isFocusView(currentView)
-    ? focusBaseViewId || views[0]?.id || null
-    : state.views.activeViewId;
+  root.activeViewId = persistentActiveViewId({ unwindFocus: true });
   root.traceLinks = graph.traceLinks;
   if (Array.isArray(root.assumptions) && root.assumptions.length === 0) {
     root.assumptions = graph.assumptions;
