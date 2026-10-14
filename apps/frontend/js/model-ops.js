@@ -18,7 +18,6 @@ import {
   syncActiveViewFromVisibleGraph,
 } from "./graph-store.js";
 import { materializeActiveView, viewNeedsAutoLayout } from "./view-materializer.js";
-import { activateIssueTarget } from "./issue-navigation.js";
 import { ensureReadableLayout } from "./layout-engine.js";
 import { nodeSizeForDiagram } from "./graph-editor/g6-style.js";
 import {
@@ -29,11 +28,10 @@ import {
 import {
   clearCanvasFocus,
   fitViewportToDiagram,
+  locateCanvasTarget,
   renderDiagram,
   renderDiagramAsync,
   renderPalette,
-  scrollToConnectionAndHighlight,
-  scrollToNodeAndHighlight,
 } from "./canvas.js";
 import { closeAttributePanel, openAttributePanel } from "./attr-panel.js";
 import { closeImpactPanel } from "./impact.js";
@@ -2209,23 +2207,10 @@ export async function undoLastEdit() {
 bindValidationCenterUi();
 
 async function locateIssueTarget(detail) {
-  const target = activateIssueTarget(detail);
+  const target = await locateCanvasTarget(detail);
   if (!target) {
     setStatus("This issue has no model element to locate. Review its details in the issue board.");
     return;
-  }
-  if (target.changedView) {
-    state.diagram = materializeActiveView();
-    renderPalette();
-    await renderDiagramAsync({ full: true });
-    renderViewWorkbench();
-  }
-  if (state.views.activeViewId !== target.viewId) return;
-  if (target.kind === "connection") {
-    scrollToConnectionAndHighlight(target.id);
-  } else {
-    openAttributePanel(target.id);
-    scrollToNodeAndHighlight(target.id);
   }
   setStatus(
     target.temporary

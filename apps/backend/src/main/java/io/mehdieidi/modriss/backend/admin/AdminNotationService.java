@@ -87,6 +87,7 @@ public class AdminNotationService {
       } catch (Exception atomicMoveUnsupported) {
         Files.move(temporary, file, StandardCopyOption.REPLACE_EXISTING);
       }
+      modelingConfig.invalidateConfig();
       return new ActivationResult(
           file.getFileName().toString(),
           backup == null ? null : backupDirectory.getFileName() + "/" + backup.getFileName(),

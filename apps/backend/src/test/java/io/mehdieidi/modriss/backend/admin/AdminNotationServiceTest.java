@@ -4,8 +4,11 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import io.mehdieidi.modriss.platform.modeling.config.ModelingConfigService;
 import io.mehdieidi.modriss.platform.modeling.runtime.MdeRuntimePaths;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -23,7 +26,9 @@ class AdminNotationServiceTest {
   void activatesTrackedFileAndStoresPreviousVersionsInBackupDirectory() throws Exception {
     MdeRuntimePaths paths = mock(MdeRuntimePaths.class);
     when(paths.notationRoot()).thenReturn(tempDir);
-    AdminNotationService service = new AdminNotationService(paths, new ObjectMapper(), null);
+    ModelingConfigService modelingConfig = mock(ModelingConfigService.class);
+    AdminNotationService service =
+        new AdminNotationService(paths, new ObjectMapper(), modelingConfig);
     Path activeFile = tempDir.resolve("cim.cvs.json");
     Files.writeString(activeFile, "previous");
 
@@ -41,6 +46,7 @@ class AdminNotationServiceTest {
     service.save("cim", document);
 
     assertTrue(Files.isRegularFile(tempDir.resolve("backup/cim.cvs.old2.json")));
+    verify(modelingConfig, times(2)).invalidateConfig();
   }
 
   private Map<String, Object> validDocument() {

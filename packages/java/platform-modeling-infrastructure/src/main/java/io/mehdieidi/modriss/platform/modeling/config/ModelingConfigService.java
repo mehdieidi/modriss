@@ -41,6 +41,11 @@ public final class ModelingConfigService {
   /** Memoized merged configuration for this service instance. */
   private volatile Map<String, Object> cachedConfig;
 
+  /** Clears the merged configuration after activating a notation document. */
+  public synchronized void invalidateConfig() {
+    cachedConfig = null;
+  }
+
   /**
    * Returns the complete modeling configuration for all supported levels.
    *

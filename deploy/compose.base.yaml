@@ -5,6 +5,7 @@ name: modriss
 #
 # The repository's methodology directory is mounted into the backend so CVS activation writes the active
 # notation directly into the Git-tracked working tree. Backups are written below methodology/modeling-framework/notation/backup.
+# CVS activation clears the modeling configuration cache; reload the editor to use the active settings.
 # After changing files under methodology/ (transformations, validation, metamodels), recreate the backend
 # container so the mounted files are reloaded:
 #   docker compose up --build --force-recreate backend

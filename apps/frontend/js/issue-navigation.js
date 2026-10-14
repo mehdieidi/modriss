@@ -79,7 +79,7 @@ function createTemporaryIssueView(target) {
 
 // Resolve the primary target before choosing a view. Parent containers and related
 // elements must never outrank a target that exists but is absent from every canvas.
-export function activateIssueTarget(detail = {}) {
+export function activateCanvasTarget(detail = {}) {
   reconcileGraphRelationshipsIfDirty(state.activeType);
   const target = resolveIssueTarget(detail);
   if (!target) return null;
@@ -113,3 +113,5 @@ export function activateIssueTarget(detail = {}) {
   }
   return { ...target, viewId: view.id, changedView, temporary: Boolean(view._temporaryIssueView) };
 }
+
+export const activateIssueTarget = activateCanvasTarget;

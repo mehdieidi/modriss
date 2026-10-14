@@ -10,7 +10,7 @@ globalThis.document = { getElementById: () => null, addEventListener() {} };
 const { state } = await import("../js/state.js");
 const { activateIssueTarget } = await import("../js/issue-navigation.js");
 const { materializeActiveView } = await import("../js/view-materializer.js");
-const { closeCanvasFocus, renderDiagramAsync } = await import("../js/canvas.js");
+const { closeCanvasFocus, locateCanvasTarget, renderDiagramAsync } = await import("../js/canvas.js");
 const { autoLayoutCurrentDiagram } = await import("../js/model-ops.js");
 const { el } = await import("../js/dom.js");
 const {
@@ -94,6 +94,79 @@ function addRelationship(id, extra = {}) {
     index.get(key).add(id);
   }
 }
+
+function fakeElement(tagName = "div") {
+  const classes = new Set(["hidden"]);
+  const attributes = new Map();
+  return {
+    tagName: tagName.toUpperCase(), children: [], dataset: {},
+    style: { setProperty() {} },
+    classList: {
+      add: (...names) => names.forEach((name) => classes.add(name)),
+      remove: (...names) => names.forEach((name) => classes.delete(name)),
+      toggle: (name, enabled) => enabled ? classes.add(name) : classes.delete(name),
+      contains: (name) => classes.has(name),
+    },
+    setAttribute: (name, value) => attributes.set(name, value),
+    getAttribute: (name) => attributes.get(name),
+    append(...children) { this.children.push(...children); },
+    appendChild(child) { this.children.push(child); },
+    addEventListener() {}, querySelector: () => null, querySelectorAll: () => [],
+  };
+}
+
+async function withAttributePanelDom(run) {
+  const keys = ["attrPanelBody", "attrPanelTitle", "attrPanelType", "attributePanel", "workspace", "canvasFocusBackBtn"];
+  const previous = keys.map((key) => el[key]);
+  const previousMatchMedia = window.matchMedia;
+  document.documentElement = fakeElement();
+  document.createElement = fakeElement;
+  document.body = fakeElement();
+  document.querySelector = () => null;
+  window.matchMedia = () => ({ matches: false });
+  keys.forEach((key) => { el[key] = fakeElement(); });
+  try {
+    await run();
+  } finally {
+    // Renderer mounting yields to microtasks even when no browser renderer is present.
+    await new Promise((resolve) => setImmediate(resolve));
+    keys.forEach((key, index) => { el[key] = previous[index]; });
+    window.matchMedia = previousMatchMedia;
+  }
+}
+
+test("relationship navigation selects and highlights the exact target in its existing view", async () => {
+  state.views.byId.set("details", view("details", ["child"], {
+    kind: "FOCUS", scope: { rootElementId: "parent", scopeKind: "CONTAINER" },
+  }));
+  await withAttributePanelDom(async () => {
+    const result = await locateCanvasTarget({ id: "child" });
+    assert.equal(result.viewId, "details");
+    assert.equal(result.temporary, false);
+    assert.equal(state.selectedNodeId, "child");
+    assert.deepEqual([...state.selectedNodeIds], ["child"]);
+    assert.equal(state.issueLocateTargetId, "child");
+    assert.equal(el.attrPanelTitle.textContent, "Child");
+  });
+});
+
+test("relationship navigation opens an absent target for editing and discards its view on Back", async () => {
+  await withAttributePanelDom(async () => {
+    const result = await locateCanvasTarget({ id: "child" });
+    assert.equal(result.temporary, true);
+    assert.equal(state.selectedNodeId, "child");
+    assert.equal(state.issueLocateTargetId, "child");
+    assert.deepEqual(state.diagram.nodes.map((node) => node.id), ["child"]);
+    assert.equal(el.canvasFocusBackBtn.classList.contains("hidden"), false);
+    state.nodesById.get("child").label = "Edited child";
+    assert.equal(closeCanvasFocus(), true);
+    await renderDiagramAsync({ full: true });
+    assert.equal(state.views.activeViewId, "main");
+    assert.equal(state.views.byId.has(result.viewId), false);
+    assert.equal(state.graph.elementsById.get("child").name, "Edited child");
+    assert.equal(state.graph.elementsById.get("child").__ownerId, "parent");
+  });
+});
 
 test("keeps the current view when the exact target is already visible", () => {
   state.views.byId.set("alternative", view("alternative", ["other"]));
@@ -192,19 +265,6 @@ test("Back deletes the temporary view and keeps model edits", () => {
 });
 
 test("shows the canvas Back button and cleans up through its actual handler", async () => {
-  function fakeElement() {
-    const classes = new Set(["hidden"]);
-    return {
-      dataset: {}, style: { setProperty() {} },
-      classList: {
-        add: (name) => classes.add(name),
-        remove: (name) => classes.delete(name),
-        toggle: (name, enabled) => enabled ? classes.add(name) : classes.delete(name),
-        contains: (name) => classes.has(name),
-      },
-      setAttribute() {}, append() {}, appendChild() {}, addEventListener() {},
-    };
-  }
   document.documentElement = fakeElement();
   document.createElement = fakeElement;
   document.body = fakeElement();

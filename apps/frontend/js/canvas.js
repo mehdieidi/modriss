@@ -89,6 +89,7 @@ import {
 } from "./graph-editor/renderer-adapter.js";
 import { nodeSizeForDiagram } from "./graph-editor/g6-style.js";
 import { isFullColorIconSource, resolveThemeColor } from "./theme-colors.js";
+import { activateCanvasTarget } from "./issue-navigation.js";
 
 function requiredConfiguredKind(value, context) {
   const kind = String(value || "").trim();
@@ -3968,6 +3969,28 @@ export function startConnectionFromNode(nodeId, preferredKind = null) {
 export function highlightImpactedNodes() {
   ensureCanvas();
   updateCanvasImpactState();
+}
+
+// Shared by relationship dropdowns and issue navigation, including temporary views.
+export async function locateCanvasTarget(detail = {}) {
+  const typeKey = state.activeType;
+  const target = activateCanvasTarget(detail);
+  if (!target) return null;
+  if (target.changedView) {
+    materializeActiveView();
+    renderPalette();
+    await renderDiagramAsync({ full: true });
+  }
+  if (state.activeType !== typeKey || state.views.activeViewId !== target.viewId) return null;
+  if (target.kind === "connection") {
+    openConnectionPanel(target.id);
+    scrollToConnectionAndHighlight(target.id);
+  } else {
+    openAttributePanel(target.id);
+    scrollToNodeAndHighlight(target.id);
+  }
+  notifyModelToolsChanged();
+  return target;
 }
 
 export function scrollToNodeAndHighlight(elementId) {

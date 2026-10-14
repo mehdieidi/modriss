@@ -2,9 +2,10 @@ import { state } from "./state.js";
 import { el } from "./dom.js";
 import { MODEL_TYPES } from "./config.js";
 import { api } from "./api.js";
-import { setStatus } from "./status.js";
+import { setError, setStatus } from "./status.js";
 import {
   cancelConnectionDraw,
+  locateCanvasTarget,
   removeConnectionFromCanvas,
   removeNodeFromCanvas,
   syncDiagramRenderer,
@@ -1944,7 +1945,10 @@ function syncCustomSelectState(root, select, emptyLabel) {
   root.querySelectorAll(".attr-custom-select-option").forEach((optionButton) => {
     const active = selectedValues.has(optionButton.dataset.selectValue || "");
     optionButton.classList.toggle("is-active", active);
-    optionButton.setAttribute("aria-selected", String(active));
+    optionButton.setAttribute(
+      optionButton.getAttribute("role") === "option" ? "aria-selected" : "aria-pressed",
+      String(active),
+    );
   });
   const optionsContainer =
     root.querySelector(".attr-custom-select-options") ||
@@ -1956,8 +1960,12 @@ function syncCustomSelectState(root, select, emptyLabel) {
         const bSelected = selectedValues.has(b.dataset.selectValue || "");
         return Number(bSelected) - Number(aSelected);
       })
-      .forEach((optionButton) => optionsContainer.appendChild(optionButton));
+      .forEach((optionButton) => optionsContainer.appendChild(customSelectOptionRow(optionButton)));
   }
+}
+
+function customSelectOptionRow(optionButton) {
+  return optionButton.closest(".attr-custom-select-option-row") || optionButton;
 }
 
 function resetCustomSelectSearch(root) {
@@ -1977,8 +1985,9 @@ function filterCustomSelectMenu(root, query) {
   root.querySelectorAll(".attr-custom-select-option").forEach((optionButton) => {
     const text = (optionButton.textContent || "").toLowerCase();
     const matches = !normalized || text.includes(normalized);
-    optionButton.classList.toggle("hidden", !matches);
-    optionButton.hidden = !matches;
+    const row = customSelectOptionRow(optionButton);
+    row.classList.toggle("hidden", !matches);
+    row.hidden = !matches;
     if (matches) {
       visibleCount += 1;
     }
@@ -2016,7 +2025,7 @@ document.addEventListener("click", (event) => {
 function appendCustomSelectControl(
   wrapper,
   select,
-  { emptyLabel = "Select...", searchable = false } = {},
+  { emptyLabel = "Select...", searchable = false, showOnCanvas = false } = {},
 ) {
   select.classList.add("attr-native-source");
   const root = document.createElement("div");
@@ -2025,7 +2034,7 @@ function appendCustomSelectControl(
   const trigger = document.createElement("button");
   trigger.type = "button";
   trigger.className = "attr-custom-select-trigger";
-  trigger.setAttribute("aria-haspopup", "listbox");
+  if (!showOnCanvas) trigger.setAttribute("aria-haspopup", "listbox");
   trigger.setAttribute("aria-expanded", "false");
   trigger.innerHTML = `
     <span></span>
@@ -2033,8 +2042,10 @@ function appendCustomSelectControl(
 
   const menu = document.createElement("div");
   menu.className = `attr-custom-select-menu hidden${searchable ? " has-search" : ""}`;
-  menu.setAttribute("role", "listbox");
-  if (select.multiple) {
+  menu.setAttribute("role", showOnCanvas ? "group" : "listbox");
+  if (showOnCanvas) {
+    menu.setAttribute("aria-label", "Choose references or show elements on canvas");
+  } else if (select.multiple) {
     menu.setAttribute("aria-multiselectable", "true");
   }
 
@@ -2070,7 +2081,7 @@ function appendCustomSelectControl(
     optionButton.type = "button";
     optionButton.className = "attr-custom-select-option";
     optionButton.dataset.selectValue = sourceOption.value;
-    optionButton.setAttribute("role", "option");
+    if (!showOnCanvas) optionButton.setAttribute("role", "option");
     optionButton.textContent = sourceOption.textContent || sourceOption.value || "None";
     optionButton.addEventListener("click", () => {
       if (select.multiple) {
@@ -2082,7 +2093,43 @@ function appendCustomSelectControl(
       select.dispatchEvent(new Event("change", { bubbles: true }));
       syncCustomSelectState(root, select, emptyLabel);
     });
-    optionsContainer.appendChild(optionButton);
+    if (showOnCanvas && sourceOption.value) {
+      const row = document.createElement("div");
+      row.className = "attr-custom-select-option-row";
+      row.appendChild(optionButton);
+      const locateButton = document.createElement("button");
+      locateButton.type = "button";
+      locateButton.className = "attr-reference-locate";
+      locateButton.title = "Show on canvas";
+      locateButton.setAttribute("aria-label", `Show ${optionButton.textContent} on canvas`);
+      locateButton.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+        stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true">
+        <circle cx="12" cy="12" r="6"/><path d="M12 2v4m0 12v4M2 12h4m12 0h4"/>
+        <circle cx="12" cy="12" r="1"/></svg>`;
+      locateButton.addEventListener("click", async (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        closeCustomSelect(root);
+        try {
+          const target = await locateCanvasTarget({ id: sourceOption.value });
+          if (!target) {
+            setStatus("This element is no longer available on canvas.");
+            return;
+          }
+          setStatus(
+            target.temporary
+              ? "Showing element in a temporary view. Use Back to return."
+              : "Showing element on canvas.",
+          );
+        } catch (error) {
+          setError(error, { prefix: "Failed to show element on canvas." });
+        }
+      });
+      row.appendChild(locateButton);
+      optionsContainer.appendChild(row);
+    } else {
+      optionsContainer.appendChild(optionButton);
+    }
   });
 
   trigger.addEventListener("click", () => {
@@ -2206,6 +2253,7 @@ function buildAttrField(key, value, field) {
     appendCustomSelectControl(wrapper, input, {
       emptyLabel: fieldType === "reference" ? "No reference" : "Select...",
       searchable: fieldType === "reference",
+      showOnCanvas: fieldType === "reference",
     });
     if (field?.relationshipSelector === true) {
       input.addEventListener("change", () => {

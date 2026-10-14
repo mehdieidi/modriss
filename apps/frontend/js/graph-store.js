@@ -12,6 +12,7 @@ import {
   modelingRootType,
   modelingSemanticReferenceRules,
   modelingTypeMatches,
+  modelingViewDefinition,
 } from "./modeling-config-data.js";
 import {
   addReferenceValue,
@@ -1215,37 +1216,10 @@ function viewDefinitions(typeKey) {
 }
 
 function matchingViewDefinition(typeKey, view) {
-  const definitions = viewDefinitions(typeKey);
-  const definitionId = String(view?.definitionId || view?.sourceDefinitionId || "")
-    .trim()
-    .toLowerCase();
-  const viewpoint = String(view?.viewpoint || "")
-    .trim()
-    .toLowerCase();
-  const kind = String(view?.kind || view?.viewType || "")
-    .trim()
-    .toLowerCase();
-  const nameKey = normalizeViewName(view?.name || view?.displayName || "");
-  return (
-    definitions.find((definition) => {
-      const id = String(definition?.id || "")
-        .trim()
-        .toLowerCase();
-      const definitionViewpoint = String(definition?.viewpoint || "")
-        .trim()
-        .toLowerCase();
-      const viewType = String(definition?.viewType || "")
-        .trim()
-        .toLowerCase();
-      const displayName = normalizeViewName(definition?.displayName || definition?.name || "");
-      return (
-        (definitionId && id === definitionId) ||
-        (viewpoint && definitionViewpoint === viewpoint) ||
-        (kind && (id === kind || viewType === kind)) ||
-        (nameKey && displayName === nameKey)
-      );
-    }) || null
-  );
+  if (isFocusView(view) || String(view?.kind || "").toUpperCase() === "SAVED_VIEWPOINT") {
+    return null;
+  }
+  return modelingViewDefinition(typeKey, view);
 }
 
 function configuredElementTypes(typeKey) {
@@ -1882,7 +1856,14 @@ function assignViewNodes(
   { skipClientLayout = false } = {},
 ) {
   if (skipClientLayout) {
-    return elementIds.map((elementId) => ({ elementId, x: 0, y: 0 }));
+    const existingByElement = new Map(
+      safeArray(existingNodes).map((node) => [node.elementId, node]),
+    );
+    return elementIds.map((elementId) =>
+      existingByElement.has(elementId)
+        ? clone(existingByElement.get(elementId))
+        : { elementId, x: 0, y: 0 },
+    );
   }
   return layoutNodesForElements(graph, elementIds, existingNodes, typeKey);
 }
@@ -1912,7 +1893,13 @@ function buildViewFromDefinition(
   graph,
   definition,
   scopeElement = null,
-  { skipClientLayout = false, existingNodes = [], existingEdges = [] } = {},
+  {
+    skipClientLayout = false,
+    existingNodes = [],
+    existingEdges = [],
+    pinnedElementIds = [],
+    hidden = null,
+  } = {},
 ) {
   const idParts = [
     "view",
@@ -1959,14 +1946,14 @@ function buildViewFromDefinition(
     canvas: Array.isArray(definition.canvas)
       ? safeArray(definition.canvas)
       : safeArray(definition.palette),
-    pinnedElementIds: [],
+    pinnedElementIds: safeArray(pinnedElementIds).map(String),
     edgeLayers: safeArray(definition.edgeLayers),
     layoutProfile: definition.layoutProfile || definition.layoutHint || "DEFAULT_LAYERED",
     semanticDashboardColumns: safeArray(definition.semanticDashboardColumns),
     defaultDepth: definition.defaultDepth ?? 1,
     nodes: [],
     edges: [],
-    hidden: { elementIds: [], relationshipIds: [] },
+    hidden: hidden ? clone(hidden) : { elementIds: [], relationshipIds: [] },
   };
   let elementIds = selectElementIdsForView(graph, view, typeKey);
   const relationshipKinds = safeArray(definition.relationshipKinds);
@@ -2239,41 +2226,27 @@ function normalizeView(view, graph, typeKey, modelName, { deferLayout = false } 
     graph.elementsById.has(elementId),
   );
   if (definition) {
-    if (!normalized.definitionId) {
-      normalized.definitionId = String(definition.id || "");
+    // CVS owns the settings of configured views; persisted views own their geometry and camera.
+    if (!normalized.scope?.rootElementId) {
+      normalized.name = String(definition.displayName || definition.id || normalized.name);
     }
-    if (!normalized.viewpoint) {
-      normalized.viewpoint = String(definition.viewpoint || "");
-    }
-    if (!safeArray(normalized.palette).length) {
-      normalized.palette = safeArray(definition.palette).map(String);
-    }
-    if (!Array.isArray(normalized.canvas)) {
-      normalized.canvas = Array.isArray(definition.canvas)
-        ? safeArray(definition.canvas).map(String)
-        : [...normalized.palette];
-    }
-    normalized.filters.elementTypes = [
-      ...new Set([
-        ...normalized.filters.elementTypes,
-        ...safeArray(definition.elementTypes).map(String),
-        ...safeArray(definition.palette).map(String),
-      ]),
-    ];
-    normalized.filters.relationshipKinds = [
-      ...new Set([
-        ...normalized.filters.relationshipKinds,
-        ...safeArray(definition.relationshipKinds).map(String),
-      ]),
-    ];
-    if (!view?.layoutProfile && (definition.layoutProfile || definition.layoutHint)) {
-      normalized.layoutProfile = String(definition.layoutProfile || definition.layoutHint);
-    }
-    if (!normalized.semanticDashboardColumns.length) {
-      normalized.semanticDashboardColumns = safeArray(definition.semanticDashboardColumns).map(
-        (column) => safeArray(column).map(String).filter(Boolean),
-      );
-    }
+    normalized.definitionId = String(definition.id || "");
+    normalized.viewpoint = String(definition.viewpoint || "");
+    normalized.description = String(definition.description || "");
+    normalized.palette = safeArray(definition.palette).map(String);
+    normalized.canvas = Array.isArray(definition.canvas)
+      ? safeArray(definition.canvas).map(String)
+      : [...normalized.palette];
+    normalized.filters.elementTypes = [...normalized.canvas];
+    normalized.filters.relationshipKinds = safeArray(definition.relationshipKinds).map(String);
+    normalized.edgeLayers = safeArray(definition.edgeLayers).map(String);
+    normalized.layoutProfile = String(
+      definition.layoutProfile || definition.layoutHint || "DEFAULT_LAYERED",
+    );
+    normalized.defaultDepth = definition.defaultDepth ?? 1;
+    normalized.semanticDashboardColumns = safeArray(definition.semanticDashboardColumns).map(
+      (column) => safeArray(column).map(String).filter(Boolean),
+    );
   }
   if (graph.elementsById.size && !deferLayout) {
     let elementIds =
@@ -2560,7 +2533,13 @@ export function refreshViewContent(
   const definition = matchingViewDefinition(typeKey, view);
   const existingNodes = safeArray(view.nodes).map(clone);
   const existingEdges = safeArray(view.edges).map(clone);
-  const options = { skipClientLayout, existingNodes, existingEdges };
+  const options = {
+    skipClientLayout,
+    existingNodes,
+    existingEdges,
+    pinnedElementIds: safeArray(view.pinnedElementIds),
+    hidden: view.hidden,
+  };
   const scopeElement = view.scope?.rootElementId
     ? state.graph.elementsById.get(view.scope.rootElementId)
     : null;
@@ -2581,6 +2560,7 @@ export function refreshViewContent(
     layoutStrategy: view.layoutStrategy,
     camera: view.camera ? clone(view.camera) : undefined,
     hidden: view.hidden ? clone(view.hidden) : refreshed.hidden,
+    pinnedElementIds: safeArray(view.pinnedElementIds).map(String),
     sourceViewId: view.sourceViewId,
     savedAt: view.savedAt,
   };

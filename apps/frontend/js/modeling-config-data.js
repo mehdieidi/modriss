@@ -630,6 +630,31 @@ export function modelingViewDefinition(typeKey, view) {
     .toLowerCase()
     .replaceAll("_", "-");
   const nameKey = normalizeViewDefinitionName(view?.name || view?.displayName || "");
+  // A durable definition ID must win over shared viewpoints or an old display name.
+  if (definitionId) {
+    return (
+      definitions.find(
+        (definition) =>
+          String(definition?.id || "")
+            .trim()
+            .toLowerCase() === definitionId,
+      ) || null
+    );
+  }
+  const kindMatch =
+    kind &&
+    definitions.find((definition) =>
+      [definition?.id, definition?.viewType].some(
+        (value) =>
+          String(value || "")
+            .trim()
+            .toLowerCase()
+            .replaceAll("_", "-") === kind,
+      ),
+    );
+  if (kindMatch) {
+    return kindMatch;
+  }
   return (
     definitions.find((definition) => {
       const id = String(definition?.id || "")

@@ -477,10 +477,22 @@
   ],
   "semanticReferenceRules": [
     {
-      "sourceType": "AggregateCandidate",
-      "targetType": "BoundedContextCandidate",
-      "feature": "context",
-      "kind": "CONTEXT"
+      "sourceType": "DomainEntity",
+      "targetType": "InformationItem",
+      "feature": "attributes",
+      "kind": "ATTRIBUTES"
+    },
+    {
+      "sourceType": "DomainEntity",
+      "targetType": "InformationItem",
+      "feature": "identityAttributes",
+      "kind": "IDENTITY_ATTRIBUTES"
+    },
+    {
+      "sourceType": "DomainEntity",
+      "targetType": "InformationItem",
+      "feature": "primaryIdentityAttribute",
+      "kind": "PRIMARY_IDENTITY_ATTRIBUTE"
     }
   ],
   "semanticEdgeObjectRules": [
@@ -550,26 +562,6 @@
         "linkType": "OTHER",
         "confidence": ""
       }
-    }
-  ],
-  "semanticReferenceRules": [
-    {
-      "sourceType": "DomainEntity",
-      "targetType": "InformationItem",
-      "feature": "attributes",
-      "kind": "ATTRIBUTES"
-    },
-    {
-      "sourceType": "DomainEntity",
-      "targetType": "InformationItem",
-      "feature": "identityAttributes",
-      "kind": "IDENTITY_ATTRIBUTES"
-    },
-    {
-      "sourceType": "DomainEntity",
-      "targetType": "InformationItem",
-      "feature": "primaryIdentityAttribute",
-      "kind": "PRIMARY_IDENTITY_ATTRIBUTE"
     }
   ],
   "semanticReferenceKindMappings": {
@@ -1768,6 +1760,79 @@
       "canvas": [],
       "relationshipKinds": [],
       "layoutHint": "DETAIL"
+    },
+    {
+      "elementType": "CIMModel",
+      "layoutHint": "CONTAINER",
+      "canvas": [
+        "NonFunctionalRequirement",
+        "SecurityConstraint",
+        "PrivacyConstraint",
+        "ComplianceConstraint",
+        "Requirement",
+        "BusinessGoal",
+        "KPI",
+        "Stakeholder",
+        "Actor",
+        "ExternalSystem",
+        "Role",
+        "BusinessCapability",
+        "BoundedContextCandidate",
+        "DomainEntity",
+        "ValueObject",
+        "AggregateCandidate",
+        "InformationItem",
+        "DataClassification",
+        "Command",
+        "Query",
+        "BusinessEvent",
+        "BusinessError",
+        "Condition",
+        "BusinessProcess",
+        "Policy",
+        "DecisionTable",
+        "Risk",
+        "Assumption",
+        "Hotspot",
+        "TransformationProfile",
+        "TraceModel",
+        "ProductionReadinessAssessment"
+      ],
+      "relationshipKinds": [],
+      "palette": [
+        "NonFunctionalRequirement",
+        "SecurityConstraint",
+        "PrivacyConstraint",
+        "ComplianceConstraint",
+        "Requirement",
+        "BusinessGoal",
+        "KPI",
+        "Stakeholder",
+        "Actor",
+        "ExternalSystem",
+        "Role",
+        "BusinessCapability",
+        "BoundedContextCandidate",
+        "DomainEntity",
+        "ValueObject",
+        "AggregateCandidate",
+        "InformationItem",
+        "DataClassification",
+        "Command",
+        "Query",
+        "BusinessEvent",
+        "BusinessError",
+        "Condition",
+        "BusinessProcess",
+        "Policy",
+        "DecisionTable",
+        "Risk",
+        "Assumption",
+        "Hotspot",
+        "TransformationProfile",
+        "TraceModel",
+        "ProductionReadinessAssessment"
+      ]
     }
   ],
   "views": [
@@ -1935,7 +2000,7 @@
     },
     {
       "id": "stakeholder-actor-map",
-      "displayName": "Stakeholder and Actor",
+      "displayName": "Actors",
       "viewType": "STAKEHOLDER_ACTOR_MAP",
       "palette": [
         "Stakeholder",
@@ -1943,11 +2008,8 @@
         "ExternalSystem",
         "Role",
         "BusinessGoal",
-        "Requirement",
         "Command",
-        "Query",
-        "BusinessEvent",
-        "InformationItem"
+        "Query"
       ],
       "relationshipKinds": [
         "PLAYS_ROLES",
@@ -1969,11 +2031,8 @@
         "ExternalSystem",
         "Role",
         "BusinessGoal",
-        "Requirement",
         "Command",
-        "Query",
-        "BusinessEvent",
-        "InformationItem"
+        "Query"
       ]
     },
     {
