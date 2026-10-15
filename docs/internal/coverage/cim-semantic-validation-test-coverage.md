@@ -63,9 +63,7 @@ model fixtures.
 | `collectionHasUniqueNames`             | true for unique child business names; false for duplicate child business names. |
 | `cimOutgoingTransitionCountBySourceId` | indirectly covered through `outgoingTransitionCount`.                           |
 | `outgoingTransitionCount`              | counts multiple outgoing transitions from a decision step.                      |
-| `providerTechnologyPattern`            | matches provider-specific technology terms.                                     |
 | `labelText`                            | returns a model element's display name.                                         |
-| `containsProviderTechnologyTerm`       | detects provider terms in both `name` and `summary`.                            |
 | `isPersonalKind`                       | distinguishes public data from personal data.                                   |
 | `requiresStrongProtection`             | returns true for authentication-secret data.                                    |
 | `hasPersonalClassification`            | returns true when an information item is classified as personal.                |

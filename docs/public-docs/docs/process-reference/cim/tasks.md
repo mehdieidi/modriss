@@ -614,7 +614,7 @@ The primary performer is **Business Modeler**. The approved method profile may a
 **How to perform the task**
 
 1. Create Command elements with actors and target capabilities.
-2. Define CommandOutcome and link expected/rejection events.
+2. Add a CommandOutcome when a detailed result is useful. Link expected/rejection events only when the result includes a meaningful business fact.
 
 **Outputs**
 

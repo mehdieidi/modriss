@@ -4,12 +4,12 @@ import "../lib/cim-validation-helpers.eol";
 /** Validates Command elements. */
 context CIM!Command {
 
-  /** Checks that command must cause business outcome. */
-  constraint CommandMustCauseBusinessOutcome {
+  /** Advises that command outcome events are documented when applicable. */
+  critique CommandOutcomeEventsAreRecommended {
     check : self.expectedEvents.notEmpty() or self.rejectionEvents.notEmpty()
     message :
-      "Error [CIM-CMD-001] Command '" + self.labelText() + "' has no expectedEvents or rejectionEvents. " +
-      "Suggestion: link the business facts that occur when the command succeeds or is rejected."
+      "Warning [CIM-CMD-001] Command '" + self.labelText() + "' has no expectedEvents or rejectionEvents. " +
+      "Suggestion: link a business event when success or rejection produces a meaningful fact; otherwise no event reference is needed."
   }
 
   /** Checks that command has behavioral owner. */

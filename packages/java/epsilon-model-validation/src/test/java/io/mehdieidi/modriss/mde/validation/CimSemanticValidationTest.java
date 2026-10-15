@@ -120,16 +120,10 @@ context CIM!CIMModel {
     }
   }
 
-  constraint ProcessProviderAndReadinessHelpers {
+  constraint ProcessAndReadinessHelpers {
     check {
       var decision = CIM!DecisionStep.all.select(s | s.`id` = "helper-decision").first();
-      var providerNamed = CIM!Role.all.select(r | r.`id` = "helper-provider-name").first();
-      var providerSummary = CIM!Role.all.select(r | r.`id` = "helper-provider-summary").first();
-      return decision.outgoingTransitionCount() = 2 and
-        providerTechnologyPattern().matches("(?i).*lambda.*") and
-        providerNamed.containsProviderTechnologyTerm() and
-        providerSummary.containsProviderTechnologyTerm() and
-        self.isProductionReadyIntent();
+      return decision.outgoingTransitionCount() = 2 and self.isProductionReadyIntent();
     }
   }
 
@@ -170,8 +164,6 @@ context CIM!CIMModel {
                     xmi.replace("productionReady=\"false\"", "productionReady=\"true\""),
                     """
   <roles id="helper-unnamed-role" />
-  <roles id="helper-provider-name" name="AWS Operator" />
-  <roles id="helper-provider-summary" name="Provider Summary Role" summary="Uses Lambda operational language" />
   <relationships id="helper-rel-missing-multiplicity" name="Helper relationship" source="entity-application" target="entity-reviewcase">
     <sourceMultiplicity id="helper-mult-missing-source" name="Missing source multiplicity" lowerBound="0" />
     <targetMultiplicity id="helper-mult-missing-target" name="Missing target multiplicity" lowerBound="0" />
@@ -248,7 +240,7 @@ context CIM!CIMModel {
                         xmi,
                         """
   <actors id="actor-generated-bad" name="Generated actor" actorType="HUMAN" trustLevel="TRUSTED_INTERNAL" generatedByTransformation="true" />
-  <roles id="role-kernel-bad" name="AWS Administrator" />
+  <roles id="role-kernel-bad" name="Operations Administrator" />
   <roles id="role-no-doc" name="Role Without Explanation" sourceReference="Synthetic semantic coverage" />
 """),
                     """
@@ -258,7 +250,6 @@ context CIM!CIMModel {
             mandatory("TraceLinkHasReferenceOrExternalId"),
             mandatory("TraceLinkDoesNotPointToSameElement"),
             mandatory("GeneratedElementHasOrigin"),
-            mandatory("ModelElementAvoidsProviderSpecificTerms"),
             optional("ModelElementHasExplanation"),
             optional("TraceableElementHasSourceOrRationale")),
         scenario(
@@ -396,7 +387,7 @@ context CIM!CIMModel {
   <businessErrors id="err-bad" name="Bad Error" retryMeaningful="true" recoverable="false" />
   <conditions id="cond-bad" name="Bad Condition" mustBeAutomatable="true" />
 """),
-            mandatory("CommandMustCauseBusinessOutcome"),
+            optional("CommandOutcomeEventsAreRecommended"),
             mandatory("CommandHasBehavioralOwner"),
             mandatory("ActorFacingCommandHasAuthorizationDecision"),
             mandatory("ExternalOrUntrustedCommandRequiresAuditAndAuthorization"),
@@ -628,7 +619,6 @@ context CIM!CIMModel {
         "TraceLinkHasReferenceOrExternalId",
         "TraceLinkDoesNotPointToSameElement",
         "GeneratedElementHasOrigin",
-        "ModelElementAvoidsProviderSpecificTerms",
         "ModelElementHasExplanation",
         "TraceableElementHasSourceOrRationale",
         "RequirementHasFitCriterionOrAcceptanceCriteria",
@@ -688,7 +678,7 @@ context CIM!CIMModel {
         "SensitiveDataRequiresProtectionExpectation",
         "PersonalDataHasIdentifiability",
         "RegulatedDataHasRegulatoryCategory",
-        "CommandMustCauseBusinessOutcome",
+        "CommandOutcomeEventsAreRecommended",
         "CommandHasBehavioralOwner",
         "ActorFacingCommandHasAuthorizationDecision",
         "ExternalOrUntrustedCommandRequiresAuditAndAuthorization",

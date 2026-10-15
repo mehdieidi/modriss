@@ -566,7 +566,7 @@ Model state-changing operations with outcomes and preconditions.
 **Steps:**
 
 1. Create Command elements with actors and target capabilities.
-2. Define CommandOutcome and link expected/rejection events.
+2. Add a CommandOutcome when a detailed result is useful. Link expected/rejection events only when the result includes a meaningful business fact.
 
 **Entry criteria:**
 

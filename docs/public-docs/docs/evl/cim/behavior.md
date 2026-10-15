@@ -10,15 +10,15 @@ Each entry preserves the actual EVL guard and check. Treat the guard as the appl
 
 ---
 
-## `CommandMustCauseBusinessOutcome`
+## `CommandOutcomeEventsAreRecommended`
 
 **Context:** `CIM!Command`  
-**Classification:** Mandatory semantic constraint (error)  
+**Classification:** Advisory critique (warning)
 **Source:** `methodology/modeling-framework/validation/cim/rules/behavior.evl:8`
 
 ### Why this rule exists
 
-A command represents an intended state change. Expected or rejection events are the model's evidence of that change; without one, the command has no observable business consequence to contract or test.
+A command represents an intended state change, but some commands do not produce a business event worth modeling. This critique prompts the modeler to link expected or rejection events when success or rejection produces a meaningful business fact; omitting those links is valid when no event applies.
 
 ### When it applies
 
@@ -38,13 +38,13 @@ This rule reads: `expectedEvents`, `rejectionEvents`, `labelText`.
 
 ### Diagnostic and repair
 
-> Error [CIM-CMD-001] Command ' ' has no expectedEvents or rejectionEvents. Suggestion: link the business facts that occur when the command succeeds or is rejected.
+> Warning [CIM-CMD-001] Command ' ' has no expectedEvents or rejectionEvents. Suggestion: link a business event when success or rejection produces a meaningful fact; otherwise no event reference is needed.
 
 **How to fix it:**
 
-link the business facts that occur when the command succeeds or is rejected.
+link a business event when success or rejection produces a meaningful fact; otherwise no event reference is needed.
 
-A constraint represents a mandatory semantic invariant for this validation profile. Transformation or deployment work should not treat the model as semantically ready while this violation remains unresolved.
+A critique is an advisory quality recommendation. The model remains valid when no event applies; add an event reference when it improves the business model's explanation of the command result.
 
 ---
 

@@ -1,6 +1,6 @@
 # CIM validation: Core Kernel Trace
 
-These rules make a CIM model a coherent starting point for refinement. They require a semantic core, protect model identity and origin, and stop provider vocabulary from leaking into the computation-independent language.
+These rules make a CIM model a coherent starting point for refinement. They require a semantic core and protect model identity, origin, and explanation.
 
 Source profile: `methodology/modeling-framework/validation/cim/rules/core-kernel-trace.evl`.
 
@@ -234,49 +234,11 @@ This rule reads: `name`.
 
 ### Diagnostic and repair
 
-> Error [CIM-KERNEL-001] A model element has no user-facing name. Suggestion: provide a concise business name for this element. Avoid implementation names, provider products, acronyms without definitions, or generated placeholders.
+> Error [CIM-KERNEL-001] A model element has no user-facing name. Suggestion: provide a concise business name that reviewers can understand. Explain acronyms and avoid generated placeholders.
 
 **How to fix it:**
 
-provide a concise business name for this element. Avoid implementation names, provider products, acronyms without definitions, or generated placeholders.
-
-A constraint represents a mandatory semantic invariant for this validation profile. Transformation or deployment work should not treat the model as semantically ready while this violation remains unresolved.
-
----
-
-## `ModelElementAvoidsProviderSpecificTerms`
-
-**Context:** `KERNEL!ModelElement`  
-**Classification:** Mandatory semantic constraint (error)  
-**Source:** `methodology/modeling-framework/validation/cim/rules/core-kernel-trace.evl:80`
-
-### Why this rule exists
-
-The rule checks whether model element avoids provider specific terms. The model element element provides the relevant evidence through contains provider technology term, label text. At this level, the CIM remains a portable, explainable source model rather than a loose collection of nouns. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: ' ' contains provider-specific or implementation-level terms.
-
-### When it applies
-
-No guard is defined, so the check runs for every instance of this context in the validated model.
-
-No guard expression is present. Every instance of the context is checked.
-
-### What counts as valid
-
-The model passes when the following EVL check evaluates to `true`:
-
-```evl
-check : not self.containsProviderTechnologyTerm()
-```
-
-This rule reads: `containsProviderTechnologyTerm`, `labelText`.
-
-### Diagnostic and repair
-
-> Error [CIM-KERNEL-002] ' ' contains provider-specific or implementation-level terms. Suggestion: rename/reword it in CIM-level business language. For example, prefer 'Customer notification requested' over 'SNS message sent' and 'Document storage' over 'S3 bucket'.
-
-**How to fix it:**
-
-rename/reword it in CIM-level business language. For example, prefer 'Customer notification requested' over 'SNS message sent' and 'Document storage' over 'S3 bucket'.
+provide a concise business name that reviewers can understand. Explain acronyms and avoid generated placeholders.
 
 A constraint represents a mandatory semantic invariant for this validation profile. Transformation or deployment work should not treat the model as semantically ready while this violation remains unresolved.
 
@@ -286,7 +248,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `KERNEL!ModelElement`  
 **Classification:** Advisory critique (warning)  
-**Source:** `methodology/modeling-framework/validation/cim/rules/core-kernel-trace.evl:88`
+**Source:** `methodology/modeling-framework/validation/cim/rules/core-kernel-trace.evl:80`
 
 ### Why this rule exists
 
@@ -324,7 +286,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 **Context:** `KERNEL!TraceableElement`  
 **Classification:** Advisory critique (warning)  
-**Source:** `methodology/modeling-framework/validation/cim/rules/core-kernel-trace.evl:101`
+**Source:** `methodology/modeling-framework/validation/cim/rules/core-kernel-trace.evl:93`
 
 ### Why this rule exists
 
@@ -362,7 +324,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 **Context:** `KERNEL!TraceableElement`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `methodology/modeling-framework/validation/cim/rules/core-kernel-trace.evl:111`
+**Source:** `methodology/modeling-framework/validation/cim/rules/core-kernel-trace.evl:103`
 
 ### Why this rule exists
 
@@ -402,7 +364,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `KERNEL!TraceLink`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `methodology/modeling-framework/validation/cim/rules/core-kernel-trace.evl:124`
+**Source:** `methodology/modeling-framework/validation/cim/rules/core-kernel-trace.evl:116`
 
 ### Why this rule exists
 
@@ -440,7 +402,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `KERNEL!TraceLink`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `methodology/modeling-framework/validation/cim/rules/core-kernel-trace.evl:134`
+**Source:** `methodology/modeling-framework/validation/cim/rules/core-kernel-trace.evl:126`
 
 ### Why this rule exists
 

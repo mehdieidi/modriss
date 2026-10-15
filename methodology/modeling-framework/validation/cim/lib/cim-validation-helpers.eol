@@ -66,28 +66,12 @@ operation CIM!DecisionStep outgoingTransitionCount() : Integer {
   return count;
 }
 
-@cached
-/** Computes provider technology pattern. */
-operation providerTechnologyPattern() : String {
-  return "(?i).*(lambda|dynamodb|sqs|sns|eventbridge|cloudwatch|xray|iam|cognito|s3|aws|arn|sam|cloudformation|azure|gcp|pubsub|kafka|kubernetes|terraform).*";
-}
-
 /** Computes label text. */
 operation KERNEL!ModelElement labelText() : String {
   if (self.name.hasText()) {
     return self.name;
   }
   return "<unnamed " + self.eClass().getName() + ">";
-}
-
-@cached
-/** Returns whether the receiver contains provider technology term. */
-operation KERNEL!ModelElement containsProviderTechnologyTerm() : Boolean {
-  return
-    ((self.name.hasText()) and (self.name.matches(providerTechnologyPattern()))) or
-    ((self.summary.hasText()) and (self.summary.matches(providerTechnologyPattern()))) or
-    ((self.description.hasText()) and (self.description.matches(providerTechnologyPattern()))) or
-    ((self.documentation.hasText()) and (self.documentation.matches(providerTechnologyPattern())));
 }
 
 @cached

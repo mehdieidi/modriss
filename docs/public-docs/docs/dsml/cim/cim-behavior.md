@@ -12,7 +12,7 @@ The classes inherit from `kernel.TraceableElement`. Their inherited source, rati
 
 ### Declared attributes
 
-All attributes declared directly by `Command` are optional in Ecore. EVL still requires particular combinations when the command is human-facing, crosses a trust boundary, can be duplicated, or lacks an outcome.
+All attributes declared directly by `Command` are optional in Ecore. EVL requires a behavioral owner, applies authorization and auditing rules according to the command's issuer, and advises on outcome events, preconditions, errors, and idempotency where relevant.
 
 | Attribute                     | Type and multiplicity                    | Meaning                                                                                                                                                                                                 | Example                                                                    |
 | ----------------------------- | ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------- |
@@ -43,7 +43,7 @@ All attributes declared directly by `Command` are optional in Ecore. EVL still r
 
 ### Validation and refinement
 
-EVL requires a command to have an expected or rejection event and to have either a target capability or an aggregate. Human-issued commands must state an authorization decision. Commands issued by external or untrusted actors must require authorization and auditing. A duplicate-prone command receives a warning when no idempotency business key is supplied. If detailed `outcomes` are present, their emitted events and errors must match the direct event and error collections.
+EVL requires a command to have either a target capability or an aggregate. It advises linking expected or rejection events when success or rejection produces a meaningful business fact; a command without an event reference remains valid when no event applies. Human-issued commands must state an authorization decision. Commands issued by external or untrusted actors must require authorization and auditing. A duplicate-prone command receives a warning when no idempotency business key is supplied. If detailed `outcomes` are present, their emitted events and errors must match the direct event and error collections.
 
 `Command2Function` creates a PIM function and function contract. `UserInitiatedCommand2ApiRoute` creates a route for user-facing or immediate-response commands and carries authorization information into the PIM. `AggregateCandidate` and `InformationItem` references are used to resolve data access and contract fields.
 

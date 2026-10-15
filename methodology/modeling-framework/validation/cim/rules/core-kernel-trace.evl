@@ -73,15 +73,7 @@ context KERNEL!ModelElement {
     check : self.name.hasText()
     message :
       "Error [CIM-KERNEL-001] A model element has no user-facing name. " +
-      "Suggestion: provide a concise business name for this element. Avoid implementation names, provider products, acronyms without definitions, or generated placeholders."
-  }
-
-  /** Checks that model element avoids provider specific terms. */
-  constraint ModelElementAvoidsProviderSpecificTerms {
-    check : not self.containsProviderTechnologyTerm()
-    message :
-      "Error [CIM-KERNEL-002] '" + self.labelText() + "' contains provider-specific or implementation-level terms. " +
-      "Suggestion: rename/reword it in CIM-level business language. For example, prefer 'Customer notification requested' over 'SNS message sent' and 'Document storage' over 'S3 bucket'."
+      "Suggestion: provide a concise business name that reviewers can understand. Explain acronyms and avoid generated placeholders."
   }
 
   /** Advises that model element has explanation. */

@@ -94,7 +94,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-CIM/PIM are intentionally portable. This rule stops AWS service names from entering provider-neutral vocabulary where they would bias the architecture and make a later provider choice look inevitable.
+PIM is intentionally provider-independent. This rule stops AWS service names from entering its vocabulary, where they would bias the architecture and make a later provider choice look inevitable.
 
 ### When it applies
 

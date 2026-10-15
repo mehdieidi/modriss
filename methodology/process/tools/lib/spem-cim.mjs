@@ -410,7 +410,7 @@ const CIM_PROCESS_PHASES_SOURCE = [
                 types: ["Command", "CommandOutcome", "CommandType"],
                 steps: [
                   "Create Command elements with actors and target capabilities.",
-                  "Define CommandOutcome and link expected/rejection events.",
+                  "Add a CommandOutcome when a detailed result is useful. Link expected/rejection events only when the result includes a meaningful business fact.",
                 ],
                 entryCriteria: ["Domain structure drafted"],
                 exitCriteria: ["Commands cover primary write use cases"],

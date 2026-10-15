@@ -59,7 +59,7 @@ Every relationship in this table is a containment. The target objects are owned 
 
 ## Root-level semantic rules
 
-The EVL rules in `methodology/modeling-framework/validation/cim/rules/core-kernel-trace.evl` require a semantic core: at least one goal, actor, and capability. A complete scope declaration is a warning when `domainName`, `businessScope`, or `organizationName` is missing. Every model element must have a user-facing name and an explanation, and CIM text must avoid provider-specific terms such as Lambda, S3, or CloudFormation.
+The EVL rules in `methodology/modeling-framework/validation/cim/rules/core-kernel-trace.evl` require a semantic core: at least one goal, actor, and capability. A complete scope declaration is a warning when `domainName`, `businessScope`, or `organizationName` is missing. Every model element must have a user-facing name and an explanation.
 
 The root also acts as a policy switch for two cross-cutting checks. If `transformationProfile.requireExplicitActorAuthForCommands` is true, every human-issued command must carry an explicit authorization decision. If `requirePrivacyClassificationForAllInformation` is true, every root-level `InformationItem` must have a `DataClassification`. A model marked production-ready cannot retain blocking hotspots, production-blocking risks, blocking readiness findings, or failed readiness checks.
 

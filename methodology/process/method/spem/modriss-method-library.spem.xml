@@ -530,7 +530,7 @@
           <ownedTaskDefinitionParameter xmi:type="spem:Default_TaskDefinitionParameter" xmi:id="id_task.cim.ph3.st3.ss1.t1.in.cim-artifact.capability-map" direction="in" optionality="mandatory" parameterType="id_cim-artifact.capability-map"/>
           <ownedTaskDefinitionParameter xmi:type="spem:Default_TaskDefinitionParameter" xmi:id="id_task.cim.ph3.st3.ss1.t1.out.cim-artifact.behavior-surface" direction="out" optionality="mandatory" parameterType="id_cim-artifact.behavior-surface"/>
           <step xmi:type="spem:Step" xmi:id="id_task.cim.ph3.st3.ss1.t1.step.1" sectionName="Step 1" sectionDescription="Create Command elements with actors and target capabilities."/>
-          <step xmi:type="spem:Step" xmi:id="id_task.cim.ph3.st3.ss1.t1.step.2" sectionName="Step 2" sectionDescription="Define CommandOutcome and link expected/rejection events."/>
+          <step xmi:type="spem:Step" xmi:id="id_task.cim.ph3.st3.ss1.t1.step.2" sectionName="Step 2" sectionDescription="Add a CommandOutcome when a detailed result is useful. Link expected/rejection events only when the result includes a meaningful business fact."/>
           <modriss:metamodelBinding metamodel="cim" classifier="Command" kind="EClass"/>
           <modriss:metamodelBinding metamodel="cim" classifier="CommandOutcome" kind="EClass"/>
           <modriss:metamodelBinding metamodel="cim" classifier="CommandType" kind="EEnum"/>

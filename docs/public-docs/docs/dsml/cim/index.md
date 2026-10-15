@@ -59,7 +59,7 @@ Every CIM element also inherits the kernel. `ModelElement` supplies the stable `
 
 There is no requirement that a modeler fill every class in a single pass. A practical increment usually begins with the model scope, goals, actors, and capabilities. Requirements and acceptance criteria then make the intended outcome testable. Domain entities, information items, commands, queries, and events give that intent a business vocabulary. Processes, policies, and governance constraints add sequencing and obligations. Finally, the modeler records transformation preferences, open decisions, risks, and readiness evidence.
 
-The order matters because the concepts reinforce one another. A command becomes meaningful when it has an issuer, a target capability or aggregate, input information, expected outcomes, and possible errors. A privacy constraint becomes useful when its `dataItems` identify the information it governs and its `purpose` and `legalBasis` explain why that processing is allowed. A process transition becomes reviewable when it connects two distinct steps and states the condition under which the path is taken.
+The order matters because the concepts reinforce one another. A command is easier to refine when its issuer, target capability or aggregate, and input information are clear; expected outcomes and possible errors can be recorded when they add useful business meaning. A privacy constraint becomes useful when its `dataItems` identify the information it governs and its `purpose` and `legalBasis` explain why that processing is allowed. A process transition becomes reviewable when it connects two distinct steps and states the condition under which the path is taken.
 
 ## Semantic validation and refinement
 

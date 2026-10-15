@@ -868,7 +868,7 @@ Model commands and outcomes. Its primary performer is `role.business-modeler`. I
 **Work.**
 
 - Create Command elements with actors and target capabilities.
-- Define CommandOutcome and link expected/rejection events.
+- Add a CommandOutcome when a detailed result is useful. Link expected/rejection events only when the result includes a meaningful business fact.
 
 **Exit.** Commands cover primary write use cases.
 
