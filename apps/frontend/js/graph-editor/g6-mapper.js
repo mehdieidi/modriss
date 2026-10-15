@@ -1,9 +1,9 @@
 import { state } from "../state.js";
+import { edgeLabel } from "../relationship-label.js";
 import { declutterEdgeLabels } from "./edge-label-layout.js";
 import {
   modelingElementDefinition,
   modelingLevelConfig,
-  modelingRelationshipKindLabel,
   modelingRelationshipPresentation,
 } from "../modeling-config-data.js";
 import {
@@ -21,6 +21,8 @@ import {
   nodeSizeForDiagram,
   stickyColor,
 } from "./g6-style.js";
+
+export { edgeLabel };
 
 const elementDefinitionCache = new Map();
 
@@ -166,31 +168,6 @@ function nodeBadges(typeKey, node) {
     }
   });
   return badges;
-}
-
-export function edgeLabel(edge, typeKey = state.activeType) {
-  if (edge?.label) {
-    return edge.label;
-  }
-  const relationship = state.graph?.relationshipsById?.get(edge?.id) || edge || {};
-  const labelFields = modelingLevelConfig(typeKey).relationshipLabelFields || [];
-  for (const field of labelFields) {
-    const text = refLabel(relationship?.[field]);
-    if (String(text || "").trim()) {
-      return String(text);
-    }
-  }
-  const key = String(edge?.kind || "").toUpperCase();
-  let configured = "";
-  try {
-    configured = modelingRelationshipKindLabel(typeKey, key);
-  } catch {
-    configured = "";
-  }
-  if (edge?.bundle) {
-    return edge.label || "Bundled relations";
-  }
-  return configured || key.toLowerCase().replaceAll("_", " ");
 }
 
 export function edgePresentation(edge, typeKey = state.activeType) {

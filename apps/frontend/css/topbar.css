@@ -466,6 +466,22 @@ html.light .app-logo-img {
   background: color-mix(in srgb, var(--surface-3) 60%, transparent);
 }
 
+.tabs > .tab {
+  position: relative;
+}
+
+.tabs > .tab + .tab::before {
+  content: "";
+  position: absolute;
+  left: -2px;
+  top: 50%;
+  width: 1px;
+  height: 12px;
+  transform: translateY(-50%);
+  background: color-mix(in srgb, var(--border) 70%, transparent);
+  pointer-events: none;
+}
+
 .tab.active {
   color: color-mix(in srgb, var(--accent-light) 78%, #fff 22%);
   border-bottom-color: color-mix(in srgb, var(--accent-light) 78%, transparent);

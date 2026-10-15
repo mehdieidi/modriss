@@ -1,4 +1,4 @@
-# CIM processes and policies
+# CIM - Processes and policies
 
 Source: `methodology/modeling-framework/metamodels/cim/cim-process-policy.emf`.
 

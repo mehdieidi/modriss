@@ -1,4 +1,4 @@
-# Identity, principals, and authorization
+# PIM - Security
 
 Security modeling separates the source of identity, the actor, the permitted operation, and the policy applied at a protected boundary. `IdentityProvider` describes how identities are issued and validated. `Principal` represents a human, role, service, group, external system, or anonymous actor. Its owned `Permission` records an effect, portable action kind, target resource, conditions, and least-privilege review status.
 

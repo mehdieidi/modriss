@@ -612,27 +612,6 @@
                   ></svg>
                   <div class="canvas-minimap-window" id="canvasMinimapWindow"></div>
                 </div>
-                <div
-                  class="edge-kind-picker hidden"
-                  id="edgeKindPicker"
-                  role="dialog"
-                  aria-label="Choose relationship"
-                >
-                  <span class="edge-kind-picker-label">Relationship</span>
-                  <button
-                    aria-expanded="false"
-                    aria-haspopup="listbox"
-                    class="edge-kind-picker-trigger"
-                    id="edgeKindTrigger"
-                    type="button"
-                  >
-                    <span class="edge-kind-picker-trigger-label" id="edgeKindTriggerLabel"
-                      >Select relationship</span
-                    >
-                    <span aria-hidden="true" class="edge-kind-picker-caret"></span>
-                  </button>
-                  <div class="edge-kind-picker-menu hidden" id="edgeKindMenu" role="listbox"></div>
-                </div>
               </div>
 
               <div aria-atomic="false" aria-live="polite" class="toast-host" id="toastHost"></div>
@@ -1598,6 +1577,28 @@
           </button>
         </div>
       </div>
+    </div>
+
+    <div
+      class="edge-kind-picker hidden"
+      id="edgeKindPicker"
+      role="dialog"
+      aria-label="Choose relationship"
+    >
+      <span class="edge-kind-picker-label">Relationship</span>
+      <button
+        aria-expanded="false"
+        aria-haspopup="listbox"
+        class="edge-kind-picker-trigger"
+        id="edgeKindTrigger"
+        type="button"
+      >
+        <span class="edge-kind-picker-trigger-label" id="edgeKindTriggerLabel"
+          >Select relationship</span
+        >
+        <span aria-hidden="true" class="edge-kind-picker-caret"></span>
+      </button>
+      <div class="edge-kind-picker-menu hidden" id="edgeKindMenu" role="listbox"></div>
     </div>
 
     <script src="/backend-config.js?v=docs-link-20260922a"></script>

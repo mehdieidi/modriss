@@ -1,4 +1,4 @@
-# Amazon Cognito identity resources
+# PSM - Identity
 
 Cognito classes describe user pools, clients, OAuth, recovery, schema attributes, groups, domains, and identity pools.
 

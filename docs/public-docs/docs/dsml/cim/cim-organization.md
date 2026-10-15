@@ -1,4 +1,4 @@
-# CIM organization and bounded contexts
+# CIM - Organization and bounded contexts
 
 Source: `methodology/modeling-framework/metamodels/cim/cim-organization.emf`.
 

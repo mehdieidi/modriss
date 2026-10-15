@@ -1,6 +1,6 @@
 {
   "cvsVersion": 2,
-  "displayName": "PIM",
+  "displayName": "Serverless",
   "metamodelRef": {
     "level": "pim",
     "ecore": "methodology/modeling-framework/metamodels/pim/pim-combined.ecore",
@@ -2939,6 +2939,149 @@
       "canvas": [],
       "relationshipKinds": [],
       "layoutHint": "MATRIX"
+    },
+    {
+      "palette": [
+        "ServerlessService",
+        "DeploymentUnit",
+        "Environment",
+        "ImplementationProfile",
+        "PlatformCapability",
+        "PlatformMappingAssessment",
+        "Schema",
+        "EventType",
+        "BusinessRule",
+        "DecisionModel",
+        "DataProtectionPolicy",
+        "DataQualityPolicy",
+        "CompliancePolicy",
+        "ResiliencePolicy",
+        "TimeoutPolicy",
+        "IdempotencyPolicy",
+        "ConcurrencyPolicy",
+        "RateLimitPolicy",
+        "BatchPolicy",
+        "OrderingPolicy",
+        "CachePolicy",
+        "BackupPolicy",
+        "RetentionPolicy",
+        "CostPolicy",
+        "ObservabilityConfig",
+        "CorsPolicy",
+        "SecurityPolicy",
+        "AuthPolicy",
+        "AuthorizationPolicy",
+        "CompensationPolicy",
+        "HumanTask",
+        "ApprovalTask",
+        "EscalationPolicy",
+        "ExternalEndpoint",
+        "IdentityProvider",
+        "Principal",
+        "ConfigurationSet",
+        "Secret",
+        "TraceModel"
+      ],
+      "relationshipKinds": [],
+      "canvas": [
+        "ServerlessService",
+        "DeploymentUnit",
+        "Environment",
+        "ImplementationProfile",
+        "PlatformCapability",
+        "PlatformMappingAssessment",
+        "Schema",
+        "EventType",
+        "BusinessRule",
+        "DecisionModel",
+        "DataProtectionPolicy",
+        "DataQualityPolicy",
+        "CompliancePolicy",
+        "ResiliencePolicy",
+        "TimeoutPolicy",
+        "IdempotencyPolicy",
+        "ConcurrencyPolicy",
+        "RateLimitPolicy",
+        "BatchPolicy",
+        "OrderingPolicy",
+        "CachePolicy",
+        "BackupPolicy",
+        "RetentionPolicy",
+        "CostPolicy",
+        "ObservabilityConfig",
+        "CorsPolicy",
+        "SecurityPolicy",
+        "AuthPolicy",
+        "AuthorizationPolicy",
+        "CompensationPolicy",
+        "HumanTask",
+        "ApprovalTask",
+        "EscalationPolicy",
+        "ExternalEndpoint",
+        "IdentityProvider",
+        "Principal",
+        "ConfigurationSet",
+        "Secret",
+        "TraceModel"
+      ],
+      "layoutHint": "CONTAINER",
+      "elementType": "PIMModel"
+    },
+    {
+      "palette": ["EventEnvelope"],
+      "relationshipKinds": [],
+      "canvas": ["EventEnvelope"],
+      "layoutHint": "CONTAINER",
+      "elementType": "EventType"
+    },
+    {
+      "palette": ["RetryPolicy", "ErrorHandler"],
+      "relationshipKinds": [],
+      "canvas": ["RetryPolicy", "ErrorHandler"],
+      "layoutHint": "CONTAINER",
+      "elementType": "WorkflowStep"
+    },
+    {
+      "palette": ["RetryPolicy", "ErrorHandler"],
+      "relationshipKinds": [],
+      "canvas": ["RetryPolicy", "ErrorHandler"],
+      "layoutHint": "CONTAINER",
+      "elementType": "StartStep"
+    },
+    {
+      "palette": ["RetryPolicy", "ErrorHandler"],
+      "relationshipKinds": [],
+      "canvas": ["RetryPolicy", "ErrorHandler"],
+      "layoutHint": "CONTAINER",
+      "elementType": "SuccessEndStep"
+    },
+    {
+      "palette": ["RetryPolicy", "ErrorHandler"],
+      "relationshipKinds": [],
+      "canvas": ["RetryPolicy", "ErrorHandler"],
+      "layoutHint": "CONTAINER",
+      "elementType": "FailureEndStep"
+    },
+    {
+      "palette": ["RetryPolicy", "ErrorHandler"],
+      "relationshipKinds": [],
+      "canvas": ["RetryPolicy", "ErrorHandler"],
+      "layoutHint": "CONTAINER",
+      "elementType": "ChoiceStep"
+    },
+    {
+      "palette": ["RetryPolicy", "ErrorHandler"],
+      "relationshipKinds": [],
+      "canvas": ["RetryPolicy", "ErrorHandler"],
+      "layoutHint": "CONTAINER",
+      "elementType": "WaitStep"
+    },
+    {
+      "palette": ["RetryPolicy", "ErrorHandler"],
+      "relationshipKinds": [],
+      "canvas": ["RetryPolicy", "ErrorHandler"],
+      "layoutHint": "CONTAINER",
+      "elementType": "PassStep"
     }
   ],
   "views": [
@@ -3656,7 +3799,11 @@
         "types": ["StartStep"]
       },
       "metadata": {
-        "notation": { "tag": "START", "shape": "ellipse", "lineFields": ["orderIndex"] }
+        "notation": {
+          "tag": "START",
+          "shape": "ellipse",
+          "lineFields": ["orderIndex"]
+        }
       }
     },
     {
@@ -3664,7 +3811,11 @@
         "types": ["SuccessEndStep", "FailureEndStep"]
       },
       "metadata": {
-        "notation": { "tag": "END", "shape": "double-ellipse", "lineFields": ["orderIndex"] }
+        "notation": {
+          "tag": "END",
+          "shape": "double-ellipse",
+          "lineFields": ["orderIndex"]
+        }
       }
     },
     {

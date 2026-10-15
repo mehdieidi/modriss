@@ -1,4 +1,4 @@
-# AWS resources, SAM stacks, and CloudFormation support
+# PSM - Core and SAM
 
 Core classes provide the CloudFormation/SAM vocabulary shared by every AWS service resource, including logical IDs, tags, parameters, expressions, and lifecycle controls.
 

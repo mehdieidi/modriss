@@ -598,7 +598,7 @@ function ViewsEditor({ doc, selected, setSelected, mutate }: any) {
             <TypePool title="Palette" active={view.palette || []} allTypes={allTypes} onToggle={(type) => toggle("palette", type)} />
             <TypePool title="Canvas" active={view.canvas || []} allTypes={allTypes} onToggle={(type) => toggle("canvas", type)} />
           </div>
-          <ChipEditor label="Relationship kinds" values={view.relationshipKinds || []} onChange={(values) => mutate((draft: any) => (draft.views[index].relationshipKinds = values))} />
+          <RelationshipKindPicker key={view.id} doc={doc} values={view.relationshipKinds || []} onChange={(values) => mutate((draft: any) => (draft.views[index].relationshipKinds = values))} />
           <button className="danger-action" onClick={() => (window.confirm("Delete view?") ? (mutate((draft: any) => draft.views.splice(index, 1)), setSelected({ views: -1 })) : undefined)}>
             <Trash2 size={16} />
             <span>Delete view</span>
@@ -674,7 +674,7 @@ function ContainersEditor({ doc, selected, setSelected, mutate }: any) {
             ))}
             {!doc.metamodelContainmentFeatures?.[container.elementType]?.length && <small>No writable containment reference was derived for this owner.</small>}
           </div>
-          <ChipEditor label="Relationship kinds" values={container.relationshipKinds || []} onChange={(values) => mutate((draft: any) => (draft.containers[index].relationshipKinds = values))} />
+          <RelationshipKindPicker key={container.elementType} doc={doc} values={container.relationshipKinds || []} onChange={(values) => mutate((draft: any) => (draft.containers[index].relationshipKinds = values))} />
           <button className="ghost-action" onClick={() => mutate((draft: any) => (draft.containers[index].canvas = [...(draft.containers[index].palette || [])]))}>Use palette as canvas</button>
           <button className="danger-action" onClick={() => (window.confirm("Delete container profile?") ? (mutate((draft: any) => draft.containers.splice(index, 1)), setSelected({ containers: -1 })) : undefined)}>
             <Trash2 size={16} />
@@ -1112,6 +1112,50 @@ function Field({
         <input type={type} value={textValue} onChange={(event) => onChange(event.target.value)} />
       )}
     </label>
+  );
+}
+
+function RelationshipKindPicker({
+  doc,
+  values,
+  onChange,
+}: {
+  doc: CvsDocument;
+  values: string[];
+  onChange: (values: string[]) => void;
+}) {
+  const [search, setSearch] = useState("");
+  const selected = new Set(values);
+  const options = [...new Set<string>([...(doc.relationshipKinds || []), ...values])].sort();
+  const labelFor = (kind: string) => doc.relationshipKindLabels?.[kind] || kind.toLowerCase().replaceAll("_", " ");
+  const query = search.trim().toLowerCase();
+  const visible = options.filter((kind) => `${kind} ${labelFor(kind)}`.toLowerCase().includes(query));
+  return (
+    <fieldset className="relationship-kind-picker">
+      <legend>Relationship kinds</legend>
+      <p>Choose which relationships appear on this canvas. Leave all unchecked to show all kinds.</p>
+      <label className="admin-field">
+        <span>Search relationship kinds</span>
+        <input type="search" value={search} placeholder="Search by name or identifier…" onChange={(event) => setSearch(event.target.value)} />
+      </label>
+      <span className="relationship-kind-count" aria-live="polite">{selected.size} selected · {visible.length} shown</span>
+      <div className="relationship-kind-options">
+        {visible.map((kind) => (
+          <label className="relationship-kind-option" key={kind}>
+            <input
+              type="checkbox"
+              checked={selected.has(kind)}
+              onChange={(event) => onChange(event.target.checked ? [...new Set([...values, kind])] : values.filter((value) => value !== kind))}
+            />
+            <span>
+              <strong>{labelFor(kind)}</strong>
+              <small>{kind}</small>
+            </span>
+          </label>
+        ))}
+      </div>
+      {!visible.length && <span className="muted">{query ? "No matching relationship kinds." : "No relationship kinds are configured for this model level."}</span>}
+    </fieldset>
   );
 }
 

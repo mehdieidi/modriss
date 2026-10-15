@@ -1,4 +1,4 @@
-# CIM domain and data
+# CIM - Domain and data
 
 Source: `methodology/modeling-framework/metamodels/cim/cim-domain-data.emf`.
 

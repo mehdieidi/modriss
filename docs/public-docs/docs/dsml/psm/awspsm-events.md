@@ -1,4 +1,4 @@
-# Amazon EventBridge resources
+# PSM - EventBridge
 
 EventBridge classes cover buses, rules, targets, schedules, pipes, API destinations, connections, input mapping, and retry policy.
 

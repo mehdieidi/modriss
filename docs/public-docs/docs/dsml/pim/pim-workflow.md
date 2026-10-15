@@ -1,4 +1,4 @@
-# Provider-independent workflows
+# PIM - Workflows
 
 The workflow module represents durable control flow as a graph of owned steps and transitions. Step subtypes distinguish entry, successful and failed termination, executable tasks, choices, parallel branches, mapped iteration, waiting, and state-only pass operations. A transition carries its own condition, evaluator outcome, and default-path decision, so routing does not have to be inferred from list order.
 

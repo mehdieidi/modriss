@@ -1,4 +1,4 @@
-# Step Functions and Amazon States Language
+# PSM - Step Functions
 
 Workflow classes represent Step Functions state machines and their ASL documents, state types, branches, map processors, retries, catches, logging, and tracing.
 

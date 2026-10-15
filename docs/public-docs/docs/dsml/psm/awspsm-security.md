@@ -1,4 +1,4 @@
-# IAM, KMS, Secrets Manager, and SSM
+# PSM - Security
 
 These classes map security intent into IAM documents, roles, KMS keys, Secrets Manager secrets, and Systems Manager parameters.
 

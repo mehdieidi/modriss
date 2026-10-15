@@ -1,4 +1,4 @@
-# Channels, flows, and integrations
+# PIM - Integrations
 
 The integration module distinguishes communication infrastructure from the interaction it supports. `EventChannel` and its queue, topic, and event-bus specializations describe delivery guarantees, ordering, retention, encryption, producers, and consumers. `Schedule` supplies a time-based invocation source. `Subscription` and `EventRoutingRule` make filtering and target selection explicit.
 

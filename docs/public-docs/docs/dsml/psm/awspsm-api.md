@@ -1,4 +1,4 @@
-# Amazon API Gateway resources
+# PSM - API Gateway
 
 API Gateway classes refine provider-independent APIs into HTTP, REST, and WebSocket resources, routes, integrations, stages, authorizers, and usage controls.
 

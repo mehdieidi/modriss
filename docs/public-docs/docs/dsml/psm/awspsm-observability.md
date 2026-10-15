@@ -1,4 +1,4 @@
-# CloudWatch logs, metrics, alarms, and dashboards
+# PSM - Observability
 
 Observability classes turn operational intent into CloudWatch log groups, metric filters, alarms, composite alarms, dimensions, and dashboards.
 

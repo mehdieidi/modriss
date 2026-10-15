@@ -1,4 +1,4 @@
-# CIM model root
+# CIM - Model root
 
 Source: `methodology/modeling-framework/metamodels/cim/cim-root.emf`.
 

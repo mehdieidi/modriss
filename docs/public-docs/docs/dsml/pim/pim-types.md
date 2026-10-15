@@ -1,4 +1,4 @@
-# PIM enumerations
+# PIM - Enumerations
 
 Enumerations give recurring architectural decisions a stable vocabulary across editing, EVL validation, ETL transformation, and documentation. Their literals are semantic choices rather than provider product names. For example, `QUEUE` describes competing-consumer delivery without naming SQS, and `KEY_VALUE` states a storage model without selecting DynamoDB.
 

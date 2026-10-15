@@ -1,4 +1,4 @@
-# External endpoints and adapters
+# PIM - External systems
 
 An `ExternalEndpoint` names a capability outside the modeled application, including its protocol, ownership, availability expectation, data sensitivity, and authentication need. It is a description of the remote boundary, not executable integration code.
 

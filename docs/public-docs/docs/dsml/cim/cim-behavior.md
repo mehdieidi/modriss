@@ -1,4 +1,4 @@
-# CIM behavior
+# CIM - Behavior
 
 Source: `methodology/modeling-framework/metamodels/cim/cim-behavior.emf`.
 

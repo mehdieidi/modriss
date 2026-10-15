@@ -1,4 +1,4 @@
-# PIM model root
+# PIM - Model root
 
 `PIMModel` is the aggregate root of one provider-independent architecture. Its containments hold the reusable architecture objects that may be connected from several modules, including services, deployment units, schemas, event types, policies, flows, data-access records, human tasks, external endpoints, principals, secrets, traceability, and readiness evidence.
 

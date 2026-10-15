@@ -1,6 +1,6 @@
 {
   "cvsVersion": 2,
-  "displayName": "PSM",
+  "displayName": "AWS",
   "metamodelRef": {
     "level": "psm",
     "ecore": "methodology/modeling-framework/metamodels/psm/psm-combined.ecore",

@@ -1,4 +1,4 @@
-# Schemas and contracts
+# PIM - Contracts
 
 Contracts give architectural boundaries a shared account of the data they exchange. `Schema` is the reusable document definition; `SchemaField` builds its structure, including nested objects, arrays, maps, enumerations, cardinality, sensitivity, and validation. Field-level and schema-level constraints retain rules that primitive types alone cannot express.
 

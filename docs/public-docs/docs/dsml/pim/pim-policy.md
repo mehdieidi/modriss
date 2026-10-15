@@ -1,4 +1,4 @@
-# Architecture, business, resilience, and operational policies
+# PIM - Policies
 
 Policy objects turn cross-cutting expectations into attachable model elements. An `ArchitecturePolicy` states its scope and targets, while the concrete policies describe data protection, quality, compliance, resilience, timeout, idempotency, concurrency, rate limiting, batching, ordering, caching, backup, retention, cost, observability, and browser-origin access. `PolicySetting` subtypes belong inside a broader policy when they have no independent attachment boundary.
 

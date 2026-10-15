@@ -1,4 +1,4 @@
-# DynamoDB and S3 resources
+# PSM - Storage
 
 Storage classes expose the AWS details needed for DynamoDB key design and S3 governance, lifecycle, notification, replication, and encryption.
 

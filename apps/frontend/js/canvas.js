@@ -1,5 +1,6 @@
 import { MODEL_TYPES } from "./config.js";
 import { state } from "./state.js";
+import { edgeLabel as configuredEdgeLabel } from "./relationship-label.js";
 import { el } from "./dom.js";
 import { escapeHtml, genId } from "./utils.js";
 import { ensureReadableLayout } from "./layout-engine.js";
@@ -88,6 +89,7 @@ import {
   zoomCanvasBy as adapterZoomCanvasBy,
 } from "./graph-editor/renderer-adapter.js";
 import { nodeSizeForDiagram } from "./graph-editor/g6-style.js";
+import { canvasToViewportPoint as graphToViewportPoint } from "./graph-editor/g6-overlays.js";
 import { isFullColorIconSource, resolveThemeColor } from "./theme-colors.js";
 import { activateCanvasTarget } from "./issue-navigation.js";
 
@@ -194,21 +196,6 @@ function refLabel(value) {
     return value.name || value.label || value.$ref || value.id || "";
   }
   return "";
-}
-
-function configuredEdgeLabel(edge) {
-  if (edge.label) {
-    return edge.label;
-  }
-  const key = String(edge.kind || "").toUpperCase();
-  try {
-    return edge.bundle
-      ? edge.label || "Bundled relations"
-      : modelingRelationshipKindLabel(state.activeType, key) ||
-          key.toLowerCase().replaceAll("_", " ");
-  } catch {
-    return edge.bundle ? edge.label || "Bundled relations" : key.toLowerCase().replaceAll("_", " ");
-  }
 }
 
 function elementAttributePanelIsActive() {
@@ -1206,6 +1193,10 @@ function ensureCanvas() {
       connectionTargetState: g6ConnectionTargetState,
       connectionTargetTypes: g6ConnectionTargetTypes,
       onOpenContainer: openG6ContainerTool,
+      onViewportSynced: () => {
+        syncEdgeKindPicker();
+        syncContainerTargetPicker();
+      },
       onViewportChange: () => {
         updateZoomControlLabel();
         onCanvasViewportChanged();
@@ -2230,6 +2221,9 @@ function setEdgeKindMenuOpen(open) {
   el.edgeKindMenu?.classList.toggle("hidden", !open);
   el.edgeKindTrigger?.setAttribute("aria-expanded", open ? "true" : "false");
   el.edgeKindPicker?.classList.toggle("is-menu-open", open);
+  if (open) {
+    positionEdgeKindMenu();
+  }
 }
 
 function updateEdgeKindTriggerLabel(activeKind, options) {
@@ -2243,10 +2237,7 @@ function updateEdgeKindTriggerLabel(activeKind, options) {
 }
 
 function canvasToViewportPoint(x, y) {
-  return {
-    x: x * state.viewport.scale + state.viewport.x,
-    y: y * state.viewport.scale + state.viewport.y,
-  };
+  return graphToViewportPoint(getCanvasEditor()?.graph, x, y);
 }
 
 function setHoveredEdge(edgeId) {
@@ -2266,11 +2257,13 @@ function closeEdgeKindPicker() {
   state.edgeKindPicker.drawnFromId = null;
   state.edgeKindPicker.drawnToId = null;
   state.edgeKindPicker.options = [];
+  state.edgeKindPicker.anchor = null;
   if (el.edgeKindPicker) {
     el.edgeKindPicker.classList.add("hidden");
     el.edgeKindPicker.classList.remove("is-menu-open");
     el.edgeKindPicker.style.removeProperty("left");
     el.edgeKindPicker.style.removeProperty("top");
+    el.edgeKindPicker.style.removeProperty("transform");
   }
   setEdgeKindMenuOpen(false);
   if (el.edgeKindMenu) {
@@ -2374,12 +2367,60 @@ function positionEdgeKindPicker(pos) {
   const margin = 8;
   const viewportWidth = viewportRect?.width || window.innerWidth;
   const viewportHeight = viewportRect?.height || window.innerHeight;
-  const width = el.edgeKindPicker.offsetWidth || 200;
-  const height = el.edgeKindPicker.offsetHeight || 56;
-  const x = Math.min(Math.max(pos.x - width / 2, margin), viewportWidth - width - margin);
-  const y = Math.min(Math.max(pos.y - height / 2, margin), viewportHeight - height - margin);
-  el.edgeKindPicker.style.left = `${Math.round(x)}px`;
-  el.edgeKindPicker.style.top = `${Math.round(y)}px`;
+  const scale = canvasPickerScale();
+  el.edgeKindPicker.style.maxWidth = `${Math.max(0, viewportWidth - margin * 2) / scale}px`;
+  const width = (el.edgeKindPicker.offsetWidth || 200) * scale;
+  const height = (el.edgeKindPicker.offsetHeight || 56) * scale;
+  const x =
+    (viewportRect?.left || 0) +
+    Math.max(margin, Math.min(pos.x - width / 2, viewportWidth - width - margin));
+  const y =
+    (viewportRect?.top || 0) +
+    Math.max(margin, Math.min(pos.y - height / 2, viewportHeight - height - margin));
+  // Keep the initial placement in graph coordinates so it follows the same camera as nodes.
+  state.edgeKindPicker.anchor = toGraphCoordinates(x, y);
+  syncEdgeKindPicker();
+}
+
+function canvasPickerScale() {
+  return getCanvasEditor()?.graph?.getZoom?.() || state.viewport.scale || 1;
+}
+
+function syncCanvasPickerTransform(picker, anchor) {
+  const pos = canvasToViewportPoint(anchor.x, anchor.y);
+  const viewportRect = el.canvasViewport?.getBoundingClientRect();
+  picker.style.left = `${(viewportRect?.left || 0) + pos.x}px`;
+  picker.style.top = `${(viewportRect?.top || 0) + pos.y}px`;
+  picker.style.transform = `scale(${canvasPickerScale()})`;
+}
+
+function syncEdgeKindPicker() {
+  const picker = state.edgeKindPicker;
+  if (!picker.open || !picker.anchor || !el.edgeKindPicker) {
+    return;
+  }
+  syncCanvasPickerTransform(el.edgeKindPicker, picker.anchor);
+  if (picker.menuOpen) {
+    positionEdgeKindMenu();
+  }
+}
+
+function positionEdgeKindMenu() {
+  const pickerRect = el.edgeKindPicker?.getBoundingClientRect();
+  if (!pickerRect || !el.edgeKindMenu) {
+    return;
+  }
+  const viewportRect = el.canvasViewport?.getBoundingClientRect();
+  const scale = canvasPickerScale();
+  const gap = 6 * scale;
+  const margin = 8;
+  const below = (viewportRect?.bottom || window.innerHeight) - pickerRect.bottom - gap - margin;
+  const above = pickerRect.top - (viewportRect?.top || 0) - gap - margin;
+  const desiredHeight = Math.min(200, el.edgeKindMenu.scrollHeight) * scale;
+  const opensAbove = below < desiredHeight && above > below;
+  el.edgeKindPicker.classList.toggle("is-menu-above", opensAbove);
+  const availableHeight = opensAbove ? above : below;
+  el.edgeKindMenu.style.maxHeight = `${Math.max(0, Math.min(200, availableHeight / scale))}px`;
 }
 
 function ensureEdgeKindPickerBindings() {
@@ -2393,16 +2434,17 @@ function ensureEdgeKindPickerBindings() {
     }
     event.stopPropagation();
     setEdgeKindMenuOpen(!state.edgeKindPicker.menuOpen);
-    if (state.edgeKindPicker.menuOpen) {
-      requestAnimationFrame(() => {
-        if (!state.edgeKindPicker.open) {
-          return;
-        }
-        const pos = canvasToViewportPoint(state.edgeKindPicker.x, state.edgeKindPicker.y);
-        positionEdgeKindPicker(pos);
-      });
-    }
   });
+  el.edgeKindPicker.addEventListener(
+    "wheel",
+    (event) => {
+      event.stopPropagation();
+      if (event.ctrlKey || event.metaKey) {
+        event.preventDefault();
+      }
+    },
+    { passive: false },
+  );
   el.edgeKindMenu.addEventListener("click", (event) => {
     const target = event.target instanceof Element ? event.target : null;
     const option = target?.closest("[data-edge-kind]");
@@ -2477,9 +2519,6 @@ function openEdgeKindPicker(edgeId, options, canvasX, canvasY, { drawnFromId, dr
   state.edgeKindPicker.drawnFromId = drawnFromId || edge.sourceId;
   state.edgeKindPicker.drawnToId = drawnToId || edge.targetId;
   state.edgeKindPicker.options = [...options];
-  state.edgeKindPicker.x = canvasX;
-  state.edgeKindPicker.y = canvasY;
-
   renderEdgeKindMenu(options, edge.kind);
   setEdgeKindMenuOpen(false);
   const pos = canvasToViewportPoint(canvasX, canvasY);
@@ -3301,12 +3340,27 @@ function buildContainerTargetChoices(source, container) {
   return [...(direct.kinds.length ? [direct] : []), ...contained];
 }
 
+let containerTargetPicker = null;
+
 function closeContainerTargetPicker() {
-  const picker = document.querySelector(".container-target-picker");
-  picker?.remove();
+  if (!containerTargetPicker) {
+    return;
+  }
+  containerTargetPicker.element.remove();
+  document.removeEventListener("mousedown", containerTargetPicker.outsideClick);
+  containerTargetPicker = null;
+}
+
+function syncContainerTargetPicker() {
+  if (containerTargetPicker?.anchor && containerTargetPicker.element.isConnected) {
+    syncCanvasPickerTransform(containerTargetPicker.element, containerTargetPicker.anchor);
+  }
 }
 
 function positionFloatingPicker(picker, source, container) {
+  if (containerTargetPicker?.element !== picker || !picker.isConnected) {
+    return;
+  }
   const nodeW = getNodeWidth();
   const nodeH = getNodeHeight();
   const midX = (source.x + nodeW / 2 + container.x + nodeW / 2) / 2;
@@ -3316,14 +3370,19 @@ function positionFloatingPicker(picker, source, container) {
   const margin = 10;
   const viewportWidth = viewportRect?.width || window.innerWidth;
   const viewportHeight = viewportRect?.height || window.innerHeight;
-  const width = picker.offsetWidth || 280;
-  const height = picker.offsetHeight || 220;
-  picker.style.left = `${Math.round(
-    Math.min(Math.max(viewportPoint.x - width / 2, margin), viewportWidth - width - margin),
-  )}px`;
-  picker.style.top = `${Math.round(
-    Math.min(Math.max(viewportPoint.y - 24, margin), viewportHeight - height - margin),
-  )}px`;
+  const scale = canvasPickerScale();
+  picker.style.maxWidth = `${Math.max(0, viewportWidth - margin * 2) / scale}px`;
+  picker.style.maxHeight = `${Math.max(0, Math.min(340, (viewportHeight - margin * 2) / scale))}px`;
+  const width = (picker.offsetWidth || 300) * scale;
+  const height = (picker.offsetHeight || 220) * scale;
+  const x =
+    (viewportRect?.left || 0) +
+    Math.max(margin, Math.min(viewportPoint.x - width / 2, viewportWidth - width - margin));
+  const y =
+    (viewportRect?.top || 0) +
+    Math.max(margin, Math.min(viewportPoint.y - 24 * scale, viewportHeight - height - margin));
+  containerTargetPicker.anchor = toGraphCoordinates(x, y);
+  syncContainerTargetPicker();
 }
 
 function renderContainerTargetPicker(source, container, choices, preferredKind) {
@@ -3365,8 +3424,13 @@ function renderContainerTargetPicker(source, container, choices, preferredKind) 
           : ""
       }
     </div>`;
-  el.canvasViewport?.appendChild(picker);
-  requestAnimationFrame(() => positionFloatingPicker(picker, source, container));
+  containerTargetPicker = { element: picker, anchor: null, outsideClick: null };
+  picker.style.visibility = "hidden";
+  document.body.appendChild(picker);
+  requestAnimationFrame(() => {
+    positionFloatingPicker(picker, source, container);
+    picker.style.removeProperty("visibility");
+  });
 
   const close = () => closeContainerTargetPicker();
   picker.querySelector(".container-target-picker-close")?.addEventListener("click", close);
@@ -3395,9 +3459,13 @@ function renderContainerTargetPicker(source, container, choices, preferredKind) 
       return;
     }
     closeContainerTargetPicker();
-    document.removeEventListener("mousedown", outsideClick);
   };
-  setTimeout(() => document.addEventListener("mousedown", outsideClick), 0);
+  containerTargetPicker.outsideClick = outsideClick;
+  setTimeout(() => {
+    if (containerTargetPicker?.element === picker) {
+      document.addEventListener("mousedown", outsideClick);
+    }
+  }, 0);
 }
 
 function maybeOpenContainerTargetPicker(source, target, preferredKind) {

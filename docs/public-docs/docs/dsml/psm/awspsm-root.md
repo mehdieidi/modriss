@@ -1,4 +1,4 @@
-# PSM model root
+# PSM - Model root
 
 The PSM root is the deployment-oriented container. It owns stages, SAM stacks, AWS policies, documents, and the derived resource index.
 

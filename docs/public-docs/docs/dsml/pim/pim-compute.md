@@ -1,4 +1,4 @@
-# Provider-independent compute
+# PIM - Compute
 
 Compute elements describe executable responsibility without selecting a provider runtime. A `Function` states what work occurs, how it is invoked, its workload characteristics, and whether it reads state, writes state, publishes events, or crosses a network boundary. Its relationships then name the actual stores, event types, adapters, contracts, secrets, and policies involved.
 

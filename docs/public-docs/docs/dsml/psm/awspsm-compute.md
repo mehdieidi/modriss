@@ -1,4 +1,4 @@
-# AWS Lambda resources
+# PSM - Lambda compute
 
 Lambda classes describe code packaging, runtime, environment, event sources, permissions, destinations, layers, URLs, tracing, and operational safeguards.
 

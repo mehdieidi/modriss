@@ -1,4 +1,4 @@
-# Configuration, secrets, and credentials
+# PIM - Configuration
 
 This module separates ordinary configuration from confidential material and from the credentials needed to reach another system. A `ConfigurationSet` groups parameters for a defined scope and set of environments. `EnvironmentVariable` binds a runtime name either to a configuration parameter or to a secret, allowing application code to depend on a stable name while deployment supplies the value.
 

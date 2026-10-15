@@ -745,7 +745,8 @@
 }
 
 .edge-kind-picker {
-  position: absolute;
+  position: fixed;
+  transform-origin: top left;
   z-index: 140;
   border: 1px solid color-mix(in srgb, var(--border) 80%, transparent);
   border-radius: 7px;
@@ -823,16 +824,26 @@
 }
 
 .edge-kind-picker-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: -1px;
+  right: -1px;
   display: grid;
   gap: 2px;
   max-height: min(200px, calc(100vh - 160px));
   overflow: auto;
-  margin-top: 2px;
+  overscroll-behavior: contain;
+  touch-action: pan-y;
   padding: 3px;
   border: 1px solid color-mix(in srgb, var(--border) 72%, transparent);
   border-radius: 6px;
   background: color-mix(in srgb, var(--surface) 96%, var(--surface-3) 4%);
   box-shadow: 0 6px 16px rgba(0, 0, 0, 0.18);
+}
+
+.edge-kind-picker.is-menu-above .edge-kind-picker-menu {
+  top: auto;
+  bottom: calc(100% + 6px);
 }
 
 .edge-kind-picker-menu.hidden {
@@ -894,7 +905,8 @@
 }
 
 .container-target-picker {
-  position: absolute;
+  position: fixed;
+  transform-origin: top left;
   z-index: 145;
   width: min(300px, calc(100vw - 32px));
   max-height: min(340px, calc(100vh - 120px));
@@ -948,6 +960,8 @@
   min-height: 0;
   padding: 6px;
   overflow: auto;
+  overscroll-behavior: contain;
+  touch-action: pan-y;
 }
 
 .container-target-group-label {

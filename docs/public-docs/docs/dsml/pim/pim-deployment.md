@@ -1,4 +1,4 @@
-# Services, deployment units, and platform mapping
+# PIM - Deployment
 
 Deployment concepts answer three distinct ownership questions. `ServerlessService` groups architecture by responsibility, `ServiceElementMembership` records how a deployable element participates in that service, and `DeploymentUnit` defines what is released together. Keeping these concepts separate allows a shared resource to support several services without pretending that it has several containment owners.
 

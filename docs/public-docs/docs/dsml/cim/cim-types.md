@@ -1,4 +1,4 @@
-# CIM enumerations
+# CIM - Enumerations
 
 Source: `methodology/modeling-framework/metamodels/cim/cim-types.emf`.
 

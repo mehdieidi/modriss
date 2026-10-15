@@ -1,4 +1,4 @@
-# Cross-resource integration views
+# PSM - Integration views
 
 Integration views are explicit wiring records used to inspect and validate how AWS resources connect across service boundaries.
 

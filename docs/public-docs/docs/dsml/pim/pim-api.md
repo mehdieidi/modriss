@@ -1,4 +1,4 @@
-# Provider-independent APIs
+# PIM - APIs
 
 The API module describes a callable boundary without assuming how a cloud provider will expose it. `Api` supplies the public identity and shared policy context. Its contained `ApiRoute` objects define individual operations, and each route selects exactly one function or workflow integration. Request, response, and error schemas connect the API surface to the contract module.
 

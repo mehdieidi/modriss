@@ -1,4 +1,4 @@
-# SQS and SNS resources
+# PSM - Messaging
 
 Messaging classes configure SQS queues, redrive behavior, queue policies, SNS topics, subscriptions, filters, and topic policies.
 

@@ -1,4 +1,4 @@
-# CIM governance
+# CIM - Governance
 
 Source: `methodology/modeling-framework/metamodels/cim/cim-governance.emf`.
 

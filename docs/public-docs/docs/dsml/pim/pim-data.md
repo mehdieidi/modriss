@@ -1,4 +1,4 @@
-# Stores, data models, and access patterns
+# PIM - Data
 
 The data module separates the reason for persistence from a provider product. `DataStore` characterizes structured storage and owns the models and candidate indexes associated with it. `ObjectStore` covers key-addressed binary or document objects and their notification rules. Their common `StorageElement` base carries persistence, encryption, sensitivity, retention, backup, and service-ownership concerns.
 

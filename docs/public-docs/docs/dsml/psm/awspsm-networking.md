@@ -1,4 +1,4 @@
-# VPC networking and security groups
+# PSM - Networking
 
 Networking classes make VPC attachment, subnet placement, endpoints, security groups, and ingress/egress decisions explicit.
 

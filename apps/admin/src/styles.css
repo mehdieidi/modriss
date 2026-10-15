@@ -1371,6 +1371,89 @@ form textarea {
   margin-bottom: 14px;
 }
 
+.relationship-kind-picker {
+  min-width: 0;
+  margin: 0 0 14px;
+  padding: 12px;
+  border: 1px solid #d7ded7;
+  border-radius: 7px;
+}
+
+.relationship-kind-picker legend {
+  padding: 0 4px;
+  color: #26352f;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.relationship-kind-picker p,
+.relationship-kind-count {
+  color: #526159;
+  font-size: 12px;
+}
+
+.relationship-kind-picker p {
+  margin: 0 0 12px;
+}
+
+.relationship-kind-count {
+  display: block;
+  margin-bottom: 8px;
+}
+
+.relationship-kind-options {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(220px, 100%), 1fr));
+  gap: 6px;
+  max-height: 260px;
+  overflow: auto;
+  padding: 2px;
+}
+
+.relationship-kind-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  padding: 8px;
+  border: 1px solid #dce2dc;
+  border-radius: 7px;
+  background: #f6f8f5;
+  cursor: pointer;
+}
+
+.relationship-kind-option:has(input:checked) {
+  border-color: #0d6f54;
+  background: #e2f1eb;
+}
+
+.relationship-kind-option:focus-within {
+  outline: 2px solid #0d6f54;
+  outline-offset: 1px;
+}
+
+.relationship-kind-option input {
+  flex: 0 0 auto;
+  accent-color: #0d6f54;
+}
+
+.relationship-kind-option span {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.relationship-kind-option strong {
+  color: #184c3c;
+  font-size: 12px;
+}
+
+.relationship-kind-option small {
+  color: #526159;
+  font-size: 10px;
+}
+
 .choice-chips > span {
   color: #26352f;
   font-size: 12px;

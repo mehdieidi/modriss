@@ -1,6 +1,6 @@
 {
   "cvsVersion": 2,
-  "displayName": "CIM",
+  "displayName": "Business",
   "metamodelRef": {
     "level": "cim",
     "ecore": "methodology/modeling-framework/metamodels/cim/cim-combined.ecore",
@@ -1892,7 +1892,7 @@
     },
     {
       "id": "strategy-goals",
-      "displayName": "Goals and Requirements",
+      "displayName": "Requirements",
       "viewType": "REQUIREMENTS_GOALS",
       "palette": [
         "Requirement",
@@ -1946,7 +1946,8 @@
         "OWNS_PROCESSES",
         "CONSTRAINED_BY",
         "REALIZES_REQUIREMENTS",
-        "MEMBER"
+        "MEMBER",
+        "REFINED_BY"
       ],
       "layoutHint": "CONTAINER",
       "canvas": ["BusinessCapability", "BoundedContextCandidate", "Actor", "BusinessGoal"]

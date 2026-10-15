@@ -145,8 +145,7 @@ export const state = {
     edgeId: null,
     drawnFromId: null,
     drawnToId: null,
-    x: 0,
-    y: 0,
+    anchor: null,
     options: [],
   },
   undo: {

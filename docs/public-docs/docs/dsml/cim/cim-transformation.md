@@ -1,4 +1,4 @@
-# CIM transformation metadata
+# CIM - Transformation metadata
 
 Source: `methodology/modeling-framework/metamodels/cim/cim-transformation.emf`.
 
