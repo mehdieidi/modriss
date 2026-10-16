@@ -56,6 +56,12 @@ function safeArray(value) {
   return Array.isArray(value) ? value : [];
 }
 
+const BASE_DATE = "1970-01-01";
+
+function readDateAttributeValue(value, required = false) {
+  return String(value ?? "").trim() || (required ? BASE_DATE : null);
+}
+
 /** Reads a multi-valued scalar attribute without collapsing it to a string. */
 function readManyAttributeValue(input) {
   const raw = input.value || "";
@@ -1617,6 +1623,13 @@ function containedCellMarkup(child, fieldName) {
                    data-contained-field="${escapeAttr(fieldName)}"
                    type="checkbox" ${value ? "checked" : ""}>`;
   }
+  if (field.fieldType === "date") {
+    const date = readDateAttributeValue(value, field.required);
+    return `<input class="attr-contained-input"
+                   data-contained-edit="${escapeAttr(child.id)}"
+                   data-contained-field="${escapeAttr(fieldName)}"
+                   type="date" value="${escapeAttr(date?.slice(0, 10) ?? "")}">`;
+  }
   const inputType = field.fieldType === "number" || typeof value === "number" ? "number" : "text";
   return `<input class="attr-contained-input"
                  data-contained-edit="${escapeAttr(child.id)}"
@@ -1756,6 +1769,8 @@ function updateContainedChildField(childId, fieldName, rawValue, inputType) {
     value = Boolean(rawValue);
   } else if (definition?.fieldType === "number") {
     value = Number(rawValue);
+  } else if (definition?.fieldType === "date") {
+    value = readDateAttributeValue(rawValue, definition.required);
   }
   child[fieldName] = value;
   if (node?.meta) {
@@ -2216,7 +2231,7 @@ function buildAttrField(key, value, field) {
   } else if (fieldType === "date") {
     input = document.createElement("input");
     input.type = "date";
-    input.value = String(value ?? "").slice(0, 10);
+    input.value = readDateAttributeValue(value, field?.required)?.slice(0, 10) ?? "";
   } else if (fieldType === "textarea") {
     input = document.createElement("textarea");
     input.textContent = String(value ?? "");
@@ -2410,28 +2425,7 @@ export function applyAttributePanel() {
   try {
     el.attrPanelBody.querySelectorAll("[data-attr-key]").forEach((input) => {
       const key = input.dataset.attrKey;
-      const attrType = input.dataset.attrType;
-      let value;
-
-      if (attrType === "boolean") {
-        value = input.checked;
-      } else if (attrType === "number") {
-        value = Number(input.value);
-      } else if (attrType === "reference") {
-        if (input.dataset.attrMany === "true") {
-          value = [...input.selectedOptions].map((option) => option.value).filter(Boolean);
-        } else {
-          value = input.value || null;
-        }
-      } else if (input.dataset.attrMany === "true") {
-        value = readManyAttributeValue(input);
-      } else if (attrType === "json") {
-        value = JSON.parse(input.value || "null");
-      } else if (input.tagName === "TEXTAREA") {
-        value = input.value;
-      } else {
-        value = input.value;
-      }
+      const value = readInputValue(input);
 
       if (key === labelKey || key === "label" || key === "name") {
         node.label = String(value) || node.label;
@@ -2513,6 +2507,9 @@ function readInputValue(input) {
   }
   if (input.dataset.attrMany === "true") {
     return readManyAttributeValue(input);
+  }
+  if (attrType === "date") {
+    return readDateAttributeValue(input.value, input.required);
   }
   if (attrType === "json") {
     return JSON.parse(input.value || "null");
