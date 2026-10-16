@@ -3039,6 +3039,16 @@ function queuePaletteDrop(type, clientX, clientY) {
   const pos = toCanvasCoordinates(clientX, clientY);
   const node = getDefaultNode(state.activeType, type, Math.round(pos.x), Math.round(pos.y));
   requestAnimationFrame(() => {
+    const focus = activeContainerFocus();
+    const owner = focus && state.graph.elementsById.get(focus.elementId);
+    const availableSlot =
+      focus &&
+      owner &&
+      modelingContainmentEntryForChildType(state.activeType, focus.elementType, type, owner);
+    if (focus && !availableSlot) {
+      setStatus(`No available containment slot for ${type} in ${focus.label || focus.elementType}`);
+      return;
+    }
     pushDiagramUndoSnapshot(captureAddElementUndoSnapshot(node.id));
     assignNodeToSemanticContainer(node);
     addNodeToGraphAndActiveView(node);
@@ -3168,6 +3178,7 @@ function assignNodeToFocusedContainer(node) {
     state.activeType,
     focus.elementType,
     node.type,
+    owner,
   );
   if (!containmentEntry?.feature) {
     return false;
@@ -3196,10 +3207,12 @@ function tryAssignNodeToContainerOwner(node, owner) {
   if (!owner) {
     return false;
   }
-  const containment = modelingContainmentsForType(
+  const containment = modelingContainmentEntryForChildType(
     state.activeType,
     owner.eClass || owner.type,
-  ).find((entry) => !entry.relationshipOnly && containmentAcceptsType(entry, node.type));
+    node.type,
+    owner,
+  );
   if (!containment || (containment.many === false && owner[containment.feature])) {
     return false;
   }
@@ -3260,8 +3273,8 @@ function assignEntryTypeViewOwner(node) {
 }
 
 function assignNodeToSemanticContainer(node) {
-  if (assignNodeToFocusedContainer(node)) {
-    return true;
+  if (activeContainerFocus()) {
+    return assignNodeToFocusedContainer(node);
   }
   if (assignEntryTypeViewOwner(node)) {
     return true;

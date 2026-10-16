@@ -2796,8 +2796,8 @@
     },
     {
       "elementType": "SchemaField",
-      "palette": ["SchemaEnumLiteral", "SchemaValidationConstraint", "SchemaField"],
-      "canvas": ["SchemaEnumLiteral", "SchemaValidationConstraint", "SchemaField"],
+      "palette": ["SchemaEnumLiteral", "SchemaValidationConstraint", "SchemaField", "Cardinality"],
+      "canvas": ["SchemaEnumLiteral", "SchemaValidationConstraint", "SchemaField", "Cardinality"],
       "relationshipKinds": [],
       "layoutHint": "TABLE"
     },
@@ -2852,8 +2852,8 @@
     },
     {
       "elementType": "ParallelStep",
-      "palette": ["ParallelBranch"],
-      "canvas": ["ParallelBranch"],
+      "palette": ["ParallelBranch", "RetryPolicy"],
+      "canvas": ["ParallelBranch", "RetryPolicy"],
       "relationshipKinds": [],
       "layoutHint": "CONTAINER"
     },
@@ -3063,16 +3063,16 @@
       "elementType": "FailureEndStep"
     },
     {
-      "palette": ["RetryPolicy", "ErrorHandler"],
+      "palette": ["RetryPolicy", "ErrorHandler", "Expression"],
       "relationshipKinds": [],
-      "canvas": ["RetryPolicy", "ErrorHandler"],
+      "canvas": ["RetryPolicy", "ErrorHandler", "Expression"],
       "layoutHint": "CONTAINER",
       "elementType": "ChoiceStep"
     },
     {
-      "palette": ["RetryPolicy", "ErrorHandler"],
+      "palette": ["RetryPolicy", "ErrorHandler", "Expression"],
       "relationshipKinds": [],
-      "canvas": ["RetryPolicy", "ErrorHandler"],
+      "canvas": ["RetryPolicy", "ErrorHandler", "Expression"],
       "layoutHint": "CONTAINER",
       "elementType": "WaitStep"
     },
@@ -3645,7 +3645,7 @@
           "light": "#475569",
           "dark": "#94a3b8"
         },
-        "category": "Kernel / Trace",
+        "category": "Traceability & Metadata",
         "supportOnly": true,
         "creatable": false,
         "notation": {
@@ -3653,6 +3653,17 @@
           "shape": "metadata-chip",
           "lineFields": ["linkType", "reviewStatus", "sourceReference"]
         }
+      }
+    },
+    {
+      "match": {
+        "types": ["Expression", "StructuredDocument", "Multiplicity", "Cardinality", "KeyValue"]
+      },
+      "metadata": {
+        "category": "Expressions & Values",
+        "supportOnly": false,
+        "creatable": true,
+        "containedOnly": true
       }
     },
     {

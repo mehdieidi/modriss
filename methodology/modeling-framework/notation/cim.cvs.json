@@ -1620,22 +1620,22 @@
     },
     {
       "elementType": "InformationItem",
-      "palette": ["InformationItem"],
-      "canvas": ["InformationItem"],
+      "palette": ["InformationItem", "Multiplicity"],
+      "canvas": ["InformationItem", "Multiplicity"],
       "relationshipKinds": ["CONTAINS", "CLASSIFIED_AS"],
       "layoutHint": "CONTAINER"
     },
     {
       "elementType": "NonFunctionalRequirement",
-      "palette": ["QualityScenario"],
-      "canvas": ["QualityScenario"],
+      "palette": ["QualityScenario", "AcceptanceCriterion"],
+      "canvas": ["QualityScenario", "AcceptanceCriterion"],
       "relationshipKinds": ["CONTAINS", "CONSTRAINED_ELEMENTS"],
       "layoutHint": "CONTAINER"
     },
     {
       "elementType": "SecurityConstraint",
-      "palette": ["QualityScenario"],
-      "canvas": ["QualityScenario"],
+      "palette": ["QualityScenario", "AcceptanceCriterion"],
+      "canvas": ["QualityScenario", "AcceptanceCriterion"],
       "relationshipKinds": [
         "CONTAINS",
         "CONSTRAINED_ACTORS",
@@ -1647,15 +1647,15 @@
     },
     {
       "elementType": "PrivacyConstraint",
-      "palette": ["QualityScenario"],
-      "canvas": ["QualityScenario"],
+      "palette": ["QualityScenario", "AcceptanceCriterion"],
+      "canvas": ["QualityScenario", "AcceptanceCriterion"],
       "relationshipKinds": ["CONTAINS", "DATA_ITEMS", "DATA_SUBJECTS"],
       "layoutHint": "CONTAINER"
     },
     {
       "elementType": "ComplianceConstraint",
-      "palette": ["QualityScenario"],
-      "canvas": ["QualityScenario"],
+      "palette": ["QualityScenario", "AcceptanceCriterion"],
+      "canvas": ["QualityScenario", "AcceptanceCriterion"],
       "relationshipKinds": ["CONTAINS", "SCOPED_ELEMENTS"],
       "layoutHint": "CONTAINER"
     },
@@ -1714,36 +1714,36 @@
     },
     {
       "elementType": "Policy",
-      "palette": [],
-      "canvas": [],
+      "palette": ["Expression"],
+      "canvas": ["Expression"],
       "relationshipKinds": [],
       "layoutHint": "DETAIL"
     },
     {
       "elementType": "Condition",
-      "palette": [],
-      "canvas": [],
+      "palette": ["Expression"],
+      "canvas": ["Expression"],
       "relationshipKinds": [],
       "layoutHint": "DETAIL"
     },
     {
       "elementType": "BusinessInvariant",
-      "palette": [],
-      "canvas": [],
+      "palette": ["Expression"],
+      "canvas": ["Expression"],
       "relationshipKinds": [],
       "layoutHint": "DETAIL"
     },
     {
       "elementType": "TemporalConstraint",
-      "palette": [],
-      "canvas": [],
+      "palette": ["Expression"],
+      "canvas": ["Expression"],
       "relationshipKinds": [],
       "layoutHint": "DETAIL"
     },
     {
       "elementType": "WaitStep",
-      "palette": [],
-      "canvas": [],
+      "palette": ["Expression"],
+      "canvas": ["Expression"],
       "relationshipKinds": [],
       "layoutHint": "DETAIL"
     },
@@ -2303,9 +2303,20 @@
           "light": "#475569",
           "dark": "#94a3b8"
         },
-        "category": "Kernel / Trace",
+        "category": "Traceability & Metadata",
         "supportOnly": true,
         "creatable": false
+      }
+    },
+    {
+      "match": {
+        "types": ["Expression", "StructuredDocument", "Multiplicity", "Cardinality", "KeyValue"]
+      },
+      "metadata": {
+        "category": "Expressions & Values",
+        "supportOnly": false,
+        "creatable": true,
+        "containedOnly": true
       }
     },
     {

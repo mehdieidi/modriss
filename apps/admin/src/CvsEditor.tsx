@@ -18,11 +18,13 @@ import {
 } from "lucide-react";
 import { ChangeEvent, ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import { api } from "./api";
+import { PaletteGroup, paletteGroups, renamePaletteGroup } from "./cvs-palette-groups";
 
 type CvsDocument = Record<string, any>;
 type EditorSection =
   | "overview"
   | "elements"
+  | "palette-groups"
   | "views"
   | "containers"
   | "canvas"
@@ -101,6 +103,7 @@ const markers = ["", "arrow", "triangle-hollow", "triangle-filled", "diamond-fil
 const sections: Array<{ id: EditorSection; label: string; icon: ReactNode }> = [
   { id: "overview", label: "Overview", icon: <Eye size={16} /> },
   { id: "elements", label: "Elements", icon: <Boxes size={16} /> },
+  { id: "palette-groups", label: "Palette Groups", icon: <Palette size={16} /> },
   { id: "views", label: "Views", icon: <Grid3X3 size={16} /> },
   { id: "containers", label: "Containers", icon: <SquareStack size={16} /> },
   { id: "canvas", label: "Canvas", icon: <SlidersHorizontal size={16} /> },
@@ -336,6 +339,8 @@ function EditorSectionView(props: {
   switch (props.section) {
     case "elements":
       return <ElementsEditor {...props} />;
+    case "palette-groups":
+      return <PaletteGroupsEditor {...props} />;
     case "views":
       return <ViewsEditor {...props} />;
     case "containers":
@@ -413,6 +418,66 @@ function OverviewEditor({ doc, mutate, setSection }: any) {
         </section>
       </div>
     </>
+  );
+}
+
+function PaletteGroupsEditor({ doc, mutate, filter, setFilter }: any) {
+  const [query, setQuery] = useState("");
+  const groups = paletteGroups(doc).filter((group) =>
+    [group.name, ...group.elementTypes, ...group.sharedRules].join(" ").toLowerCase().includes(query.trim().toLowerCase()),
+  );
+  return (
+    <>
+      <SectionHead
+        title="Palette Groups"
+        description="Rename palette groups for this level. Assign individual elements in Elements → Palette group. Save changes with Activate & backup."
+      />
+      <div className="cvs-filterbar">
+        <input aria-label="Search palette groups" placeholder="Search groups, elements, or shared rules" value={query} onChange={(event) => setQuery(event.target.value)} />
+      </div>
+      <div className="palette-group-grid">
+        {groups.map((group) => (
+          <PaletteGroupCard key={group.name} group={group} onRename={(name) => {
+            mutate((draft: CvsDocument) => renamePaletteGroup(draft, group.name, name));
+            if (filter.category === group.name) setFilter({ ...filter, category: name });
+            setQuery("");
+          }} />
+        ))}
+        {!groups.length && <div className="panel empty-inline">No palette groups match.</div>}
+      </div>
+    </>
+  );
+}
+
+function PaletteGroupCard({ group, onRename }: { group: PaletteGroup; onRename: (name: string) => void }) {
+  const [name, setName] = useState(group.name);
+  return (
+    <section className="panel palette-group-card">
+      <h3>{group.name}</h3>
+      <p className="muted">
+        {[
+          group.isDefault ? "Default group" : "",
+          group.elementTypes.length ? `${group.elementTypes.length} element setting${group.elementTypes.length === 1 ? "" : "s"}` : "",
+          group.sharedRules.length ? `${group.sharedRules.length} shared rule${group.sharedRules.length === 1 ? "" : "s"}` : "",
+        ].filter(Boolean).join(" · ")}
+      </p>
+      <form onSubmit={(event) => {
+        event.preventDefault();
+        if (name.trim() && name.trim() !== group.name) onRename(name.trim());
+      }}>
+        <Field label="Group name" value={name} onChange={setName} />
+        <button className="ghost-action" type="submit" disabled={!name.trim() || name.trim() === group.name}>
+          <Save size={16} />
+          <span>Rename group</span>
+        </button>
+      </form>
+      <details>
+        <summary>Where this name is used</summary>
+        {group.isDefault && <p>Elements without a group override use this default.</p>}
+        {group.elementTypes.length > 0 && <p>{group.elementTypes.join(", ")}</p>}
+        {group.sharedRules.map((rule, index) => <p key={index}>{rule}</p>)}
+      </details>
+    </section>
   );
 }
 
@@ -498,7 +563,7 @@ function ElementsEditor({ doc, selected, setSelected, filter, setFilter, mutate 
               <NodePreview visual={visual} selected />
               <Field label="Type name" value={element.type} onChange={(value) => updateElement((item) => (item.type = value))} />
               <Field label="Label" value={element.label || element.displayName} onChange={(value) => updateElement((item) => ((item.label = value), (item.displayName = value)))} />
-              <Field label="Category" value={element.category} onChange={(value) => updateElement((item) => (item.category = value))} />
+              <Field label="Palette group" value={element.category} onChange={(value) => updateElement((item) => (item.category = value))} />
               <SelectField label="Visual role" value={element.visualRole || "node"} options={visualRoles} onChange={(value) => updateElement((item) => (item.visualRole = value))} />
               <ThemeColorFields value={element.color || visual.color} onChange={(value) => updateElement((item) => (item.color = value))} />
               <CheckField label="Contained only" checked={element.containedOnly} onChange={(value) => updateElement((item) => (item.containedOnly = value))} />
@@ -1042,7 +1107,7 @@ function AdvancedEditor({ doc, mutate, onError }: any) {
           <h2>Element visual defaults</h2>
           <Field label="Icon" value={defaults.icon} onChange={(value) => mutate((draft: any) => ((draft.elementVisualDefaults ??= {}), (draft.elementVisualDefaults.icon = value)))} />
           <ThemeColorFields value={defaults.color} onChange={(value) => mutate((draft: any) => ((draft.elementVisualDefaults ??= {}), (draft.elementVisualDefaults.color = value)))} />
-          <Field label="Category" value={defaults.category} onChange={(value) => mutate((draft: any) => ((draft.elementVisualDefaults ??= {}), (draft.elementVisualDefaults.category = value)))} />
+          <Field label="Default palette group" value={defaults.category} onChange={(value) => mutate((draft: any) => ((draft.elementVisualDefaults ??= {}), (draft.elementVisualDefaults.category = value)))} />
         </section>
         <section className="panel cvs-wide">
           <h2>Raw document JSON</h2>

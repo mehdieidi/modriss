@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -82,6 +83,81 @@ class ContainedPaletteAuditTest {
         }
       }
     }
+  }
+
+  @Test
+  void mutableContainmentsExposeCreatableChildren() {
+    List<String> missing = new ArrayList<>();
+    for (String key : List.of("cim", "pim", "psm")) {
+      Map<String, Object> modelingLevel = level(key);
+      List<Map<String, Object>> elements = listOfMaps(modelingLevel.get("elements"));
+      Map<String, Object> palettes = map(modelingLevel.get("containmentPalettes"));
+      for (Map<String, Object> owner : elements) {
+        if (Boolean.TRUE.equals(owner.get("abstract"))
+            || Boolean.TRUE.equals(owner.get("supportOnly"))
+            || Boolean.TRUE.equals(owner.get("relationshipElement"))) {
+          continue;
+        }
+        String ownerType = String.valueOf(owner.get("type"));
+        List<String> palette = stringList(map(palettes.get(ownerType)).get("types"));
+        for (Map<String, Object> reference : listOfMaps(owner.get("references"))) {
+          if (!Boolean.TRUE.equals(reference.get("containment"))
+              || Boolean.TRUE.equals(reference.get("readonly"))) {
+            continue;
+          }
+          String target = String.valueOf(reference.get("targetType"));
+          List<String> candidates = new ArrayList<>();
+          for (Map<String, Object> child : elements) {
+            String childType = String.valueOf(child.get("type"));
+            if ((target.equals(childType) || stringList(child.get("supertypes")).contains(target))
+                && Boolean.TRUE.equals(child.get("creatable"))
+                && !Boolean.TRUE.equals(child.get("abstract"))
+                && !Boolean.TRUE.equals(child.get("supportOnly"))
+                && !Boolean.TRUE.equals(child.get("relationshipElement"))) {
+              candidates.add(childType);
+            }
+          }
+          // Profiles may restrict an abstract target to its context-specific subtypes,
+          // such as HTTP routes inside HttpApi, but must still expose the feature.
+          if (!candidates.isEmpty() && candidates.stream().noneMatch(palette::contains)) {
+            missing.add(key + " " + ownerType + "." + reference.get("name") + " -> " + target);
+          }
+        }
+      }
+    }
+    assertTrue(
+        missing.isEmpty(), "Missing containment palette entries:\n" + String.join("\n", missing));
+  }
+
+  @Test
+  void sharedValuesAreCreatableOnlyInsideTheirOwners() {
+    for (String key : List.of("cim", "pim", "psm")) {
+      Map<String, Object> modelingLevel = level(key);
+      for (Map<String, Object> element : listOfMaps(modelingLevel.get("elements"))) {
+        String type = String.valueOf(element.get("type"));
+        if (!List.of("Expression", "StructuredDocument", "Multiplicity", "Cardinality", "KeyValue")
+            .contains(type)) {
+          continue;
+        }
+        assertTrue(Boolean.TRUE.equals(element.get("creatable")), key + " " + type);
+        assertEquals("Expressions & Values", element.get("category"), key + " " + type);
+        assertFalse(Boolean.TRUE.equals(element.get("supportOnly")), key + " " + type);
+        assertTrue(Boolean.TRUE.equals(element.get("containedOnly")), key + " " + type);
+        for (Map<String, Object> view : listOfMaps(modelingLevel.get("viewDefinitions"))) {
+          assertFalse(stringList(view.get("palette")).contains(type), key + " " + view.get("id"));
+        }
+      }
+    }
+    Map<String, Object> palettes = map(level("cim").get("containmentPalettes"));
+    Map<String, Object> invariant = map(palettes.get("BusinessInvariant"));
+    assertTrue(stringList(invariant.get("types")).contains("Expression"));
+    assertTrue(stringList(invariant.get("canvas")).contains("Expression"));
+    Map<String, Object> expressionFeature =
+        listOfMaps(invariant.get("features")).stream()
+            .filter(feature -> "expressionModel".equals(feature.get("feature")))
+            .findFirst()
+            .orElseThrow();
+    assertEquals(Boolean.FALSE, expressionFeature.get("many"));
   }
 
   @Test

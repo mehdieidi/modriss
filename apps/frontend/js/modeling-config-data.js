@@ -549,21 +549,22 @@ export function modelingContainerDefinition(typeKey, ownerType) {
   return palette ? { elementType: ownerKey, palette: palette.types, canvas: palette.canvas } : null;
 }
 
-export function modelingContainmentEntryForChildType(typeKey, ownerType, childType) {
+export function modelingContainmentEntryForChildType(typeKey, ownerType, childType, owner = null) {
   const ownerKey = String(ownerType || "");
   const palettes = modelingLevelConfig(typeKey).containmentPalettes;
   const entry = palettes?.[ownerKey];
   const features = Array.isArray(entry?.features) ? entry.features : [];
-  const configured =
-    features.find((feature) =>
-      (feature?.types || []).some((type) => modelingTypeMatches(typeKey, type, childType)),
-    ) || null;
-  if (configured) {
-    return configured;
+  const configured = features.filter((feature) =>
+    (feature?.types || []).some((type) => modelingTypeMatches(typeKey, type, childType)),
+  );
+  const hasCapacity = (feature) => !owner || feature.many !== false || !owner[feature.feature];
+  if (configured.length) {
+    return configured.find(hasCapacity) || null;
   }
   const containment = modelingContainmentsForType(typeKey, ownerKey).find(
     (candidate) =>
       !candidate.relationshipOnly &&
+      hasCapacity(candidate) &&
       (candidate.types || []).some((type) => modelingTypeMatches(typeKey, type, childType)),
   );
   if (!containment) {

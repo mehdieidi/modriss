@@ -4318,8 +4318,8 @@
     },
     {
       "elementType": "AwsStage",
-      "palette": ["AwsTag"],
-      "canvas": ["AwsTag"],
+      "palette": ["AwsTag", "KeyValue"],
+      "canvas": ["AwsTag", "KeyValue"],
       "relationshipKinds": [],
       "layoutHint": "CONTAINER"
     },
@@ -4869,7 +4869,8 @@
         "AwsTaggingPolicy",
         "AwsSecurityBaseline",
         "TraceModel",
-        "AslDocument"
+        "AslDocument",
+        "StructuredDocument"
       ],
       "canvas": [
         "AwsStage",
@@ -4879,7 +4880,8 @@
         "AwsTaggingPolicy",
         "AwsSecurityBaseline",
         "TraceModel",
-        "AslDocument"
+        "AslDocument",
+        "StructuredDocument"
       ],
       "relationshipKinds": [],
       "layoutHint": "CONTAINER"
@@ -6049,7 +6051,7 @@
           "light": "#475569",
           "dark": "#94a3b8"
         },
-        "category": "Kernel / Trace",
+        "category": "Traceability & Metadata",
         "supportOnly": true,
         "creatable": false,
         "notation": {
@@ -6058,6 +6060,17 @@
           "lineFields": ["name", "summary"],
           "detailFields": ["name", "summary", "description", "rationale"]
         }
+      }
+    },
+    {
+      "match": {
+        "types": ["Expression", "StructuredDocument", "Multiplicity", "Cardinality", "KeyValue"]
+      },
+      "metadata": {
+        "category": "Expressions & Values",
+        "supportOnly": false,
+        "creatable": true,
+        "containedOnly": true
       }
     },
     {

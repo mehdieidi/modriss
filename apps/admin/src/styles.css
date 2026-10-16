@@ -747,6 +747,38 @@ form textarea {
   grid-column: 1 / -1;
 }
 
+.palette-group-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr));
+  gap: 18px;
+}
+
+.palette-group-card {
+  min-width: 0;
+  padding: 20px;
+}
+
+.palette-group-card h3 {
+  margin: 0 0 8px;
+}
+
+.palette-group-card form {
+  margin: 18px 0;
+}
+
+.palette-group-card details {
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+
+.palette-group-card summary {
+  cursor: pointer;
+}
+
+.palette-group-card details p {
+  margin: 10px 0 0;
+}
+
 .cvs-stat-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));

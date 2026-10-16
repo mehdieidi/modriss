@@ -267,7 +267,7 @@
       "metadata": {
         "icon": "tag",
         "color": "#475569",
-        "category": "Kernel / Trace",
+        "category": "Traceability & Metadata",
         "supportOnly": true,
         "creatable": false,
         "notation": {
@@ -275,6 +275,17 @@
           "shape": "metadata-chip",
           "lineFields": ["linkType", "reviewStatus", "sourceReference"]
         }
+      }
+    },
+    {
+      "match": {
+        "types": ["Expression", "StructuredDocument", "Multiplicity", "Cardinality", "KeyValue"]
+      },
+      "metadata": {
+        "category": "Expressions & Values",
+        "supportOnly": false,
+        "creatable": true,
+        "containedOnly": true
       }
     },
     {
