@@ -56,6 +56,8 @@ tags:
       Model-to-model and model-to-artifact transformations. Long-running work is accepted as an MDE
       job; use its job ID to poll status and retrieve generated models, artifacts, diagnostics, and
       timing details.
+  - name: Cloud platforms
+    description: Project-owned immutable Ecore and Epsilon packages, independent custom PSM branches, and artifact history. User scripts execute synchronously in disposable containers.
   - name: Synchronizations
     description: >-
       Three-way synchronization sessions for generated model changes. Inspect conflicts, record
@@ -2660,6 +2662,379 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ThemeState"
+  /api/projects/{projectId}/psm/packages:
+    parameters:
+      - $ref: "#/components/parameters/PsmProjectId"
+    get:
+      tags: [Cloud platforms]
+      summary: List custom platform packages
+      responses:
+        "200":
+          description: Immutable package summaries (excludes executable payloads)
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/PsmPackageSummary"
+    post:
+      tags: [Cloud platforms]
+      summary: Check and store a platform package
+      description: Ecore and all Epsilon scripts are checked before the immutable package is persisted. ZIP paths are relative to each archive root.
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [name, ecore]
+              properties:
+                name: { type: string, maxLength: 120 }
+                description: { type: string }
+                ecore:
+                  {
+                    type: string,
+                    format: binary,
+                    description: Self-contained Ecore file; at most 5 MB,
+                  }
+                transformation:
+                  {
+                    type: string,
+                    format: binary,
+                    description: ETL and optional EOL ZIP; at most 10 MB,
+                  }
+                generation:
+                  {
+                    type: string,
+                    format: binary,
+                    description: EGX and EGL ZIP with optional EOL helpers; at most 10 MB,
+                  }
+                validation:
+                  {
+                    type: string,
+                    format: binary,
+                    description: Optional EVL and EOL ZIP; at most 10 MB,
+                  }
+                transformationEntry: { type: string, example: main.etl }
+                generationEntry: { type: string, example: main.egx }
+      responses:
+        "201":
+          description: Checked package
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PsmPackageSummary"
+        "400": { description: Invalid archive, path, entry script or size }
+        "422": { description: Ecore or script syntax validation failed }
+        "429": { description: Execution capacity reached }
+        "503": { description: Isolated runner unavailable }
+  /api/projects/{projectId}/psm/packages/{id}/{asset}:
+    parameters:
+      - $ref: "#/components/parameters/PsmProjectId"
+      - $ref: "#/components/parameters/PsmRecordId"
+      - name: asset
+        in: path
+        required: true
+        schema:
+          type: string
+          enum: [platform.ecore, transformation.zip, generation.zip, validation.zip]
+    get:
+      tags: [Cloud platforms]
+      summary: Download an original platform package asset
+      responses:
+        "200":
+          description: Package asset
+          content:
+            application/octet-stream:
+              schema: { type: string, format: binary }
+        "404": { description: Package or asset not found }
+  /api/projects/{projectId}/psm/packages/{id}/definition:
+    parameters:
+      - $ref: "#/components/parameters/PsmProjectId"
+      - $ref: "#/components/parameters/PsmRecordId"
+    get:
+      tags: [Cloud platforms]
+      summary: Read the Ecore schema and optional visual notation
+      responses:
+        "200":
+          description: EClass schema and presentation document
+          content:
+            application/json:
+              schema:
+                {
+                  type: object,
+                  properties:
+                    {
+                      schema: { type: array, items: { type: object } },
+                      visualSyntax: { type: object },
+                    },
+                }
+  /api/projects/{projectId}/psm/packages/{id}/notation:
+    parameters:
+      - $ref: "#/components/parameters/PsmProjectId"
+      - $ref: "#/components/parameters/PsmRecordId"
+    put:
+      tags: [Cloud platforms]
+      summary: Save project provider visual notation
+      description: Presentation only; validates root type, groups, icons and view type membership against the uploaded schema. Cannot change the root type of an existing model.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              {
+                type: object,
+                required: [rootType, paletteGroups, elements, views],
+                additionalProperties: true,
+              }
+      responses:
+        "200": { description: Updated schema and visual notation }
+        "400": { description: Invalid presentation document }
+        "409": { description: Root type incompatible with the existing model }
+  /api/projects/{projectId}/psm/packages/{packageId}/model:
+    parameters:
+      - $ref: "#/components/parameters/PsmProjectId"
+      - { name: packageId, in: path, required: true, schema: { type: string } }
+    post:
+      tags: [Cloud platforms]
+      summary: Create the package model from workbench semantic JSON
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/PsmEditorSave" }
+      responses:
+        "200": { description: Workbench model record with id, name, revision and modelJson }
+        "409": { description: This package already has a model }
+        "422": { description: Model does not structurally conform to Ecore }
+  /api/projects/{projectId}/psm/packages/{packageId}/model/{id}:
+    parameters:
+      - $ref: "#/components/parameters/PsmProjectId"
+      - $ref: "#/components/parameters/PsmRecordId"
+      - { name: packageId, in: path, required: true, schema: { type: string } }
+    put:
+      tags: [Cloud platforms]
+      summary: Structurally validate and save semantic JSON with canvas state
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/PsmEditorSave" }
+      responses:
+        "200": { description: Updated workbench model record }
+        "409": { description: Stale model revision }
+        "422": { description: Structural Ecore conformance failed }
+  /api/projects/{projectId}/psm/packages/{packageId}/import:
+    parameters:
+      - $ref: "#/components/parameters/PsmProjectId"
+      - { name: packageId, in: path, required: true, schema: { type: string } }
+    post:
+      tags: [Cloud platforms]
+      summary: Structurally validate XMI and return workbench semantic JSON
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object, required: [xmi], properties: { xmi: { type: string } } }
+      responses:
+        "200": { description: Semantic model JSON; does not persist or run EVL }
+        "422": { description: Invalid XMI or structural conformance failure }
+  /api/projects/{projectId}/psm/branches/{id}/editor:
+    parameters:
+      - $ref: "#/components/parameters/PsmProjectId"
+      - $ref: "#/components/parameters/PsmRecordId"
+    get:
+      tags: [Cloud platforms]
+      summary: Read the model as a normal workbench record
+      responses:
+        "200":
+          {
+            description: Object containing id,
+            projectId,
+            name,
+            revision and semantic modelJson including saved canvas state,
+          }
+  /api/projects/{projectId}/psm/branches:
+    parameters:
+      - $ref: "#/components/parameters/PsmProjectId"
+    get:
+      tags: [Cloud platforms]
+      summary: List custom provider models
+      responses:
+        "200":
+          description: Branch summaries without XMI
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/PsmBranchSummary"
+    post:
+      tags: [Cloud platforms]
+      summary: Generate or regenerate the single package model from a saved PIM
+      description: Runs the package ETL and gates persistence on structural EMF conformance. Existing branches and native AWS models remain available.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [packageId, sourcePimId, expectedRevision, name]
+              properties:
+                expectedTargetRevision:
+                  {
+                    type: integer,
+                    minimum: 0,
+                    description: Required current target revision when regenerating; zero for the first generation,
+                  }
+                packageId: { type: string }
+                sourcePimId: { type: string }
+                expectedRevision: { type: integer, minimum: 1 }
+                name: { type: string, maxLength: 120 }
+      responses:
+        "201":
+          description: Generated PSM branch
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PsmBranch"
+        "409": { description: Source PIM revision changed }
+        "422": { description: ETL failed or output does not conform to Ecore }
+  /api/projects/{projectId}/psm/branches/{id}:
+    parameters:
+      - $ref: "#/components/parameters/PsmProjectId"
+      - $ref: "#/components/parameters/PsmRecordId"
+    get:
+      tags: [Cloud platforms]
+      summary: Read a custom PSM branch and its XMI
+      responses:
+        "200":
+          description: PSM branch
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PsmBranch"
+    put:
+      tags: [Cloud platforms]
+      summary: Structurally validate and save a custom PSM branch
+      description: Uses the branch's immutable Ecore metamodel; does not run EVL.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, xmi, expectedRevision]
+              properties:
+                name: { type: string, maxLength: 120 }
+                xmi: { type: string }
+                expectedRevision: { type: integer, minimum: 1 }
+      responses:
+        "200":
+          description: Saved branch with incremented revision
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PsmBranch"
+        "409": { description: Branch revision changed }
+        "422": { description: XMI does not conform to this branch's Ecore metamodel }
+    delete:
+      tags: [Cloud platforms]
+      summary: Delete a PSM branch while preserving its generated artifacts
+      parameters:
+        - name: expectedRevision
+          in: query
+          required: true
+          schema: { type: integer, minimum: 1 }
+      responses:
+        "204": { description: Branch deleted }
+        "409": { description: Branch revision changed }
+  /api/projects/{projectId}/psm/branches/{id}/schema:
+    parameters:
+      - $ref: "#/components/parameters/PsmProjectId"
+      - $ref: "#/components/parameters/PsmRecordId"
+    get:
+      tags: [Cloud platforms]
+      summary: Inspect Ecore classes and features for this branch
+      responses:
+        "200":
+          description: Structural inspection with Ecore language reference
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PsmWorkerResult"
+  /api/projects/{projectId}/psm/branches/{id}/validate:
+    parameters:
+      - $ref: "#/components/parameters/PsmProjectId"
+      - $ref: "#/components/parameters/PsmRecordId"
+    post:
+      tags: [Cloud platforms]
+      summary: Explicitly validate a branch against Ecore and its optional EVL constraints
+      responses:
+        "200":
+          description: Validation result; inspect valid and issues
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PsmWorkerResult"
+  /api/projects/{projectId}/psm/branches/{id}/artifacts:
+    parameters:
+      - $ref: "#/components/parameters/PsmProjectId"
+      - $ref: "#/components/parameters/PsmRecordId"
+    get:
+      tags: [Cloud platforms]
+      summary: List artifact generation history for this branch
+      responses:
+        "200":
+          description: Artifact summaries with source PSM revision; use the normal artifact APIs to inspect or download
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id: { type: string }
+                    name: { type: string }
+                    sourceModelRevision: { type: integer }
+                    createdAt: { type: string, format: date-time }
+                    filePaths:
+                      type: array
+                      items: { type: string }
+    post:
+      tags: [Cloud platforms]
+      summary: Generate artifacts using the branch's EGX and EGL package
+      description: Creates a new artifact bundle tagged with branch, package and PSM revision. Does not run EVL.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [expectedRevision]
+              properties:
+                expectedRevision: { type: integer, minimum: 1 }
+      responses:
+        "200":
+          description: Generated artifact bundle
+          content:
+            application/json:
+              schema: { type: object }
+        "409": { description: Branch revision changed }
+        "422": { description: Structural conformance or generation failed }
+  /api/projects/{projectId}/psm/branches/{id}/model.xmi:
+    parameters:
+      - $ref: "#/components/parameters/PsmProjectId"
+      - $ref: "#/components/parameters/PsmRecordId"
+    get:
+      tags: [Cloud platforms]
+      summary: Download a PSM branch as XMI
+      responses:
+        "200":
+          description: Complete PSM model
+          content:
+            application/xml:
+              schema: { type: string, format: binary }
 components:
   securitySchemes:
     AuthToken:
@@ -2667,6 +3042,16 @@ components:
       in: header
       name: X-Auth-Token
   parameters:
+    PsmProjectId:
+      name: projectId
+      in: path
+      required: true
+      schema: { type: string }
+    PsmRecordId:
+      name: id
+      in: path
+      required: true
+      schema: { type: string }
     ProjectId:
       name: id
       in: path
@@ -2785,6 +3170,78 @@ components:
           schema:
             $ref: "#/components/schemas/JobResponse"
   schemas:
+    PsmEditorSave:
+      type: object
+      required: [name, model]
+      properties:
+        name: { type: string, maxLength: 120 }
+        expectedRevision: { type: integer, minimum: 0 }
+        model: { type: object, additionalProperties: true }
+    PsmPackageSummary:
+      type: object
+      properties:
+        id: { type: string }
+        name: { type: string }
+        description: { type: string }
+        uploadedBy: { type: string }
+        transformationEntry: { type: string }
+        generationEntry: { type: string }
+        hasValidation: { type: boolean }
+        hasTransformation: { type: boolean }
+        hasGeneration: { type: boolean }
+        createdAt: { type: string, format: date-time }
+    PsmBranchSummary:
+      type: object
+      properties:
+        id: { type: string }
+        packageId: { type: string }
+        name: { type: string }
+        sourcePimId: { type: string }
+        sourcePimRevision: { type: integer }
+        revision: { type: integer }
+        updatedAt: { type: string, format: date-time }
+    PsmBranch:
+      allOf:
+        - $ref: "#/components/schemas/PsmBranchSummary"
+        - type: object
+          properties:
+            projectId: { type: string }
+            createdBy: { type: string }
+            sourcePimHash: { type: string, description: SHA-256 of the source XMI snapshot }
+            xmi: { type: string }
+            createdAt: { type: string, format: date-time }
+    PsmWorkerResult:
+      type: object
+      properties:
+        valid: { type: boolean }
+        xmi: { type: [string, "null"] }
+        schema:
+          type: [array, "null"]
+          items:
+            type: object
+            properties:
+              name: { type: string }
+              namespace: { type: string }
+              abstract: { type: boolean }
+              features:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    name: { type: string }
+                    type: { type: string }
+                    required: { type: boolean }
+                    many: { type: boolean }
+                    containment: { type: boolean }
+                    literals:
+                      type: array
+                      items: { type: string }
+        issues:
+          type: array
+          items: { type: string }
+        files:
+          type: object
+          additionalProperties: { type: string }
     ApiErrorResponse:
       type: object
       required: [message, status, timestamp, issues, errorId]
@@ -4219,11 +4676,14 @@ components:
           $ref: "#/components/schemas/AdminOverview"
     ArtifactSummary:
       type: object
-      required: [id, projectId, name, filePaths, createdAt, updatedAt]
+      required: [id, projectId, name, cloudProviderId, filePaths, createdAt, updatedAt]
       properties:
         id: { type: string }
         projectId: { type: string }
         name: { type: string }
+        cloudProviderId:
+          type: string
+          description: Custom PSM package identifier, or aws for the built-in provider.
         filePaths:
           type: array
           items: { type: string }

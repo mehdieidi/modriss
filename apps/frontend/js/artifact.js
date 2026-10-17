@@ -44,6 +44,8 @@ let monacoThemeObserver = null;
 let applyingProgrammaticEdit = false;
 let currentLanguageLabel = FALLBACK_LANGUAGE_LABEL;
 let artifactFileRequestId = 0;
+let artifactLoadRequestId = 0;
+const artifactScope = () => `${state.project?.id}:${state.cloudProvider?.id || "aws"}`;
 
 function setArtifactFileLoading(loading) {
   state.artifact.openingFile = Boolean(loading);
@@ -510,9 +512,11 @@ export async function initArtifactEditor() {
 }
 
 export function clearArtifactState() {
+  artifactLoadRequestId += 1;
   artifactFileRequestId += 1;
   state.artifact.id = null;
   state.artifact.name = "";
+  state.artifact.cloudProviderId = null;
   state.artifact.files = [];
   state.artifact.activeFile = null;
   state.artifact.openingFile = false;
@@ -544,8 +548,13 @@ export function toggleArtifactTreeCollapsed() {
 }
 
 export async function loadArtifactRecord(record, { collapseTree = true } = {}) {
+  artifactLoadRequestId += 1;
+  artifactFileRequestId += 1;
   state.artifact.id = record.id;
   state.artifact.name = record.name || "artifact";
+  state.artifact.cloudProviderId =
+    record.cloudProviderId || record.modelJson?.psmPackageId || "aws";
+  setArtifactFileLoading(false);
   setArtifactDirty(false);
 
   const filePaths = Array.isArray(record.filePaths)
@@ -564,8 +573,11 @@ export async function loadArtifactRecord(record, { collapseTree = true } = {}) {
 }
 
 export async function loadArtifactById(id, { collapseTree = true } = {}) {
+  const scope = artifactScope();
+  const requestId = ++artifactLoadRequestId;
   try {
     const record = await api(`/artifact/${id}`);
+    if (scope !== artifactScope() || requestId !== artifactLoadRequestId) return;
     await loadArtifactRecord(record, { collapseTree });
     if (state.project?.id) {
       try {
@@ -587,6 +599,7 @@ export async function loadArtifactById(id, { collapseTree = true } = {}) {
       }
     }
   } catch (error) {
+    if (scope !== artifactScope()) return;
     setStatus(error, { prefix: "Failed to load artifact.", error: true });
   }
 }
@@ -596,24 +609,35 @@ export async function loadCurrentProjectArtifact(options = {}) {
     clearArtifactState();
     return null;
   }
-  if (!options.forceReload && state.artifact.id && state.artifact.files.length) {
+  const providerId = state.cloudProvider?.id || "aws";
+  if (!options.forceReload && state.artifact.id && state.artifact.cloudProviderId === providerId) {
     return {
       id: state.artifact.id,
       name: state.artifact.name,
       files: state.artifact.files,
     };
   }
+  clearArtifactState();
+  const scope = artifactScope();
+  const requestId = ++artifactLoadRequestId;
   try {
     const records = await api(`/artifact?projectId=${state.project.id}`);
-    const record = Array.isArray(records) ? records[0] : null;
+    if (scope !== artifactScope() || requestId !== artifactLoadRequestId) return null;
+    const record = Array.isArray(records)
+      ? records.find((item) => (item.cloudProviderId || "aws") === providerId)
+      : null;
     if (!record?.id) {
       clearArtifactState();
-      setStatus("No artifact has been generated for this project yet");
+      const providerName =
+        document.querySelector('#modelTabs .tab[data-type="psm"]')?.textContent || "this provider";
+      setExplorerRootLabel(`${providerName} · No artifacts yet`);
+      setStatus(`No artifacts have been generated for ${providerName} yet`);
       return null;
     }
     await loadArtifactById(record.id, { ...options, collapseTree: options.collapseTree ?? true });
     return record;
   } catch (error) {
+    if (scope !== artifactScope() || requestId !== artifactLoadRequestId) return null;
     clearArtifactState();
     setStatus(error, { prefix: "Failed to load artifact.", error: true });
     return null;

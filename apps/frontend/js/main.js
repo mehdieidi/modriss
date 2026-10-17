@@ -740,6 +740,7 @@ function bindEvents() {
   });
 
   window.addEventListener("modriss-active-modeling-level-change", renderMobileModelLevelTabs);
+  window.addEventListener("modriss-cloud-provider-change", renderMobileModelLevelTabs);
 
   // Theme
   if (el.paletteRailToggleBtn) {
@@ -1273,6 +1274,7 @@ async function init() {
   await loadModelingConfig();
   initGuidedModeling();
   renderConfiguredModelTabs();
+  (await import("./cloud-providers.js")).renderCloudProviderControls();
   refreshCurrentUserLabel();
   bindProjectDialogActions();
   setupIdeMenus();

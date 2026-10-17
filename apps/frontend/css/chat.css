@@ -88,6 +88,12 @@
   display: none;
 }
 
+.app-shell:has(#modelTabs .tab[data-type="psm"].active) .chat-toggle,
+.app-shell:has(#modelTabs .tab[data-type="psm"].active) .chat-window,
+.app-shell:has(#modelTabs .tab[data-type="psm"].active) #mobileDockChatBtn {
+  display: none;
+}
+
 .chat-header {
   padding: 12px 12px 11px;
   border-bottom: 1px solid color-mix(in srgb, var(--border) 72%, transparent);

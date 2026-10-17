@@ -14,6 +14,8 @@ import io.mehdieidi.modriss.platform.model.domain.ModelRecord;
 import io.mehdieidi.modriss.platform.model.domain.StagedImportRecord;
 import io.mehdieidi.modriss.platform.project.domain.ProjectMember;
 import io.mehdieidi.modriss.platform.project.domain.ProjectRecord;
+import io.mehdieidi.modriss.platform.psm.PsmBranch;
+import io.mehdieidi.modriss.platform.psm.PsmPlatformPackage;
 import io.mehdieidi.modriss.platform.storage.api.PlatformStore;
 import io.mehdieidi.modriss.platform.transformation.domain.MdeJobIdempotencyRecord;
 import io.mehdieidi.modriss.platform.transformation.domain.MdeJobIndexRecord;
@@ -85,6 +87,15 @@ public final class PostgresPlatformStore implements PlatformStore, ArtifactStora
   }
 
   private Object readValue(String[] key, Class<?> type) {
+    if (type == PsmPlatformPackage.class || type == PsmBranch.class) {
+      return maybeOne(
+              "SELECT payload::text FROM psm_extension_records WHERE project_id = ? AND record_key"
+                  + " = ?",
+              (rs, row) -> readJson(rs.getString(1), type),
+              key[1],
+              psmRecordKey(key))
+          .orElse(null);
+    }
     if (type == UserRecord.class) {
       return maybeOne("SELECT * FROM users WHERE id = ?", this::user, id(key, 1)).orElse(null);
     }
@@ -176,7 +187,16 @@ public final class PostgresPlatformStore implements PlatformStore, ArtifactStora
   @Override
   public void write(Path path, Object value) {
     try {
-      if (value instanceof UserRecord record) {
+      if (value instanceof PsmPlatformPackage || value instanceof PsmBranch) {
+        String[] key = key(path);
+        jdbc.update(
+            "INSERT INTO psm_extension_records(project_id, record_key, payload) VALUES (?, ?,"
+                + " ?::jsonb) ON CONFLICT(project_id, record_key) DO UPDATE SET payload ="
+                + " EXCLUDED.payload, updated_at = now()",
+            key[1],
+            psmRecordKey(key),
+            json(value));
+      } else if (value instanceof UserRecord record) {
         writeUser(record);
       } else if (value instanceof AuthSession record) {
         writeSession(record);
@@ -270,7 +290,12 @@ public final class PostgresPlatformStore implements PlatformStore, ArtifactStora
   @Override
   public void deleteIfExists(Path path) {
     String[] key = key(path);
-    if (isModelXmi(key)) {
+    if (isPsmKey(key)) {
+      jdbc.update(
+          "DELETE FROM psm_extension_records WHERE project_id = ? AND record_key = ?",
+          key[1],
+          psmRecordKey(key));
+    } else if (isModelXmi(key)) {
       jdbc.update(
           "UPDATE models SET source_xmi = NULL, source_xmi_hash = NULL WHERE id = ?",
           id(key, key.length - 1));
@@ -305,7 +330,15 @@ public final class PostgresPlatformStore implements PlatformStore, ArtifactStora
     String[] key = key(directory);
     try {
       List<?> values;
-      if (type == UserRecord.class) {
+      if (type == PsmPlatformPackage.class || type == PsmBranch.class) {
+        values =
+            jdbc.query(
+                "SELECT payload::text FROM psm_extension_records WHERE project_id = ? "
+                    + "AND split_part(record_key, '/', 1) = ? ORDER BY updated_at DESC",
+                (rs, row) -> readJson(rs.getString(1), type),
+                key[1],
+                key[3]);
+      } else if (type == UserRecord.class) {
         values = jdbc.query("SELECT * FROM users ORDER BY created_at", this::user);
       } else if (type == AuthSession.class) {
         values = jdbc.query("SELECT * FROM auth_sessions ORDER BY created_at", this::session);
@@ -899,6 +932,8 @@ ON CONFLICT (id) DO UPDATE SET project_id=EXCLUDED.project_id,
   }
 
   private Class<?> recordType(String[] key) {
+    if (isPsmKey(key))
+      return key[3].equals("packages") ? PsmPlatformPackage.class : PsmBranch.class;
     if (key[0].equals("projects") && key.length == 3) {
       return ProjectRecord.class;
     }
@@ -949,6 +984,18 @@ ON CONFLICT (id) DO UPDATE SET project_id=EXCLUDED.project_id,
     } catch (Exception ex) {
       throw new PlatformException(500, "Could not deserialize synchronization data.", ex);
     }
+  }
+
+  private boolean isPsmKey(String[] key) {
+    return key.length == 5
+        && key[0].equals("projects")
+        && key[2].equals("psm-extensions")
+        && (key[3].equals("packages") || key[3].equals("branches"));
+  }
+
+  private String psmRecordKey(String[] key) {
+    if (!isPsmKey(key)) throw unsupported(path(key), Object.class);
+    return key[3] + "/" + key[4];
   }
 
   private boolean isSynchronizationKey(String[] key) {

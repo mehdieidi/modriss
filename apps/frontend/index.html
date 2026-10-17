@@ -200,6 +200,20 @@
           </button>
           <button
             class="workspace-rail-item"
+            id="psmPlatformsBtn"
+            title="Cloud platforms"
+            aria-label="Cloud platforms"
+            aria-haspopup="dialog"
+            type="button"
+          >
+            <span
+              aria-hidden="true"
+              class="workspace-rail-icon icon-svg icon-mask"
+              style="--icon-src: url(&quot;/assets/icons/process-map/cloud.svg&quot;)"
+            ></span>
+          </button>
+          <button
+            class="workspace-rail-item"
             id="themeRailToggleBtn"
             title="Toggle Theme"
             type="button"
@@ -1601,6 +1615,8 @@
       <div class="edge-kind-picker-menu hidden" id="edgeKindMenu" role="listbox"></div>
     </div>
 
+    <link href="/css/psm-platforms.css" rel="stylesheet" />
+    <script src="/js/psm-platforms.js" type="module"></script>
     <script src="/backend-config.js?v=docs-link-20260922a"></script>
     <script src="/js/main.js?v=email-verification-20261006" type="module"></script>
   </body>

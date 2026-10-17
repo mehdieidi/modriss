@@ -58,6 +58,28 @@ public final class ProjectArchiveService {
       ZipOutputStream zip, ProjectRecord project, List<ArtifactRecord> artifacts)
       throws IOException {
     addJsonEntry(zip, "modriss-project/project.json", project);
+    for (var platform :
+        store.list(
+            Path.of("projects", project.id(), "psm-extensions", "packages"),
+            io.mehdieidi.modriss.platform.psm.PsmPlatformPackage.class)) {
+      String root = "modriss-project/psm-extensions/packages/" + platform.id();
+      addJsonEntry(zip, root + ".json", platform);
+      addFileEntry(zip, root + "/platform.ecore", platform.ecore());
+      if (platform.transformationZip() != null)
+        addFileEntry(zip, root + "/transformation.zip", platform.transformationZip());
+      if (platform.generationZip() != null)
+        addFileEntry(zip, root + "/generation.zip", platform.generationZip());
+      if (platform.validationZip() != null)
+        addFileEntry(zip, root + "/validation.zip", platform.validationZip());
+    }
+    for (var branch :
+        store.list(
+            Path.of("projects", project.id(), "psm-extensions", "branches"),
+            io.mehdieidi.modriss.platform.psm.PsmBranch.class)) {
+      String root = "modriss-project/psm-extensions/branches/" + branch.id();
+      addJsonEntry(zip, root + ".json", branch);
+      addFileEntry(zip, root + ".xmi", branch.xmi().getBytes(StandardCharsets.UTF_8));
+    }
     for (ModelLevel level : ModelLevel.values()) {
       for (ModelRecord model :
           store.list(

@@ -1,0 +1,9 @@
+import 'rules/functions.etl';
+
+rule Application
+  transform source : PIM!PIMModel
+  to target : PSM!AzureApplication {
+  target.name = source.name;
+  target.location = 'westeurope';
+  target.functions = PIM!Function.all.equivalent();
+}

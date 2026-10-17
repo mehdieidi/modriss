@@ -133,6 +133,7 @@ public class ArtifactController {
       String id,
       String projectId,
       String name,
+      String cloudProviderId,
       List<String> filePaths,
       java.time.Instant createdAt,
       java.time.Instant updatedAt) {
@@ -142,6 +143,9 @@ public class ArtifactController {
           artifact.id(),
           artifact.projectId(),
           artifact.name(),
+          artifact.modelJson() == null
+              ? "aws"
+              : artifact.modelJson().path("psmPackageId").asText("aws"),
           artifact.files() == null ? List.of() : artifact.files().keySet().stream().toList(),
           artifact.createdAt(),
           artifact.updatedAt());

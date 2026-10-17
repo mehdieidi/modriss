@@ -192,6 +192,12 @@ export async function prepareModelForSave({ syncView = true } = {}) {
 }
 
 export async function flushCurrentModelPatch({ name, rethrow = false, prepared = null } = {}) {
+  if (
+    state.activeType === "psm" &&
+    state.cloudProvider?.projectId === state.project?.id &&
+    state.cloudProvider?.id !== "aws"
+  )
+    return false;
   if (!state.modelId || !MODEL_TYPES[state.activeType]) {
     return false;
   }

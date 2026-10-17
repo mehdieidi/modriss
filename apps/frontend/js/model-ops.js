@@ -2,6 +2,17 @@ import { apiUrl, MODEL_TYPES } from "./config.js";
 import { saveLastModelingType, state } from "./state.js";
 import { el } from "./dom.js";
 import { api, apiAuthHeaders } from "./api.js";
+import {
+  customPsmActive,
+  customPsmSelected,
+  selectedCloudProvider,
+  psmEndpoint,
+  generateSelectedPsm,
+  confirmPsmRegeneration,
+  selectCloudProvider,
+  rememberCloudModel,
+  renderCloudProviderControls,
+} from "./cloud-providers.js";
 import { flushCurrentModelPatch, prepareModelForSave } from "./model-patch.js";
 import { setBusy, setError, setStatus } from "./status.js";
 import { formatUserError } from "./errors.js";
@@ -620,6 +631,7 @@ export function setActiveModelName(name) {
 }
 
 async function syncProjectActiveModel(type, modelId) {
+  if (type === "psm" && customPsmSelected()) return;
   if (!state.project || !modelId) {
     return;
   }
@@ -646,6 +658,7 @@ async function syncProjectActiveModel(type, modelId) {
 }
 
 export async function reloadModels() {
+  if (customPsmActive()) return;
   try {
     const projectParam = state.project ? `?projectId=${state.project.id}` : "";
     const records = await api(`/${MODEL_TYPES[state.activeType].apiType}${projectParam}`);
@@ -747,6 +760,39 @@ async function performSaveCurrentModel({
       setBusy("Saving…");
     }
     await yieldToMain();
+    if (customPsmActive()) {
+      const providerId = selectedCloudProvider().id;
+      const savedTab = state.tabs.psm;
+      const model = serializeModel({ syncView: true, reconcileRelationships: true });
+      const saved = await api(
+        psmEndpoint(`/packages/${providerId}/model${state.modelId ? `/${state.modelId}` : ""}`),
+        {
+          method: state.modelId ? "PUT" : "POST",
+          body: JSON.stringify({
+            name: selectedName,
+            expectedRevision: state.modelRevision,
+            model,
+          }),
+        },
+      );
+      rememberCloudModel(saved, providerId);
+      if (!customPsmActive() || selectedCloudProvider().id !== providerId) {
+        Object.assign(savedTab, {
+          modelId: saved.id,
+          modelRevision: saved.revision,
+          baseModel: saved.modelJson,
+          dirty: false,
+        });
+        return;
+      }
+      state.modelId = saved.id;
+      state.modelRevision = saved.revision;
+      adoptSavedBaseModel(saved.modelJson);
+      updateActiveTabAfterSave();
+      completeModelSave();
+      if (!quiet) setStatus("Model saved");
+      return;
+    }
     let prepared = await prepareModelForSave();
     if (doBusy) {
       await waitForSaveIndicatorPaint();
@@ -840,7 +886,9 @@ export async function loadModelById(
     await switchTab(typeKey);
   }
   const record = await api(
-    `/${MODEL_TYPES[typeKey].apiType}/${id}${includeViews === false ? "?includeViews=false" : ""}`,
+    typeKey === "psm" && customPsmSelected()
+      ? psmEndpoint(`/branches/${id}/editor`)
+      : `/${MODEL_TYPES[typeKey].apiType}/${id}${includeViews === false ? "?includeViews=false" : ""}`,
   );
   await yieldToMain();
   state.modelId = record.id;
@@ -907,7 +955,7 @@ export async function loadModelById(
   }
 }
 
-async function loadModelRecord(
+export async function loadModelRecord(
   typeKey,
   record,
   {
@@ -919,7 +967,7 @@ async function loadModelRecord(
     deferTabSnapshot = false,
   } = {},
 ) {
-  if (!record?.id || !record?.modelJson) {
+  if (!record?.modelJson || (!record?.id && !(typeKey === "psm" && customPsmSelected()))) {
     await loadModelById(typeKey, record?.id, {
       showManualGuidance,
       autoLayout,
@@ -1466,12 +1514,62 @@ export function updateGenerateButtonState() {
     el.generateContextBtn.textContent = buttonConfig.label;
   }
   el.generateContextBtn.title = buttonConfig.title;
+  renderCloudProviderControls();
 }
 
-async function executeConfiguredTransformation(transformation) {
+async function executeConfiguredTransformation(transformation, { nativePsm = false } = {}) {
   const sourceLevel = transformation?.sourceLevel || state.activeType;
   const targetLevel = transformation?.targetLevel || "";
   const operation = transformation?.operation || "";
+  if (sourceLevel === "pim" && targetLevel === "psm" && state.activeType === "pim" && !nativePsm) {
+    if (customPsmSelected()) {
+      if (!(await ensureStoredModelForBackendOperation("Generate PSM"))) return;
+      if (!(await confirmPsmRegeneration())) return;
+      const provider = selectedCloudProvider();
+      showGenerationProgress({
+        title: `Generating ${selectedCloudProvider().name} PSM`,
+        label: "Running PIM → PSM transformation…",
+      });
+      try {
+        setBusy("Generating PSM…");
+        const record = await generateSelectedPsm(state.modelId, state.modelRevision);
+        if (record) {
+          if (selectedCloudProvider().id !== provider.id) await selectCloudProvider(provider.id);
+          await loadModelRecord("psm", record, { autoLayout: false });
+          await completeGenerationProgress("PSM ready.");
+          setStatus(`${selectedCloudProvider().name} model generated`);
+        }
+      } catch (error) {
+        setError(error, { prefix: "PSM generation failed." });
+      } finally {
+        hideGenerationProgress();
+      }
+      return;
+    }
+  }
+  if (sourceLevel === "psm" && customPsmActive()) {
+    if (!(await ensureStoredModelForBackendOperation("Generate Artifacts"))) return;
+    showGenerationProgress({
+      title: "Generating artifacts",
+      label: "Running EGX / EGL generation…",
+    });
+    try {
+      setBusy("Generating artifacts…");
+      const artifact = await api(psmEndpoint(`/branches/${state.modelId}/artifacts`), {
+        method: "POST",
+        body: JSON.stringify({ expectedRevision: state.modelRevision }),
+      });
+      await loadArtifactRecord(artifact, { collapseTree: true });
+      await switchTab("artifact");
+      await completeGenerationProgress("Artifacts ready.");
+      setStatus("Artifacts generated");
+    } catch (error) {
+      setError(error, { prefix: "Artifact generation failed." });
+    } finally {
+      hideGenerationProgress();
+    }
+    return;
+  }
   if (!operation) {
     setStatus("No backend transformation operation is configured for this context.");
     return;
@@ -1598,6 +1696,30 @@ export async function generateNextConfiguredTransformation() {
   );
 }
 
+export async function generateNativeAwsPsm(sourcePimId) {
+  const transformation = Object.values(state.modelingConfig.config?.transformations || {}).find(
+    (item) => item.sourceLevel === "pim" && item.targetLevel === "psm",
+  );
+  if (state.activeType !== "pim") await switchTab("pim");
+  if (sourcePimId && state.modelId !== sourcePimId) {
+    if (
+      hasUnsavedModelChanges() &&
+      !(await ensureStoredModelForBackendOperation("Generate AWS PSM"))
+    )
+      return;
+    await loadModelById("pim", sourcePimId);
+  }
+  await executeConfiguredTransformation(transformation, { nativePsm: true });
+}
+
+export async function openNativeAwsPsm(id) {
+  if (state.activeType !== "psm") await switchTab("psm");
+  if (!id || state.modelId === id) return;
+  if (hasUnsavedModelChanges() && !(await ensureStoredModelForBackendOperation("Switch AWS PSM")))
+    return;
+  await loadModelById("psm", id);
+}
+
 export async function generateArtifactConfiguredTransformation() {
   await executeConfiguredTransformation(
     Object.values(state.modelingConfig.config?.transformations || {}).find(
@@ -1617,7 +1739,7 @@ export async function generateForCurrentContext() {
 
 // ── Tab switching ─────────────────────────────────────────────────────────────
 
-export async function switchTab(type) {
+export async function switchTab(type, { skipSnapshot = false } = {}) {
   if (type !== state.activeType) {
     const { closeChatWindow } = await import("./chat.js?v=chat-provenance-ui-20260718a");
     closeChatWindow();
@@ -1637,7 +1759,7 @@ export async function switchTab(type) {
   }
 
   // Save current diagram tab state before switching
-  if (state.activeType !== "artifact" && state.tabs[state.activeType]) {
+  if (!skipSnapshot && state.activeType !== "artifact" && state.tabs[state.activeType]) {
     syncActiveViewFromVisibleGraph();
     state.tabs[state.activeType].modelId = state.modelId;
     state.tabs[state.activeType].modelRevision = state.modelRevision || 0;
@@ -1728,11 +1850,34 @@ export async function validateCurrentModel() {
     }
     setBusy("Validating…");
     setValidationInProgress(true);
+    const validating = {
+      provider: selectedCloudProvider().id,
+      type: state.activeType,
+      id: state.modelId,
+    };
     const result = await api(
-      `/${MODEL_TYPES[state.activeType].apiType}/${state.modelId}/validate`,
+      customPsmActive()
+        ? psmEndpoint(`/branches/${state.modelId}/validate`)
+        : `/${MODEL_TYPES[state.activeType].apiType}/${state.modelId}/validate`,
       { method: "POST" },
     );
-    const backendIssues = Array.isArray(result?.issues) ? result.issues : [];
+    if (
+      validating.type !== state.activeType ||
+      validating.id !== state.modelId ||
+      validating.provider !== selectedCloudProvider().id
+    )
+      return;
+    const backendIssues = Array.isArray(result?.issues)
+      ? result.issues.map((issue) =>
+          typeof issue === "string"
+            ? {
+                severity: result.valid === false ? "ERROR" : "WARNING",
+                constraint: "CloudModelConstraint",
+                message: issue,
+              }
+            : issue,
+        )
+      : [];
     if (backendIssues.length) {
       const mergedIssues = mergeIssuesWithManualGuidance(backendIssues);
       applyValidationIssues(mergedIssues, { openOnFirst: true });
@@ -1800,6 +1945,22 @@ async function runAutoLayoutCurrentDiagram({
   force = true,
   skipClientLayout = true,
 } = {}) {
+  if (customPsmActive()) {
+    state.diagram.nodes.forEach((node, index) => {
+      node.x = 60 + (index % 4) * 300;
+      node.y = 60 + Math.floor(index / 4) * 180;
+    });
+    ensureReadableLayout(state.diagram.nodes, state.diagram.connections, {
+      width: 244,
+      height: 118,
+    });
+    syncActiveViewFromVisibleGraph();
+    markModelDirty({ kind: "layout", viewSynced: true });
+    await renderDiagramAsync({ full: true });
+    await fitViewportToDiagram({ fit: true });
+    if (status) setStatus("Model arranged");
+    return;
+  }
   if (!isModelingType()) {
     if (status) {
       setStatus(`Auto layout is available for ${modelingLevelListLabel()}.`);
@@ -1963,6 +2124,25 @@ export async function exportActiveModel(format = "json") {
     return;
   }
   const normalizedFormat = String(format || "json").toLowerCase();
+  if (customPsmActive()) {
+    let blob;
+    if (normalizedFormat === "xmi") {
+      await saveCurrentModel({ quiet: true, rethrow: true });
+      const response = await fetch(apiUrl(psmEndpoint(`/branches/${state.modelId}/model.xmi`)), {
+        headers: apiAuthHeaders(),
+      });
+      if (!response.ok) throw new Error("Could not export the cloud model.");
+      blob = await response.blob();
+    } else
+      blob = new Blob(
+        [JSON.stringify(serializeModel({ syncView: true, reconcileRelationships: true }), null, 2)],
+        { type: "application/json" },
+      );
+    const response = new Response(blob);
+    await downloadBlobFromResponse(response, `${selectedCloudProvider().name}.${normalizedFormat}`);
+    setStatus("Model exported");
+    return;
+  }
   if (state.modelId) {
     const patched = await flushCurrentModelPatch({
       name: getActiveModelName(),
@@ -2041,6 +2221,31 @@ export async function importActiveModel(file, format = "json", typeKey = state.a
   }
 
   const normalizedFormat = String(format || "json").toLowerCase();
+  if (customPsmActive()) {
+    const text = await file.text();
+    const model =
+      normalizedFormat === "xmi"
+        ? await api(psmEndpoint(`/packages/${selectedCloudProvider().id}/import`), {
+            method: "POST",
+            body: JSON.stringify({ xmi: text }),
+          })
+        : JSON.parse(text);
+    if (model.eClass !== state.modelingConfig.config.levels.psm.rootTemplate.eClass)
+      throw new Error("Imported model root does not match this provider's configured root EClass.");
+    await loadModelRecord(
+      "psm",
+      {
+        id: state.modelId,
+        name: getActiveModelName(),
+        revision: state.modelRevision,
+        modelJson: model,
+      },
+      { autoLayout: false },
+    );
+    markModelDirty();
+    await saveCurrentModel({ rethrow: true });
+    return;
+  }
   const shouldAutoLayoutImportedModel = normalizedFormat === "xmi";
   const formData = new FormData();
   formData.append("file", file);

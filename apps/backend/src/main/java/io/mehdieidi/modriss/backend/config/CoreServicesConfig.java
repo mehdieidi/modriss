@@ -33,6 +33,26 @@ import tools.jackson.databind.ObjectMapper;
 @EnableConfigurationProperties(BackendProperties.class)
 public class CoreServicesConfig {
 
+  @Bean
+  io.mehdieidi.modriss.platform.psm.PsmExtensionService psmExtensionService(
+      PlatformStore store,
+      ProjectService projects,
+      ModelService models,
+      ArtifactService artifacts,
+      MetamodelResolver metamodels,
+      @org.springframework.beans.factory.annotation.Value(
+              "${modriss.psm.runner-image:modriss-backend:local}")
+          String image) {
+    return new io.mehdieidi.modriss.platform.psm.PsmExtensionService(
+        store,
+        projects,
+        models,
+        artifacts,
+        metamodels,
+        new io.mehdieidi.modriss.platform.psm.ContainerPsmExecutionRunner(
+            store.objectMapper(), image, java.time.Duration.ofMinutes(3)));
+  }
+
   /**
    * Creates the authentication service.
    *

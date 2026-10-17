@@ -1,6 +1,7 @@
 import { readLastModelingType, saveLastModelingType, state } from "./state.js";
 import { el } from "./dom.js";
 import { api, apiAuthHeaders } from "./api.js";
+import { resetCloudProviders, loadCloudProviders } from "./cloud-providers.js";
 import { setBusy, setError, setStatus } from "./status.js";
 import { formatUserError } from "./errors.js";
 import { emptyDiagram, escapeHtml } from "./utils.js";
@@ -638,6 +639,7 @@ export async function loadProject(project) {
   setBusy(`Loading project "${projectName}"…`);
   try {
     state.project = normalizedProject;
+    resetCloudProviders();
     saveLastProjectId(projectId);
     clearArtifactState();
     resetChatForProjectChange();
@@ -764,6 +766,7 @@ export async function loadProject(project) {
     }
     renderViewWorkbench();
     resetModelSaveState();
+    await loadCloudProviders({ restore: true, open: rememberedLevel === "psm" });
     hideProjectDialog();
     setStatus(
       diagramWarning

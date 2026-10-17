@@ -13,8 +13,10 @@ in authoring, inspecting, explaining, and controlled modification of models expr
 This repository contains the MODRISS development process, modeling framework, and web-based low-code platform. The current
 platform-specific target is the AWS serverless ecosystem. The platform-independent modeling layer
 and transformation-based architecture are intended to support future extensions to other cloud
-platforms, including Microsoft Azure and Google Cloud Platform (GCP), through corresponding
-platform-specific models, transformations, and artifact generators.
+platforms, including Microsoft Azure and Google Cloud Platform (GCP), through project-scoped
+Ecore metamodels, ETL transformations, EGX/EGL generators and optional EVL constraints.
+The [custom cloud platforms guide](docs/public-docs/docs/guides/custom-cloud-platforms.md) explains
+how to keep multiple PSM branches from the same PIM alongside the native AWS path.
 
 ![Low-code platform screenshot](apps/landing/src/assets/modriss-workspace.png)
 

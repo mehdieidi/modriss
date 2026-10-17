@@ -567,7 +567,12 @@
 /* Collapse the inspect actions before the topbar's fixed Save/Issues actions
  * run out of room. This is intentionally earlier than the topbar Menu
  * breakpoint so compact desktop widths keep the primary topbar visible. */
-@media (max-width: 1400px) {
+@media (max-width: 1560px) {
+  .topbar .workbench-section-label,
+  .topbar .workbench-control-label {
+    display: none;
+  }
+
   .workbench-view-section {
     flex-basis: 200px;
     min-width: 140px;

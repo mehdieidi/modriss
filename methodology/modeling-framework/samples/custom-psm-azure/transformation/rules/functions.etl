@@ -1,0 +1,6 @@
+rule Function
+  transform source : PIM!Function
+  to target : PSM!AzureFunction {
+  target.name = source.name;
+  target.runtime = 'nodejs20';
+}

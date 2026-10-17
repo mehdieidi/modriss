@@ -17,6 +17,9 @@
 *.nar
 *.ear
 *.zip
+!methodology/modeling-framework/samples/custom-psm-azure/transformation.zip
+!methodology/modeling-framework/samples/custom-psm-azure/generation.zip
+!methodology/modeling-framework/samples/custom-psm-azure/validation.zip
 *.gz
 *.rar
 

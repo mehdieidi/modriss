@@ -1,0 +1,11 @@
+rule ApplicationManifest
+  transform application : PSM!AzureApplication {
+  template : 'templates/application.egl'
+  target : 'azure-application.txt'
+}
+
+rule FunctionManifest
+  transform fn : PSM!AzureFunction {
+  template : 'templates/function.egl'
+  target : 'functions/' + fn.name.replace(' ', '-') + '.txt'
+}

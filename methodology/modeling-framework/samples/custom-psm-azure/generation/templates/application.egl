@@ -1,0 +1,3 @@
+Azure application: [%=application.name%]
+Location: [%=application.location%]
+Functions: [%=application.functions.size()%]

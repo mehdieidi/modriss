@@ -2055,7 +2055,10 @@ export function isNamedInstanceView(typeKey, view) {
 
 function sanitizeWorkbenchViews(views, typeKey) {
   return safeArray(views).filter(
-    (view) => !view._temporaryIssueView && !isNamedInstanceView(typeKey, view),
+    (view) =>
+      !view._temporaryIssueView &&
+      !isNamedInstanceView(typeKey, view) &&
+      !(modelingLevelConfig(typeKey).workbench?.includeMainView === false && view.kind === "MAIN"),
   );
 }
 
@@ -2138,7 +2141,9 @@ function buildMainViewSkeleton(typeKey, modelName) {
 
 function generateLazyGlobalViews(typeKey, graph, modelName) {
   return [
-    buildMainViewSkeleton(typeKey, modelName),
+    ...(modelingLevelConfig(typeKey).workbench?.includeMainView === false
+      ? []
+      : [buildMainViewSkeleton(typeKey, modelName)]),
     ...viewDefinitions(typeKey).map((definition) =>
       buildViewSkeletonFromDefinition(typeKey, definition),
     ),

@@ -224,6 +224,7 @@ nav:
       - Modeling workflow: guides/modeling-workflow.md
       - AI-assisted modeling: guides/ai-assistant.md
       - Generated AWS projects: guides/generated-artifacts.md
+      - Custom cloud platforms: guides/custom-cloud-platforms.md
       - Floci AWS emulator: guides/floci-emulator.md
   - Prototype reference:
       - Architecture:

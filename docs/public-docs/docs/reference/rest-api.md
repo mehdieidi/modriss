@@ -1,5 +1,29 @@
 # REST API
 
+Custom cloud platform APIs are scoped to `/api/projects/{projectId}/psm` and use the normal
+`X-Auth-Token` project membership checks. See the [custom platform guide](../guides/custom-cloud-platforms.md).
+
+| Method             | Relative path                      | Purpose                                                                                                                                                                                 |
+| ------------------ | ---------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| GET / POST         | `/packages`                        | List platform summaries / upload Ecore with optional ETL, EGX/EGL and EVL ZIPs and entry paths. Ecore alone enables the editor.                                                         |
+| GET                | `/packages/{id}/definition`        | Read the Ecore schema and optional visual notation.                                                                                                                                     |
+| PUT                | `/packages/{id}/notation`          | Save palette groups, element notation and views for the project provider.                                                                                                               |
+| POST               | `/packages/{packageId}/model`      | Create the single provider model from semantic workbench JSON.                                                                                                                          |
+| PUT                | `/packages/{packageId}/model/{id}` | Structurally validate and save semantic JSON and canvas state with `expectedRevision`.                                                                                                  |
+| POST               | `/packages/{packageId}/import`     | Convert structurally valid XMI into semantic workbench JSON without persisting or running EVL.                                                                                          |
+| GET                | `/packages/{id}/{asset}`           | Download `platform.ecore`, `transformation.zip`, `generation.zip` or `validation.zip`.                                                                                                  |
+| GET / POST         | `/branches`                        | List provider models / generate with `packageId`, `sourcePimId`, `expectedRevision` and `name`. Regeneration updates the existing model and also requires its `expectedTargetRevision`. |
+| GET                | `/branches/{id}/editor`            | Read the normal workbench record, including semantic JSON, revision and saved canvas state.                                                                                             |
+| GET / PUT / DELETE | `/branches/{id}`                   | Read / structurally validate and save / delete a branch. PUT includes `name`, `xmi` and `expectedRevision`; DELETE requires `expectedRevision` as a query parameter.                    |
+| GET                | `/branches/{id}/schema`            | Inspect the branch's Ecore classes and features.                                                                                                                                        |
+| POST               | `/branches/{id}/validate`          | Explicit structural and optional EVL validation.                                                                                                                                        |
+| GET / POST         | `/branches/{id}/artifacts`         | List branch artifact history / generate with `expectedRevision`.                                                                                                                        |
+| GET                | `/branches/{id}/model.xmi`         | Download the branch model.                                                                                                                                                              |
+
+Extension operations are synchronous and use isolated containers. Invalid packages or structurally
+invalid output return 422. Stale revisions return 409; concurrent execution capacity returns 429.
+The native `/api/transformations/*` asynchronous AWS endpoints remain available.
+
 The backend API defaults to `http://127.0.0.1:8080`. Most application endpoints are under `/api`.
 
 Interactive and machine-readable contracts:

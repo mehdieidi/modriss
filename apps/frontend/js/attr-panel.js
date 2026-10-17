@@ -118,6 +118,7 @@ const HIDDEN_ATTR_KEYS = new Set([
 ]);
 
 function isHiddenAttributeKey(key) {
+  if (["_emfId", "_resourceRoots"].includes(key)) return true;
   return HIDDEN_ATTR_KEYS.has(
     String(key || "")
       .trim()
@@ -2181,7 +2182,7 @@ function buildAttrField(key, value, field) {
   if (readonly) {
     wrapper.className = "attr-field";
     const lbl = document.createElement("label");
-    lbl.textContent = key;
+    lbl.textContent = field?.label || key;
     const val = document.createElement("div");
     val.className = "attr-field-readonly";
     val.textContent = String(value);
@@ -2201,7 +2202,7 @@ function buildAttrField(key, value, field) {
     input.dataset.attrType = "boolean";
     const lbl = document.createElement("label");
     lbl.htmlFor = fieldId;
-    lbl.textContent = key;
+    lbl.textContent = field?.label || key;
     wrapper.appendChild(input);
     wrapper.appendChild(lbl);
     return wrapper;
@@ -2211,7 +2212,7 @@ function buildAttrField(key, value, field) {
   const fieldId = nextAttrFieldDomId(key);
   const lbl = document.createElement("label");
   lbl.htmlFor = fieldId;
-  lbl.textContent = field?.required ? `${key} *` : key;
+  lbl.textContent = `${field?.label || key}${field?.required ? " *" : ""}`;
   wrapper.appendChild(lbl);
 
   let input;

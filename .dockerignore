@@ -32,6 +32,7 @@
 # Runtime image definition.
 !deploy/
 !deploy/Dockerfile
+!deploy/backend-entrypoint.sh
 
 # Keep generated files and nested repositories out of the context.
 **/.git

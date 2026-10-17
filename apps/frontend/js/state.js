@@ -30,6 +30,7 @@ export const state = {
     user: null,
   },
   project: null, // active Project object from backend
+  cloudProvider: { projectId: null, id: "aws" },
   activeType: "",
   modelId: null,
   modelRevision: 0,
@@ -92,6 +93,7 @@ export const state = {
   assistantPreview: null,
   artifact: {
     id: null,
+    cloudProviderId: null,
     name: "",
     files: [],
     activeFile: null,

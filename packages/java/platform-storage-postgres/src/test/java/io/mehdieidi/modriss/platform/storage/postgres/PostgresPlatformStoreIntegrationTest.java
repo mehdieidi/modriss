@@ -359,6 +359,88 @@ class PostgresPlatformStoreIntegrationTest {
     assertEquals(0, count("model_synchronization_records"));
   }
 
+  @Test
+  void persistsProjectPsmPackagesAndBranchesAndCascadesProjectDeletion() {
+    Instant now = Instant.now();
+    store.write(
+        Path.of("users", "user-1.json"),
+        new UserRecord("user-1", "user@example.com", "User", "hash", "salt", now, now));
+    store.write(
+        Path.of("projects", "project-1", "project.json"),
+        new ProjectRecord(
+            "project-1",
+            "Project",
+            "",
+            "user-1",
+            Map.of(),
+            List.of(new ProjectMember("user-1", "user@example.com", "User", "OWNER", now)),
+            now,
+            now));
+    var platform =
+        new io.mehdieidi.modriss.platform.psm.PsmPlatformPackage(
+            "azure",
+            "project-1",
+            "user-1",
+            "Azure",
+            "Example",
+            new byte[] {1},
+            new byte[] {2},
+            new byte[] {3},
+            null,
+            "main.etl",
+            "main.egx",
+            null,
+            now);
+    var branch =
+        new io.mehdieidi.modriss.platform.psm.PsmBranch(
+            "branch",
+            "project-1",
+            "user-1",
+            "azure",
+            "Azure branch",
+            "pim",
+            3,
+            "hash",
+            "<azure/>",
+            1,
+            now,
+            now);
+    Path packages = Path.of("projects", "project-1", "psm-extensions", "packages");
+    Path branches = Path.of("projects", "project-1", "psm-extensions", "branches");
+    store.write(packages.resolve("azure.json"), platform);
+    store.write(branches.resolve("branch.json"), branch);
+    assertArrayEquals(
+        platform.ecore(),
+        store
+            .require(
+                packages.resolve("azure.json"),
+                io.mehdieidi.modriss.platform.psm.PsmPlatformPackage.class,
+                "missing")
+            .ecore());
+    assertEquals(
+        branch,
+        store.require(
+            branches.resolve("branch.json"),
+            io.mehdieidi.modriss.platform.psm.PsmBranch.class,
+            "missing"));
+    assertEquals(
+        1, store.list(packages, io.mehdieidi.modriss.platform.psm.PsmPlatformPackage.class).size());
+    assertEquals(1, store.list(branches, io.mehdieidi.modriss.platform.psm.PsmBranch.class).size());
+    assertTrue(
+        store
+            .list(
+                Path.of("projects", "other", "psm-extensions", "packages"),
+                io.mehdieidi.modriss.platform.psm.PsmPlatformPackage.class)
+            .isEmpty());
+    byte[] backedUp = store.readBytes(branches.resolve("branch.json")).orElseThrow();
+    store.deleteIfExists(branches.resolve("branch.json"));
+    assertEquals(0, store.list(branches, io.mehdieidi.modriss.platform.psm.PsmBranch.class).size());
+    store.writeBytesAtomically(branches.resolve("branch.json"), backedUp);
+    assertEquals(2, count("psm_extension_records"));
+    store.deleteTree(Path.of("projects", "project-1"));
+    assertEquals(0, count("psm_extension_records"));
+  }
+
   private void truncateAllTables() {
     List<String> tables =
         jdbc.queryForList(

@@ -1,0 +1,13 @@
+context PSM!AzureApplication {
+  constraint SupportedLocation {
+    check : self.location = 'westeurope' or self.location = 'eastus'
+    message : 'Choose westeurope or eastus for this minimal Azure example.'
+  }
+}
+
+context PSM!AzureFunction {
+  constraint SupportedRuntime {
+    check : self.runtime = 'nodejs20'
+    message : 'This minimal example supports the nodejs20 runtime.'
+  }
+}

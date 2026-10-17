@@ -56,9 +56,11 @@ spring:
   servlet:
     multipart:
       max-file-size: 20MB
-      max-request-size: 20MB
+      max-request-size: 40MB
 
 modriss:
+  psm:
+    runner-image: ${MODRISS_PSM_RUNNER_IMAGE:modriss-backend:local}
   session-ttl: 30d
   password-reset:
     from: ${MODRISS_MAIL_FROM:}

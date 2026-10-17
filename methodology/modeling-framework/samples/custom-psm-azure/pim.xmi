@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<pim:PIMModel xmlns:pim="https://modriss.org/pim/1.0" id="azure-demo" name="AzureDemo" domainName="Minimal Azure example">
+  <services id="hello-service" name="HelloService">
+    <functions id="hello-function" name="Hello"/>
+  </services>
+</pim:PIMModel>

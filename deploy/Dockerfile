@@ -37,13 +37,14 @@ FROM eclipse-temurin:17-jre
 WORKDIR /app
 # hadolint ignore=DL3008
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends curl \
+    && apt-get install -y --no-install-recommends curl docker.io gosu \
     && rm -rf /var/lib/apt/lists/*
 RUN useradd --system --uid 10001 modriss
 RUN mkdir -p /app/uploads /app/logs /app/storage \
     && chown -R modriss:modriss /app/uploads /app/logs /app/storage
 COPY --from=build /workspace/apps/backend/target/backend-*.jar /app/backend.jar
 COPY --from=build /workspace/methodology /app/methodology
-USER 10001
+COPY --chmod=755 deploy/backend-entrypoint.sh /app/backend-entrypoint.sh
 EXPOSE 8080
-ENTRYPOINT ["java", "-jar", "/app/backend.jar"]
+ENTRYPOINT ["/app/backend-entrypoint.sh"]
+CMD ["java", "-jar", "/app/backend.jar"]

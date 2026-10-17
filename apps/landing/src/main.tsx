@@ -63,7 +63,7 @@ function Icon({ name, size = 20 }: { name: IconName; size?: number }) {
 
 const contributions = [
   ['01', 'Development process', 'An iterative and incremental process guides teams from project initiation through coordinated CIM–PIM–PSM modeling and on to release, operations, evolution, and retirement.'],
-  ['02', 'Modeling framework', 'A set of domain-specific modeling languages represents the problem domain, platform-independent serverless architecture, and AWS deployment design. Their abstract syntax is specified through Ecore metamodels.'],
+  ['02', 'Modeling framework', 'Fixed domain-specific languages represent the problem domain and platform-independent serverless architecture. AWS is the built-in deployment target; projects can add other cloud-specific languages through Ecore metamodels and Epsilon packages.'],
   ['03', 'Automated refinement', 'Explicit model-to-model transformations refine CIM models into PIM and PSM models. Model-to-text transformations generate an inspectable serverless project from the provider-specific model.'],
   ['04', 'AI-assisted modeling', 'A conversational LLM-based assistant supports model creation, inspection, explanation, and controlled modification. It works with the live metamodel and keeps generated changes subject to structural conformance and human control.'],
 ]
@@ -175,7 +175,7 @@ function App() {
         <i><Icon name="arrow" /></i>
         <article><span>02 · PIM</span><h3>Serverless architecture</h3><p>Services, functions, contracts, data, events, workflows, integrations, security, policies, and deployment concerns.</p><small>Platform-Independent Model</small></article>
         <i><Icon name="arrow" /></i>
-        <article><span>03 · PSM</span><h3>Cloud provider ecosystem</h3><p>AWS resources and their configuration for compute, APIs, storage, messaging, identity, networking, and observability.</p><small>Platform-Specific Model</small></article>
+        <article><span>03 · PSM</span><h3>Cloud provider ecosystem</h3><p>Use the built-in AWS language or upload a cloud-specific Ecore language and Epsilon pipeline. Keep independent PSMs for multiple platforms from one PIM.</p><small>Platform-Specific Model</small></article>
         <i><Icon name="arrow" /></i>
         <article className="artefact"><span>04 · M2T</span><h3>Generated artifacts</h3><p>Infrastructure, Go handlers, contracts, tests, workflows, scripts, documentation, and trace information for review.</p><small>Engineering project baseline</small></article>
       </div>
