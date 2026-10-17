@@ -27,11 +27,12 @@ readers, and operators.
 
 ## Model-Driven Engineering
 
-| Document                                                                                     | Description                                    |
-| -------------------------------------------------------------------------------------------- | ---------------------------------------------- |
-| [change-impact-and-synchronization-guide.md](mde/change-impact-and-synchronization-guide.md) | What to update when metamodels or rules change |
-| [concrete-visual-syntax-coverage.md](mde/concrete-visual-syntax-coverage.md)                 | Visual notation coverage notes                 |
-| [concrete-visual-syntax-v2.md](mde/concrete-visual-syntax-v2.md)                             | CVS v2 formalism and migration notes           |
+| Document                                                                                     | Description                                                     |
+| -------------------------------------------------------------------------------------------- | --------------------------------------------------------------- |
+| [custom-cloud-platforms.md](mde/custom-cloud-platforms.md)                                   | PSM extension packages, provider models, and runtime boundaries |
+| [change-impact-and-synchronization-guide.md](mde/change-impact-and-synchronization-guide.md) | What to update when metamodels or rules change                  |
+| [concrete-visual-syntax-coverage.md](mde/concrete-visual-syntax-coverage.md)                 | Visual notation coverage notes                                  |
+| [concrete-visual-syntax-v2.md](mde/concrete-visual-syntax-v2.md)                             | CVS v2 formalism and migration notes                            |
 
 ## Configuration and Operations
 

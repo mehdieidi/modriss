@@ -17,6 +17,13 @@ public record PsmBranch(
     Instant createdAt,
     Instant updatedAt,
     tools.jackson.databind.JsonNode modelJson) {
+  public PsmBranch {
+    // JSON null and a missing legacy snapshot both require the XMI fallback.
+    if (modelJson != null && modelJson.isNull()) {
+      modelJson = null;
+    }
+  }
+
   public PsmBranch(
       String id,
       String projectId,

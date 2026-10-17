@@ -1,7 +1,13 @@
 # Generated AWS Projects
 
-a PSM can generate a complete reviewable project rather than a single infrastructure file.
-The exact files depend on modeled resources and contracts.
+The built-in AWS PSM generator produces a reviewable project containing infrastructure,
+application files, and supporting artifacts. The exact files depend on modeled resources
+and contracts.
+
+This guide describes the native AWS output. [Custom cloud platforms](custom-cloud-platforms.md)
+use their own EGX/EGL scripts and templates to define the generated project. Their files and
+deployment requirements depend on the uploaded package. The Artifacts tab lets users switch
+between outputs from different providers derived from the same CIM and PIM.
 
 ## Review Before Deployment
 

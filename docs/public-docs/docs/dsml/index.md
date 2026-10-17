@@ -2,11 +2,16 @@
 
 MODRISS is a model-driven framework for serverless software development. The landing site presents it as two connected research artefacts: an explicit development process and a modeling framework. This section documents the modeling framework itself. Its purpose is to preserve the meaning of the models at the point where a researcher, modeler, or reviewer needs to make a decision.
 
-The three DSMLs are deliberately different. CIM speaks about the problem domain and the organization that owns it. PIM expresses a serverless architecture without naming a cloud provider. PSM describes the concrete AWS resources, policies, documents, and integration wiring that can be turned into deployment and application artifacts. The levels are connected through ETL transformations, then EGX and EGL coordinate model-to-text generation from the PSM.
+The built-in DSMLs address different concerns. CIM speaks about the problem domain and the organization that owns it. PIM expresses a serverless architecture without naming a cloud provider. The AWS PSM describes the concrete resources, policies, documents, and integration wiring that can be turned into deployment and application artifacts. The levels are connected through ETL transformations, then EGX and EGL coordinate model-to-text generation from the PSM.
 
 The pages below are a semantic reference, rather than a list of class names. Every declared class, attribute, containment, and reference is retained. The prose explains the decision represented by that feature and the connections through which the feature participates in the larger model.
 
 ## The three modeling levels
+
+The PSM reference and AWS path below describe the built-in language. Users can add other
+PSM languages through [custom cloud platform packages](../guides/custom-cloud-platforms.md),
+using Ecore metamodels and Epsilon scripts. CIM and PIM retain their existing languages,
+and their models can support several provider PSMs and generated projects in the same project.
 
 | Level | Main question                                                           | What belongs here                                                                                                                                       | Reference                |
 | ----- | ----------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------ |

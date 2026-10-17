@@ -34,12 +34,18 @@ Wait for PostgreSQL and the backend to become healthy, then open:
 3. Open the CIM workspace.
 4. Create a model or import `methodology/modeling-framework/samples/cim.xmi`.
 5. Save and validate the CIM.
-6. Select **Generate PIM**, review the result, then select **Generate PSM**.
+6. Select **Generate PIM**, review and save the result, then select **Generate AWS PSM**.
 7. From PSM, select **Generate Artifacts**.
 8. Open the artifact explorer and download the generated ZIP.
 
 The included climate-relief sample exercises a broad portion of the CIM language and is the best
 starting point for exploring the full pipeline.
+
+To target another provider, add its PSM Ecore metamodel and Epsilon script ZIPs through
+**Cloud platforms** on the left workspace rail. Select that provider beside the PIM generation
+button, then generate and review its model and artifacts. AWS and custom-provider PSMs can
+coexist in the same project and share the same source CIM and PIM. See
+[Custom cloud platforms](../guides/custom-cloud-platforms.md) for a minimal Azure example.
 
 ## Enable the AI Assistant
 

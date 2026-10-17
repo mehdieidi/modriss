@@ -1,8 +1,15 @@
 # Custom cloud platforms
 
-MODRISS keeps its fixed CIM and PIM languages and built-in AWS modeling path. Projects can
-upload additional cloud languages and Epsilon pipelines. Each uploaded package has one PSM
-model, so AWS, Azure and other providers can coexist without mixing their models or artifacts.
+Users can extend MODRISS to a cloud provider by supplying a language for its PSM models and
+the scripts that map a PIM to that language and generate its project files. These packages
+are added through the workbench and stored with the project. The extension uses the existing
+modeling and generation controls without requiring changes to the platform source code.
+
+The CIM language describes the business domain, and the PIM language describes generic
+serverless architecture. Both remain fixed. AWS is the built-in PSM target; uploaded packages
+define additional targets. A project can derive several provider-specific models and final
+projects from the same CIM and PIM. Each custom package maintains one PSM, with its own editor
+state and artifact history.
 
 ## Add a platform
 
@@ -18,8 +25,11 @@ use the main workspace controls.
 | Validation ZIP     | Optional `.evl` constraints and `.eol` helpers. Used by the workspace Validate action.                                  |
 
 Ecore alone supplies a working editor. Script packages must include their relative folders,
-imports and templates. ETL reads `PIM` and writes `PSM`; EGX/EGL and EVL use `PSM`. The native
-PIM aliases, including `COMPUTE`, `DATA` and `API`, remain available. External files, remote
+imports and templates. Put all transformation `.etl` files in the transformation ZIP, all
+generation `.egx` and `.egl` files in the generation ZIP, and all `.evl` files in the validation
+ZIP, together with any helpers each package needs. ETL reads `PIM` and writes `PSM`;
+EGX/EGL and EVL use `PSM`. The native PIM aliases, including `COMPUTE`, `DATA` and `API`,
+remain available. External files, remote
 imports and installed Java extensions are outside the package contract.
 
 Ecore is limited to 5 MB. Each ZIP is limited to 10 MB compressed, 30 MB expanded, 250 files
@@ -33,12 +43,15 @@ or executable pipeline.
 
 ## Use the provider editor
 
-The PSM navbar tab shows the selected provider's name. Clicking the tab opens its canvas;
-clicking the small arrow beside it selects another provider. Provider selection is remembered
-per user and project. Each provider retains its own model and workspace state when switching.
+The PSM navbar tab shows the selected provider's name. Click that tab to open its canvas;
+while it is active, the small arrow beside its name lets you select another provider.
+Provider selection is remembered per user and project. Each provider retains its own model
+and workspace state when switching. A loading panel identifies the incoming provider while
+the editor is prepared.
 
-From the PIM tab, use the arrow beside **Generate PSM** to select the target provider, then
-press the generation button. The result opens in that provider's canvas. A custom package
+From the PIM tab, use the arrow beside the generation button to select the target provider.
+The button names that target, for example **Generate AWS PSM** or **Generate Azure PSM**.
+The result opens in that provider's canvas. A custom package
 keeps one model: regeneration asks for confirmation, checks the existing revision and updates
 the same model. It preserves prior artifact bundles. It never creates an additional model for
 the same package. Concurrent or stale writes return HTTP 409.
@@ -49,10 +62,35 @@ conformance. **Validate** explicitly runs the supplied EVL constraints, if prese
 EVL does not run during ordinary saves or artifact generation. Packages without ETL or
 EGX/EGL keep their editors; the corresponding generation action is unavailable.
 
-Each artifact bundle records its provider package, model revision and source PIM provenance.
+Open **Artifacts** to inspect the selected provider's generated project. While this tab is
+active, its dropdown lets you select another provider's artifacts. A provider with no output
+shows an empty state. Provider switches show a loading panel and ask before discarding
+unsaved artifact-file edits.
+
+Each custom artifact bundle records its provider package, model revision and source PIM provenance.
 Whole-project exports include packages, scripts, PSM XMI, workspace state, visual notation
 and generated artifacts. The chatbot continues to support CIM and PIM only; its structural
 validation boundary is unchanged.
+
+## Generate projects for several providers
+
+The provider paths share their upstream business and serverless models. They can be kept in
+the same project and reviewed independently. To use both AWS and a custom Azure package:
+
+1. Create or import a CIM, then generate and review its PIM as usual. Save the PIM.
+2. Open **Cloud platforms** from the left rail and add the Azure Ecore file and its script ZIPs.
+3. Return to the PIM tab. Select AWS beside the generation button and choose **Generate AWS PSM**.
+4. Review the AWS model in its editor, then choose **Generate artifacts**.
+5. Return to the same saved PIM. Select Azure and choose **Generate Azure PSM**.
+6. Review the Azure model, run **Validate** if needed, and generate its artifacts.
+7. Use the active provider tab's dropdown to revisit either PSM. In the active **Artifacts**
+   tab, use its dropdown to inspect or download the corresponding generated project.
+
+The AWS and Azure models coexist; selecting one does not replace the other. Regenerating a
+custom provider updates its existing PSM after confirmation. Its earlier artifact bundles
+remain stored, and the Artifacts view opens the latest bundle for the selected provider.
+The generated files depend on that provider's templates. The included Azure example produces
+small text manifests for testing the extension mechanism.
 
 ## Customize visual notation
 

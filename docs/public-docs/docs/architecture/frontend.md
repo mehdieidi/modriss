@@ -49,6 +49,23 @@ still contain level-specific behavior where a generic editor is insufficient.
 
 ## State and Persistence
 
+### Cloud-provider workspaces
+
+The PSM tab represents the selected cloud provider. AWS uses its built-in language; additional
+providers use project packages containing an Ecore metamodel and Epsilon scripts. The browser
+derives a default editor from uploaded Ecore and applies the package's editable visual
+notation. The normal canvas, properties, Save, Validate, and generation controls operate on
+that provider's model.
+
+`cloud-providers.js` keeps provider models and editing state separate and remembers the
+selection per user and project. A saved PIM can produce a PSM for each target package.
+Each custom package maintains one PSM, and the Artifacts workspace loads the selected
+provider's generated output. The package settings window handles uploads and notation;
+modeling operations remain in the main workspace. See
+[Custom cloud platforms](../guides/custom-cloud-platforms.md) for the user workflow.
+
+### Saved editor state
+
 The browser maintains working state, graph state, selections, view state, and undo history. Saved
 models are persisted through revision-aware API calls. Generated layouts can be persisted per model
 and view.

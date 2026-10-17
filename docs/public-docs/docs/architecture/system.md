@@ -44,6 +44,13 @@ implements that boundary. Modeling and MDE runners remain reusable Java modules.
 The frontend is a static browser application made of ES modules. It consumes backend-derived
 modeling configuration rather than maintaining a second independent metamodel.
 
+The PSM layer has a project-level extension point alongside the built-in AWS pipeline.
+Users upload Ecore metamodels and Epsilon packages for additional providers. The backend
+stores these packages with the project and runs their scripts in disposable containers.
+The same CIM and PIM can lead to several provider models and generated projects. The
+[custom cloud platforms guide](../guides/custom-cloud-platforms.md) describes the package
+contract and execution environment.
+
 ## Runtime Boundaries
 
 - Static browser assets can be hosted independently from the backend.

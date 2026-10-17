@@ -77,11 +77,20 @@ class AssistantMetamodelSchemaServiceTest {
     List<String> types =
         schemas.relevantTypes(
             ModelLevel.PIM, "Create a serverless model for vending machine backend", true, 8);
+    List<String> allTypes =
+        schemas.relevantTypes(ModelLevel.PIM, "anything", true, Integer.MAX_VALUE);
 
+    assertEquals(8, types.size());
+    assertEquals(allTypes.subList(0, 8), types);
     assertEquals(types, schemas.relevantTypes(ModelLevel.PIM, "unrelated wording", true, 8));
-    assertTrue(types.contains("Function"));
-    assertTrue(types.contains("Api"));
-    assertEquals(6, schemas.planningContracts(ModelLevel.PIM, "anything", 6, true).size());
+    // Core types must remain available even when earlier Ecore declarations fill the limited list.
+    assertTrue(allTypes.contains("Function"));
+    assertTrue(allTypes.contains("Api"));
+    assertEquals(
+        allTypes.subList(0, 6),
+        schemas.planningContracts(ModelLevel.PIM, "anything", 6, true).stream()
+            .map(AssistantModelProvider.ContextSnippet::title)
+            .toList());
   }
 
   @Test

@@ -49,11 +49,23 @@ The model-driven delivery engine operates within the single active-product phase
   <span>Architecture, APIs, configuration, persistence, and development operations.</span>
 </a>
 
+<a class="doc-path-card" href="guides/custom-cloud-platforms/">
+  <strong>Custom cloud platforms</strong>
+  <span>Add PSM languages and Epsilon packages, then generate projects for several providers from shared CIM and PIM models.</span>
+</a>
+
 </div>
 
 ## Modeling framework
 
 The three modeling levels describe different concerns. CIM records business and domain intent. PIM expresses a serverless architecture without fixing it to a cloud provider. PSM specifies the provider resources and deployment structure used by the current project generator.
+
+AWS is the built-in PSM target. Users can extend cloud support with an Ecore metamodel and
+ZIP packages of ETL transformation rules, EGX/EGL generators, and optional EVL constraints.
+The CIM and PIM languages remain fixed. A project can retain several provider PSMs and
+generate a separate project from each, using the same business and serverless models.
+The [custom cloud platforms guide](guides/custom-cloud-platforms.md) explains how to add a
+package, customize its notation, and switch between provider models and artifacts.
 
 <figure class="doc-diagram">
   <a class="doc-diagram__link" href="assets/diagrams/34-mde-modeling-path.svg" aria-label="Open the full-size model-driven engineering diagram">

@@ -86,13 +86,13 @@ var t = e((e) => {
       var i = r.ref;
       return { $$typeof: t, type: e, key: n, ref: i === void 0 ? null : i, props: r };
     }
-    function w(e, t) {
+    function re(e, t) {
       return ne(e.type, t, e.props);
     }
-    function T(e) {
+    function w(e) {
       return typeof e == `object` && !!e && e.$$typeof === t;
     }
-    function re(e) {
+    function ie(e) {
       var t = { "=": `=0`, ":": `=2` };
       return (
         `$` +
@@ -101,11 +101,11 @@ var t = e((e) => {
         })
       );
     }
-    var ie = /\/+/g;
-    function ae(e, t) {
-      return typeof e == `object` && e && e.key != null ? re(`` + e.key) : t.toString(36);
+    var ae = /\/+/g;
+    function oe(e, t) {
+      return typeof e == `object` && e && e.key != null ? ie(`` + e.key) : t.toString(36);
     }
-    function oe(e) {
+    function se(e) {
       switch (e.status) {
         case `fulfilled`:
           return e.value;
@@ -134,7 +134,7 @@ var t = e((e) => {
       }
       throw e;
     }
-    function se(e, r, i, a, o) {
+    function ce(e, r, i, a, o) {
       var s = typeof e;
       (s === `undefined` || s === `boolean`) && (e = null);
       var c = !1;
@@ -153,27 +153,27 @@ var t = e((e) => {
                 c = !0;
                 break;
               case d:
-                return (c = e._init), se(c(e._payload), r, i, a, o);
+                return (c = e._init), ce(c(e._payload), r, i, a, o);
             }
         }
       if (c)
         return (
           (o = o(e)),
-          (c = a === `` ? `.` + ae(e, 0) : a),
+          (c = a === `` ? `.` + oe(e, 0) : a),
           ee(o)
             ? ((i = ``),
-              c != null && (i = c.replace(ie, `$&/`) + `/`),
-              se(o, r, i, ``, function (e) {
+              c != null && (i = c.replace(ae, `$&/`) + `/`),
+              ce(o, r, i, ``, function (e) {
                 return e;
               }))
             : o != null &&
-              (T(o) &&
-                (o = w(
+              (w(o) &&
+                (o = re(
                   o,
                   i +
                     (o.key == null || (e && e.key === o.key)
                       ? ``
-                      : (`` + o.key).replace(ie, `$&/`) + `/`) +
+                      : (`` + o.key).replace(ae, `$&/`) + `/`) +
                     c,
                 )),
               r.push(o)),
@@ -182,12 +182,12 @@ var t = e((e) => {
       c = 0;
       var l = a === `` ? `.` : a + `:`;
       if (ee(e))
-        for (var u = 0; u < e.length; u++) (a = e[u]), (s = l + ae(a, u)), (c += se(a, r, i, s, o));
+        for (var u = 0; u < e.length; u++) (a = e[u]), (s = l + oe(a, u)), (c += ce(a, r, i, s, o));
       else if (((u = m(e)), typeof u == `function`))
         for (e = u.call(e), u = 0; !(a = e.next()).done; )
-          (a = a.value), (s = l + ae(a, u++)), (c += se(a, r, i, s, o));
+          (a = a.value), (s = l + oe(a, u++)), (c += ce(a, r, i, s, o));
       else if (s === `object`) {
-        if (typeof e.then == `function`) return se(oe(e), r, i, a, o);
+        if (typeof e.then == `function`) return ce(se(e), r, i, a, o);
         throw (
           ((r = String(e)),
           Error(
@@ -201,18 +201,18 @@ var t = e((e) => {
       }
       return c;
     }
-    function ce(e, t, n) {
+    function le(e, t, n) {
       if (e == null) return e;
       var r = [],
         i = 0;
       return (
-        se(e, r, ``, ``, function (e) {
+        ce(e, r, ``, ``, function (e) {
           return t.call(n, e, i++);
         }),
         r
       );
     }
-    function le(e) {
+    function ue(e) {
       if (e._status === -1) {
         var t = e._result;
         (t = t()),
@@ -229,7 +229,7 @@ var t = e((e) => {
       if (e._status === 1) return e._result.default;
       throw e._result;
     }
-    var E =
+    var T =
         typeof reportError == `function`
           ? reportError
           : function (e) {
@@ -250,10 +250,10 @@ var t = e((e) => {
               }
               console.error(e);
             },
-      D = {
-        map: ce,
+      E = {
+        map: le,
         forEach: function (e, t, n) {
-          ce(
+          le(
             e,
             function () {
               t.apply(this, arguments);
@@ -264,7 +264,7 @@ var t = e((e) => {
         count: function (e) {
           var t = 0;
           return (
-            ce(e, function () {
+            le(e, function () {
               t++;
             }),
             t
@@ -272,19 +272,19 @@ var t = e((e) => {
         },
         toArray: function (e) {
           return (
-            ce(e, function (e) {
+            le(e, function (e) {
               return e;
             }) || []
           );
         },
         only: function (e) {
-          if (!T(e))
+          if (!w(e))
             throw Error(`React.Children.only expected to receive a single React element child.`);
           return e;
         },
       };
     (e.Activity = f),
-      (e.Children = D),
+      (e.Children = E),
       (e.Component = v),
       (e.Fragment = r),
       (e.Profiler = a),
@@ -365,9 +365,9 @@ var t = e((e) => {
       (e.forwardRef = function (e) {
         return { $$typeof: c, render: e };
       }),
-      (e.isValidElement = T),
+      (e.isValidElement = w),
       (e.lazy = function (e) {
-        return { $$typeof: d, _payload: { _status: -1, _result: e }, _init: le };
+        return { $$typeof: d, _payload: { _status: -1, _result: e }, _init: ue };
       }),
       (e.memo = function (e, t) {
         return { $$typeof: u, type: e, compare: t === void 0 ? null : t };
@@ -380,9 +380,9 @@ var t = e((e) => {
           var r = e(),
             i = C.S;
           i !== null && i(n, r),
-            typeof r == `object` && r && typeof r.then == `function` && r.then(S, E);
+            typeof r == `object` && r && typeof r.then == `function` && r.then(S, T);
         } catch (e) {
-          E(e);
+          T(e);
         } finally {
           t !== null && n.types !== null && (t.types = n.types), (C.T = t);
         }
@@ -526,10 +526,10 @@ var t = e((e) => {
     }
     function x(e) {
       if (((h = !1), b(e), !m))
-        if (n(c) !== null) (m = !0), ee || ((ee = !0), T());
+        if (n(c) !== null) (m = !0), ee || ((ee = !0), w());
         else {
           var t = n(l);
-          t !== null && ae(x, t.startTime - e);
+          t !== null && oe(x, t.startTime - e);
         }
     }
     var ee = !1,
@@ -539,7 +539,7 @@ var t = e((e) => {
     function ne() {
       return g ? !0 : !(e.unstable_now() - te < C);
     }
-    function w() {
+    function re() {
       if (((g = !1), ee)) {
         var t = e.unstable_now();
         te = t;
@@ -566,7 +566,7 @@ var t = e((e) => {
                 if (d !== null) i = !0;
                 else {
                   var u = n(l);
-                  u !== null && ae(x, u.startTime - t), (i = !1);
+                  u !== null && oe(x, u.startTime - t), (i = !1);
                 }
               }
               break a;
@@ -576,27 +576,27 @@ var t = e((e) => {
             i = void 0;
           }
         } finally {
-          i ? T() : (ee = !1);
+          i ? w() : (ee = !1);
         }
       }
     }
-    var T;
+    var w;
     if (typeof y == `function`)
-      T = function () {
-        y(w);
+      w = function () {
+        y(re);
       };
     else if (typeof MessageChannel < `u`) {
-      var re = new MessageChannel(),
-        ie = re.port2;
-      (re.port1.onmessage = w),
-        (T = function () {
-          ie.postMessage(null);
+      var ie = new MessageChannel(),
+        ae = ie.port2;
+      (ie.port1.onmessage = re),
+        (w = function () {
+          ae.postMessage(null);
         });
     } else
-      T = function () {
-        _(w, 0);
+      w = function () {
+        _(re, 0);
       };
-    function ae(t, n) {
+    function oe(t, n) {
       S = _(function () {
         t(e.unstable_now());
       }, n);
@@ -696,8 +696,8 @@ var t = e((e) => {
           a > o
             ? ((r.sortIndex = a),
               t(l, r),
-              n(c) === null && r === n(l) && (h ? (v(S), (S = -1)) : (h = !0), ae(x, a - o)))
-            : ((r.sortIndex = s), t(c, r), m || p || ((m = !0), ee || ((ee = !0), T()))),
+              n(c) === null && r === n(l) && (h ? (v(S), (S = -1)) : (h = !0), oe(x, a - o)))
+            : ((r.sortIndex = s), t(c, r), m || p || ((m = !0), ee || ((ee = !0), w()))),
           r
         );
       }),
@@ -1018,20 +1018,20 @@ var t = e((e) => {
       C = Symbol.for(`react.forward_ref`),
       te = Symbol.for(`react.suspense`),
       ne = Symbol.for(`react.suspense_list`),
-      w = Symbol.for(`react.memo`),
-      T = Symbol.for(`react.lazy`),
-      re = Symbol.for(`react.activity`),
-      ie = Symbol.for(`react.memo_cache_sentinel`),
-      ae = Symbol.iterator;
-    function oe(e) {
+      re = Symbol.for(`react.memo`),
+      w = Symbol.for(`react.lazy`),
+      ie = Symbol.for(`react.activity`),
+      ae = Symbol.for(`react.memo_cache_sentinel`),
+      oe = Symbol.iterator;
+    function se(e) {
       return typeof e != `object` || !e
         ? null
-        : ((e = (ae && e[ae]) || e[`@@iterator`]), typeof e == `function` ? e : null);
+        : ((e = (oe && e[oe]) || e[`@@iterator`]), typeof e == `function` ? e : null);
     }
-    var se = Symbol.for(`react.client.reference`);
-    function ce(e) {
+    var ce = Symbol.for(`react.client.reference`);
+    function le(e) {
       if (e == null) return null;
-      if (typeof e == `function`) return e.$$typeof === se ? null : e.displayName || e.name || null;
+      if (typeof e == `function`) return e.$$typeof === ce ? null : e.displayName || e.name || null;
       if (typeof e == `string`) return e;
       switch (e) {
         case y:
@@ -1044,7 +1044,7 @@ var t = e((e) => {
           return `Suspense`;
         case ne:
           return `SuspenseList`;
-        case re:
+        case ie:
           return `Activity`;
       }
       if (typeof e == `object`)
@@ -1064,37 +1064,37 @@ var t = e((e) => {
                 e === `` ? `ForwardRef` : `ForwardRef(` + e + `)`)),
               e
             );
+          case re:
+            return (t = e.displayName || null), t === null ? le(e.type) || `Memo` : t;
           case w:
-            return (t = e.displayName || null), t === null ? ce(e.type) || `Memo` : t;
-          case T:
             (t = e._payload), (e = e._init);
             try {
-              return ce(e(t));
+              return le(e(t));
             } catch {}
         }
       return null;
     }
-    var le = Array.isArray,
-      E = r.__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE,
-      D = a.__DOM_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE,
-      ue = { pending: !1, data: null, method: null, action: null },
+    var ue = Array.isArray,
+      T = r.__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE,
+      E = a.__DOM_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE,
+      D = { pending: !1, data: null, method: null, action: null },
       de = [],
       fe = -1;
     function pe(e) {
       return { current: e };
     }
-    function me(e) {
+    function O(e) {
       0 > fe || ((e.current = de[fe]), (de[fe] = null), fe--);
     }
-    function O(e, t) {
+    function k(e, t) {
       fe++, (de[fe] = e.current), (e.current = t);
     }
-    var he = pe(null),
+    var me = pe(null),
+      he = pe(null),
       ge = pe(null),
-      _e = pe(null),
-      ve = pe(null);
-    function ye(e, t) {
-      switch ((O(_e, t), O(ge, e), O(he, null), t.nodeType)) {
+      _e = pe(null);
+    function ve(e, t) {
+      switch ((k(ge, t), k(he, e), k(me, null), t.nodeType)) {
         case 9:
         case 11:
           e = (e = t.documentElement) && (e = e.namespaceURI) ? Vd(e) : 0;
@@ -1113,29 +1113,29 @@ var t = e((e) => {
                 e = 0;
             }
       }
-      me(he), O(he, e);
+      O(me), k(me, e);
     }
-    function be() {
-      me(he), me(ge), me(_e);
+    function ye() {
+      O(me), O(he), O(ge);
+    }
+    function be(e) {
+      e.memoizedState !== null && k(_e, e);
+      var t = me.current,
+        n = Hd(t, e.type);
+      t !== n && (k(he, e), k(me, n));
     }
     function xe(e) {
-      e.memoizedState !== null && O(ve, e);
-      var t = he.current,
-        n = Hd(t, e.type);
-      t !== n && (O(ge, e), O(he, n));
+      he.current === e && (O(me), O(he)), _e.current === e && (O(_e), (Qf._currentValue = D));
     }
-    function Se(e) {
-      ge.current === e && (me(he), me(ge)), ve.current === e && (me(ve), (Qf._currentValue = ue));
-    }
-    var Ce, we;
-    function Te(e) {
-      if (Ce === void 0)
+    var Se, Ce;
+    function we(e) {
+      if (Se === void 0)
         try {
           throw Error();
         } catch (e) {
           var t = e.stack.trim().match(/\n( *(at )?)/);
-          (Ce = (t && t[1]) || ``),
-            (we =
+          (Se = (t && t[1]) || ``),
+            (Ce =
               -1 <
               e.stack.indexOf(`
     at`)
@@ -1147,15 +1147,15 @@ var t = e((e) => {
       return (
         `
 ` +
-        Ce +
+        Se +
         e +
-        we
+        Ce
       );
     }
-    var Ee = !1;
-    function De(e, t) {
-      if (!e || Ee) return ``;
-      Ee = !0;
+    var Te = !1;
+    function Ee(e, t) {
+      if (!e || Te) return ``;
+      Te = !0;
       var n = Error.prepareStackTrace;
       Error.prepareStackTrace = void 0;
       try {
@@ -1241,40 +1241,40 @@ var t = e((e) => {
             }
         }
       } finally {
-        (Ee = !1), (Error.prepareStackTrace = n);
+        (Te = !1), (Error.prepareStackTrace = n);
       }
-      return (n = e ? e.displayName || e.name : ``) ? Te(n) : ``;
+      return (n = e ? e.displayName || e.name : ``) ? we(n) : ``;
     }
-    function Oe(e, t) {
+    function De(e, t) {
       switch (e.tag) {
         case 26:
         case 27:
         case 5:
-          return Te(e.type);
+          return we(e.type);
         case 16:
-          return Te(`Lazy`);
+          return we(`Lazy`);
         case 13:
-          return e.child !== t && t !== null ? Te(`Suspense Fallback`) : Te(`Suspense`);
+          return e.child !== t && t !== null ? we(`Suspense Fallback`) : we(`Suspense`);
         case 19:
-          return Te(`SuspenseList`);
+          return we(`SuspenseList`);
         case 0:
         case 15:
-          return De(e.type, !1);
+          return Ee(e.type, !1);
         case 11:
-          return De(e.type.render, !1);
+          return Ee(e.type.render, !1);
         case 1:
-          return De(e.type, !0);
+          return Ee(e.type, !0);
         case 31:
-          return Te(`Activity`);
+          return we(`Activity`);
         default:
           return ``;
       }
     }
-    function ke(e) {
+    function Oe(e) {
       try {
         var t = ``,
           n = null;
-        do (t += Oe(e, n)), (n = e), (e = e.return);
+        do (t += De(e, n)), (n = e), (e = e.return);
         while (e);
         return t;
       } catch (e) {
@@ -1288,38 +1288,38 @@ Error generating stack: ` +
         );
       }
     }
-    var Ae = Object.prototype.hasOwnProperty,
-      je = t.unstable_scheduleCallback,
-      Me = t.unstable_cancelCallback,
-      Ne = t.unstable_shouldYield,
-      Pe = t.unstable_requestPaint,
-      Fe = t.unstable_now,
-      Ie = t.unstable_getCurrentPriorityLevel,
-      Le = t.unstable_ImmediatePriority,
-      Re = t.unstable_UserBlockingPriority,
-      ze = t.unstable_NormalPriority,
-      Be = t.unstable_LowPriority,
-      Ve = t.unstable_IdlePriority,
-      He = t.log,
-      Ue = t.unstable_setDisableYieldValue,
-      We = null,
-      Ge = null;
-    function Ke(e) {
-      if ((typeof He == `function` && Ue(e), Ge && typeof Ge.setStrictMode == `function`))
+    var ke = Object.prototype.hasOwnProperty,
+      Ae = t.unstable_scheduleCallback,
+      je = t.unstable_cancelCallback,
+      Me = t.unstable_shouldYield,
+      Ne = t.unstable_requestPaint,
+      Pe = t.unstable_now,
+      Fe = t.unstable_getCurrentPriorityLevel,
+      Ie = t.unstable_ImmediatePriority,
+      Le = t.unstable_UserBlockingPriority,
+      Re = t.unstable_NormalPriority,
+      ze = t.unstable_LowPriority,
+      Be = t.unstable_IdlePriority,
+      Ve = t.log,
+      He = t.unstable_setDisableYieldValue,
+      Ue = null,
+      We = null;
+    function Ge(e) {
+      if ((typeof Ve == `function` && He(e), We && typeof We.setStrictMode == `function`))
         try {
-          Ge.setStrictMode(We, e);
+          We.setStrictMode(Ue, e);
         } catch {}
     }
-    var qe = Math.clz32 ? Math.clz32 : Xe,
-      Je = Math.log,
-      Ye = Math.LN2;
-    function Xe(e) {
-      return (e >>>= 0), e === 0 ? 32 : (31 - ((Je(e) / Ye) | 0)) | 0;
+    var Ke = Math.clz32 ? Math.clz32 : Ye,
+      qe = Math.log,
+      Je = Math.LN2;
+    function Ye(e) {
+      return (e >>>= 0), e === 0 ? 32 : (31 - ((qe(e) / Je) | 0)) | 0;
     }
-    var Ze = 256,
-      Qe = 262144,
-      $e = 4194304;
-    function et(e) {
+    var Xe = 256,
+      Ze = 262144,
+      Qe = 4194304;
+    function $e(e) {
       var t = e & 42;
       if (t !== 0) return t;
       switch (e & -e) {
@@ -1374,7 +1374,7 @@ Error generating stack: ` +
           return e;
       }
     }
-    function tt(e, t, n) {
+    function et(e, t, n) {
       var r = e.pendingLanes;
       if (r === 0) return 0;
       var i = 0,
@@ -1387,13 +1387,13 @@ Error generating stack: ` +
           ? ((s = r & ~a),
             s === 0
               ? o === 0
-                ? n || ((n = r & ~e), n !== 0 && (i = et(n)))
-                : (i = et(o))
-              : (i = et(s)))
+                ? n || ((n = r & ~e), n !== 0 && (i = $e(n)))
+                : (i = $e(o))
+              : (i = $e(s)))
           : ((r = s & ~a),
             r === 0
-              ? ((o &= s), o === 0 ? n || ((n = s & ~e), n !== 0 && (i = et(n))) : (i = et(o)))
-              : (i = et(r))),
+              ? ((o &= s), o === 0 ? n || ((n = s & ~e), n !== 0 && (i = $e(n))) : (i = $e(o)))
+              : (i = $e(r))),
         i === 0
           ? 0
           : t !== 0 &&
@@ -1404,10 +1404,10 @@ Error generating stack: ` +
             : i
       );
     }
-    function nt(e, t) {
+    function tt(e, t) {
       return (e.pendingLanes & ~(e.suspendedLanes & ~e.pingedLanes) & t) === 0;
     }
-    function rt(e, t) {
+    function nt(e, t) {
       switch (e) {
         case 1:
         case 2:
@@ -1448,19 +1448,19 @@ Error generating stack: ` +
           return -1;
       }
     }
-    function it() {
-      var e = $e;
-      return ($e <<= 1), !($e & 62914560) && ($e = 4194304), e;
+    function rt() {
+      var e = Qe;
+      return (Qe <<= 1), !(Qe & 62914560) && (Qe = 4194304), e;
     }
-    function at(e) {
+    function it(e) {
       for (var t = [], n = 0; 31 > n; n++) t.push(e);
       return t;
     }
-    function ot(e, t) {
+    function at(e, t) {
       (e.pendingLanes |= t),
         t !== 268435456 && ((e.suspendedLanes = 0), (e.pingedLanes = 0), (e.warmLanes = 0));
     }
-    function st(e, t, n, r, i, a) {
+    function ot(e, t, n, r, i, a) {
       var o = e.pendingLanes;
       (e.pendingLanes = n),
         (e.suspendedLanes = 0),
@@ -1474,7 +1474,7 @@ Error generating stack: ` +
         c = e.expirationTimes,
         l = e.hiddenUpdates;
       for (n = o & ~n; 0 < n; ) {
-        var u = 31 - qe(n),
+        var u = 31 - Ke(n),
           d = 1 << u;
         (s[u] = 0), (c[u] = -1);
         var f = l[u];
@@ -1485,28 +1485,28 @@ Error generating stack: ` +
           }
         n &= ~d;
       }
-      r !== 0 && ct(e, r, 0),
+      r !== 0 && st(e, r, 0),
         a !== 0 && i === 0 && e.tag !== 0 && (e.suspendedLanes |= a & ~(o & ~t));
     }
-    function ct(e, t, n) {
+    function st(e, t, n) {
       (e.pendingLanes |= t), (e.suspendedLanes &= ~t);
-      var r = 31 - qe(t);
+      var r = 31 - Ke(t);
       (e.entangledLanes |= t),
         (e.entanglements[r] = e.entanglements[r] | 1073741824 | (n & 261930));
     }
-    function lt(e, t) {
+    function ct(e, t) {
       var n = (e.entangledLanes |= t);
       for (e = e.entanglements; n; ) {
-        var r = 31 - qe(n),
+        var r = 31 - Ke(n),
           i = 1 << r;
         (i & t) | (e[r] & t) && (e[r] |= t), (n &= ~i);
       }
     }
-    function ut(e, t) {
+    function lt(e, t) {
       var n = t & -t;
-      return (n = n & 42 ? 1 : dt(n)), (n & (e.suspendedLanes | t)) === 0 ? n : 0;
+      return (n = n & 42 ? 1 : ut(n)), (n & (e.suspendedLanes | t)) === 0 ? n : 0;
     }
-    function dt(e) {
+    function ut(e) {
       switch (e) {
         case 2:
           e = 1;
@@ -1545,41 +1545,41 @@ Error generating stack: ` +
       }
       return e;
     }
-    function ft(e) {
+    function dt(e) {
       return (e &= -e), 2 < e ? (8 < e ? (e & 134217727 ? 32 : 268435456) : 8) : 2;
     }
-    function pt() {
-      var e = D.p;
+    function ft() {
+      var e = E.p;
       return e === 0 ? ((e = window.event), e === void 0 ? 32 : mp(e.type)) : e;
     }
-    function mt(e, t) {
-      var n = D.p;
+    function pt(e, t) {
+      var n = E.p;
       try {
-        return (D.p = e), t();
+        return (E.p = e), t();
       } finally {
-        D.p = n;
+        E.p = n;
       }
     }
-    var ht = Math.random().toString(36).slice(2),
-      gt = `__reactFiber$` + ht,
-      _t = `__reactProps$` + ht,
-      vt = `__reactContainer$` + ht,
-      yt = `__reactEvents$` + ht,
-      bt = `__reactListeners$` + ht,
-      xt = `__reactHandles$` + ht,
-      St = `__reactResources$` + ht,
-      Ct = `__reactMarker$` + ht;
-    function wt(e) {
-      delete e[gt], delete e[_t], delete e[yt], delete e[bt], delete e[xt];
+    var mt = Math.random().toString(36).slice(2),
+      ht = `__reactFiber$` + mt,
+      gt = `__reactProps$` + mt,
+      _t = `__reactContainer$` + mt,
+      vt = `__reactEvents$` + mt,
+      yt = `__reactListeners$` + mt,
+      bt = `__reactHandles$` + mt,
+      xt = `__reactResources$` + mt,
+      St = `__reactMarker$` + mt;
+    function Ct(e) {
+      delete e[ht], delete e[gt], delete e[vt], delete e[yt], delete e[bt];
     }
-    function Tt(e) {
-      var t = e[gt];
+    function wt(e) {
+      var t = e[ht];
       if (t) return t;
       for (var n = e.parentNode; n; ) {
-        if ((t = n[vt] || n[gt])) {
+        if ((t = n[_t] || n[ht])) {
           if (((n = t.alternate), t.child !== null || (n !== null && n.child !== null)))
             for (e = df(e); e !== null; ) {
-              if ((n = e[gt])) return n;
+              if ((n = e[ht])) return n;
               e = df(e);
             }
           return t;
@@ -1588,24 +1588,24 @@ Error generating stack: ` +
       }
       return null;
     }
-    function Et(e) {
-      if ((e = e[gt] || e[vt])) {
+    function Tt(e) {
+      if ((e = e[ht] || e[_t])) {
         var t = e.tag;
         if (t === 5 || t === 6 || t === 13 || t === 31 || t === 26 || t === 27 || t === 3) return e;
       }
       return null;
     }
-    function Dt(e) {
+    function Et(e) {
       var t = e.tag;
       if (t === 5 || t === 26 || t === 27 || t === 6) return e.stateNode;
       throw Error(s(33));
     }
-    function Ot(e) {
-      var t = e[St];
-      return (t ||= e[St] = { hoistableStyles: new Map(), hoistableScripts: new Map() }), t;
+    function Dt(e) {
+      var t = e[xt];
+      return (t ||= e[xt] = { hoistableStyles: new Map(), hoistableScripts: new Map() }), t;
     }
-    function k(e) {
-      e[Ct] = !0;
+    function Ot(e) {
+      e[St] = !0;
     }
     var kt = new Set(),
       At = {};
@@ -1621,9 +1621,9 @@ Error generating stack: ` +
       Pt = {},
       Ft = {};
     function It(e) {
-      return Ae.call(Ft, e)
+      return ke.call(Ft, e)
         ? !0
-        : Ae.call(Pt, e)
+        : ke.call(Pt, e)
           ? !1
           : Nt.test(e)
             ? (Ft[e] = !0)
@@ -1847,7 +1847,7 @@ Error generating stack: ` +
       if (t == null) {
         if (r != null) {
           if (n != null) throw Error(s(92));
-          if (le(r)) {
+          if (ue(r)) {
             if (1 < r.length) throw Error(s(93));
             r = r[0];
           }
@@ -2021,9 +2021,9 @@ Error generating stack: ` +
     var fn = null,
       pn = null;
     function mn(e) {
-      var t = Et(e);
+      var t = Tt(e);
       if (t && (e = t.stateNode)) {
-        var n = e[_t] || null;
+        var n = e[gt] || null;
         a: switch (((e = t.stateNode), t.type)) {
           case `input`:
             if (
@@ -2048,7 +2048,7 @@ Error generating stack: ` +
               ) {
                 var r = n[t];
                 if (r !== e && r.form === e.form) {
-                  var i = r[_t] || null;
+                  var i = r[gt] || null;
                   if (!i) throw Error(s(90));
                   Jt(
                     r,
@@ -2091,7 +2091,7 @@ Error generating stack: ` +
     function _n(e, t) {
       var n = e.stateNode;
       if (n === null) return null;
-      var r = n[_t] || null;
+      var r = n[gt] || null;
       if (r === null) return null;
       n = r[t];
       a: switch (t) {
@@ -2509,7 +2509,7 @@ Error generating stack: ` +
       yd(e, 0);
     }
     function vr(e) {
-      if (Wt(Dt(e))) return e;
+      if (Wt(Et(e))) return e;
     }
     function yr(e, t) {
       if (e === `change`) return t;
@@ -2562,7 +2562,7 @@ Error generating stack: ` +
       if (n.length !== r.length) return !1;
       for (r = 0; r < n.length; r++) {
         var i = n[r];
-        if (!Ae.call(t, i) || !jr(e[i], t[i])) return !1;
+        if (!ke.call(t, i) || !jr(e[i], t[i])) return !1;
       }
       return !0;
     }
@@ -2787,7 +2787,7 @@ Error generating stack: ` +
         ? ((a = e.stateNode),
           i &&
             t !== null &&
-            ((i = 31 - qe(n)),
+            ((i = 31 - Ke(n)),
             (e = a.hiddenUpdates),
             (r = e[i]),
             r === null ? (e[i] = [t]) : r.push(t),
@@ -2891,11 +2891,11 @@ Error generating stack: ` +
       var o = 0;
       if (((r = e), typeof e == `function`)) vi(e) && (o = 1);
       else if (typeof e == `string`)
-        o = Uf(e, n, he.current) ? 26 : e === `html` || e === `head` || e === `body` ? 27 : 5;
+        o = Uf(e, n, me.current) ? 26 : e === `html` || e === `head` || e === `body` ? 27 : 5;
       else
         a: switch (e) {
-          case re:
-            return (e = _i(31, n, t, i)), (e.elementType = re), (e.lanes = a), e;
+          case ie:
+            return (e = _i(31, n, t, i)), (e.elementType = ie), (e.lanes = a), e;
           case y:
             return Si(n.children, i, a, t);
           case b:
@@ -2919,10 +2919,10 @@ Error generating stack: ` +
                 case C:
                   o = 11;
                   break a;
-                case w:
+                case re:
                   o = 14;
                   break a;
-                case T:
+                case w:
                   (o = 16), (r = null);
                   break a;
               }
@@ -2956,9 +2956,9 @@ Error generating stack: ` +
     function Di(e, t) {
       if (typeof e == `object` && e) {
         var n = Ei.get(e);
-        return n === void 0 ? ((t = { value: e, source: t, stack: ke(t) }), Ei.set(e, t), t) : n;
+        return n === void 0 ? ((t = { value: e, source: t, stack: Oe(t) }), Ei.set(e, t), t) : n;
       }
-      return { value: e, source: t, stack: ke(t) };
+      return { value: e, source: t, stack: Oe(t) };
     }
     var Oi = [],
       ki = 0,
@@ -2976,15 +2976,15 @@ Error generating stack: ` +
       (Mi[Ni++] = Fi), (Mi[Ni++] = Ii), (Mi[Ni++] = Pi), (Pi = e);
       var r = Fi;
       e = Ii;
-      var i = 32 - qe(r) - 1;
+      var i = 32 - Ke(r) - 1;
       (r &= ~(1 << i)), (n += 1);
-      var a = 32 - qe(t) + i;
+      var a = 32 - Ke(t) + i;
       if (30 < a) {
         var o = i - (i % 5);
         (a = (r & ((1 << o) - 1)).toString(32)),
           (r >>= o),
           (i -= o),
-          (Fi = (1 << (32 - qe(t) + i)) | (n << i) | r),
+          (Fi = (1 << (32 - Ke(t) + i)) | (n << i) | r),
           (Ii = a + e);
       } else (Fi = (1 << a) | (n << i) | r), (Ii = e);
     }
@@ -3031,7 +3031,7 @@ Error generating stack: ` +
       var t = e.stateNode,
         n = e.type,
         r = e.memoizedProps;
-      switch (((t[gt] = e), (t[_t] = r), n)) {
+      switch (((t[ht] = e), (t[gt] = r), n)) {
         case `dialog`:
           Q(`cancel`, t), Q(`close`, t);
           break;
@@ -3135,10 +3135,10 @@ Error generating stack: ` +
       ea = null,
       ta = null;
     function na(e, t, n) {
-      O($i, t._currentValue), (t._currentValue = n);
+      k($i, t._currentValue), (t._currentValue = n);
     }
     function ra(e) {
-      (e._currentValue = $i.current), me($i);
+      (e._currentValue = $i.current), O($i);
     }
     function ia(e, t, n) {
       for (; e !== null; ) {
@@ -3208,7 +3208,7 @@ Error generating stack: ` +
             var c = i.type;
             jr(i.pendingProps.value, o.value) || (e === null ? (e = [c]) : e.push(c));
           }
-        } else if (i === ve.current) {
+        } else if (i === _e.current) {
           if (((o = i.alternate), o === null)) throw Error(s(387));
           o.memoizedState.memoizedState !== i.memoizedState.memoizedState &&
             (e === null ? (e = [Qf]) : e.push(Qf));
@@ -3329,9 +3329,9 @@ Error generating stack: ` +
         r
       );
     }
-    var wa = E.S;
-    E.S = function (e, t) {
-      (tu = Fe()),
+    var wa = T.S;
+    T.S = function (e, t) {
+      (tu = Pe()),
         typeof t == `object` && t && typeof t.then == `function` && xa(e, t),
         wa !== null && wa(e, t);
     };
@@ -3341,7 +3341,7 @@ Error generating stack: ` +
       return e === null ? G.pooledCache : e;
     }
     function Da(e, t) {
-      t === null ? O(Ta, Ta.current) : O(Ta, t.pool);
+      t === null ? k(Ta, Ta.current) : k(Ta, t.pool);
     }
     function Oa() {
       var e = Ea();
@@ -3474,7 +3474,7 @@ Error generating stack: ` +
           ? d(e, t, n.props.children, r, n.key)
           : t !== null &&
               (t.elementType === a ||
-                (typeof a == `object` && a && a.$$typeof === T && Fa(a) === t.type))
+                (typeof a == `object` && a && a.$$typeof === w && Fa(a) === t.type))
             ? ((t = i(t, n.props)), Ha(t, n), (t.return = e), t)
             : ((t = xi(n.type, n.key, n.props, null, e.mode, r)), Ha(t, n), (t.return = e), t);
       }
@@ -3500,10 +3500,10 @@ Error generating stack: ` +
               return (n = xi(t.type, t.key, t.props, null, e.mode, n)), Ha(n, t), (n.return = e), n;
             case v:
               return (t = Ti(t, e.mode, n)), (t.return = e), t;
-            case T:
+            case w:
               return (t = Fa(t)), f(e, t, n);
           }
-          if (le(t) || oe(t)) return (t = Si(t, e.mode, n, null)), (t.return = e), t;
+          if (ue(t) || se(t)) return (t = Si(t, e.mode, n, null)), (t.return = e), t;
           if (typeof t.then == `function`) return f(e, Va(t), n);
           if (t.$$typeof === S) return f(e, ua(e, t), n);
           Ua(e, t);
@@ -3520,10 +3520,10 @@ Error generating stack: ` +
               return n.key === i ? l(e, t, n, r) : null;
             case v:
               return n.key === i ? u(e, t, n, r) : null;
-            case T:
+            case w:
               return (n = Fa(n)), p(e, t, n, r);
           }
-          if (le(n) || oe(n)) return i === null ? d(e, t, n, r, null) : null;
+          if (ue(n) || se(n)) return i === null ? d(e, t, n, r, null) : null;
           if (typeof n.then == `function`) return p(e, t, Va(n), r);
           if (n.$$typeof === S) return p(e, t, ua(e, n), r);
           Ua(e, n);
@@ -3539,10 +3539,10 @@ Error generating stack: ` +
               return (e = e.get(r.key === null ? n : r.key) || null), l(t, e, r, i);
             case v:
               return (e = e.get(r.key === null ? n : r.key) || null), u(t, e, r, i);
-            case T:
+            case w:
               return (r = Fa(r)), m(e, t, n, r, i);
           }
-          if (le(r) || oe(r)) return (e = e.get(n) || null), d(t, e, r, i, null);
+          if (ue(r) || se(r)) return (e = e.get(n) || null), d(t, e, r, i, null);
           if (typeof r.then == `function`) return m(e, t, n, Va(r), i);
           if (r.$$typeof === S) return m(e, t, n, ua(t, r), i);
           Ua(t, r);
@@ -3649,7 +3649,7 @@ Error generating stack: ` +
                       }
                     } else if (
                       r.elementType === l ||
-                      (typeof l == `object` && l && l.$$typeof === T && Fa(l) === r.type)
+                      (typeof l == `object` && l && l.$$typeof === w && Fa(l) === r.type)
                     ) {
                       n(e, r.sibling), (c = i(r, a.props)), Ha(c, a), (c.return = e), (e = c);
                       break a;
@@ -3688,12 +3688,12 @@ Error generating stack: ` +
                 (c = Ti(a, e.mode, c)), (c.return = e), (e = c);
               }
               return o(e);
-            case T:
+            case w:
               return (a = Fa(a)), b(e, r, a, c);
           }
-          if (le(a)) return h(e, r, a, c);
-          if (oe(a)) {
-            if (((l = oe(a)), typeof l != `function`)) throw Error(s(150));
+          if (ue(a)) return h(e, r, a, c);
+          if (se(a)) {
+            if (((l = se(a)), typeof l != `function`)) throw Error(s(150));
             return (a = l.call(a)), g(e, r, a, c);
           }
           if (typeof a.then == `function`) return b(e, r, Va(a), c);
@@ -3764,7 +3764,7 @@ Error generating stack: ` +
     function Qa(e, t, n) {
       if (((t = t.updateQueue), t !== null && ((t = t.shared), n & 4194048))) {
         var r = t.lanes;
-        (r &= e.pendingLanes), (n |= r), (t.lanes = n), lt(e, n);
+        (r &= e.pendingLanes), (n |= r), (t.lanes = n), ct(e, n);
       }
     }
     function $a(e, t) {
@@ -3896,33 +3896,33 @@ Error generating stack: ` +
     var ao = pe(null),
       oo = pe(0);
     function so(e, t) {
-      (e = Gl), O(oo, e), O(ao, t), (Gl = e | t.baseLanes);
+      (e = Gl), k(oo, e), k(ao, t), (Gl = e | t.baseLanes);
     }
     function co() {
-      O(oo, Gl), O(ao, ao.current);
+      k(oo, Gl), k(ao, ao.current);
     }
     function lo() {
-      (Gl = oo.current), me(ao), me(oo);
+      (Gl = oo.current), O(ao), O(oo);
     }
     var uo = pe(null),
       fo = null;
     function po(e) {
       var t = e.alternate;
-      O(N, N.current & 1),
-        O(uo, e),
+      k(N, N.current & 1),
+        k(uo, e),
         fo === null && (t === null || ao.current !== null || t.memoizedState !== null) && (fo = e);
     }
     function mo(e) {
-      O(N, N.current), O(uo, e), fo === null && (fo = e);
+      k(N, N.current), k(uo, e), fo === null && (fo = e);
     }
     function ho(e) {
-      e.tag === 22 ? (O(N, N.current), O(uo, e), fo === null && (fo = e)) : go(e);
+      e.tag === 22 ? (k(N, N.current), k(uo, e), fo === null && (fo = e)) : go(e);
     }
     function go() {
-      O(N, N.current), O(uo, uo.current);
+      k(N, N.current), k(uo, uo.current);
     }
     function _o(e) {
-      me(uo), fo === e && (fo = null), me(N);
+      O(uo), fo === e && (fo = null), O(N);
     }
     var N = pe(0);
     function vo(e) {
@@ -3977,7 +3977,7 @@ Error generating stack: ` +
         (t.memoizedState = null),
         (t.updateQueue = null),
         (t.lanes = 0),
-        (E.H = e === null || e.memoizedState === null ? Ws : Gs),
+        (T.H = e === null || e.memoizedState === null ? Ws : Gs),
         (So = !1),
         (a = n(r, i)),
         (So = !1),
@@ -3987,7 +3987,7 @@ Error generating stack: ` +
       );
     }
     function ko(e) {
-      E.H = Us;
+      T.H = Us;
       var t = F !== null && F.next !== null;
       if (((yo = 0), (I = F = P = null), (bo = !1), (wo = 0), (To = null), t)) throw Error(s(300));
       e === null || z || ((e = e.dependencies), e !== null && sa(e) && (z = !0));
@@ -4004,12 +4004,12 @@ Error generating stack: ` +
             (a.stores = null),
             a.memoCache != null && (a.memoCache.index = 0);
         }
-        (E.H = Ks), (a = t(n, r));
+        (T.H = Ks), (a = t(n, r));
       } while (xo);
       return a;
     }
     function jo() {
-      var e = E.H,
+      var e = T.H,
         t = e.useState()[0];
       return (
         (t = typeof t.then == `function` ? Lo(t) : t),
@@ -4071,7 +4071,7 @@ Error generating stack: ` +
         (e = Pa(To, e, t)),
         (t = P),
         (I === null ? t.memoizedState : I.next) === null &&
-          ((t = t.alternate), (E.H = t === null || t.memoizedState === null ? Ws : Gs)),
+          ((t = t.alternate), (T.H = t === null || t.memoizedState === null ? Ws : Gs)),
         e
       );
     }
@@ -4106,7 +4106,7 @@ Error generating stack: ` +
         (n = t.data[t.index]),
         n === void 0)
       )
-        for (n = t.data[t.index] = Array(e), r = 0; r < e; r++) n[r] = ie;
+        for (n = t.data[t.index] = Array(e), r = 0; r < e; r++) n[r] = ae;
       return t.index++, n;
     }
     function Bo(e, t) {
@@ -4273,11 +4273,11 @@ Error generating stack: ` +
       if (typeof e == `function`) {
         var n = e;
         if (((e = n()), So)) {
-          Ke(!0);
+          Ge(!0);
           try {
             n();
           } finally {
-            Ke(!1);
+            Ge(!1);
           }
         }
       }
@@ -4312,7 +4312,7 @@ Error generating stack: ` +
             a.listeners.push(e);
           },
         };
-        E.T === null ? (a.isTransition = !1) : n(!0),
+        T.T === null ? (a.isTransition = !1) : n(!0),
           r(a),
           (n = t.pending),
           n === null
@@ -4325,17 +4325,17 @@ Error generating stack: ` +
         r = t.payload,
         i = e.state;
       if (t.isTransition) {
-        var a = E.T,
+        var a = T.T,
           o = {};
-        E.T = o;
+        T.T = o;
         try {
           var s = n(i, r),
-            c = E.S;
+            c = T.S;
           c !== null && c(o, s), es(e, t, s);
         } catch (n) {
           ns(e, t, n);
         } finally {
-          a !== null && o.types !== null && (a.types = o.types), (E.T = a);
+          a !== null && o.types !== null && (a.types = o.types), (T.T = a);
         }
       } else
         try {
@@ -4565,11 +4565,11 @@ Error generating stack: ` +
       var r = n.memoizedState;
       if (t !== null && Do(t, r[1])) return r[0];
       if (((r = e()), So)) {
-        Ke(!0);
+        Ge(!0);
         try {
           e();
         } finally {
-          Ke(!1);
+          Ge(!1);
         }
       }
       return (n.memoizedState = [r, t]), r;
@@ -4589,14 +4589,14 @@ Error generating stack: ` +
           : ((e = Ts(e, n, r)), jr(e, t) || (z = !0), e);
     }
     function Ds(e, t, n, r, i) {
-      var a = D.p;
-      D.p = a !== 0 && 8 > a ? a : 8;
-      var o = E.T,
+      var a = E.p;
+      E.p = a !== 0 && 8 > a ? a : 8;
+      var o = T.T,
         s = {};
-      (E.T = s), zs(e, !1, t, n);
+      (T.T = s), zs(e, !1, t, n);
       try {
         var c = i(),
-          l = E.S;
+          l = T.S;
         l !== null && l(s, c),
           typeof c == `object` && c && typeof c.then == `function`
             ? Rs(e, t, Ca(c, r), pu(e))
@@ -4604,7 +4604,7 @@ Error generating stack: ` +
       } catch (n) {
         Rs(e, t, { then: function () {}, status: `rejected`, reason: n }, pu());
       } finally {
-        (D.p = a), o !== null && s.types !== null && (o.types = s.types), (E.T = o);
+        (E.p = a), o !== null && s.types !== null && (o.types = s.types), (T.T = o);
       }
     }
     function Os() {}
@@ -4615,7 +4615,7 @@ Error generating stack: ` +
         e,
         i,
         t,
-        ue,
+        D,
         n === null
           ? Os
           : function () {
@@ -4627,15 +4627,15 @@ Error generating stack: ` +
       var t = e.memoizedState;
       if (t !== null) return t;
       t = {
-        memoizedState: ue,
-        baseState: ue,
+        memoizedState: D,
+        baseState: D,
         baseQueue: null,
         queue: {
           pending: null,
           lanes: 0,
           dispatch: null,
           lastRenderedReducer: Bo,
-          lastRenderedState: ue,
+          lastRenderedState: D,
         },
         next: null,
       };
@@ -4759,7 +4759,7 @@ Error generating stack: ` +
     function Hs(e, t, n) {
       if (n & 4194048) {
         var r = t.lanes;
-        (r &= e.pendingLanes), (n |= r), (t.lanes = n), lt(e, n);
+        (r &= e.pendingLanes), (n |= r), (t.lanes = n), ct(e, n);
       }
     }
     var Us = {
@@ -4810,11 +4810,11 @@ Error generating stack: ` +
           t = t === void 0 ? null : t;
           var r = e();
           if (So) {
-            Ke(!0);
+            Ge(!0);
             try {
               e();
             } finally {
-              Ke(!1);
+              Ge(!1);
             }
           }
           return (n.memoizedState = [r, t]), r;
@@ -4824,11 +4824,11 @@ Error generating stack: ` +
           if (n !== void 0) {
             var i = n(t);
             if (So) {
-              Ke(!0);
+              Ge(!0);
               try {
                 n(t);
               } finally {
-                Ke(!1);
+                Ge(!1);
               }
             }
           } else i = t;
@@ -4890,7 +4890,7 @@ Error generating stack: ` +
           if (j) {
             var n = Ii,
               r = Fi;
-            (n = (r & ~(1 << (32 - qe(r) - 1))).toString(32) + n),
+            (n = (r & ~(1 << (32 - Ke(r) - 1))).toString(32) + n),
               (t = `_` + t + `R_` + n),
               (n = Co++),
               0 < n && (t += `H` + n.toString(32)),
@@ -5391,7 +5391,7 @@ Error generating stack: ` +
           else if (t.memoizedState !== null) (t.child = e.child), (t.flags |= 128), (t = null);
           else throw Error(s(558));
         else if ((z || oa(e, t, n, !1), (i = (n & e.childLanes) !== 0), z || i)) {
-          if (((r = G), r !== null && ((o = ut(r, n)), o !== 0 && o !== a.retryLane)))
+          if (((r = G), r !== null && ((o = lt(r, n)), o !== 0 && o !== a.retryLane)))
             throw ((a.retryLane = o), fi(e, o), hu(r, e, o), sc);
           Du(), (t = gc(e, t, n));
         } else
@@ -5687,7 +5687,7 @@ Error generating stack: ` +
             Qi({ value: r, source: null, stack: null }),
             (t = kc(e, t, n));
         } else if ((z || oa(e, t, n, !1), (o = (n & e.childLanes) !== 0), z || o)) {
-          if (((o = G), o !== null && ((r = ut(o, n)), r !== 0 && r !== l.retryLane)))
+          if (((o = G), o !== null && ((r = lt(o, n)), r !== 0 && r !== l.retryLane)))
             throw ((l.retryLane = r), fi(e, r), hu(o, e, r), sc);
           af(c) || Du(), (t = kc(e, t, n));
         } else
@@ -5792,7 +5792,7 @@ Error generating stack: ` +
         s = (o & 2) != 0;
       if (
         (s ? ((o = (o & 1) | 2), (t.flags |= 128)) : (o &= 1),
-        O(N, o),
+        k(N, o),
         cc(e, t, r, n),
         (r = j ? ji : 0),
         !s && e !== null && e.flags & 128)
@@ -5863,14 +5863,14 @@ Error generating stack: ` +
     function Fc(e, t, n) {
       switch (t.tag) {
         case 3:
-          ye(t, t.stateNode.containerInfo), na(t, M, e.memoizedState.cache), Xi();
+          ve(t, t.stateNode.containerInfo), na(t, M, e.memoizedState.cache), Xi();
           break;
         case 27:
         case 5:
-          xe(t);
+          be(t);
           break;
         case 4:
-          ye(t, t.stateNode.containerInfo);
+          ve(t, t.stateNode.containerInfo);
           break;
         case 10:
           na(t, t.type, t.memoizedProps.value);
@@ -5899,7 +5899,7 @@ Error generating stack: ` +
           if (
             ((i = t.memoizedState),
             i !== null && ((i.rendering = null), (i.tail = null), (i.lastEffect = null)),
-            O(N, N.current),
+            k(N, N.current),
             r)
           )
             break;
@@ -5933,12 +5933,12 @@ Error generating stack: ` +
                 if (i === C) {
                   (t.tag = 11), (t = lc(null, t, e, r, n));
                   break a;
-                } else if (i === w) {
+                } else if (i === re) {
                   (t.tag = 14), (t = uc(null, t, e, r, n));
                   break a;
                 }
               }
-              throw ((t = ce(e) || e), Error(s(306, t, ``)));
+              throw ((t = le(e) || e), Error(s(306, t, ``)));
             }
           }
           return t;
@@ -5948,7 +5948,7 @@ Error generating stack: ` +
           return (r = t.type), (i = Zs(r, t.pendingProps)), xc(e, t, r, i, n);
         case 3:
           a: {
-            if ((ye(t, t.stateNode.containerInfo), e === null)) throw Error(s(387));
+            if ((ve(t, t.stateNode.containerInfo), e === null)) throw Error(s(387));
             r = t.pendingProps;
             var a = t.memoizedState;
             (i = a.element), Ya(e, t), no(t, r, null, n);
@@ -6012,21 +6012,21 @@ Error generating stack: ` +
                 : j ||
                   ((n = t.type),
                   (e = t.pendingProps),
-                  (r = Bd(_e.current).createElement(n)),
-                  (r[gt] = t),
-                  (r[_t] = e),
+                  (r = Bd(ge.current).createElement(n)),
+                  (r[ht] = t),
+                  (r[gt] = e),
                   Pd(r, n, e),
-                  k(r),
+                  Ot(r),
                   (t.stateNode = r))
               : (t.memoizedState = kf(t.type, e.memoizedProps, t.pendingProps, e.memoizedState)),
             null
           );
         case 27:
           return (
-            xe(t),
+            be(t),
             e === null &&
               j &&
-              ((r = t.stateNode = ff(t.type, t.pendingProps, _e.current)),
+              ((r = t.stateNode = ff(t.type, t.pendingProps, ge.current)),
               (Hi = t),
               (Wi = !0),
               (i = A),
@@ -6046,7 +6046,7 @@ Error generating stack: ` +
                   ? (i = !1)
                   : ((t.stateNode = r), (Hi = t), (A = cf(r.firstChild)), (Wi = !1), (i = !0))),
               i || Ki(t)),
-            xe(t),
+            be(t),
             (i = t.type),
             (a = t.pendingProps),
             (o = e === null ? null : e.memoizedProps),
@@ -6071,7 +6071,7 @@ Error generating stack: ` +
           return Ec(e, t, n);
         case 4:
           return (
-            ye(t, t.stateNode.containerInfo),
+            ve(t, t.stateNode.containerInfo),
             (r = t.pendingProps),
             e === null ? (t.child = Ga(t, null, r, n)) : cc(e, t, r, n),
             t.child
@@ -6159,7 +6159,7 @@ Error generating stack: ` +
     }
     function Bc(e, t) {
       t !== null && (e.flags |= 4),
-        e.flags & 16384 && ((t = e.tag === 22 ? 536870912 : it()), (e.lanes |= t), (Xl |= t));
+        e.flags & 16384 && ((t = e.tag === 22 ? 536870912 : rt()), (e.lanes |= t), (Xl |= t));
     }
     function Vc(e, t) {
       if (!j)
@@ -6221,7 +6221,7 @@ Error generating stack: ` +
             e !== null && (r = e.memoizedState.cache),
             t.memoizedState.cache !== r && (t.flags |= 2048),
             ra(M),
-            be(),
+            ye(),
             n.pendingContext && ((n.context = n.pendingContext), (n.pendingContext = null)),
             (e === null || e.child === null) &&
               (Yi(t)
@@ -6246,27 +6246,27 @@ Error generating stack: ` +
             null
           );
         case 27:
-          if ((Se(t), (n = _e.current), (i = t.type), e !== null && t.stateNode != null))
+          if ((xe(t), (n = ge.current), (i = t.type), e !== null && t.stateNode != null))
             e.memoizedProps !== r && Lc(t);
           else {
             if (!r) {
               if (t.stateNode === null) throw Error(s(166));
               return B(t), null;
             }
-            (e = he.current), Yi(t) ? qi(t, e) : ((e = ff(i, r, n)), (t.stateNode = e), Lc(t));
+            (e = me.current), Yi(t) ? qi(t, e) : ((e = ff(i, r, n)), (t.stateNode = e), Lc(t));
           }
           return B(t), null;
         case 5:
-          if ((Se(t), (i = t.type), e !== null && t.stateNode != null))
+          if ((xe(t), (i = t.type), e !== null && t.stateNode != null))
             e.memoizedProps !== r && Lc(t);
           else {
             if (!r) {
               if (t.stateNode === null) throw Error(s(166));
               return B(t), null;
             }
-            if (((a = he.current), Yi(t))) qi(t, a);
+            if (((a = me.current), Yi(t))) qi(t, a);
             else {
-              var o = Bd(_e.current);
+              var o = Bd(ge.current);
               switch (a) {
                 case 1:
                   a = o.createElementNS(`http://www.w3.org/2000/svg`, i);
@@ -6301,7 +6301,7 @@ Error generating stack: ` +
                           : o.createElement(i);
                   }
               }
-              (a[gt] = t), (a[_t] = r);
+              (a[ht] = t), (a[gt] = r);
               a: for (o = t.child; o !== null; ) {
                 if (o.tag === 5 || o.tag === 6) a.appendChild(o.stateNode);
                 else if (o.tag !== 4 && o.tag !== 27 && o.child !== null) {
@@ -6337,21 +6337,21 @@ Error generating stack: ` +
           if (e && t.stateNode != null) e.memoizedProps !== r && Lc(t);
           else {
             if (typeof r != `string` && t.stateNode === null) throw Error(s(166));
-            if (((e = _e.current), Yi(t))) {
+            if (((e = ge.current), Yi(t))) {
               if (((e = t.stateNode), (n = t.memoizedProps), (r = null), (i = Hi), i !== null))
                 switch (i.tag) {
                   case 27:
                   case 5:
                     r = i.memoizedProps;
                 }
-              (e[gt] = t),
+              (e[ht] = t),
                 (e = !!(
                   e.nodeValue === n ||
                   (r !== null && !0 === r.suppressHydrationWarning) ||
                   Md(e.nodeValue, n)
                 )),
                 e || Ki(t, !0);
-            } else (e = Bd(e).createTextNode(r)), (e[gt] = t), (t.stateNode = e);
+            } else (e = Bd(e).createTextNode(r)), (e[ht] = t), (t.stateNode = e);
           }
           return B(t), null;
         case 31:
@@ -6361,7 +6361,7 @@ Error generating stack: ` +
                 if (!r) throw Error(s(318));
                 if (((e = t.memoizedState), (e = e === null ? null : e.dehydrated), !e))
                   throw Error(s(557));
-                e[gt] = t;
+                e[ht] = t;
               } else Xi(), !(t.flags & 128) && (t.memoizedState = null), (t.flags |= 4);
               B(t), (e = !1);
             } else
@@ -6382,7 +6382,7 @@ Error generating stack: ` +
                 if (!i) throw Error(s(318));
                 if (((i = t.memoizedState), (i = i === null ? null : i.dehydrated), !i))
                   throw Error(s(317));
-                i[gt] = t;
+                i[ht] = t;
               } else Xi(), !(t.flags & 128) && (t.memoizedState = null), (t.flags |= 4);
               B(t), (i = !1);
             } else
@@ -6415,11 +6415,11 @@ Error generating stack: ` +
                 null)
           );
         case 4:
-          return be(), e === null && Sd(t.stateNode.containerInfo), B(t), null;
+          return ye(), e === null && Sd(t.stateNode.containerInfo), B(t), null;
         case 10:
           return ra(t.type), B(t), null;
         case 19:
-          if ((me(N), (r = t.memoizedState), r === null)) return B(t), null;
+          if ((O(N), (r = t.memoizedState), r === null)) return B(t), null;
           if (((i = (t.flags & 128) != 0), (a = r.rendering), a === null))
             if (i) Vc(r, !1);
             else {
@@ -6439,12 +6439,12 @@ Error generating stack: ` +
 
                     )
                       bi(n, e), (n = n.sibling);
-                    return O(N, (N.current & 1) | 2), j && Li(t, r.treeForkCount), t.child;
+                    return k(N, (N.current & 1) | 2), j && Li(t, r.treeForkCount), t.child;
                   }
                   e = e.sibling;
                 }
               r.tail !== null &&
-                Fe() > nu &&
+                Pe() > nu &&
                 ((t.flags |= 128), (i = !0), Vc(r, !1), (t.lanes = 4194304));
             }
           else {
@@ -6461,7 +6461,7 @@ Error generating stack: ` +
                 )
                   return B(t), null;
               } else
-                2 * Fe() - r.renderingStartTime > nu &&
+                2 * Pe() - r.renderingStartTime > nu &&
                   n !== 536870912 &&
                   ((t.flags |= 128), (i = !0), Vc(r, !1), (t.lanes = 4194304));
             r.isBackwards
@@ -6473,10 +6473,10 @@ Error generating stack: ` +
             : ((e = r.tail),
               (r.rendering = e),
               (r.tail = e.sibling),
-              (r.renderingStartTime = Fe()),
+              (r.renderingStartTime = Pe()),
               (e.sibling = null),
               (n = N.current),
-              O(N, i ? (n & 1) | 2 : n & 1),
+              k(N, i ? (n & 1) | 2 : n & 1),
               j && Li(t, r.treeForkCount),
               e);
         case 22:
@@ -6503,7 +6503,7 @@ Error generating stack: ` +
               t.memoizedState.cachePool !== null &&
               (r = t.memoizedState.cachePool.pool),
             r !== n && (t.flags |= 2048),
-            e !== null && me(Ta),
+            e !== null && O(Ta),
             null
           );
         case 24:
@@ -6529,14 +6529,14 @@ Error generating stack: ` +
         case 3:
           return (
             ra(M),
-            be(),
+            ye(),
             (e = t.flags),
             e & 65536 && !(e & 128) ? ((t.flags = (e & -65537) | 128), t) : null
           );
         case 26:
         case 27:
         case 5:
-          return Se(t), null;
+          return xe(t), null;
         case 31:
           if (t.memoizedState !== null) {
             if ((_o(t), t.alternate === null)) throw Error(s(340));
@@ -6550,9 +6550,9 @@ Error generating stack: ` +
           }
           return (e = t.flags), e & 65536 ? ((t.flags = (e & -65537) | 128), t) : null;
         case 19:
-          return me(N), null;
+          return O(N), null;
         case 4:
-          return be(), null;
+          return ye(), null;
         case 10:
           return ra(t.type), null;
         case 22:
@@ -6560,7 +6560,7 @@ Error generating stack: ` +
           return (
             _o(t),
             lo(),
-            e !== null && me(Ta),
+            e !== null && O(Ta),
             (e = t.flags),
             e & 65536 ? ((t.flags = (e & -65537) | 128), t) : null
           );
@@ -6575,15 +6575,15 @@ Error generating stack: ` +
     function Wc(e, t) {
       switch ((Bi(t), t.tag)) {
         case 3:
-          ra(M), be();
+          ra(M), ye();
           break;
         case 26:
         case 27:
         case 5:
-          Se(t);
+          xe(t);
           break;
         case 4:
-          be();
+          ye();
           break;
         case 31:
           t.memoizedState !== null && _o(t);
@@ -6592,14 +6592,14 @@ Error generating stack: ` +
           _o(t);
           break;
         case 19:
-          me(N);
+          O(N);
           break;
         case 10:
           ra(t.type);
           break;
         case 22:
         case 23:
-          _o(t), lo(), e !== null && me(Ta);
+          _o(t), lo(), e !== null && O(Ta);
           break;
         case 24:
           ra(M);
@@ -6738,7 +6738,7 @@ Error generating stack: ` +
     function Qc(e, t, n) {
       try {
         var r = e.stateNode;
-        Fd(r, e.type, n, t), (r[_t] = t);
+        Fd(r, e.type, n, t), (r[gt] = t);
       } catch (t) {
         Z(e, e.return, t);
       }
@@ -6798,7 +6798,7 @@ Error generating stack: ` +
         n = e.memoizedProps;
       try {
         for (var r = e.type, i = t.attributes; i.length; ) t.removeAttributeNode(i[0]);
-        Pd(t, r, n), (t[gt] = e), (t[_t] = n);
+        Pd(t, r, n), (t[ht] = e), (t[gt] = n);
       } catch (t) {
         Z(e, e.return, t);
       }
@@ -7006,7 +7006,7 @@ Error generating stack: ` +
         (e.child = null),
         (e.deletions = null),
         (e.sibling = null),
-        e.tag === 5 && ((t = e.stateNode), t !== null && wt(t)),
+        e.tag === 5 && ((t = e.stateNode), t !== null && Ct(t)),
         (e.stateNode = null),
         (e.return = null),
         (e.dependencies = null),
@@ -7022,9 +7022,9 @@ Error generating stack: ` +
       for (n = n.child; n !== null; ) fl(e, t, n), (n = n.sibling);
     }
     function fl(e, t, n) {
-      if (Ge && typeof Ge.onCommitFiberUnmount == `function`)
+      if (We && typeof We.onCommitFiberUnmount == `function`)
         try {
-          Ge.onCommitFiberUnmount(We, n);
+          We.onCommitFiberUnmount(Ue, n);
         } catch {}
       switch (n.tag) {
         case 26:
@@ -7232,15 +7232,15 @@ Error generating stack: ` +
                       case `title`:
                         (a = i.getElementsByTagName(`title`)[0]),
                           (!a ||
-                            a[Ct] ||
-                            a[gt] ||
+                            a[St] ||
+                            a[ht] ||
                             a.namespaceURI === `http://www.w3.org/2000/svg` ||
                             a.hasAttribute(`itemprop`)) &&
                             ((a = i.createElement(r)),
                             i.head.insertBefore(a, i.querySelector(`head > title`))),
                           Pd(a, r, n),
-                          (a[gt] = e),
-                          k(a),
+                          (a[ht] = e),
+                          Ot(a),
                           (r = a);
                         break a;
                       case `link`:
@@ -7286,7 +7286,7 @@ Error generating stack: ` +
                       default:
                         throw Error(s(468, r));
                     }
-                    (a[gt] = e), k(a), (r = a);
+                    (a[ht] = e), Ot(a), (r = a);
                   }
                   e.stateNode = r;
                 } else Hf(i, e.type, e.stateNode);
@@ -7364,7 +7364,7 @@ Error generating stack: ` +
             bl(e),
             e.child.flags & 8192 &&
               (e.memoizedState !== null) != (n !== null && n.memoizedState !== null) &&
-              (eu = Fe()),
+              (eu = Pe()),
             r & 4 && ((r = e.updateQueue), r !== null && ((e.updateQueue = null), gl(e, r)));
           break;
         case 22:
@@ -7903,26 +7903,26 @@ Error generating stack: ` +
       du = 0,
       fu = null;
     function pu() {
-      return W & 2 && q !== 0 ? q & -q : E.T === null ? pt() : dd();
+      return W & 2 && q !== 0 ? q & -q : T.T === null ? ft() : dd();
     }
     function mu() {
       if (Yl === 0)
         if (!(q & 536870912) || j) {
-          var e = Qe;
-          (Qe <<= 1), !(Qe & 3932160) && (Qe = 262144), (Yl = e);
+          var e = Ze;
+          (Ze <<= 1), !(Ze & 3932160) && (Ze = 262144), (Yl = e);
         } else Yl = 536870912;
       return (e = uo.current), e !== null && (e.flags |= 32), Yl;
     }
     function hu(e, t, n) {
       ((e === G && (J === 2 || J === 9)) || e.cancelPendingCommit !== null) &&
         (Su(e, 0), yu(e, q, Yl, !1)),
-        ot(e, n),
+        at(e, n),
         (!(W & 2) || e !== G) &&
           (e === G && (!(W & 2) && (ql |= n), Y === 4 && yu(e, q, Yl, !1)), rd(e));
     }
     function gu(e, t, n) {
       if (W & 6) throw Error(s(327));
-      var r = (!n && (t & 127) == 0 && (t & e.expiredLanes) === 0) || nt(e, t),
+      var r = (!n && (t & 127) == 0 && (t & e.expiredLanes) === 0) || tt(e, t),
         i = r ? Au(e, t) : Ou(e, t, !0),
         a = r;
       do {
@@ -7980,8 +7980,8 @@ Error generating stack: ` +
               default:
                 throw Error(s(329));
             }
-            if ((t & 62914560) === t && ((i = eu + 300 - Fe()), 10 < i)) {
-              if ((yu(r, t, Yl, !Hl), tt(r, 0, !0) !== 0)) break a;
+            if ((t & 62914560) === t && ((i = eu + 300 - Pe()), 10 < i)) {
+              if ((yu(r, t, Yl, !Hl), et(r, 0, !0) !== 0)) break a;
               (su = t),
                 (r.timeoutHandle = Kd(
                   _u.bind(null, r, n, Ql, ru, $l, t, Yl, ql, Xl, Hl, a, `Throttled`, -0, 0),
@@ -8009,7 +8009,7 @@ Error generating stack: ` +
           unsuspend: ln,
         }),
           Nl(t, a, d);
-        var m = (a & 62914560) === a ? eu - Fe() : (a & 4194048) === a ? tu - Fe() : 0;
+        var m = (a & 62914560) === a ? eu - Pe() : (a & 4194048) === a ? tu - Pe() : 0;
         if (((m = qf(d, m)), m !== null)) {
           (su = a),
             (e.cancelPendingCommit = m(Lu.bind(null, e, t, a, n, r, i, o, s, c, u, d, null, f, p))),
@@ -8057,11 +8057,11 @@ Error generating stack: ` +
         r && (e.warmLanes |= t),
         (r = e.expirationTimes);
       for (var i = t; 0 < i; ) {
-        var a = 31 - qe(i),
+        var a = 31 - Ke(i),
           o = 1 << a;
         (r[a] = -1), (i &= ~o);
       }
-      n !== 0 && ct(e, n, t);
+      n !== 0 && st(e, n, t);
     }
     function bu() {
       return W & 6 ? !0 : (id(0, !1), !1);
@@ -8087,7 +8087,7 @@ Error generating stack: ` +
         (J = 0),
         (Vl = null),
         (Hl = !1),
-        (Ul = nt(e, t)),
+        (Ul = tt(e, t)),
         (Wl = !1),
         (Xl = Yl = Jl = ql = Kl = Y = 0),
         (Ql = Zl = null),
@@ -8096,7 +8096,7 @@ Error generating stack: ` +
       var r = e.entangledLanes;
       if (r !== 0)
         for (e = e.entanglements, r &= t; 0 < r; ) {
-          var i = 31 - qe(r),
+          var i = 31 - Ke(r),
             a = 1 << i;
           (t |= e[i]), (r &= ~a);
         }
@@ -8104,7 +8104,7 @@ Error generating stack: ` +
     }
     function Cu(e, t) {
       (P = null),
-        (E.H = Us),
+        (T.H = Us),
         t === ka || t === ja
           ? ((t = La()), (J = 3))
           : t === Aa
@@ -8124,12 +8124,12 @@ Error generating stack: ` +
             : !1;
     }
     function Tu() {
-      var e = E.H;
-      return (E.H = Us), e === null ? Us : e;
+      var e = T.H;
+      return (T.H = Us), e === null ? Us : e;
     }
     function Eu() {
-      var e = E.A;
-      return (E.A = zl), e;
+      var e = T.A;
+      return (T.A = zl), e;
     }
     function Du() {
       (Y = 4),
@@ -8177,8 +8177,8 @@ Error generating stack: ` +
         t && e.shellSuspendCounter++,
         (ta = ea = null),
         (W = r),
-        (E.H = i),
-        (E.A = a),
+        (T.H = i),
+        (T.A = a),
         K === null && ((G = null), (q = 0), li()),
         o
       );
@@ -8191,7 +8191,7 @@ Error generating stack: ` +
       W |= 2;
       var r = Tu(),
         i = Eu();
-      G !== e || q !== t ? ((ru = null), (nu = Fe() + 500), Su(e, t)) : (Ul = nt(e, t));
+      G !== e || q !== t ? ((ru = null), (nu = Pe() + 500), Su(e, t)) : (Ul = tt(e, t));
       a: do
         try {
           if (J !== 0 && K !== null) {
@@ -8260,14 +8260,14 @@ Error generating stack: ` +
       while (1);
       return (
         (ta = ea = null),
-        (E.H = r),
-        (E.A = i),
+        (T.H = r),
+        (T.A = i),
         (W = n),
         K === null ? ((G = null), (q = 0), li(), Y) : 0
       );
     }
     function ju() {
-      for (; K !== null && !Ne(); ) Mu(K);
+      for (; K !== null && !Me(); ) Mu(K);
     }
     function Mu(e) {
       var t = Ic(e.alternate, e, Gl);
@@ -8365,7 +8365,7 @@ Error generating stack: ` +
         if (
           ((a = t.lanes | t.childLanes),
           (a |= ci),
-          st(e, n, a, o, c, l),
+          ot(e, n, a, o, c, l),
           e === G && ((K = G = null), (q = 0)),
           (ou = t),
           (au = e),
@@ -8376,18 +8376,18 @@ Error generating stack: ` +
           t.subtreeFlags & 10256 || t.flags & 10256
             ? ((e.callbackNode = null),
               (e.callbackPriority = 0),
-              Xu(ze, function () {
+              Xu(Re, function () {
                 return Uu(), null;
               }))
             : ((e.callbackNode = null), (e.callbackPriority = 0)),
           (r = (t.flags & 13878) != 0),
           t.subtreeFlags & 13878 || r)
         ) {
-          (r = E.T), (E.T = null), (i = D.p), (D.p = 2), (o = W), (W |= 4);
+          (r = T.T), (T.T = null), (i = E.p), (E.p = 2), (o = W), (W |= 4);
           try {
             sl(e, t, n);
           } finally {
-            (W = o), (D.p = i), (E.T = r);
+            (W = o), (E.p = i), (T.T = r);
           }
         }
         (X = 1), Ru(), zu(), Bu();
@@ -8400,9 +8400,9 @@ Error generating stack: ` +
           t = ou,
           n = (t.flags & 13878) != 0;
         if (t.subtreeFlags & 13878 || n) {
-          (n = E.T), (E.T = null);
-          var r = D.p;
-          D.p = 2;
+          (n = T.T), (T.T = null);
+          var r = E.p;
+          E.p = 2;
           var i = W;
           W |= 4;
           try {
@@ -8456,7 +8456,7 @@ Error generating stack: ` +
             }
             (sp = !!Rd), (zd = Rd = null);
           } finally {
-            (W = i), (D.p = r), (E.T = n);
+            (W = i), (E.p = r), (T.T = n);
           }
         }
         (e.current = t), (X = 2);
@@ -8469,15 +8469,15 @@ Error generating stack: ` +
           t = ou,
           n = (t.flags & 8772) != 0;
         if (t.subtreeFlags & 8772 || n) {
-          (n = E.T), (E.T = null);
-          var r = D.p;
-          D.p = 2;
+          (n = T.T), (T.T = null);
+          var r = E.p;
+          E.p = 2;
           var i = W;
           W |= 4;
           try {
             cl(e, t.alternate, t);
           } finally {
-            (W = i), (D.p = r), (E.T = n);
+            (W = i), (E.p = r), (T.T = n);
           }
         }
         X = 3;
@@ -8485,7 +8485,7 @@ Error generating stack: ` +
     }
     function Bu() {
       if (X === 4 || X === 3) {
-        (X = 0), Pe();
+        (X = 0), Ne();
         var e = au,
           t = ou,
           n = su,
@@ -8496,22 +8496,22 @@ Error generating stack: ` +
         var i = e.pendingLanes;
         if (
           (i === 0 && (iu = null),
-          ft(n),
+          dt(n),
           (t = t.stateNode),
-          Ge && typeof Ge.onCommitFiberRoot == `function`)
+          We && typeof We.onCommitFiberRoot == `function`)
         )
           try {
-            Ge.onCommitFiberRoot(We, t, void 0, (t.current.flags & 128) == 128);
+            We.onCommitFiberRoot(Ue, t, void 0, (t.current.flags & 128) == 128);
           } catch {}
         if (r !== null) {
-          (t = E.T), (i = D.p), (D.p = 2), (E.T = null);
+          (t = T.T), (i = E.p), (E.p = 2), (T.T = null);
           try {
             for (var a = e.onRecoverableError, o = 0; o < r.length; o++) {
               var s = r[o];
               a(s.value, { componentStack: s.stack });
             }
           } finally {
-            (E.T = t), (D.p = i);
+            (T.T = t), (E.p = i);
           }
         }
         su & 3 && Hu(),
@@ -8533,11 +8533,11 @@ Error generating stack: ` +
       var e = au,
         t = cu;
       cu = 0;
-      var n = ft(su),
-        r = E.T,
-        i = D.p;
+      var n = dt(su),
+        r = T.T,
+        i = E.p;
       try {
-        (D.p = 32 > n ? 32 : n), (E.T = null), (n = lu), (lu = null);
+        (E.p = 32 > n ? 32 : n), (T.T = null), (n = lu), (lu = null);
         var a = au,
           o = su;
         if (((X = 0), (ou = au = null), (su = 0), W & 6)) throw Error(s(331));
@@ -8548,21 +8548,21 @@ Error generating stack: ` +
           Ol(a, a.current, o, n),
           (W = c),
           id(0, !1),
-          Ge && typeof Ge.onPostCommitFiberRoot == `function`)
+          We && typeof We.onPostCommitFiberRoot == `function`)
         )
           try {
-            Ge.onPostCommitFiberRoot(We, a);
+            We.onPostCommitFiberRoot(Ue, a);
           } catch {}
         return !0;
       } finally {
-        (D.p = i), (E.T = r), Vu(e, t);
+        (E.p = i), (T.T = r), Vu(e, t);
       }
     }
     function Wu(e, t, n) {
       (t = Di(n, t)),
         (t = rc(e.stateNode, t, 2)),
         (e = Za(e, t, 2)),
-        e !== null && (ot(e, 2), rd(e));
+        e !== null && (at(e, 2), rd(e));
     }
     function Z(e, t, n) {
       if (e.tag === 3) Wu(e, e, n);
@@ -8580,7 +8580,7 @@ Error generating stack: ` +
               (e = Di(n, e)),
                 (n = ic(2)),
                 (r = Za(t, n, 2)),
-                r !== null && (ac(n, r, t, e), ot(r, 2), rd(r));
+                r !== null && (ac(n, r, t, e), at(r, 2), rd(r));
               break;
             }
           }
@@ -8603,14 +8603,14 @@ Error generating stack: ` +
         (e.warmLanes &= ~n),
         G === e &&
           (q & n) === n &&
-          (Y === 4 || (Y === 3 && (q & 62914560) === q && 300 > Fe() - eu)
+          (Y === 4 || (Y === 3 && (q & 62914560) === q && 300 > Pe() - eu)
             ? !(W & 2) && Su(e, 0)
             : (Jl |= n),
           Xl === q && (Xl = 0)),
         rd(e);
     }
     function qu(e, t) {
-      t === 0 && (t = it()), (e = fi(e, t)), e !== null && (ot(e, t), rd(e));
+      t === 0 && (t = rt()), (e = fi(e, t)), e !== null && (at(e, t), rd(e));
     }
     function Ju(e) {
       var t = e.memoizedState,
@@ -8638,7 +8638,7 @@ Error generating stack: ` +
       r !== null && r.delete(t), qu(e, n);
     }
     function Xu(e, t) {
-      return je(e, t);
+      return Ae(e, t);
     }
     var Zu = null,
       Qu = null,
@@ -8663,19 +8663,19 @@ Error generating stack: ` +
                 else {
                   var o = r.suspendedLanes,
                     s = r.pingedLanes;
-                  (a = (1 << (31 - qe(42 | e) + 1)) - 1),
+                  (a = (1 << (31 - Ke(42 | e) + 1)) - 1),
                     (a &= i & ~(o & ~s)),
                     (a = a & 201326741 ? (a & 201326741) | 1 : a ? a | 2 : 0);
                 }
                 a !== 0 && ((n = !0), ld(r, a));
               } else
                 (a = q),
-                  (a = tt(
+                  (a = et(
                     r,
                     r === G ? a : 0,
                     r.cancelPendingCommit !== null || r.timeoutHandle !== -1,
                   )),
-                  !(a & 3) || nt(r, a) || ((n = !0), ld(r, a));
+                  !(a & 3) || tt(r, a) || ((n = !0), ld(r, a));
             r = r.next;
           }
         while (n);
@@ -8689,7 +8689,7 @@ Error generating stack: ` +
       ed = $u = !1;
       var e = 0;
       nd !== 0 && Gd() && (e = nd);
-      for (var t = Fe(), n = null, r = Zu; r !== null; ) {
+      for (var t = Pe(), n = null, r = Zu; r !== null; ) {
         var i = r.next,
           a = sd(r, t);
         a === 0
@@ -8708,44 +8708,44 @@ Error generating stack: ` +
         0 < a;
 
       ) {
-        var o = 31 - qe(a),
+        var o = 31 - Ke(a),
           s = 1 << o,
           c = i[o];
         c === -1
-          ? ((s & n) === 0 || (s & r) !== 0) && (i[o] = rt(s, t))
+          ? ((s & n) === 0 || (s & r) !== 0) && (i[o] = nt(s, t))
           : c <= t && (e.expiredLanes |= s),
           (a &= ~s);
       }
       if (
         ((t = G),
         (n = q),
-        (n = tt(e, e === t ? n : 0, e.cancelPendingCommit !== null || e.timeoutHandle !== -1)),
+        (n = et(e, e === t ? n : 0, e.cancelPendingCommit !== null || e.timeoutHandle !== -1)),
         (r = e.callbackNode),
         n === 0 || (e === t && (J === 2 || J === 9)) || e.cancelPendingCommit !== null)
       )
-        return r !== null && r !== null && Me(r), (e.callbackNode = null), (e.callbackPriority = 0);
-      if (!(n & 3) || nt(e, n)) {
+        return r !== null && r !== null && je(r), (e.callbackNode = null), (e.callbackPriority = 0);
+      if (!(n & 3) || tt(e, n)) {
         if (((t = n & -n), t === e.callbackPriority)) return t;
-        switch ((r !== null && Me(r), ft(n))) {
+        switch ((r !== null && je(r), dt(n))) {
           case 2:
           case 8:
-            n = Re;
+            n = Le;
             break;
           case 32:
-            n = ze;
+            n = Re;
             break;
           case 268435456:
-            n = Ve;
+            n = Be;
             break;
           default:
-            n = ze;
+            n = Re;
         }
         return (
-          (r = cd.bind(null, e)), (n = je(n, r)), (e.callbackPriority = t), (e.callbackNode = n), t
+          (r = cd.bind(null, e)), (n = Ae(n, r)), (e.callbackPriority = t), (e.callbackNode = n), t
         );
       }
       return (
-        r !== null && r !== null && Me(r), (e.callbackPriority = 2), (e.callbackNode = null), 2
+        r !== null && r !== null && je(r), (e.callbackPriority = 2), (e.callbackNode = null), 2
       );
     }
     function cd(e, t) {
@@ -8754,11 +8754,11 @@ Error generating stack: ` +
       if (Hu() && e.callbackNode !== n) return null;
       var r = q;
       return (
-        (r = tt(e, e === G ? r : 0, e.cancelPendingCommit !== null || e.timeoutHandle !== -1)),
+        (r = et(e, e === G ? r : 0, e.cancelPendingCommit !== null || e.timeoutHandle !== -1)),
         r === 0
           ? null
           : (gu(e, r, t),
-            sd(e, Fe()),
+            sd(e, Pe()),
             e.callbackNode != null && e.callbackNode === n ? cd.bind(null, e) : null)
       );
     }
@@ -8768,13 +8768,13 @@ Error generating stack: ` +
     }
     function ud() {
       Yd(function () {
-        W & 6 ? je(Le, ad) : od();
+        W & 6 ? Ae(Ie, ad) : od();
       });
     }
     function dd() {
       if (nd === 0) {
         var e = ya;
-        e === 0 && ((e = Ze), (Ze <<= 1), !(Ze & 261888) && (Ze = 256)), (nd = e);
+        e === 0 && ((e = Xe), (Xe <<= 1), !(Xe & 261888) && (Xe = 256)), (nd = e);
       }
       return nd;
     }
@@ -8799,10 +8799,10 @@ Error generating stack: ` +
     }
     function md(e, t, n, r, i) {
       if (t === `submit` && n && n.stateNode === i) {
-        var a = fd((i[_t] || null).action),
+        var a = fd((i[gt] || null).action),
           o = r.submitter;
         o &&
-          ((t = (t = o[_t] || null) ? fd(t.formAction) : o.getAttribute(`formAction`)),
+          ((t = (t = o[gt] || null) ? fd(t.formAction) : o.getAttribute(`formAction`)),
           t !== null && ((a = t), (o = null)));
         var s = new An(`action`, `action`, null, r, i);
         e.push({
@@ -8917,8 +8917,8 @@ Error generating stack: ` +
       }
     }
     function Q(e, t) {
-      var n = t[yt];
-      n === void 0 && (n = t[yt] = new Set());
+      var n = t[vt];
+      n === void 0 && (n = t[vt] = new Set());
       var r = e + `__bubble`;
       n.has(r) || (Cd(t, e, 2, !1), n.add(r));
     }
@@ -8975,7 +8975,7 @@ Error generating stack: ` +
                 o = o.return;
               }
             for (; s !== null; ) {
-              if (((o = Tt(s)), o === null)) return;
+              if (((o = wt(s)), o === null)) return;
               if (((c = o.tag), c === 5 || c === 6 || c === 26 || c === 27)) {
                 r = a = o;
                 continue a;
@@ -9099,7 +9099,7 @@ Error generating stack: ` +
             if (
               ((s = e === `mouseover` || e === `pointerover`),
               (c = e === `mouseout` || e === `pointerout`),
-              s && n !== un && (u = n.relatedTarget || n.fromElement) && (Tt(u) || u[vt]))
+              s && n !== un && (u = n.relatedTarget || n.fromElement) && (wt(u) || u[_t]))
             )
               break a;
             if (
@@ -9113,7 +9113,7 @@ Error generating stack: ` +
               c
                 ? ((u = n.relatedTarget || n.toElement),
                   (c = r),
-                  (u = u ? Tt(u) : null),
+                  (u = u ? wt(u) : null),
                   u !== null &&
                     ((f = l(u)), (d = u.tag), u !== f || (d !== 5 && d !== 27 && d !== 6)) &&
                     (u = null))
@@ -9127,13 +9127,13 @@ Error generating stack: ` +
                 (m = `mouse`),
                 (e === `pointerout` || e === `pointerover`) &&
                   ((d = Yn), (g = `onPointerLeave`), (p = `onPointerEnter`), (m = `pointer`)),
-                (f = c == null ? s : Dt(c)),
-                (h = u == null ? s : Dt(u)),
+                (f = c == null ? s : Et(c)),
+                (h = u == null ? s : Et(u)),
                 (s = new d(g, m + `leave`, c, n, i)),
                 (s.target = f),
                 (s.relatedTarget = h),
                 (g = null),
-                Tt(i) === r &&
+                wt(i) === r &&
                   ((d = new d(p, m + `enter`, u, n, i)),
                   (d.target = h),
                   (d.relatedTarget = f),
@@ -9162,7 +9162,7 @@ Error generating stack: ` +
           }
           a: {
             if (
-              ((s = r ? Dt(r) : window),
+              ((s = r ? Et(r) : window),
               (c = s.nodeName && s.nodeName.toLowerCase()),
               c === `select` || (c === `input` && s.type === `file`))
             )
@@ -9189,7 +9189,7 @@ Error generating stack: ` +
                 r.memoizedProps.value != null &&
                 Xt(s, `number`, s.value);
           }
-          switch (((y = r ? Dt(r) : window), e)) {
+          switch (((y = r ? Et(r) : window), e)) {
             case `focusin`:
               (pr(y) || y.contentEditable === `true`) && ((zr = y), (Br = r), (Vr = null));
               break;
@@ -9570,7 +9570,7 @@ Error generating stack: ` +
                 n[1] === `n` &&
                 ((i = n.endsWith(`Capture`)),
                 (t = n.slice(2, i ? n.length - 7 : void 0)),
-                (a = e[_t] || null),
+                (a = e[gt] || null),
                 (a = a == null ? null : a[n]),
                 typeof a == `function` && e.removeEventListener(t, a, i),
                 typeof r == `function`)
@@ -10093,7 +10093,7 @@ Error generating stack: ` +
             for (var a = n.firstChild; a; ) {
               var o = a.nextSibling,
                 s = a.nodeName;
-              a[Ct] ||
+              a[St] ||
                 s === `SCRIPT` ||
                 s === `STYLE` ||
                 (s === `LINK` && a.rel.toLowerCase() === `stylesheet`) ||
@@ -10137,7 +10137,7 @@ Error generating stack: ` +
           case `HTML`:
           case `HEAD`:
           case `BODY`:
-            ef(n), wt(n);
+            ef(n), Ct(n);
             continue;
           case `SCRIPT`:
           case `STYLE`:
@@ -10158,7 +10158,7 @@ Error generating stack: ` +
             var a = i.name == null ? null : `` + i.name;
             if (i.type === `hidden` && e.getAttribute(`name`) === a) return e;
           } else return e;
-        else if (!e[Ct])
+        else if (!e[St])
           switch (t) {
             case `meta`:
               if (!e.hasAttribute(`itemprop`)) break;
@@ -10301,7 +10301,7 @@ Error generating stack: ` +
     }
     function pf(e) {
       for (var t = e.attributes; t.length; ) e.removeAttributeNode(t[0]);
-      wt(e);
+      Ct(e);
     }
     var mf = new Map(),
       hf = new Set();
@@ -10312,15 +10312,15 @@ Error generating stack: ` +
           ? e
           : e.ownerDocument;
     }
-    var _f = D.d;
-    D.d = { f: vf, r: yf, D: Sf, C: Cf, L: wf, m: Tf, X: Df, S: Ef, M: Of };
+    var _f = E.d;
+    E.d = { f: vf, r: yf, D: Sf, C: Cf, L: wf, m: Tf, X: Df, S: Ef, M: Of };
     function vf() {
       var e = _f.f(),
         t = bu();
       return e || t;
     }
     function yf(e) {
-      var t = Et(e);
+      var t = Tt(e);
       t !== null && t.tag === 5 && t.type === `form` ? js(t) : _f.r(e);
     }
     var bf = typeof document > `u` ? null : document;
@@ -10334,7 +10334,7 @@ Error generating stack: ` +
             (hf.add(i),
             (e = { rel: e, crossOrigin: n, href: t }),
             r.querySelector(i) === null &&
-              ((t = r.createElement(`link`)), Pd(t, `link`, e), k(t), r.head.appendChild(t)));
+              ((t = r.createElement(`link`)), Pd(t, `link`, e), Ot(t), r.head.appendChild(t)));
       }
     }
     function Sf(e) {
@@ -10369,7 +10369,7 @@ Error generating stack: ` +
           r.querySelector(i) !== null ||
             (t === `style` && r.querySelector(jf(a))) ||
             (t === `script` && r.querySelector(Ff(a))) ||
-            ((t = r.createElement(`link`)), Pd(t, `link`, e), k(t), r.head.appendChild(t)));
+            ((t = r.createElement(`link`)), Pd(t, `link`, e), Ot(t), r.head.appendChild(t)));
       }
     }
     function Tf(e, t) {
@@ -10401,7 +10401,7 @@ Error generating stack: ` +
             case `script`:
               if (n.querySelector(Ff(a))) return;
           }
-          (r = n.createElement(`link`)), Pd(r, `link`, e), k(r), n.head.appendChild(r);
+          (r = n.createElement(`link`)), Pd(r, `link`, e), Ot(r), n.head.appendChild(r);
         }
       }
     }
@@ -10409,7 +10409,7 @@ Error generating stack: ` +
       _f.S(e, t, n);
       var r = bf;
       if (r && e) {
-        var i = Ot(r).hoistableStyles,
+        var i = Dt(r).hoistableStyles,
           a = Af(e);
         t ||= `default`;
         var o = i.get(a);
@@ -10420,7 +10420,7 @@ Error generating stack: ` +
             (e = h({ rel: `stylesheet`, href: e, "data-precedence": t }, n)),
               (n = mf.get(a)) && Rf(e, n);
             var c = (o = r.createElement(`link`));
-            k(c),
+            Ot(c),
               Pd(c, `link`, e),
               (c._p = new Promise(function (e, t) {
                 (c.onload = e), (c.onerror = t);
@@ -10442,7 +10442,7 @@ Error generating stack: ` +
       _f.X(e, t);
       var n = bf;
       if (n && e) {
-        var r = Ot(n).hoistableScripts,
+        var r = Dt(n).hoistableScripts,
           i = Pf(e),
           a = r.get(i);
         a ||
@@ -10451,7 +10451,7 @@ Error generating stack: ` +
             ((e = h({ src: e, async: !0 }, t)),
             (t = mf.get(i)) && zf(e, t),
             (a = n.createElement(`script`)),
-            k(a),
+            Ot(a),
             Pd(a, `link`, e),
             n.head.appendChild(a)),
           (a = { type: `script`, instance: a, count: 1, state: null }),
@@ -10462,7 +10462,7 @@ Error generating stack: ` +
       _f.M(e, t);
       var n = bf;
       if (n && e) {
-        var r = Ot(n).hoistableScripts,
+        var r = Dt(n).hoistableScripts,
           i = Pf(e),
           a = r.get(i);
         a ||
@@ -10471,7 +10471,7 @@ Error generating stack: ` +
             ((e = h({ src: e, async: !0, type: `module` }, t)),
             (t = mf.get(i)) && zf(e, t),
             (a = n.createElement(`script`)),
-            k(a),
+            Ot(a),
             Pd(a, `link`, e),
             n.head.appendChild(a)),
           (a = { type: `script`, instance: a, count: 1, state: null }),
@@ -10479,7 +10479,7 @@ Error generating stack: ` +
       }
     }
     function kf(e, t, n, r) {
-      var i = (i = _e.current) ? gf(i) : null;
+      var i = (i = ge.current) ? gf(i) : null;
       if (!i) throw Error(s(446));
       switch (e) {
         case `meta`:
@@ -10488,7 +10488,7 @@ Error generating stack: ` +
         case `style`:
           return typeof n.precedence == `string` && typeof n.href == `string`
             ? ((t = Af(n.href)),
-              (n = Ot(i).hoistableStyles),
+              (n = Dt(i).hoistableStyles),
               (r = n.get(t)),
               r || ((r = { type: `style`, instance: null, count: 0, state: null }), n.set(t, r)),
               r)
@@ -10500,7 +10500,7 @@ Error generating stack: ` +
             typeof n.precedence == `string`
           ) {
             e = Af(n.href);
-            var a = Ot(i).hoistableStyles,
+            var a = Dt(i).hoistableStyles,
               o = a.get(e);
             if (
               (o ||
@@ -10539,7 +10539,7 @@ Error generating stack: ` +
             (n = n.src),
             typeof n == `string` && t && typeof t != `function` && typeof t != `symbol`
               ? ((t = Pf(n)),
-                (n = Ot(i).hoistableScripts),
+                (n = Dt(i).hoistableScripts),
                 (r = n.get(t)),
                 r || ((r = { type: `script`, instance: null, count: 0, state: null }), n.set(t, r)),
                 r)
@@ -10570,7 +10570,7 @@ Error generating stack: ` +
             return (r.loading |= 2);
           }),
           Pd(t, `link`, n),
-          k(t),
+          Ot(t),
           e.head.appendChild(t));
     }
     function Pf(e) {
@@ -10584,7 +10584,7 @@ Error generating stack: ` +
         switch (t.type) {
           case `style`:
             var r = e.querySelector(`style[data-href~="` + qt(n.href) + `"]`);
-            if (r) return (t.instance = r), k(r), r;
+            if (r) return (t.instance = r), Ot(r), r;
             var i = h({}, n, {
               "data-href": n.href,
               "data-precedence": n.precedence,
@@ -10593,7 +10593,7 @@ Error generating stack: ` +
             });
             return (
               (r = (e.ownerDocument || e).createElement(`style`)),
-              k(r),
+              Ot(r),
               Pd(r, `style`, i),
               Lf(r, n.precedence, e),
               (t.instance = r)
@@ -10601,11 +10601,11 @@ Error generating stack: ` +
           case `stylesheet`:
             i = Af(n.href);
             var a = e.querySelector(jf(i));
-            if (a) return (t.state.loading |= 4), (t.instance = a), k(a), a;
+            if (a) return (t.state.loading |= 4), (t.instance = a), Ot(a), a;
             (r = Mf(n)),
               (i = mf.get(i)) && Rf(r, i),
               (a = (e.ownerDocument || e).createElement(`link`)),
-              k(a);
+              Ot(a);
             var o = a;
             return (
               (o._p = new Promise(function (e, t) {
@@ -10620,12 +10620,12 @@ Error generating stack: ` +
             return (
               (a = Pf(n.src)),
               (i = e.querySelector(Ff(a)))
-                ? ((t.instance = i), k(i), i)
+                ? ((t.instance = i), Ot(i), i)
                 : ((r = n),
                   (i = mf.get(a)) && ((r = h({}, n)), zf(r, i)),
                   (e = e.ownerDocument || e),
                   (i = e.createElement(`script`)),
-                  k(i),
+                  Ot(i),
                   Pd(i, `link`, r),
                   e.head.appendChild(i),
                   (t.instance = i))
@@ -10681,7 +10681,7 @@ Error generating stack: ` +
       for (r.set(e, null), n = n.getElementsByTagName(e), i = 0; i < n.length; i++) {
         var a = n[i];
         if (
-          !(a[Ct] || a[gt] || (e === `link` && a.getAttribute(`rel`) === `stylesheet`)) &&
+          !(a[St] || a[ht] || (e === `link` && a.getAttribute(`rel`) === `stylesheet`)) &&
           a.namespaceURI !== `http://www.w3.org/2000/svg`
         ) {
           var o = a.getAttribute(t) || ``;
@@ -10754,14 +10754,14 @@ Error generating stack: ` +
                 (e.count++, (e = Jf.bind(e)), t.then(e, e)),
               (n.state.loading |= 4),
               (n.instance = a),
-              k(a);
+              Ot(a);
             return;
           }
           (a = t.ownerDocument || t),
             (r = Mf(r)),
             (i = mf.get(i)) && Rf(r, i),
             (a = a.createElement(`link`)),
-            k(a);
+            Ot(a);
           var o = a;
           (o._p = new Promise(function (e, t) {
             (o.onload = e), (o.onerror = t);
@@ -10865,8 +10865,8 @@ Error generating stack: ` +
       $$typeof: S,
       Provider: null,
       Consumer: null,
-      _currentValue: ue,
-      _currentValue2: ue,
+      _currentValue: D,
+      _currentValue2: D,
       _threadCount: 0,
     };
     function $f(e, t, n, r, i, a, o, s, c) {
@@ -10881,7 +10881,7 @@ Error generating stack: ` +
           this.cancelPendingCommit =
             null),
         (this.callbackPriority = 0),
-        (this.expirationTimes = at(-1)),
+        (this.expirationTimes = it(-1)),
         (this.entangledLanes =
           this.shellSuspendCounter =
           this.errorRecoveryDisabledLanes =
@@ -10891,8 +10891,8 @@ Error generating stack: ` +
           this.suspendedLanes =
           this.pendingLanes =
             0),
-        (this.entanglements = at(0)),
-        (this.hiddenUpdates = at(null)),
+        (this.entanglements = it(0)),
+        (this.hiddenUpdates = it(null)),
         (this.identifierPrefix = r),
         (this.onUncaughtError = i),
         (this.onCaughtError = a),
@@ -10950,30 +10950,30 @@ Error generating stack: ` +
     function op(e) {
       if (e.tag === 13 || e.tag === 31) {
         var t = pu();
-        t = dt(t);
+        t = ut(t);
         var n = fi(e, t);
         n !== null && hu(n, e, t), ip(e, t);
       }
     }
     var sp = !0;
     function cp(e, t, n, r) {
-      var i = E.T;
-      E.T = null;
-      var a = D.p;
+      var i = T.T;
+      T.T = null;
+      var a = E.p;
       try {
-        (D.p = 2), up(e, t, n, r);
+        (E.p = 2), up(e, t, n, r);
       } finally {
-        (D.p = a), (E.T = i);
+        (E.p = a), (T.T = i);
       }
     }
     function lp(e, t, n, r) {
-      var i = E.T;
-      E.T = null;
-      var a = D.p;
+      var i = T.T;
+      T.T = null;
+      var a = E.p;
       try {
-        (D.p = 8), up(e, t, n, r);
+        (E.p = 8), up(e, t, n, r);
       } finally {
-        (D.p = a), (E.T = i);
+        (E.p = a), (T.T = i);
       }
     }
     function up(e, t, n, r) {
@@ -10983,19 +10983,19 @@ Error generating stack: ` +
         else if (Tp(i, e, t, n, r)) r.stopPropagation();
         else if ((Cp(e, r), t & 4 && -1 < Sp.indexOf(e))) {
           for (; i !== null; ) {
-            var a = Et(i);
+            var a = Tt(i);
             if (a !== null)
               switch (a.tag) {
                 case 3:
                   if (((a = a.stateNode), a.current.memoizedState.isDehydrated)) {
-                    var o = et(a.pendingLanes);
+                    var o = $e(a.pendingLanes);
                     if (o !== 0) {
                       var s = a;
                       for (s.pendingLanes |= 2, s.entangledLanes |= 2; o; ) {
-                        var c = 1 << (31 - qe(o));
+                        var c = 1 << (31 - Ke(o));
                         (s.entanglements[1] |= c), (o &= ~c);
                       }
-                      rd(a), !(W & 6) && ((nu = Fe() + 500), id(0, !1));
+                      rd(a), !(W & 6) && ((nu = Pe() + 500), id(0, !1));
                     }
                   }
                   break;
@@ -11015,7 +11015,7 @@ Error generating stack: ` +
     }
     var fp = null;
     function pp(e) {
-      if (((fp = null), (e = Tt(e)), e !== null)) {
+      if (((fp = null), (e = wt(e)), e !== null)) {
         var t = l(e);
         if (t === null) e = null;
         else {
@@ -11111,15 +11111,15 @@ Error generating stack: ` +
         case `pointerleave`:
           return 8;
         case `message`:
-          switch (Ie()) {
-            case Le:
+          switch (Fe()) {
+            case Ie:
               return 2;
-            case Re:
+            case Le:
               return 8;
+            case Re:
             case ze:
-            case Be:
               return 32;
-            case Ve:
+            case Be:
               return 268435456;
             default:
               return 32;
@@ -11171,7 +11171,7 @@ Error generating stack: ` +
             nativeEvent: a,
             targetContainers: [i],
           }),
-          t !== null && ((t = Et(t)), t !== null && ap(t)),
+          t !== null && ((t = Tt(t)), t !== null && ap(t)),
           e)
         : ((e.eventSystemFlags |= r),
           (t = e.targetContainers),
@@ -11195,14 +11195,14 @@ Error generating stack: ` +
       return !1;
     }
     function Ep(e) {
-      var t = Tt(e.target);
+      var t = wt(e.target);
       if (t !== null) {
         var n = l(t);
         if (n !== null) {
           if (((t = n.tag), t === 13)) {
             if (((t = u(n)), t !== null)) {
               (e.blockedOn = t),
-                mt(e.priority, function () {
+                pt(e.priority, function () {
                   op(n);
                 });
               return;
@@ -11210,7 +11210,7 @@ Error generating stack: ` +
           } else if (t === 31) {
             if (((t = d(n)), t !== null)) {
               (e.blockedOn = t),
-                mt(e.priority, function () {
+                pt(e.priority, function () {
                   op(n);
                 });
               return;
@@ -11231,7 +11231,7 @@ Error generating stack: ` +
           n = e.nativeEvent;
           var r = new n.constructor(n.type, n);
           (un = r), n.target.dispatchEvent(r), (un = null);
-        } else return (t = Et(n)), t !== null && ap(t), (e.blockedOn = n), !1;
+        } else return (t = Tt(n)), t !== null && ap(t), (e.blockedOn = n), !1;
         t.shift();
       }
       return !0;
@@ -11266,7 +11266,7 @@ Error generating stack: ` +
               if (pp(r || n) === null) continue;
               break;
             }
-            var a = Et(n);
+            var a = Tt(n);
             a !== null &&
               (e.splice(t, 3),
               (t -= 3),
@@ -11293,12 +11293,12 @@ Error generating stack: ` +
         for (r = 0; r < n.length; r += 3) {
           var i = n[r],
             a = n[r + 1],
-            o = i[_t] || null;
+            o = i[gt] || null;
           if (typeof a == `function`) o || Mp(n);
           else if (o) {
             var s = null;
             if (a && a.hasAttribute(`formAction`)) {
-              if (((i = a), (o = a[_t] || null))) s = o.formAction;
+              if (((i = a), (o = a[gt] || null))) s = o.formAction;
               else if (pp(i) !== null) continue;
             } else s = o.action;
             typeof s == `function` ? (n[r + 1] = s) : (n.splice(r, 3), (r -= 3)), Mp(n);
@@ -11368,7 +11368,7 @@ Error generating stack: ` +
           if (e !== null) {
             this._internalRoot = null;
             var t = e.containerInfo;
-            np(e.current, 2, null, e, null, null), bu(), (t[vt] = null);
+            np(e.current, 2, null, e, null, null), bu(), (t[_t] = null);
           }
         });
     function Ip(e) {
@@ -11376,7 +11376,7 @@ Error generating stack: ` +
     }
     Ip.prototype.unstable_scheduleHydration = function (e) {
       if (e) {
-        var t = pt();
+        var t = ft();
         e = { blockedOn: null, target: e, priority: t };
         for (var n = 0; n < xp.length && t !== 0 && t < xp[n].priority; n++);
         xp.splice(n, 0, e), n === 0 && Ep(e);
@@ -11384,7 +11384,7 @@ Error generating stack: ` +
     };
     var Lp = r.version;
     if (Lp !== `19.2.7`) throw Error(s(527, Lp, `19.2.7`));
-    D.findDOMNode = function (e) {
+    E.findDOMNode = function (e) {
       var t = e._reactInternals;
       if (t === void 0)
         throw typeof e.render == `function`
@@ -11396,14 +11396,14 @@ Error generating stack: ` +
       bundleType: 0,
       version: `19.2.7`,
       rendererPackageName: `react-dom`,
-      currentDispatcherRef: E,
+      currentDispatcherRef: T,
       reconcilerVersion: `19.2.7`,
     };
     if (typeof __REACT_DEVTOOLS_GLOBAL_HOOK__ < `u`) {
       var zp = __REACT_DEVTOOLS_GLOBAL_HOOK__;
       if (!zp.isDisabled && zp.supportsFiber)
         try {
-          (We = zp.inject(Rp)), (Ge = zp);
+          (Ue = zp.inject(Rp)), (We = zp);
         } catch {}
     }
     e.createRoot = function (e, t) {
@@ -11421,7 +11421,7 @@ Error generating stack: ` +
           t.onCaughtError !== void 0 && (a = t.onCaughtError),
           t.onRecoverableError !== void 0 && (o = t.onRecoverableError)),
         (t = ep(e, 1, !1, null, null, n, r, null, i, a, o, Pp)),
-        (e[vt] = t.current),
+        (e[_t] = t.current),
         Sd(e),
         new Fp(t)
       );
@@ -11443,13 +11443,7 @@ Error generating stack: ` +
     }
     n(), (t.exports = s());
   }),
-  l = n(),
-  u = c(),
-  d = `/assets/modriss-workspace-DkhcwnNs.png`,
-  f = `/assets/modriss-favicon-X1h9hZcT.svg`,
-  p = `/assets/modriss-logo-C7-AY6Pn.svg`,
-  m = `/assets/modriss-logo-w-QD6nJF9M.svg`,
-  h = e((e) => {
+  l = e((e) => {
     var t = Symbol.for(`react.transitional.element`),
       n = Symbol.for(`react.fragment`);
     function r(e, n, r) {
@@ -11461,19 +11455,519 @@ Error generating stack: ` +
     }
     (e.Fragment = n), (e.jsx = r), (e.jsxs = r);
   }),
-  g = e((e, t) => {
-    t.exports = h();
-  })(),
-  _ = window.location.origin,
-  v = window.location.origin.replace(/\/$/, ``),
-  y = `https://docs.modriss.site`,
-  b = `${y.replace(/\/$/, ``)}/guides/full-lifecycle-method/`,
-  x = `https://github.com/mehdieidi/modriss`,
-  ee = `https://www.sharif.ir/en/web/me_ce/home`,
-  S = `https://www.sharif.ir/en/web/me_ce/w/mehdi-eidi`,
-  C = `https://mehdieidi.github.io/`,
-  te = `https://www.scitepress.org/Link.aspx?doi=10.5220/0014634200004058`;
-async function ne() {
+  u = e((e, t) => {
+    t.exports = l();
+  }),
+  d = n(),
+  f = c(),
+  p = u();
+function m({ added: e = !1 }) {
+  return (0, p.jsxs)(`g`, {
+    className: `ad-glyph`,
+    children: [
+      (0, p.jsx)(`path`, { d: `M-24-12 H0 V16 H24 M0-12 H24` }),
+      (0, p.jsx)(`rect`, { x: `-34`, y: `-22`, width: `20`, height: `20`, rx: `3` }),
+      (0, p.jsx)(`rect`, { x: `14`, y: `-22`, width: `20`, height: `20`, rx: `3` }),
+      (0, p.jsx)(`rect`, {
+        className: e ? `ad-new-element` : ``,
+        x: `14`,
+        y: `6`,
+        width: `20`,
+        height: `20`,
+        rx: `3`,
+      }),
+      e && (0, p.jsx)(`path`, { className: `ad-plus`, d: `M20 16 H28 M24 12 V20` }),
+    ],
+  });
+}
+function h({ x: e, y: t }) {
+  return (0, p.jsxs)(`g`, {
+    transform: `translate(${e} ${t})`,
+    children: [
+      (0, p.jsx)(`g`, { transform: `translate(-92 0)`, children: (0, p.jsx)(m, {}) }),
+      (0, p.jsxs)(`g`, {
+        className: `ad-glyph`,
+        children: [
+          (0, p.jsx)(`rect`, { x: `-25`, y: `-25`, width: `50`, height: `48`, rx: `3` }),
+          (0, p.jsx)(`path`, { d: `M-25-9 H25 M-15 1 H1 M-15 11 H12` }),
+          (0, p.jsx)(`circle`, { cx: `15`, cy: `-17`, r: `2` }),
+        ],
+      }),
+      (0, p.jsx)(`g`, {
+        className: `ad-glyph`,
+        transform: `translate(92 0)`,
+        children: (0, p.jsx)(`path`, {
+          d: `M-14-24 H15 L25-14 V24 H-14Z M15-24 V-14 H25 M-22-16 H-24 V16 M-5-2 H15 M-5 7 H15 M-5 16 H8`,
+        }),
+      }),
+      (0, p.jsx)(`text`, { className: `ad-small`, x: `-92`, y: `49`, children: `Model` }),
+      (0, p.jsx)(`text`, { className: `ad-small`, y: `49`, children: `Ecore` }),
+      (0, p.jsx)(`text`, { className: `ad-small`, x: `92`, y: `49`, children: `Sources` }),
+      (0, p.jsx)(`path`, {
+        className: `ad-context-bracket`,
+        d: `M-124 60 V64 Q-124 72-116 72 H116 Q124 72 124 64 V60`,
+      }),
+    ],
+  });
+}
+function g({ x: e, y: t, compact: n }) {
+  return (0, p.jsxs)(`g`, {
+    transform: `translate(${e} ${t})`,
+    children: [
+      (0, p.jsx)(`text`, {
+        className: `ad-label`,
+        x: n ? 72 : 92,
+        y: `-20`,
+        children: `Modeler + chatbot`,
+      }),
+      (0, p.jsxs)(`g`, {
+        transform: n ? `scale(.7826 .8125)` : void 0,
+        children: [
+          (0, p.jsx)(`rect`, { className: `ad-window`, width: `184`, height: `128`, rx: `2` }),
+          (0, p.jsx)(`path`, { className: `ad-window-rule`, d: `M0 24 H184 M108 24 V128` }),
+          (0, p.jsxs)(`g`, {
+            className: `ad-window-dots`,
+            children: [
+              (0, p.jsx)(`circle`, { cx: `14`, cy: `12`, r: `2` }),
+              (0, p.jsx)(`circle`, { cx: `23`, cy: `12`, r: `2` }),
+              (0, p.jsx)(`circle`, { cx: `32`, cy: `12`, r: `2` }),
+            ],
+          }),
+          (0, p.jsx)(`g`, { transform: `translate(51 76) scale(.9)`, children: (0, p.jsx)(m, {}) }),
+          (0, p.jsxs)(`g`, {
+            className: `ad-chat-glyph`,
+            children: [
+              (0, p.jsx)(`path`, { d: `M120 43 H171 V66 H137 L129 74 V66 H120Z` }),
+              (0, p.jsx)(`path`, { d: `M120 88 H171 V109 H163 V116 L155 109 H120Z` }),
+              (0, p.jsx)(`path`, {
+                className: `ad-chat-lines`,
+                d: `M129 52 H160 M129 58 H150 M129 96 H160 M129 102 H150`,
+              }),
+            ],
+          }),
+        ],
+      }),
+    ],
+  });
+}
+function _({ x: e, y: t }) {
+  return (0, p.jsxs)(`g`, {
+    transform: `translate(${e} ${t})`,
+    children: [
+      (0, p.jsx)(`rect`, {
+        className: `ad-router-ring`,
+        x: `-60`,
+        y: `-60`,
+        width: `120`,
+        height: `120`,
+      }),
+      (0, p.jsx)(`rect`, {
+        className: `ad-router`,
+        x: `-52`,
+        y: `-52`,
+        width: `104`,
+        height: `104`,
+      }),
+      (0, p.jsxs)(`g`, {
+        className: `ad-router-symbol`,
+        children: [
+          (0, p.jsx)(`path`, { d: `M-16-17 H16 M0-17 V-29` }),
+          (0, p.jsx)(`circle`, { cx: `-16`, cy: `-17`, r: `3` }),
+          (0, p.jsx)(`circle`, { cx: `16`, cy: `-17`, r: `3` }),
+          (0, p.jsx)(`circle`, { cy: `-29`, r: `3` }),
+        ],
+      }),
+      (0, p.jsx)(`text`, { className: `ad-router-text`, y: `18`, children: `LLM` }),
+    ],
+  });
+}
+function v({ kind: e, x: t, y: n }) {
+  let r = { generate: `Generate`, edit: `Edit`, explain: `Explain` }[e];
+  return (0, p.jsxs)(`g`, {
+    transform: `translate(${t} ${n})`,
+    children: [
+      (0, p.jsx)(`rect`, {
+        className: `ad-route-disc`,
+        x: `-34`,
+        y: `-34`,
+        width: `68`,
+        height: `68`,
+      }),
+      e === `generate` &&
+        (0, p.jsx)(`g`, { transform: `scale(.66)`, children: (0, p.jsx)(m, { added: !0 }) }),
+      e === `edit` &&
+        (0, p.jsxs)(`g`, {
+          className: `ad-glyph`,
+          children: [
+            (0, p.jsx)(`rect`, { x: `-18`, y: `-16`, width: `25`, height: `28`, rx: `3` }),
+            (0, p.jsx)(`path`, { className: `ad-selection`, d: `M-24-22 H13 V18 H-24Z` }),
+            (0, p.jsx)(`path`, {
+              className: `ad-pencil`,
+              d: `m-1 10 4-12 17-17 7 7L10 5Z M3-2 10 5`,
+            }),
+          ],
+        }),
+      e === `explain` &&
+        (0, p.jsx)(`g`, {
+          className: `ad-glyph`,
+          children: (0, p.jsx)(`path`, {
+            d: `M-21-17 H21 V12 H-3 L-14 22 V12 H-21Z M-12-6 H12 M-12 2 H5`,
+          }),
+        }),
+      (0, p.jsx)(`text`, { className: `ad-label`, y: `57`, children: r }),
+      e === `explain` &&
+        (0, p.jsx)(`text`, { className: `ad-small`, y: `80`, children: `Read-only` }),
+    ],
+  });
+}
+function y({ x: e, y: t, compact: n }) {
+  let r = n ? 240 : 192,
+    i = n ? 184 : 224;
+  return (0, p.jsxs)(`g`, {
+    transform: `translate(${e} ${t})`,
+    children: [
+      (0, p.jsx)(`text`, { className: `ad-label`, x: r / 2, y: `-20`, children: `Private draft` }),
+      (0, p.jsx)(`rect`, { className: `ad-draft`, width: r, height: i }),
+      (0, p.jsx)(`g`, {
+        transform: `translate(${r / 2} ${n ? 60 : 88}) scale(${n ? 1.1 : 1.35})`,
+        children: (0, p.jsx)(m, { added: !0 }),
+      }),
+      (0, p.jsxs)(`g`, {
+        className: `ad-glyph ad-draft-extension`,
+        transform: `translate(${r / 2} ${n ? 60 : 88}) scale(${n ? 1.1 : 1.35})`,
+        children: [
+          (0, p.jsx)(`path`, { d: `M-24-2 V48 H24 V26` }),
+          (0, p.jsx)(`rect`, { x: `-34`, y: `38`, width: `20`, height: `20`, rx: `3` }),
+        ],
+      }),
+      (0, p.jsx)(`path`, { className: `ad-draft-rule`, d: `M16 ${i - 48} H${r - 16}` }),
+      (0, p.jsx)(`text`, {
+        className: `ad-small`,
+        x: r / 2,
+        y: i - 20,
+        children: `Compile · stage`,
+      }),
+    ],
+  });
+}
+function b({ x: e, y: t, compact: n }) {
+  return (0, p.jsxs)(`g`, {
+    transform: `translate(${e} ${t})`,
+    children: [
+      (0, p.jsx)(`path`, { className: `ad-gate`, d: `M0-48 36 0 0 48-36 0Z` }),
+      (0, p.jsx)(`path`, { className: `ad-gate-check`, d: `m-12 0 8 8 16-18` }),
+      (0, p.jsx)(`text`, {
+        className: `ad-label`,
+        x: n ? 100 : 0,
+        y: n ? -8 : -80,
+        children: `Ecore / EMF`,
+      }),
+      (0, p.jsx)(`text`, {
+        className: `ad-small`,
+        x: n ? 100 : 0,
+        y: n ? 16 : -58,
+        children: `Structural gate`,
+      }),
+    ],
+  });
+}
+function x({ x: e, y: t }) {
+  return (0, p.jsxs)(`g`, {
+    transform: `translate(${e} ${t})`,
+    children: [
+      (0, p.jsx)(`rect`, {
+        className: `ad-saved-back`,
+        x: `-47`,
+        y: `-40`,
+        width: `88`,
+        height: `72`,
+      }),
+      (0, p.jsx)(`rect`, { className: `ad-saved`, x: `-40`, y: `-32`, width: `88`, height: `72` }),
+      (0, p.jsx)(`g`, {
+        transform: `translate(4 3) scale(.75)`,
+        children: (0, p.jsx)(m, { added: !0 }),
+      }),
+      (0, p.jsx)(`circle`, { className: `ad-saved-badge`, cx: `44`, cy: `-28`, r: `13` }),
+      (0, p.jsx)(`path`, { className: `ad-saved-check`, d: `m38-28 4 4 8-9` }),
+      (0, p.jsx)(`text`, { className: `ad-label`, x: `4`, y: `70`, children: `Checkpoint` }),
+      (0, p.jsx)(`text`, { className: `ad-small`, x: `4`, y: `94`, children: `Revision checked` }),
+    ],
+  });
+}
+function ee({ compact: e = !1 }) {
+  let t = e ? `assistant-mobile` : `assistant-wide`;
+  return (0, p.jsxs)(`svg`, {
+    className: `assistant-diagram ${e ? `assistant-diagram-mobile` : `assistant-diagram-wide`}`,
+    viewBox: e ? `0 0 400 1120` : `0 0 1280 712`,
+    role: `img`,
+    "aria-labelledby": `${t}-title ${t}-desc`,
+    children: [
+      (0, p.jsx)(`title`, {
+        id: `${t}-title`,
+        children: `The MODRISS conversational modeling loop`,
+      }),
+      (0, p.jsx)(`desc`, {
+        id: `${t}-desc`,
+        children: `Model and conversation context, live Ecore contracts, and optional sources inform LLM strategy selection within a durable backend turn. Generate and edit routes compile changes into a private draft. Structural Ecore/EMF conformance and a revision check precede an atomic checkpoint and model update. Rejected drafts can return for bounded repair. Explanation is read-only and returns a reply. EVL semantic validation is outside this loop.`,
+      }),
+      (0, p.jsxs)(`defs`, {
+        children: [
+          (0, p.jsx)(`marker`, {
+            id: `${t}-arrow`,
+            markerWidth: `8`,
+            markerHeight: `6`,
+            refX: `7`,
+            refY: `3`,
+            orient: `auto`,
+            children: (0, p.jsx)(`path`, { d: `M0 0 8 3 0 6Z`, fill: `var(--copper)` }),
+          }),
+          (0, p.jsx)(`marker`, {
+            id: `${t}-accent`,
+            markerWidth: `8`,
+            markerHeight: `6`,
+            refX: `7`,
+            refY: `3`,
+            orient: `auto`,
+            children: (0, p.jsx)(`path`, { d: `M0 0 8 3 0 6Z`, fill: `var(--teal-dark)` }),
+          }),
+          (0, p.jsx)(`marker`, {
+            id: `${t}-link`,
+            markerWidth: `8`,
+            markerHeight: `6`,
+            refX: `7`,
+            refY: `3`,
+            orient: `auto`,
+            children: (0, p.jsx)(`path`, { d: `M0 0 8 3 0 6Z`, fill: `var(--ink-soft)` }),
+          }),
+        ],
+      }),
+      !e &&
+        (0, p.jsxs)(p.Fragment, {
+          children: [
+            (0, p.jsx)(`rect`, {
+              className: `ad-turn-boundary`,
+              x: `264`,
+              y: `168`,
+              width: `984`,
+              height: `480`,
+            }),
+            (0, p.jsx)(`text`, {
+              className: `ad-eyebrow`,
+              x: `284`,
+              y: `194`,
+              children: `DURABLE TURN`,
+            }),
+          ],
+        }),
+      e &&
+        (0, p.jsx)(`text`, {
+          className: `ad-eyebrow`,
+          x: `24`,
+          y: `18`,
+          children: `MODEL · METAMODEL · SOURCES`,
+        }),
+      (0, p.jsx)(`g`, {
+        className: `ad-flows`,
+        markerEnd: `url(#${t}-arrow)`,
+        children: e
+          ? (0, p.jsxs)(p.Fragment, {
+              children: [
+                (0, p.jsx)(`path`, {
+                  d: `M200 124 V144 Q200 152 208 152 H280 Q288 152 288 160 V184`,
+                }),
+                (0, p.jsx)(`path`, { d: `M168 244 H228` }),
+                (0, p.jsx)(`path`, { d: `M264 298 V308 Q264 316 256 316 H88 Q80 316 80 324 V390` }),
+                (0, p.jsx)(`path`, {
+                  d: `M288 304 V332 Q288 340 280 340 H208 Q200 340 200 348 V390`,
+                }),
+                (0, p.jsx)(`path`, { d: `M312 298 V308 Q312 316 316 316 Q320 316 320 324 V390` }),
+                (0, p.jsx)(`path`, {
+                  d: `M46 424 H40 Q32 424 32 432 V504 Q32 512 40 512 H92 Q100 512 100 520 V560`,
+                }),
+                (0, p.jsx)(`path`, { d: `M234 424 H252 Q260 424 260 432 V560` }),
+                (0, p.jsx)(`path`, { d: `M180 744 V784` }),
+                (0, p.jsx)(`path`, {
+                  className: `ad-approved-flow`,
+                  markerEnd: `url(#${t}-accent)`,
+                  d: `M180 880 V936`,
+                }),
+                (0, p.jsx)(`path`, {
+                  className: `ad-repair-flow`,
+                  markerEnd: `url(#${t}-link)`,
+                  d: `M144 832 H32 Q24 832 24 824 V656 Q24 648 32 648 H60`,
+                }),
+                (0, p.jsx)(`path`, {
+                  className: `ad-return-flow`,
+                  markerEnd: `url(#${t}-link)`,
+                  d: `M224 984 H352 Q360 984 360 992 V1072 Q360 1080 352 1080 H16 Q8 1080 8 1072 V276 Q8 268 16 268 H24`,
+                }),
+              ],
+            })
+          : (0, p.jsxs)(p.Fragment, {
+              children: [
+                (0, p.jsx)(`path`, { d: `M392 152 V276` }),
+                (0, p.jsx)(`path`, { d: `M224 336 H332` }),
+                (0, p.jsx)(`path`, {
+                  d: `M448 316 H484 Q492 316 492 308 V248 Q492 240 500 240 H586`,
+                }),
+                (0, p.jsx)(`path`, {
+                  d: `M448 356 H492 Q500 356 500 364 V368 Q500 376 508 376 H586`,
+                }),
+                (0, p.jsx)(`path`, {
+                  d: `M392 396 V496 Q392 504 400 504 H612 Q620 504 620 512 V518`,
+                }),
+                (0, p.jsx)(`path`, { d: `M654 240 H776` }),
+                (0, p.jsx)(`path`, { d: `M654 376 H776` }),
+                (0, p.jsx)(`path`, { d: `M968 328 H996` }),
+                (0, p.jsx)(`path`, {
+                  className: `ad-approved-flow`,
+                  markerEnd: `url(#${t}-accent)`,
+                  d: `M1068 328 H1129`,
+                }),
+                (0, p.jsx)(`path`, {
+                  className: `ad-repair-flow`,
+                  markerEnd: `url(#${t}-link)`,
+                  d: `M1032 376 V464 Q1032 472 1024 472 H880 Q872 472 872 464 V432`,
+                }),
+                (0, p.jsx)(`path`, {
+                  className: `ad-return-flow`,
+                  markerEnd: `url(#${t}-link)`,
+                  d: `M586 552 H184 Q176 552 176 544 V400`,
+                }),
+                (0, p.jsx)(`path`, {
+                  className: `ad-return-flow`,
+                  markerEnd: `url(#${t}-link)`,
+                  d: `M1224 344 H1252 Q1260 344 1260 352 V656 Q1260 664 1252 664 H104 Q96 664 96 656 V400`,
+                }),
+              ],
+            }),
+      }),
+      e
+        ? (0, p.jsxs)(p.Fragment, {
+            children: [
+              (0, p.jsx)(h, { x: 200, y: 52 }),
+              (0, p.jsx)(g, { x: 24, y: 188, compact: !0 }),
+              (0, p.jsx)(_, { x: 288, y: 244 }),
+              (0, p.jsx)(v, { kind: `generate`, x: 80, y: 424 }),
+              (0, p.jsx)(v, { kind: `edit`, x: 200, y: 424 }),
+              (0, p.jsx)(v, { kind: `explain`, x: 320, y: 424 }),
+              (0, p.jsx)(y, { x: 60, y: 560, compact: !0 }),
+              (0, p.jsx)(b, { x: 180, y: 832, compact: !0 }),
+              (0, p.jsx)(x, { x: 176, y: 976 }),
+              (0, p.jsx)(`text`, {
+                className: `ad-edge-label`,
+                x: `79`,
+                y: `820`,
+                children: `Repair`,
+              }),
+              (0, p.jsx)(`text`, {
+                className: `ad-edge-label`,
+                x: `205`,
+                y: `916`,
+                children: `pass`,
+              }),
+              (0, p.jsx)(`text`, {
+                className: `ad-edge-label`,
+                x: `280`,
+                y: `1104`,
+                children: `Model update`,
+              }),
+            ],
+          })
+        : (0, p.jsxs)(p.Fragment, {
+            children: [
+              (0, p.jsx)(h, { x: 392, y: 80 }),
+              (0, p.jsx)(g, { x: 40, y: 272, compact: !1 }),
+              (0, p.jsx)(_, { x: 392, y: 336 }),
+              (0, p.jsx)(v, { kind: `generate`, x: 620, y: 240 }),
+              (0, p.jsx)(v, { kind: `edit`, x: 620, y: 376 }),
+              (0, p.jsx)(v, { kind: `explain`, x: 620, y: 552 }),
+              (0, p.jsx)(y, { x: 776, y: 208, compact: !1 }),
+              (0, p.jsx)(b, { x: 1032, y: 328, compact: !1 }),
+              (0, p.jsx)(x, { x: 1176, y: 328 }),
+              (0, p.jsx)(`text`, {
+                className: `ad-edge-label`,
+                x: `280`,
+                y: `324`,
+                children: `request`,
+              }),
+              (0, p.jsx)(`text`, {
+                className: `ad-edge-label`,
+                x: `1098`,
+                y: `316`,
+                children: `pass`,
+              }),
+              (0, p.jsx)(`text`, {
+                className: `ad-edge-label`,
+                x: `948`,
+                y: `460`,
+                children: `Repair`,
+              }),
+              (0, p.jsx)(`text`, {
+                className: `ad-edge-label`,
+                x: `288`,
+                y: `540`,
+                children: `Reply`,
+              }),
+              (0, p.jsx)(`text`, {
+                className: `ad-edge-label`,
+                x: `1016`,
+                y: `652`,
+                children: `Model update`,
+              }),
+            ],
+          }),
+    ],
+  });
+}
+function S() {
+  return (0, p.jsxs)(`figure`, {
+    className: `assistant-figure`,
+    "aria-labelledby": `assistant-map-title`,
+    children: [
+      (0, p.jsxs)(`div`, {
+        className: `assistant-map-heading`,
+        children: [
+          (0, p.jsxs)(`div`, {
+            children: [
+              (0, p.jsx)(`span`, { children: `CIM & PIM · implemented architecture` }),
+              (0, p.jsx)(`h3`, {
+                id: `assistant-map-title`,
+                children: `The conversational modeling loop`,
+              }),
+            ],
+          }),
+          (0, p.jsx)(`div`, {
+            className: `assistant-scope-tag`,
+            children: `Human intent → model change`,
+          }),
+        ],
+      }),
+      (0, p.jsx)(ee, {}),
+      (0, p.jsx)(ee, { compact: !0 }),
+      (0, p.jsxs)(`figcaption`, {
+        children: [
+          (0, p.jsx)(`span`, { children: `Figure 3.` }),
+          ` Generation and editing share a private draft and structural gate; explanation is read-only. Repair is bounded; checkpoints are atomic and reversible. EVL semantic validation remains a separate, explicit user workflow.`,
+        ],
+      }),
+    ],
+  });
+}
+var C = `/assets/modriss-workspace-DkhcwnNs.png`,
+  te = `/assets/modriss-favicon-X1h9hZcT.svg`,
+  ne = `/assets/modriss-logo-C7-AY6Pn.svg`,
+  re = `/assets/modriss-logo-w-QD6nJF9M.svg`,
+  w = window.location.origin,
+  ie = window.location.origin.replace(/\/$/, ``),
+  ae = `https://docs.modriss.site`,
+  oe = `${ae.replace(/\/$/, ``)}/guides/full-lifecycle-method/`,
+  se = `https://github.com/mehdieidi/modriss`,
+  ce = `https://www.sharif.ir/en/web/me_ce/home`,
+  le = `https://www.sharif.ir/en/web/me_ce/w/mehdi-eidi`,
+  ue = `https://mehdieidi.github.io/`,
+  T = `https://www.scitepress.org/Link.aspx?doi=10.5220/0014634200004058`;
+async function E() {
   let e = JSON.stringify({
       app: `landing`,
       kind: `page_view`,
@@ -11481,7 +11975,7 @@ async function ne() {
       attributes: { referrer: document.referrer },
       occurredAt: new Date().toISOString(),
     }),
-    t = `${v}/api/telemetry/frontend`;
+    t = `${ie}/api/telemetry/frontend`;
   (navigator.sendBeacon && navigator.sendBeacon(t, new Blob([e], { type: `application/json` }))) ||
     fetch(t, {
       method: `POST`,
@@ -11490,8 +11984,8 @@ async function ne() {
       keepalive: !0,
     }).catch(() => void 0);
 }
-ne(), document.querySelector(`link[rel="icon"]`)?.setAttribute(`href`, f);
-function w({ name: e, size: t = 20 }) {
+E(), document.querySelector(`link[rel="icon"]`)?.setAttribute(`href`, te);
+function D({ name: e, size: t = 20 }) {
   let n = {
       width: t,
       height: t,
@@ -11504,72 +11998,72 @@ function w({ name: e, size: t = 20 }) {
       "aria-hidden": !0,
     },
     r = {
-      arrow: (0, g.jsxs)(g.Fragment, {
+      arrow: (0, p.jsxs)(p.Fragment, {
         children: [
-          (0, g.jsx)(`path`, { d: `M5 12h14` }),
-          (0, g.jsx)(`path`, { d: `m13 6 6 6-6 6` }),
+          (0, p.jsx)(`path`, { d: `M5 12h14` }),
+          (0, p.jsx)(`path`, { d: `m13 6 6 6-6 6` }),
         ],
       }),
-      book: (0, g.jsxs)(g.Fragment, {
+      book: (0, p.jsxs)(p.Fragment, {
         children: [
-          (0, g.jsx)(`path`, {
+          (0, p.jsx)(`path`, {
             d: `M4 5.5A2.5 2.5 0 0 1 6.5 3H20v16H6.5A2.5 2.5 0 0 0 4 21.5v-16Z`,
           }),
-          (0, g.jsx)(`path`, { d: `M4 19a2.5 2.5 0 0 1 2.5-2.5H20` }),
+          (0, p.jsx)(`path`, { d: `M4 19a2.5 2.5 0 0 1 2.5-2.5H20` }),
         ],
       }),
-      code: (0, g.jsx)(g.Fragment, {
-        children: (0, g.jsx)(`path`, { d: `m8 9-3 3 3 3M16 9l3 3-3 3M14 5l-4 14` }),
+      code: (0, p.jsx)(p.Fragment, {
+        children: (0, p.jsx)(`path`, { d: `m8 9-3 3 3 3M16 9l3 3-3 3M14 5l-4 14` }),
       }),
-      downArrow: (0, g.jsxs)(g.Fragment, {
+      downArrow: (0, p.jsxs)(p.Fragment, {
         children: [
-          (0, g.jsx)(`path`, { d: `M12 5v14` }),
-          (0, g.jsx)(`path`, { d: `m6 13 6 6 6-6` }),
+          (0, p.jsx)(`path`, { d: `M12 5v14` }),
+          (0, p.jsx)(`path`, { d: `m6 13 6 6 6-6` }),
         ],
       }),
-      github: (0, g.jsxs)(g.Fragment, {
+      github: (0, p.jsxs)(p.Fragment, {
         children: [
-          (0, g.jsx)(`path`, {
+          (0, p.jsx)(`path`, {
             d: `M15 22v-3.9c.04-1.01-.3-2-.95-2.78 3.16-.35 6.48-1.55 6.48-7A5.5 5.5 0 0 0 19.1 4.5 5.1 5.1 0 0 0 19 1s-1.2-.38-3.94 1.5a13.6 13.6 0 0 0-7.17 0C5.15.62 3.95 1 3.95 1a5.1 5.1 0 0 0-.1 3.5 5.5 5.5 0 0 0-1.43 3.81c0 5.44 3.31 6.64 6.47 7-.64.78-.98 1.77-.95 2.78V22`,
           }),
-          (0, g.jsx)(`path`, { d: `M9 19c-3 .92-3-1.5-4.2-1.84` }),
+          (0, p.jsx)(`path`, { d: `M9 19c-3 .92-3-1.5-4.2-1.84` }),
         ],
       }),
-      layers: (0, g.jsxs)(g.Fragment, {
+      layers: (0, p.jsxs)(p.Fragment, {
         children: [
-          (0, g.jsx)(`path`, { d: `m12 3 9 5-9 5-9-5 9-5Z` }),
-          (0, g.jsx)(`path`, { d: `m3 12 9 5 9-5M3 17l9 5 9-5` }),
+          (0, p.jsx)(`path`, { d: `m12 3 9 5-9 5-9-5 9-5Z` }),
+          (0, p.jsx)(`path`, { d: `m3 12 9 5 9-5M3 17l9 5 9-5` }),
         ],
       }),
-      model: (0, g.jsxs)(g.Fragment, {
+      model: (0, p.jsxs)(p.Fragment, {
         children: [
-          (0, g.jsx)(`rect`, { x: `3`, y: `4`, width: `7`, height: `6`, rx: `1` }),
-          (0, g.jsx)(`rect`, { x: `14`, y: `14`, width: `7`, height: `6`, rx: `1` }),
-          (0, g.jsx)(`path`, { d: `M10 7h4a3 3 0 0 1 3 3v4` }),
+          (0, p.jsx)(`rect`, { x: `3`, y: `4`, width: `7`, height: `6`, rx: `1` }),
+          (0, p.jsx)(`rect`, { x: `14`, y: `14`, width: `7`, height: `6`, rx: `1` }),
+          (0, p.jsx)(`path`, { d: `M10 7h4a3 3 0 0 1 3 3v4` }),
         ],
       }),
-      process: (0, g.jsxs)(g.Fragment, {
+      process: (0, p.jsxs)(p.Fragment, {
         children: [
-          (0, g.jsx)(`circle`, { cx: `5`, cy: `5`, r: `2` }),
-          (0, g.jsx)(`circle`, { cx: `19`, cy: `19`, r: `2` }),
-          (0, g.jsx)(`path`, { d: `M7 5h8a4 4 0 0 1 4 4v8M5 7v5a4 4 0 0 0 4 4h8` }),
+          (0, p.jsx)(`circle`, { cx: `5`, cy: `5`, r: `2` }),
+          (0, p.jsx)(`circle`, { cx: `19`, cy: `19`, r: `2` }),
+          (0, p.jsx)(`path`, { d: `M7 5h8a4 4 0 0 1 4 4v8M5 7v5a4 4 0 0 0 4 4h8` }),
         ],
       }),
-      spark: (0, g.jsxs)(g.Fragment, {
+      spark: (0, p.jsxs)(p.Fragment, {
         children: [
-          (0, g.jsx)(`path`, {
+          (0, p.jsx)(`path`, {
             d: `m12 3-1.4 5.6L5 10l5.6 1.4L12 17l1.4-5.6L19 10l-5.6-1.4L12 3Z`,
           }),
-          (0, g.jsx)(`path`, { d: `M19 16v6M16 19h6` }),
+          (0, p.jsx)(`path`, { d: `M19 16v6M16 19h6` }),
         ],
       }),
-      transform: (0, g.jsx)(g.Fragment, {
-        children: (0, g.jsx)(`path`, { d: `M4 7h12l-3-3M16 7l-3 3M20 17H8l3 3M8 17l3-3` }),
+      transform: (0, p.jsx)(p.Fragment, {
+        children: (0, p.jsx)(`path`, { d: `M4 7h12l-3-3M16 7l-3 3M20 17H8l3 3M8 17l3-3` }),
       }),
     };
-  return (0, g.jsx)(`svg`, { ...n, children: r[e] });
+  return (0, p.jsx)(`svg`, { ...n, children: r[e] });
 }
-var T = [
+var de = [
     [
       `01`,
       `Development process`,
@@ -11578,7 +12072,7 @@ var T = [
     [
       `02`,
       `Modeling framework`,
-      `A set of domain-specific modeling languages represents the problem domain, platform-independent serverless architecture, and AWS deployment design. Their abstract syntax is specified through Ecore metamodels.`,
+      `Fixed domain-specific languages represent the business domain and generic serverless architecture. Users can extend the PSM level with their own cloud metamodels and Epsilon scripts alongside the built-in AWS language.`,
     ],
     [
       `03`,
@@ -11591,7 +12085,7 @@ var T = [
       `A conversational LLM-based assistant supports model creation, inspection, explanation, and controlled modification. It works with the live metamodel and keeps generated changes subject to structural conformance and human control.`,
     ],
   ],
-  re = [
+  fe = [
     [
       `Abstract syntax`,
       `Ecore metamodels define the concepts, attributes, containments, references, and multiplicities of each DSML.`,
@@ -11617,143 +12111,143 @@ var T = [
       `Links and reports preserve correspondences between source concepts, refined architecture elements, and generated artifacts.`,
     ],
   ];
-function ie() {
-  let [e, t] = (0, l.useState)(!1),
+function pe() {
+  let [e, t] = (0, d.useState)(!1),
     n = () => t(!1);
-  return (0, g.jsxs)(`main`, {
+  return (0, p.jsxs)(`main`, {
     id: `top`,
     children: [
-      (0, g.jsxs)(`nav`, {
+      (0, p.jsxs)(`nav`, {
         className: `nav`,
         "aria-label": `Main navigation`,
         children: [
-          (0, g.jsxs)(`a`, {
+          (0, p.jsxs)(`a`, {
             className: `brand`,
             href: `#top`,
             onClick: n,
             "aria-label": `MODRISS model-driven methodology research project home`,
             children: [
-              (0, g.jsx)(`img`, { src: p, alt: `` }),
-              (0, g.jsxs)(`span`, {
-                children: [`MODRISS`, (0, g.jsx)(`small`, { children: `Research Project` })],
+              (0, p.jsx)(`img`, { src: ne, alt: `` }),
+              (0, p.jsxs)(`span`, {
+                children: [`MODRISS`, (0, p.jsx)(`small`, { children: `Research Project` })],
               }),
             ],
           }),
-          (0, g.jsxs)(`button`, {
+          (0, p.jsxs)(`button`, {
             className: `menu`,
             onClick: () => t(!e),
             "aria-expanded": e,
             "aria-label": `Toggle navigation`,
-            children: [(0, g.jsx)(`span`, {}), (0, g.jsx)(`span`, {})],
+            children: [(0, p.jsx)(`span`, {}), (0, p.jsx)(`span`, {})],
           }),
-          (0, g.jsxs)(`div`, {
+          (0, p.jsxs)(`div`, {
             className: `nav-links ${e ? `open` : ``}`,
             children: [
-              (0, g.jsx)(`a`, { href: `#research`, onClick: n, children: `Research` }),
-              (0, g.jsx)(`a`, { href: `#methodology`, onClick: n, children: `Methodology` }),
-              (0, g.jsx)(`a`, { href: `#framework`, onClick: n, children: `Framework` }),
-              (0, g.jsx)(`a`, { href: `#process`, onClick: n, children: `Process` }),
-              (0, g.jsx)(`a`, { href: `#publication`, onClick: n, children: `Publications` }),
-              (0, g.jsx)(`a`, { href: y, onClick: n, children: `Documentation` }),
-              (0, g.jsx)(`a`, {
+              (0, p.jsx)(`a`, { href: `#research`, onClick: n, children: `Research` }),
+              (0, p.jsx)(`a`, { href: `#methodology`, onClick: n, children: `Methodology` }),
+              (0, p.jsx)(`a`, { href: `#framework`, onClick: n, children: `Framework` }),
+              (0, p.jsx)(`a`, { href: `#process`, onClick: n, children: `Process` }),
+              (0, p.jsx)(`a`, { href: `#publication`, onClick: n, children: `Publications` }),
+              (0, p.jsx)(`a`, { href: ae, onClick: n, children: `Documentation` }),
+              (0, p.jsx)(`a`, {
                 className: `nav-icon`,
-                href: x,
+                href: se,
                 "aria-label": `MODRISS source code on GitHub`,
-                children: (0, g.jsx)(w, { name: `github`, size: 18 }),
+                children: (0, p.jsx)(D, { name: `github`, size: 18 }),
               }),
             ],
           }),
         ],
       }),
-      (0, g.jsxs)(`header`, {
+      (0, p.jsxs)(`header`, {
         className: `hero`,
         children: [
-          (0, g.jsxs)(`div`, {
+          (0, p.jsxs)(`div`, {
             className: `hero-copy`,
             children: [
-              (0, g.jsxs)(`h1`, {
+              (0, p.jsxs)(`h1`, {
                 children: [
                   `A model-driven methodology for `,
-                  (0, g.jsx)(`i`, { children: `serverless software development` }),
+                  (0, p.jsx)(`i`, { children: `serverless software development` }),
                 ],
               }),
-              (0, g.jsx)(`p`, {
+              (0, p.jsx)(`p`, {
                 className: `lede`,
                 children: `MODRISS is an ongoing academic research project on how serverless software development can be supported through an explicit process, domain-specific modeling languages, model transformations, and code generation. It also explores LLM-assisted modeling for creating, explaining, and modifying models. The work is conducted at the Methodology Engineering Laboratory, Sharif University of Technology.`,
               }),
-              (0, g.jsxs)(`div`, {
+              (0, p.jsxs)(`div`, {
                 className: `hero-actions`,
                 children: [
-                  (0, g.jsxs)(`a`, {
+                  (0, p.jsxs)(`a`, {
                     className: `button primary`,
-                    href: _,
+                    href: w,
                     children: [
                       `Open the Modeling Workbench `,
-                      (0, g.jsx)(w, { name: `arrow`, size: 17 }),
+                      (0, p.jsx)(D, { name: `arrow`, size: 17 }),
                     ],
                   }),
-                  (0, g.jsxs)(`a`, {
+                  (0, p.jsxs)(`a`, {
                     className: `button secondary`,
                     href: `#research`,
                     children: [
                       `Read about the research `,
-                      (0, g.jsx)(w, { name: `downArrow`, size: 17 }),
+                      (0, p.jsx)(D, { name: `downArrow`, size: 17 }),
                     ],
                   }),
                 ],
               }),
             ],
           }),
-          (0, g.jsxs)(`aside`, {
+          (0, p.jsxs)(`aside`, {
             className: `research-card`,
             "aria-label": `Research context`,
             children: [
-              (0, g.jsxs)(`div`, {
+              (0, p.jsxs)(`div`, {
                 className: `card-rule`,
                 children: [
-                  (0, g.jsx)(`span`, { children: `Research record` }),
-                  (0, g.jsx)(`b`, { children: `01` }),
+                  (0, p.jsx)(`span`, { children: `Research record` }),
+                  (0, p.jsx)(`b`, { children: `01` }),
                 ],
               }),
-              (0, g.jsxs)(`dl`, {
+              (0, p.jsxs)(`dl`, {
                 children: [
-                  (0, g.jsxs)(`div`, {
+                  (0, p.jsxs)(`div`, {
                     children: [
-                      (0, g.jsx)(`dt`, { children: `Researcher` }),
-                      (0, g.jsx)(`dd`, {
-                        children: (0, g.jsx)(`a`, { href: C, children: `Mehdi Eidi ↗` }),
+                      (0, p.jsx)(`dt`, { children: `Researcher` }),
+                      (0, p.jsx)(`dd`, {
+                        children: (0, p.jsx)(`a`, { href: ue, children: `Mehdi Eidi ↗` }),
                       }),
                     ],
                   }),
-                  (0, g.jsxs)(`div`, {
+                  (0, p.jsxs)(`div`, {
                     children: [
-                      (0, g.jsx)(`dt`, { children: `Laboratory` }),
-                      (0, g.jsx)(`dd`, {
-                        children: (0, g.jsx)(`a`, {
-                          href: ee,
+                      (0, p.jsx)(`dt`, { children: `Laboratory` }),
+                      (0, p.jsx)(`dd`, {
+                        children: (0, p.jsx)(`a`, {
+                          href: ce,
                           children: `Methodology Engineering Laboratory ↗`,
                         }),
                       }),
                     ],
                   }),
-                  (0, g.jsxs)(`div`, {
+                  (0, p.jsxs)(`div`, {
                     children: [
-                      (0, g.jsx)(`dt`, { children: `Institution` }),
-                      (0, g.jsxs)(`dd`, {
+                      (0, p.jsx)(`dt`, { children: `Institution` }),
+                      (0, p.jsxs)(`dd`, {
                         children: [
                           `Department of Computer Engineering`,
-                          (0, g.jsx)(`br`, {}),
+                          (0, p.jsx)(`br`, {}),
                           `Sharif University of Technology`,
                         ],
                       }),
                     ],
                   }),
-                  (0, g.jsxs)(`div`, {
+                  (0, p.jsxs)(`div`, {
                     children: [
-                      (0, g.jsx)(`dt`, { children: `Status` }),
-                      (0, g.jsxs)(`dd`, {
+                      (0, p.jsx)(`dt`, { children: `Status` }),
+                      (0, p.jsxs)(`dd`, {
                         children: [
-                          (0, g.jsx)(`span`, { className: `status-dot` }),
+                          (0, p.jsx)(`span`, { className: `status-dot` }),
                           ` Ongoing research and development`,
                         ],
                       }),
@@ -11761,44 +12255,44 @@ function ie() {
                   }),
                 ],
               }),
-              (0, g.jsxs)(`a`, {
+              (0, p.jsxs)(`a`, {
                 className: `text-link`,
-                href: S,
-                children: [`Researcher profile `, (0, g.jsx)(w, { name: `arrow`, size: 15 })],
+                href: le,
+                children: [`Researcher profile `, (0, p.jsx)(D, { name: `arrow`, size: 15 })],
               }),
             ],
           }),
         ],
       }),
-      (0, g.jsxs)(`section`, {
+      (0, p.jsxs)(`section`, {
         className: `research-question`,
         id: `research`,
         children: [
-          (0, g.jsxs)(`div`, {
+          (0, p.jsxs)(`div`, {
             className: `section-label`,
-            children: [(0, g.jsx)(`span`, { children: `01` }), ` Research premise`],
+            children: [(0, p.jsx)(`span`, { children: `01` }), ` Research premise`],
           }),
-          (0, g.jsxs)(`div`, {
+          (0, p.jsxs)(`div`, {
             className: `question-layout`,
             children: [
-              (0, g.jsx)(`h2`, {
+              (0, p.jsx)(`h2`, {
                 children: `Serverless development needs a methodology that addresses its full lifecycle.`,
               }),
-              (0, g.jsxs)(`div`, {
+              (0, p.jsxs)(`div`, {
                 className: `prose`,
                 children: [
-                  (0, g.jsx)(`p`, {
+                  (0, p.jsx)(`p`, {
                     children: `Serverless computing removes much of the direct work of server management, but it creates architectural and development concerns that extend beyond function implementation. Existing model-driven approaches for serverless development remain limited in their process coverage, modeling support, and treatment of serverless-specific concerns.`,
                   }),
-                  (0, g.jsx)(`p`, {
+                  (0, p.jsx)(`p`, {
                     children: `This research studies the design of a model-driven software development methodology for the serverless paradigm. The methodology is intended to connect domain understanding, architectural design, cloud-specific configuration, and generated implementation artefacts within one traceable development path.`,
                   }),
-                  (0, g.jsxs)(`a`, {
+                  (0, p.jsxs)(`a`, {
                     className: `text-link`,
-                    href: te,
+                    href: T,
                     children: [
                       `Read the study that frames the research gap `,
-                      (0, g.jsx)(w, { name: `arrow`, size: 15 }),
+                      (0, p.jsx)(D, { name: `arrow`, size: 15 }),
                     ],
                   }),
                 ],
@@ -11807,70 +12301,70 @@ function ie() {
           }),
         ],
       }),
-      (0, g.jsxs)(`section`, {
+      (0, p.jsxs)(`section`, {
         className: `methodology`,
         id: `methodology`,
         children: [
-          (0, g.jsxs)(`div`, {
+          (0, p.jsxs)(`div`, {
             className: `section-heading`,
             children: [
-              (0, g.jsxs)(`div`, {
+              (0, p.jsxs)(`div`, {
                 className: `section-label light`,
-                children: [(0, g.jsx)(`span`, { children: `02` }), ` Proposed contribution`],
+                children: [(0, p.jsx)(`span`, { children: `02` }), ` Proposed contribution`],
               }),
-              (0, g.jsx)(`h2`, {
+              (0, p.jsx)(`h2`, {
                 children: `The methodology joins process guidance with a structured modeling framework.`,
               }),
-              (0, g.jsx)(`p`, {
+              (0, p.jsx)(`p`, {
                 children: `In this research, a methodology contains two related parts. The process explains how the development work is carried out. The modeling framework provides the languages, rules, transformations, and tools used to perform that work.`,
               }),
             ],
           }),
-          (0, g.jsxs)(`div`, {
+          (0, p.jsxs)(`div`, {
             className: `method-equation`,
             "aria-label": `MODRISS methodology consists of a development process and a modeling framework`,
             children: [
-              (0, g.jsxs)(`article`, {
+              (0, p.jsxs)(`article`, {
                 children: [
-                  (0, g.jsx)(`div`, {
+                  (0, p.jsx)(`div`, {
                     className: `equation-icon`,
-                    children: (0, g.jsx)(w, { name: `process`, size: 25 }),
+                    children: (0, p.jsx)(D, { name: `process`, size: 25 }),
                   }),
-                  (0, g.jsx)(`p`, { children: `Part A` }),
-                  (0, g.jsx)(`h3`, { children: `Development process` }),
-                  (0, g.jsx)(`span`, {
+                  (0, p.jsx)(`p`, { children: `Part A` }),
+                  (0, p.jsx)(`h3`, { children: `Development process` }),
+                  (0, p.jsx)(`span`, {
                     children: `Lifecycle, phases, roles, tasks, work products, decision points, iterations, and umbrella activities`,
                   }),
                 ],
               }),
-              (0, g.jsx)(`b`, { children: `+` }),
-              (0, g.jsxs)(`article`, {
+              (0, p.jsx)(`b`, { children: `+` }),
+              (0, p.jsxs)(`article`, {
                 children: [
-                  (0, g.jsx)(`div`, {
+                  (0, p.jsx)(`div`, {
                     className: `equation-icon`,
-                    children: (0, g.jsx)(w, { name: `model`, size: 25 }),
+                    children: (0, p.jsx)(D, { name: `model`, size: 25 }),
                   }),
-                  (0, g.jsx)(`p`, { children: `Part B` }),
-                  (0, g.jsx)(`h3`, { children: `Modeling framework` }),
-                  (0, g.jsx)(`span`, {
+                  (0, p.jsx)(`p`, { children: `Part B` }),
+                  (0, p.jsx)(`h3`, { children: `Modeling framework` }),
+                  (0, p.jsx)(`span`, {
                     children: `DSMLs and metamodels, semantics and constraints, transformations, code generation, notation, and tool support`,
                   }),
                 ],
               }),
             ],
           }),
-          (0, g.jsx)(`div`, {
+          (0, p.jsx)(`div`, {
             className: `contribution-list`,
-            children: T.map(([e, t, n]) =>
-              (0, g.jsxs)(
+            children: de.map(([e, t, n]) =>
+              (0, p.jsxs)(
                 `article`,
                 {
                   children: [
-                    (0, g.jsx)(`span`, { children: e }),
-                    (0, g.jsxs)(`div`, {
+                    (0, p.jsx)(`span`, { children: e }),
+                    (0, p.jsxs)(`div`, {
                       children: [
-                        (0, g.jsx)(`h3`, { children: t }),
-                        (0, g.jsx)(`p`, { children: n }),
+                        (0, p.jsx)(`h3`, { children: t }),
+                        (0, p.jsx)(`p`, { children: n }),
                       ],
                     }),
                   ],
@@ -11881,123 +12375,123 @@ function ie() {
           }),
         ],
       }),
-      (0, g.jsxs)(`section`, {
+      (0, p.jsxs)(`section`, {
         className: `pipeline-section`,
         "aria-labelledby": `pipeline-title`,
         children: [
-          (0, g.jsxs)(`div`, {
+          (0, p.jsxs)(`div`, {
             className: `section-label`,
-            children: [(0, g.jsx)(`span`, { children: `03` }), ` Model-driven path`],
+            children: [(0, p.jsx)(`span`, { children: `03` }), ` Model-driven path`],
           }),
-          (0, g.jsxs)(`div`, {
+          (0, p.jsxs)(`div`, {
             className: `pipeline-intro`,
             children: [
-              (0, g.jsx)(`h2`, {
+              (0, p.jsx)(`h2`, {
                 id: `pipeline-title`,
                 children: `From domain knowledge to serverless artifacts`,
               }),
-              (0, g.jsx)(`p`, {
+              (0, p.jsx)(`p`, {
                 children: `The current framework organizes models at three abstraction levels. Transformations provide a systematic refinement path, while modelers review and complete decisions at every level.`,
               }),
             ],
           }),
-          (0, g.jsxs)(`div`, {
+          (0, p.jsxs)(`div`, {
             className: `pipeline`,
             children: [
-              (0, g.jsxs)(`article`, {
+              (0, p.jsxs)(`article`, {
                 children: [
-                  (0, g.jsx)(`span`, { children: `01 · CIM` }),
-                  (0, g.jsx)(`h3`, { children: `Problem domain` }),
-                  (0, g.jsx)(`p`, {
+                  (0, p.jsx)(`span`, { children: `01 · CIM` }),
+                  (0, p.jsx)(`h3`, { children: `Problem domain` }),
+                  (0, p.jsx)(`p`, {
                     children: `Capabilities, actors, concepts, events, processes, policies, governance, and requirements without a software or cloud commitment.`,
                   }),
-                  (0, g.jsx)(`small`, { children: `Computation-Independent Model` }),
+                  (0, p.jsx)(`small`, { children: `Computation-Independent Model` }),
                 ],
               }),
-              (0, g.jsx)(`i`, { children: (0, g.jsx)(w, { name: `arrow` }) }),
-              (0, g.jsxs)(`article`, {
+              (0, p.jsx)(`i`, { children: (0, p.jsx)(D, { name: `arrow` }) }),
+              (0, p.jsxs)(`article`, {
                 children: [
-                  (0, g.jsx)(`span`, { children: `02 · PIM` }),
-                  (0, g.jsx)(`h3`, { children: `Serverless architecture` }),
-                  (0, g.jsx)(`p`, {
+                  (0, p.jsx)(`span`, { children: `02 · PIM` }),
+                  (0, p.jsx)(`h3`, { children: `Serverless architecture` }),
+                  (0, p.jsx)(`p`, {
                     children: `Services, functions, contracts, data, events, workflows, integrations, security, policies, and deployment concerns.`,
                   }),
-                  (0, g.jsx)(`small`, { children: `Platform-Independent Model` }),
+                  (0, p.jsx)(`small`, { children: `Platform-Independent Model` }),
                 ],
               }),
-              (0, g.jsx)(`i`, { children: (0, g.jsx)(w, { name: `arrow` }) }),
-              (0, g.jsxs)(`article`, {
+              (0, p.jsx)(`i`, { children: (0, p.jsx)(D, { name: `arrow` }) }),
+              (0, p.jsxs)(`article`, {
                 children: [
-                  (0, g.jsx)(`span`, { children: `03 · PSM` }),
-                  (0, g.jsx)(`h3`, { children: `Cloud provider ecosystem` }),
-                  (0, g.jsx)(`p`, {
-                    children: `AWS resources and their configuration for compute, APIs, storage, messaging, identity, networking, and observability.`,
+                  (0, p.jsx)(`span`, { children: `03 · PSM` }),
+                  (0, p.jsx)(`h3`, { children: `Cloud provider ecosystem` }),
+                  (0, p.jsx)(`p`, {
+                    children: `Use the built-in AWS language or add a provider's PSM metamodel and Epsilon scripts. Derive separate provider models from the same PIM.`,
                   }),
-                  (0, g.jsx)(`small`, { children: `Platform-Specific Model` }),
+                  (0, p.jsx)(`small`, { children: `Platform-Specific Model` }),
                 ],
               }),
-              (0, g.jsx)(`i`, { children: (0, g.jsx)(w, { name: `arrow` }) }),
-              (0, g.jsxs)(`article`, {
+              (0, p.jsx)(`i`, { children: (0, p.jsx)(D, { name: `arrow` }) }),
+              (0, p.jsxs)(`article`, {
                 className: `artefact`,
                 children: [
-                  (0, g.jsx)(`span`, { children: `04 · M2T` }),
-                  (0, g.jsx)(`h3`, { children: `Generated artifacts` }),
-                  (0, g.jsx)(`p`, {
-                    children: `Infrastructure, Go handlers, contracts, tests, workflows, scripts, documentation, and trace information for review.`,
+                  (0, p.jsx)(`span`, { children: `04 · M2T` }),
+                  (0, p.jsx)(`h3`, { children: `Generated artifacts` }),
+                  (0, p.jsx)(`p`, {
+                    children: `Each provider's generator defines its project outputs. The built-in AWS generator produces infrastructure, Go handlers, contracts, tests, automation, and documentation.`,
                   }),
-                  (0, g.jsx)(`small`, { children: `Engineering project baseline` }),
+                  (0, p.jsx)(`small`, { children: `Engineering project baseline` }),
                 ],
               }),
             ],
           }),
-          (0, g.jsxs)(`p`, {
+          (0, p.jsxs)(`p`, {
             className: `pipeline-note`,
             children: [
-              (0, g.jsx)(w, { name: `transform`, size: 18 }),
+              (0, p.jsx)(D, { name: `transform`, size: 18 }),
               ` ETL supports model-to-model refinement. EGX and EGL coordinate model-to-text generation. Semantic EVL checks remain explicit user-initiated validation activities.`,
             ],
           }),
         ],
       }),
-      (0, g.jsxs)(`section`, {
+      (0, p.jsxs)(`section`, {
         className: `framework`,
         id: `framework`,
         children: [
-          (0, g.jsxs)(`div`, {
+          (0, p.jsxs)(`div`, {
             className: `framework-copy`,
             children: [
-              (0, g.jsxs)(`div`, {
+              (0, p.jsxs)(`div`, {
                 className: `section-label`,
-                children: [(0, g.jsx)(`span`, { children: `04` }), ` Modeling framework`],
+                children: [(0, p.jsx)(`span`, { children: `04` }), ` Modeling framework`],
               }),
-              (0, g.jsx)(`h2`, {
+              (0, p.jsx)(`h2`, {
                 children: `Domain-specific languages made usable in a web-based workbench`,
               }),
-              (0, g.jsx)(`p`, {
+              (0, p.jsx)(`p`, {
                 children: `The browser platform is the concrete research artefact through which the methodology can be enacted and examined. It makes the DSMLs available as visual editors and connects them with validation, transformation, generation, traceability, and project management functions.`,
               }),
-              (0, g.jsxs)(`a`, {
+              (0, p.jsxs)(`a`, {
                 className: `text-link`,
-                href: y,
+                href: ae,
                 children: [
                   `Examine the technical documentation `,
-                  (0, g.jsx)(w, { name: `arrow`, size: 15 }),
+                  (0, p.jsx)(D, { name: `arrow`, size: 15 }),
                 ],
               }),
             ],
           }),
-          (0, g.jsx)(`div`, {
+          (0, p.jsx)(`div`, {
             className: `framework-list`,
-            children: re.map(([e, t], n) =>
-              (0, g.jsxs)(
+            children: fe.map(([e, t], n) =>
+              (0, p.jsxs)(
                 `article`,
                 {
                   children: [
-                    (0, g.jsx)(`span`, { children: String(n + 1).padStart(2, `0`) }),
-                    (0, g.jsxs)(`div`, {
+                    (0, p.jsx)(`span`, { children: String(n + 1).padStart(2, `0`) }),
+                    (0, p.jsxs)(`div`, {
                       children: [
-                        (0, g.jsx)(`h3`, { children: e }),
-                        (0, g.jsx)(`p`, { children: t }),
+                        (0, p.jsx)(`h3`, { children: e }),
+                        (0, p.jsx)(`p`, { children: t }),
                       ],
                     }),
                   ],
@@ -12008,168 +12502,168 @@ function ie() {
           }),
         ],
       }),
-      (0, g.jsxs)(`section`, {
+      (0, p.jsxs)(`section`, {
         className: `process-section`,
         id: `process`,
         "aria-labelledby": `process-title`,
         children: [
-          (0, g.jsxs)(`div`, {
+          (0, p.jsxs)(`div`, {
             className: `process-intro`,
             children: [
-              (0, g.jsxs)(`div`, {
+              (0, p.jsxs)(`div`, {
                 children: [
-                  (0, g.jsxs)(`div`, {
+                  (0, p.jsxs)(`div`, {
                     className: `section-label`,
                     children: [
-                      (0, g.jsx)(`span`, { children: `05` }),
+                      (0, p.jsx)(`span`, { children: `05` }),
                       ` Engineered development process`,
                     ],
                   }),
-                  (0, g.jsx)(`h2`, {
+                  (0, p.jsx)(`h2`, {
                     id: `process-title`,
                     children: `A development process for engineering and evolving software in the serverless paradigm`,
                   }),
                 ],
               }),
-              (0, g.jsxs)(`div`, {
+              (0, p.jsxs)(`div`, {
                 className: `process-summary`,
                 children: [
-                  (0, g.jsx)(`p`, {
+                  (0, p.jsx)(`p`, {
                     children: `Development and Delivery has three one-time phases: inception and tailoring, active product development, and retirement. During the active phase, teams build vertical CIM–PIM–PSM increments and release them while Operations and Maintenance sustains the live service. DevOps connects delivery and operations through evidence, telemetry, controlled change, and learning.`,
                   }),
-                  (0, g.jsx)(`p`, {
+                  (0, p.jsx)(`p`, {
                     children: `Each handoff names its evidence and decision owner. Release responsibility starts before the first production traffic; retirement closes the live service while retained records move to accepted, funded custody.`,
                   }),
-                  (0, g.jsxs)(`a`, {
+                  (0, p.jsxs)(`a`, {
                     className: `text-link`,
-                    href: b,
+                    href: oe,
                     children: [
                       `Study the full lifecycle process `,
-                      (0, g.jsx)(w, { name: `arrow`, size: 15 }),
+                      (0, p.jsx)(D, { name: `arrow`, size: 15 }),
                     ],
                   }),
                 ],
               }),
             ],
           }),
-          (0, g.jsxs)(`figure`, {
+          (0, p.jsxs)(`figure`, {
             className: `process-figure`,
             "aria-labelledby": `process-map-title`,
             children: [
-              (0, g.jsxs)(`div`, {
+              (0, p.jsxs)(`div`, {
                 className: `process-map-heading`,
                 children: [
-                  (0, g.jsxs)(`div`, {
+                  (0, p.jsxs)(`div`, {
                     children: [
-                      (0, g.jsx)(`span`, { children: `Integrated lifecycle` }),
-                      (0, g.jsx)(`h3`, {
+                      (0, p.jsx)(`span`, { children: `Integrated lifecycle` }),
+                      (0, p.jsx)(`h3`, {
                         id: `process-map-title`,
                         children: `Two processes, one product lifecycle`,
                       }),
                     ],
                   }),
-                  (0, g.jsx)(`p`, {
+                  (0, p.jsx)(`p`, {
                     children: `Development delivers releases while operations sustains the live baseline.`,
                   }),
                 ],
               }),
-              (0, g.jsxs)(`div`, {
+              (0, p.jsxs)(`div`, {
                 className: `process-lane-heading development-lane-heading`,
                 children: [
-                  (0, g.jsx)(`span`, { children: `Process A` }),
-                  (0, g.jsx)(`b`, { children: `Development & Delivery` }),
-                  (0, g.jsxs)(`small`, {
+                  (0, p.jsx)(`span`, { children: `Process A` }),
+                  (0, p.jsx)(`b`, { children: `Development & Delivery` }),
+                  (0, p.jsxs)(`small`, {
                     children: [
                       `Phase 0 `,
-                      (0, g.jsx)(`i`, { "aria-hidden": `true`, children: `→` }),
+                      (0, p.jsx)(`i`, { "aria-hidden": `true`, children: `→` }),
                       ` Phase 1 `,
-                      (0, g.jsx)(`i`, { "aria-hidden": `true`, children: `→` }),
+                      (0, p.jsx)(`i`, { "aria-hidden": `true`, children: `→` }),
                       ` Phase 2`,
                     ],
                   }),
                 ],
               }),
-              (0, g.jsxs)(`div`, {
+              (0, p.jsxs)(`div`, {
                 className: `lifecycle-cycle`,
                 "aria-label": `Development and Delivery proceeds through three sequential, one-time phases`,
                 children: [
-                  (0, g.jsxs)(`article`, {
+                  (0, p.jsxs)(`article`, {
                     className: `lifecycle-boundary lifecycle-start`,
                     children: [
-                      (0, g.jsx)(`span`, { children: `Phase 0 · once` }),
-                      (0, g.jsx)(`h4`, { children: `Assess, authorize & tailor` }),
-                      (0, g.jsx)(`small`, { children: `G0 · G1` }),
+                      (0, p.jsx)(`span`, { children: `Phase 0 · once` }),
+                      (0, p.jsx)(`h4`, { children: `Assess, authorize & tailor` }),
+                      (0, p.jsx)(`small`, { children: `G0 · G1` }),
                     ],
                   }),
-                  (0, g.jsx)(`i`, {
+                  (0, p.jsx)(`i`, {
                     className: `lifecycle-flow`,
                     "aria-hidden": `true`,
                     children: `→`,
                   }),
-                  (0, g.jsx)(`div`, {
+                  (0, p.jsx)(`div`, {
                     className: `active-lifecycle-stack`,
-                    children: (0, g.jsxs)(`section`, {
+                    children: (0, p.jsxs)(`section`, {
                       className: `active-lifecycle`,
                       "aria-label": `One-time active product phase containing repeatable delivery activities`,
                       children: [
-                        (0, g.jsxs)(`header`, {
+                        (0, p.jsxs)(`header`, {
                           className: `active-lifecycle-heading`,
                           children: [
-                            (0, g.jsxs)(`div`, {
+                            (0, p.jsxs)(`div`, {
                               children: [
-                                (0, g.jsx)(`span`, { children: `Phase 1 · once` }),
-                                (0, g.jsx)(`b`, { children: `Active product life` }),
+                                (0, p.jsx)(`span`, { children: `Phase 1 · once` }),
+                                (0, p.jsx)(`b`, { children: `Active product life` }),
                               ],
                             }),
-                            (0, g.jsx)(`small`, {
+                            (0, p.jsx)(`small`, {
                               children: `Activities and iterations repeat · phases do not`,
                             }),
                           ],
                         }),
-                        (0, g.jsxs)(`div`, {
+                        (0, p.jsxs)(`div`, {
                           className: `release-cycle`,
                           children: [
-                            (0, g.jsxs)(`section`, {
+                            (0, p.jsxs)(`section`, {
                               className: `increment-zone`,
                               children: [
-                                (0, g.jsxs)(`header`, {
+                                (0, p.jsxs)(`header`, {
                                   children: [
-                                    (0, g.jsx)(`span`, { children: `Iteration` }),
-                                    (0, g.jsx)(`b`, { children: `1+ increments` }),
+                                    (0, p.jsx)(`span`, { children: `Iteration` }),
+                                    (0, p.jsx)(`b`, { children: `1+ increments` }),
                                   ],
                                 }),
-                                (0, g.jsxs)(`div`, {
+                                (0, p.jsxs)(`div`, {
                                   className: `increment-stack`,
                                   children: [
-                                    (0, g.jsx)(`div`, {
+                                    (0, p.jsx)(`div`, {
                                       className: `increment-card-back increment-card-back-far`,
                                       "aria-hidden": `true`,
                                     }),
-                                    (0, g.jsx)(`div`, {
+                                    (0, p.jsx)(`div`, {
                                       className: `increment-card-back increment-card-back-near`,
                                       "aria-hidden": `true`,
                                     }),
-                                    (0, g.jsxs)(`article`, {
+                                    (0, p.jsxs)(`article`, {
                                       className: `increment-card`,
                                       children: [
-                                        (0, g.jsxs)(`div`, {
+                                        (0, p.jsxs)(`div`, {
                                           children: [
-                                            (0, g.jsx)(`b`, { children: `Increment k` }),
-                                            (0, g.jsx)(`span`, { children: `one valuable slice` }),
+                                            (0, p.jsx)(`b`, { children: `Increment k` }),
+                                            (0, p.jsx)(`span`, { children: `one valuable slice` }),
                                           ],
                                         }),
-                                        (0, g.jsxs)(`ol`, {
+                                        (0, p.jsxs)(`ol`, {
                                           "aria-label": `Model-driven path through one increment`,
                                           children: [
-                                            (0, g.jsx)(`li`, { children: `CIM` }),
-                                            (0, g.jsx)(`li`, { children: `PIM` }),
-                                            (0, g.jsx)(`li`, { children: `PSM` }),
-                                            (0, g.jsx)(`li`, { children: `Artifacts` }),
+                                            (0, p.jsx)(`li`, { children: `CIM` }),
+                                            (0, p.jsx)(`li`, { children: `PIM` }),
+                                            (0, p.jsx)(`li`, { children: `PSM` }),
+                                            (0, p.jsx)(`li`, { children: `Artifacts` }),
                                           ],
                                         }),
-                                        (0, g.jsxs)(`small`, {
+                                        (0, p.jsxs)(`small`, {
                                           children: [
-                                            (0, g.jsx)(`span`, {
+                                            (0, p.jsx)(`span`, {
                                               "aria-hidden": `true`,
                                               children: `↻`,
                                             }),
@@ -12180,54 +12674,54 @@ function ie() {
                                     }),
                                   ],
                                 }),
-                                (0, g.jsx)(`div`, {
+                                (0, p.jsx)(`div`, {
                                   className: `increment-gates`,
                                   children: `G2 → G5`,
                                 }),
                               ],
                             }),
-                            (0, g.jsx)(`i`, {
+                            (0, p.jsx)(`i`, {
                               className: `cycle-flow`,
                               "aria-hidden": `true`,
                               children: `→`,
                             }),
-                            (0, g.jsxs)(`article`, {
+                            (0, p.jsxs)(`article`, {
                               className: `release-node`,
                               children: [
-                                (0, g.jsx)(`span`, { children: `Release activities` }),
-                                (0, g.jsx)(`h4`, { children: `Qualify, promote & hand over` }),
-                                (0, g.jsxs)(`div`, {
+                                (0, p.jsx)(`span`, { children: `Release activities` }),
+                                (0, p.jsx)(`h4`, { children: `Qualify, promote & hand over` }),
+                                (0, p.jsxs)(`div`, {
                                   children: [
-                                    (0, g.jsx)(`b`, { children: `Candidate` }),
-                                    (0, g.jsx)(`i`, { "aria-hidden": `true`, children: `→` }),
-                                    (0, g.jsx)(`b`, { children: `Promote` }),
+                                    (0, p.jsx)(`b`, { children: `Candidate` }),
+                                    (0, p.jsx)(`i`, { "aria-hidden": `true`, children: `→` }),
+                                    (0, p.jsx)(`b`, { children: `Promote` }),
                                   ],
                                 }),
-                                (0, g.jsx)(`small`, { children: `G6 · G7` }),
+                                (0, p.jsx)(`small`, { children: `G6 · G7` }),
                               ],
                             }),
                           ],
                         }),
-                        (0, g.jsxs)(`div`, {
+                        (0, p.jsxs)(`div`, {
                           className: `release-learning-loop`,
                           "aria-label": `Release learning loop: review release evidence, adapt the backlog, and begin the next release iteration`,
                           children: [
-                            (0, g.jsx)(`span`, { children: `Release learning loop` }),
-                            (0, g.jsxs)(`ol`, {
+                            (0, p.jsx)(`span`, { children: `Release learning loop` }),
+                            (0, p.jsxs)(`ol`, {
                               children: [
-                                (0, g.jsx)(`li`, {
-                                  children: (0, g.jsx)(`b`, { children: `G7 evidence` }),
+                                (0, p.jsx)(`li`, {
+                                  children: (0, p.jsx)(`b`, { children: `G7 evidence` }),
                                 }),
-                                (0, g.jsx)(`li`, {
-                                  children: (0, g.jsx)(`b`, { children: `Review outcomes` }),
+                                (0, p.jsx)(`li`, {
+                                  children: (0, p.jsx)(`b`, { children: `Review outcomes` }),
                                 }),
-                                (0, g.jsx)(`li`, {
-                                  children: (0, g.jsx)(`b`, { children: `Adapt backlog` }),
+                                (0, p.jsx)(`li`, {
+                                  children: (0, p.jsx)(`b`, { children: `Adapt backlog` }),
                                 }),
-                                (0, g.jsx)(`li`, {
-                                  children: (0, g.jsxs)(`strong`, {
+                                (0, p.jsx)(`li`, {
+                                  children: (0, p.jsxs)(`strong`, {
                                     children: [
-                                      (0, g.jsx)(`i`, { "aria-hidden": `true`, children: `↺` }),
+                                      (0, p.jsx)(`i`, { "aria-hidden": `true`, children: `↺` }),
                                       ` Next iteration`,
                                     ],
                                   }),
@@ -12239,112 +12733,112 @@ function ie() {
                       ],
                     }),
                   }),
-                  (0, g.jsx)(`i`, {
+                  (0, p.jsx)(`i`, {
                     className: `lifecycle-flow lifecycle-exit-flow`,
                     "aria-hidden": `true`,
                     children: `→`,
                   }),
-                  (0, g.jsxs)(`article`, {
+                  (0, p.jsxs)(`article`, {
                     className: `lifecycle-boundary lifecycle-end`,
                     children: [
-                      (0, g.jsx)(`span`, { children: `Phase 2 · once authorized` }),
-                      (0, g.jsx)(`h4`, { children: `Retire, verify & close` }),
-                      (0, g.jsx)(`small`, { children: `G8` }),
+                      (0, p.jsx)(`span`, { children: `Phase 2 · once authorized` }),
+                      (0, p.jsx)(`h4`, { children: `Retire, verify & close` }),
+                      (0, p.jsx)(`small`, { children: `G8` }),
                     ],
                   }),
                 ],
               }),
-              (0, g.jsxs)(`div`, {
+              (0, p.jsxs)(`div`, {
                 className: `process-coupling`,
                 "aria-label": `DevOps interface between the processes: operational feedback returns to active product development and the G7 release enters operations`,
                 children: [
-                  (0, g.jsxs)(`div`, {
+                  (0, p.jsxs)(`div`, {
                     className: `coupling-heading`,
                     children: [
-                      (0, g.jsx)(`b`, { children: `DevOps interface` }),
-                      (0, g.jsx)(`span`, { children: `shared automation + evidence` }),
+                      (0, p.jsx)(`b`, { children: `DevOps interface` }),
+                      (0, p.jsx)(`span`, { children: `shared automation + evidence` }),
                     ],
                   }),
-                  (0, g.jsxs)(`svg`, {
+                  (0, p.jsxs)(`svg`, {
                     className: `coupling-lines`,
                     viewBox: `0 0 1000 76`,
                     preserveAspectRatio: `none`,
                     "aria-hidden": `true`,
                     children: [
-                      (0, g.jsxs)(`defs`, {
+                      (0, p.jsxs)(`defs`, {
                         children: [
-                          (0, g.jsx)(`marker`, {
+                          (0, p.jsx)(`marker`, {
                             id: `coupling-coral-arrow`,
                             markerWidth: `8`,
                             markerHeight: `6`,
                             refX: `7`,
                             refY: `3`,
                             orient: `auto`,
-                            children: (0, g.jsx)(`path`, { d: `M0 0 8 3 0 6Z` }),
+                            children: (0, p.jsx)(`path`, { d: `M0 0 8 3 0 6Z` }),
                           }),
-                          (0, g.jsx)(`marker`, {
+                          (0, p.jsx)(`marker`, {
                             id: `coupling-teal-arrow`,
                             markerWidth: `8`,
                             markerHeight: `6`,
                             refX: `7`,
                             refY: `3`,
                             orient: `auto`,
-                            children: (0, g.jsx)(`path`, { d: `M0 0 8 3 0 6Z` }),
+                            children: (0, p.jsx)(`path`, { d: `M0 0 8 3 0 6Z` }),
                           }),
                         ],
                       }),
-                      (0, g.jsx)(`path`, {
+                      (0, p.jsx)(`path`, {
                         className: `coupling-path coupling-path-feedback`,
                         d: `M280 76 V0`,
                         markerEnd: `url(#coupling-teal-arrow)`,
                       }),
-                      (0, g.jsx)(`path`, {
+                      (0, p.jsx)(`path`, {
                         className: `coupling-path coupling-path-handover`,
                         d: `M680 0 V76`,
                         markerEnd: `url(#coupling-coral-arrow)`,
                       }),
                     ],
                   }),
-                  (0, g.jsx)(`div`, {
+                  (0, p.jsx)(`div`, {
                     className: `coupling-channel coupling-feedback`,
-                    children: (0, g.jsxs)(`span`, {
+                    children: (0, p.jsxs)(`span`, {
                       "data-short": `Feedback`,
                       children: [
-                        (0, g.jsx)(`i`, { "aria-hidden": `true`, children: `↑` }),
+                        (0, p.jsx)(`i`, { "aria-hidden": `true`, children: `↑` }),
                         ` Feedback + change`,
                       ],
                     }),
                   }),
-                  (0, g.jsx)(`div`, {
+                  (0, p.jsx)(`div`, {
                     className: `coupling-channel coupling-handover`,
-                    children: (0, g.jsxs)(`span`, {
+                    children: (0, p.jsxs)(`span`, {
                       "data-short": `G7 release`,
                       children: [
-                        (0, g.jsx)(`i`, { "aria-hidden": `true`, children: `↓` }),
+                        (0, p.jsx)(`i`, { "aria-hidden": `true`, children: `↓` }),
                         ` G7 release`,
                       ],
                     }),
                   }),
                 ],
               }),
-              (0, g.jsxs)(`article`, {
+              (0, p.jsxs)(`article`, {
                 className: `operations-process`,
                 "aria-label": `Distinct concurrent Operations and Maintenance process with Kanban pull flow`,
                 children: [
-                  (0, g.jsxs)(`header`, {
+                  (0, p.jsxs)(`header`, {
                     children: [
-                      (0, g.jsx)(`span`, { children: `Process B · concurrent · not a phase` }),
-                      (0, g.jsx)(`h4`, { children: `Operations & Maintenance` }),
-                      (0, g.jsxs)(`div`, {
+                      (0, p.jsx)(`span`, { children: `Process B · concurrent · not a phase` }),
+                      (0, p.jsx)(`h4`, { children: `Operations & Maintenance` }),
+                      (0, p.jsxs)(`div`, {
                         className: `live-baseline`,
                         children: [
-                          (0, g.jsxs)(`span`, {
-                            children: [(0, g.jsx)(`i`, { "aria-hidden": `true` }), `Live baseline`],
+                          (0, p.jsxs)(`span`, {
+                            children: [(0, p.jsx)(`i`, { "aria-hidden": `true` }), `Live baseline`],
                           }),
-                          (0, g.jsxs)(`small`, {
+                          (0, p.jsxs)(`small`, {
                             children: [
                               `First G7 `,
-                              (0, g.jsx)(`i`, { "aria-hidden": `true`, children: `→` }),
+                              (0, p.jsx)(`i`, { "aria-hidden": `true`, children: `→` }),
                               ` shared G8 closure`,
                             ],
                           }),
@@ -12352,114 +12846,114 @@ function ie() {
                       }),
                     ],
                   }),
-                  (0, g.jsxs)(`div`, {
+                  (0, p.jsxs)(`div`, {
                     className: `operations-mechanism`,
                     children: [
-                      (0, g.jsxs)(`div`, {
+                      (0, p.jsxs)(`div`, {
                         className: `kanban-label`,
                         children: [
-                          (0, g.jsx)(`b`, { children: `Kanban pull` }),
-                          (0, g.jsx)(`span`, { children: `WIP + SLE` }),
+                          (0, p.jsx)(`b`, { children: `Kanban pull` }),
+                          (0, p.jsx)(`span`, { children: `WIP + SLE` }),
                         ],
                       }),
-                      (0, g.jsxs)(`ol`, {
+                      (0, p.jsxs)(`ol`, {
                         className: `kanban-mini`,
                         "aria-label": `Requested, Ready, Doing, Verify, Done`,
                         children: [
-                          (0, g.jsx)(`li`, {
-                            children: (0, g.jsx)(`span`, { children: `Requested` }),
+                          (0, p.jsx)(`li`, {
+                            children: (0, p.jsx)(`span`, { children: `Requested` }),
                           }),
-                          (0, g.jsx)(`li`, { children: (0, g.jsx)(`span`, { children: `Ready` }) }),
-                          (0, g.jsxs)(`li`, {
+                          (0, p.jsx)(`li`, { children: (0, p.jsx)(`span`, { children: `Ready` }) }),
+                          (0, p.jsxs)(`li`, {
                             children: [
-                              (0, g.jsx)(`span`, { children: `Doing` }),
-                              (0, g.jsx)(`small`, { children: `2/2` }),
+                              (0, p.jsx)(`span`, { children: `Doing` }),
+                              (0, p.jsx)(`small`, { children: `2/2` }),
                             ],
                           }),
-                          (0, g.jsxs)(`li`, {
+                          (0, p.jsxs)(`li`, {
                             children: [
-                              (0, g.jsx)(`span`, { children: `Verify` }),
-                              (0, g.jsx)(`small`, { children: `1/2` }),
+                              (0, p.jsx)(`span`, { children: `Verify` }),
+                              (0, p.jsx)(`small`, { children: `1/2` }),
                             ],
                           }),
-                          (0, g.jsx)(`li`, { children: (0, g.jsx)(`span`, { children: `Done` }) }),
+                          (0, p.jsx)(`li`, { children: (0, p.jsx)(`span`, { children: `Done` }) }),
                         ],
                       }),
-                      (0, g.jsxs)(`div`, {
+                      (0, p.jsxs)(`div`, {
                         className: `operations-routes`,
                         "aria-label": `At replenishment, classify each service item for one of three destinations`,
                         children: [
-                          (0, g.jsxs)(`div`, {
+                          (0, p.jsxs)(`div`, {
                             className: `route-decision`,
                             children: [
-                              (0, g.jsx)(`span`, { children: `At replenishment` }),
-                              (0, g.jsx)(`b`, { children: `Classify service item` }),
+                              (0, p.jsx)(`span`, { children: `At replenishment` }),
+                              (0, p.jsx)(`b`, { children: `Classify service item` }),
                             ],
                           }),
-                          (0, g.jsxs)(`svg`, {
+                          (0, p.jsxs)(`svg`, {
                             className: `route-fork`,
                             viewBox: `0 0 52 128`,
                             preserveAspectRatio: `none`,
                             "aria-hidden": `true`,
                             children: [
-                              (0, g.jsx)(`defs`, {
-                                children: (0, g.jsx)(`marker`, {
+                              (0, p.jsx)(`defs`, {
+                                children: (0, p.jsx)(`marker`, {
                                   id: `route-fork-arrow`,
                                   markerWidth: `7`,
                                   markerHeight: `6`,
                                   refX: `6`,
                                   refY: `3`,
                                   orient: `auto`,
-                                  children: (0, g.jsx)(`path`, { d: `M0 0 7 3 0 6Z` }),
+                                  children: (0, p.jsx)(`path`, { d: `M0 0 7 3 0 6Z` }),
                                 }),
                               }),
-                              (0, g.jsx)(`path`, { d: `M0 64 H14` }),
-                              (0, g.jsx)(`path`, {
+                              (0, p.jsx)(`path`, { d: `M0 64 H14` }),
+                              (0, p.jsx)(`path`, {
                                 d: `M14 64 V22 Q14 16 20 16 H50`,
                                 markerEnd: `url(#route-fork-arrow)`,
                               }),
-                              (0, g.jsx)(`path`, {
+                              (0, p.jsx)(`path`, {
                                 d: `M14 64 H50`,
                                 markerEnd: `url(#route-fork-arrow)`,
                               }),
-                              (0, g.jsx)(`path`, {
+                              (0, p.jsx)(`path`, {
                                 d: `M14 64 V106 Q14 112 20 112 H50`,
                                 markerEnd: `url(#route-fork-arrow)`,
                               }),
                             ],
                           }),
-                          (0, g.jsxs)(`div`, {
+                          (0, p.jsxs)(`div`, {
                             className: `route-outcomes`,
                             children: [
-                              (0, g.jsxs)(`article`, {
+                              (0, p.jsxs)(`article`, {
                                 children: [
-                                  (0, g.jsx)(`i`, { "aria-hidden": `true`, children: `↺` }),
-                                  (0, g.jsxs)(`div`, {
+                                  (0, p.jsx)(`i`, { "aria-hidden": `true`, children: `↺` }),
+                                  (0, p.jsxs)(`div`, {
                                     children: [
-                                      (0, g.jsx)(`b`, { children: `Resolve in operations` }),
-                                      (0, g.jsx)(`small`, { children: `Runbook + evidence` }),
+                                      (0, p.jsx)(`b`, { children: `Resolve in operations` }),
+                                      (0, p.jsx)(`small`, { children: `Runbook + evidence` }),
                                     ],
                                   }),
                                 ],
                               }),
-                              (0, g.jsxs)(`article`, {
+                              (0, p.jsxs)(`article`, {
                                 children: [
-                                  (0, g.jsx)(`i`, { "aria-hidden": `true`, children: `↑` }),
-                                  (0, g.jsxs)(`div`, {
+                                  (0, p.jsx)(`i`, { "aria-hidden": `true`, children: `↑` }),
+                                  (0, p.jsxs)(`div`, {
                                     children: [
-                                      (0, g.jsx)(`b`, { children: `Return to MDE flow` }),
-                                      (0, g.jsx)(`small`, { children: `Earliest owning source` }),
+                                      (0, p.jsx)(`b`, { children: `Return to MDE flow` }),
+                                      (0, p.jsx)(`small`, { children: `Earliest owning source` }),
                                     ],
                                   }),
                                 ],
                               }),
-                              (0, g.jsxs)(`article`, {
+                              (0, p.jsxs)(`article`, {
                                 children: [
-                                  (0, g.jsx)(`i`, { "aria-hidden": `true`, children: `↗` }),
-                                  (0, g.jsxs)(`div`, {
+                                  (0, p.jsx)(`i`, { "aria-hidden": `true`, children: `↗` }),
+                                  (0, p.jsxs)(`div`, {
                                     children: [
-                                      (0, g.jsx)(`b`, { children: `Commit to planned release` }),
-                                      (0, g.jsx)(`small`, { children: `Release backlog` }),
+                                      (0, p.jsx)(`b`, { children: `Commit to planned release` }),
+                                      (0, p.jsx)(`small`, { children: `Release backlog` }),
                                     ],
                                   }),
                                 ],
@@ -12472,52 +12966,58 @@ function ie() {
                   }),
                 ],
               }),
-              (0, g.jsxs)(`div`, {
+              (0, p.jsxs)(`div`, {
                 className: `discipline-rail`,
                 children: [
-                  (0, g.jsx)(`b`, { children: `Continuous disciplines` }),
-                  (0, g.jsx)(`span`, {
+                  (0, p.jsx)(`b`, { children: `Continuous disciplines` }),
+                  (0, p.jsx)(`span`, {
                     children: `Management · risk · quality · security · change · traceability · FinOps · learning`,
                   }),
+                ],
+              }),
+              (0, p.jsxs)(`figcaption`, {
+                children: [
+                  (0, p.jsx)(`span`, { children: `Figure 1.` }),
+                  ` The MODRISS development process, connecting Development & Delivery with Operations & Maintenance across the product lifecycle.`,
                 ],
               }),
             ],
           }),
         ],
       }),
-      (0, g.jsxs)(`section`, {
+      (0, p.jsxs)(`section`, {
         className: `prototype`,
         id: `prototype`,
         children: [
-          (0, g.jsxs)(`div`, {
+          (0, p.jsxs)(`div`, {
             className: `prototype-heading`,
             children: [
-              (0, g.jsxs)(`div`, {
+              (0, p.jsxs)(`div`, {
                 children: [
-                  (0, g.jsxs)(`div`, {
+                  (0, p.jsxs)(`div`, {
                     className: `section-label light`,
-                    children: [(0, g.jsx)(`span`, { children: `06` }), ` Research prototype`],
+                    children: [(0, p.jsx)(`span`, { children: `06` }), ` Research prototype`],
                   }),
-                  (0, g.jsx)(`h2`, {
+                  (0, p.jsx)(`h2`, {
                     children: `The methodology is realized as an integrated low-code platform.`,
                   }),
                 ],
               }),
-              (0, g.jsx)(`p`, {
+              (0, p.jsx)(`p`, {
                 children: `The prototype provides project workspaces, graphical modeling editors, process guidance, model import and export, impact analysis, transformations, generated-artifacts inspection, and a conversational modeling assistant.`,
               }),
             ],
           }),
-          (0, g.jsxs)(`figure`, {
+          (0, p.jsxs)(`figure`, {
             className: `workspace-shot`,
             children: [
-              (0, g.jsx)(`img`, {
-                src: d,
+              (0, p.jsx)(`img`, {
+                src: C,
                 alt: `MODRISS browser-based CIM modeling workbench with a visual process model, modeling palette, lifecycle actions, and conversational assistant.`,
               }),
-              (0, g.jsxs)(`figcaption`, {
+              (0, p.jsxs)(`figcaption`, {
                 children: [
-                  (0, g.jsx)(`span`, { children: `Figure 1.` }),
+                  (0, p.jsx)(`span`, { children: `Figure 2.` }),
                   ` The MODRISS modeling workbench, showing the CIM editor and the LLM-based modeling assistant.`,
                 ],
               }),
@@ -12525,99 +13025,116 @@ function ie() {
           }),
         ],
       }),
-      (0, g.jsxs)(`section`, {
+      (0, p.jsxs)(`section`, {
         className: `assistant-section`,
+        id: `assistant`,
+        "aria-labelledby": `assistant-title`,
         children: [
-          (0, g.jsxs)(`div`, {
+          (0, p.jsxs)(`div`, {
             className: `assistant-title`,
             children: [
-              (0, g.jsx)(`div`, {
+              (0, p.jsx)(`div`, {
                 className: `assistant-mark`,
-                children: (0, g.jsx)(w, { name: `spark`, size: 28 }),
+                children: (0, p.jsx)(D, { name: `spark`, size: 28 }),
               }),
-              (0, g.jsxs)(`div`, {
+              (0, p.jsxs)(`div`, {
                 children: [
-                  (0, g.jsxs)(`div`, {
+                  (0, p.jsxs)(`div`, {
                     className: `section-label`,
-                    children: [(0, g.jsx)(`span`, { children: `07` }), ` LLM-supported modeling`],
+                    children: [(0, p.jsx)(`span`, { children: `07` }), ` LLM-supported modeling`],
                   }),
-                  (0, g.jsx)(`h2`, {
+                  (0, p.jsx)(`h2`, {
+                    id: `assistant-title`,
                     children: `A conversational LLM-based assistant grounded in the modeling languages`,
                   }),
                 ],
               }),
             ],
           }),
-          (0, g.jsx)(`div`, {
+          (0, p.jsxs)(`div`, {
             className: `assistant-grid`,
-            children: (0, g.jsxs)(`div`, {
-              className: `prose`,
-              children: [
-                (0, g.jsx)(`p`, {
+            children: [
+              (0, p.jsx)(`div`, {
+                className: `prose`,
+                children: (0, p.jsx)(`p`, {
                   children: `The assistant supports modeling activity through natural-language interaction. It can use the current model and uploaded source material to create, inspect, explain, or modify CIM and PIM models. The live Ecore metamodel provides its modeling vocabulary and structural contract.`,
                 }),
-                (0, g.jsx)(`p`, {
-                  children: `The assistant is part of the research framework, rather than an independent code generator. Its operations are recorded as durable turns, and changes can use checkpoints, confirmation, cancellation, and undo.`,
-                }),
-              ],
-            }),
+              }),
+              (0, p.jsxs)(`div`, {
+                className: `prose`,
+                children: [
+                  (0, p.jsx)(`p`, {
+                    children: `Requests run as durable turns. The LLM selects a permitted strategy and proposes model content or tool actions; the backend stages and checks mutations before committing a model checkpoint.`,
+                  }),
+                  (0, p.jsxs)(`a`, {
+                    className: `text-link`,
+                    href: `${ae.replace(/\/$/, ``)}/guides/ai-assistant/`,
+                    children: [
+                      `Examine the assistant design `,
+                      (0, p.jsx)(D, { name: `arrow`, size: 15 }),
+                    ],
+                  }),
+                ],
+              }),
+            ],
           }),
+          (0, p.jsx)(S, {}),
         ],
       }),
-      (0, g.jsxs)(`section`, {
+      (0, p.jsxs)(`section`, {
         className: `publication`,
         id: `publication`,
         children: [
-          (0, g.jsxs)(`div`, {
+          (0, p.jsxs)(`div`, {
             className: `section-label`,
-            children: [(0, g.jsx)(`span`, { children: `08` }), ` Research output`],
+            children: [(0, p.jsx)(`span`, { children: `08` }), ` Research output`],
           }),
-          (0, g.jsxs)(`article`, {
+          (0, p.jsxs)(`article`, {
             className: `paper-card`,
             children: [
-              (0, g.jsxs)(`div`, {
+              (0, p.jsxs)(`div`, {
                 className: `paper-meta`,
                 children: [
-                  (0, g.jsx)(`span`, { children: `Conference paper` }),
-                  (0, g.jsx)(`b`, { children: `2026` }),
+                  (0, p.jsx)(`span`, { children: `Conference paper` }),
+                  (0, p.jsx)(`b`, { children: `2026` }),
                 ],
               }),
-              (0, g.jsxs)(`div`, {
+              (0, p.jsxs)(`div`, {
                 className: `paper-main`,
                 children: [
-                  (0, g.jsxs)(`div`, {
+                  (0, p.jsxs)(`div`, {
                     children: [
-                      (0, g.jsx)(`p`, {
+                      (0, p.jsx)(`p`, {
                         children: `MODELSWARD 2026 · 14th International Conference on Model-Based Software and Systems Engineering`,
                       }),
-                      (0, g.jsx)(`h2`, {
+                      (0, p.jsx)(`h2`, {
                         children: `Model-Driven Approaches for Serverless Software Development: Evaluation and Future Directions`,
                       }),
-                      (0, g.jsx)(`p`, {
+                      (0, p.jsx)(`p`, {
                         className: `authors`,
                         children: `Mehdi Eidi and Raman Ramsin`,
                       }),
                     ],
                   }),
-                  (0, g.jsxs)(`div`, {
+                  (0, p.jsxs)(`div`, {
                     className: `abstract`,
                     children: [
-                      (0, g.jsx)(`h3`, { children: `Relation to MODRISS` }),
-                      (0, g.jsx)(`p`, {
+                      (0, p.jsx)(`h3`, { children: `Relation to MODRISS` }),
+                      (0, p.jsx)(`p`, {
                         children: `The paper reviews selected model-driven approaches for serverless and microservices development through a process-centered template. Its evaluation framework identifies gaps in existing serverless approaches and provides part of the research basis for developing the MODRISS methodology.`,
                       }),
-                      (0, g.jsxs)(`dl`, {
+                      (0, p.jsxs)(`dl`, {
                         children: [
-                          (0, g.jsxs)(`div`, {
+                          (0, p.jsxs)(`div`, {
                             children: [
-                              (0, g.jsx)(`dt`, { children: `Pages` }),
-                              (0, g.jsx)(`dd`, { children: `560–567` }),
+                              (0, p.jsx)(`dt`, { children: `Pages` }),
+                              (0, p.jsx)(`dd`, { children: `560–567` }),
                             ],
                           }),
-                          (0, g.jsxs)(`div`, {
+                          (0, p.jsxs)(`div`, {
                             children: [
-                              (0, g.jsx)(`dt`, { children: `DOI` }),
-                              (0, g.jsx)(`dd`, { children: `10.5220/0014634200004058` }),
+                              (0, p.jsx)(`dt`, { children: `DOI` }),
+                              (0, p.jsx)(`dd`, { children: `10.5220/0014634200004058` }),
                             ],
                           }),
                         ],
@@ -12626,41 +13143,41 @@ function ie() {
                   }),
                 ],
               }),
-              (0, g.jsxs)(`a`, {
+              (0, p.jsxs)(`a`, {
                 className: `paper-link`,
-                href: te,
-                children: [`View publication `, (0, g.jsx)(w, { name: `arrow`, size: 17 })],
+                href: T,
+                children: [`View publication `, (0, p.jsx)(D, { name: `arrow`, size: 17 })],
               }),
             ],
           }),
         ],
       }),
-      (0, g.jsxs)(`footer`, {
+      (0, p.jsxs)(`footer`, {
         children: [
-          (0, g.jsxs)(`div`, {
+          (0, p.jsxs)(`div`, {
             className: `footer-brand`,
             children: [
-              (0, g.jsx)(`img`, { src: m, alt: `` }),
-              (0, g.jsxs)(`div`, {
+              (0, p.jsx)(`img`, { src: re, alt: `` }),
+              (0, p.jsxs)(`div`, {
                 children: [
-                  (0, g.jsx)(`b`, { children: `MODRISS` }),
-                  (0, g.jsx)(`span`, {
+                  (0, p.jsx)(`b`, { children: `MODRISS` }),
+                  (0, p.jsx)(`span`, {
                     children: `Model-Driven Methodology for Serverless Software Development`,
                   }),
                 ],
               }),
             ],
           }),
-          (0, g.jsx)(`p`, {
+          (0, p.jsx)(`p`, {
             children: `A research project at the Methodology Engineering Laboratory, Department of Computer Engineering, Sharif University of Technology.`,
           }),
-          (0, g.jsxs)(`div`, {
+          (0, p.jsxs)(`div`, {
             className: `footer-links`,
             children: [
-              (0, g.jsx)(`a`, { href: ee, children: `Laboratory` }),
-              (0, g.jsx)(`a`, { href: S, children: `Lab profile` }),
-              (0, g.jsx)(`a`, { href: C, children: `Researcher` }),
-              (0, g.jsx)(`a`, { href: x, children: `Repository` }),
+              (0, p.jsx)(`a`, { href: ce, children: `Laboratory` }),
+              (0, p.jsx)(`a`, { href: le, children: `Lab profile` }),
+              (0, p.jsx)(`a`, { href: ue, children: `Researcher` }),
+              (0, p.jsx)(`a`, { href: se, children: `Repository` }),
             ],
           }),
         ],
@@ -12668,4 +13185,4 @@ function ie() {
     ],
   });
 }
-(0, u.createRoot)(document.getElementById(`root`)).render((0, g.jsx)(ie, {}));
+(0, f.createRoot)(document.getElementById(`root`)).render((0, p.jsx)(pe, {}));

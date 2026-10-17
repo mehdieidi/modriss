@@ -2,7 +2,7 @@
 
 The complete PSM reference has separate pages for [activities](../process-reference/psm/activities.md), [tasks](../process-reference/psm/tasks.md), [roles](../process-reference/psm/roles.md), [work products](../process-reference/psm/work-products.md), [guidance](../process-reference/psm/guidance.md), and the [readiness gate](../process-reference/psm/gates.md).
 
-The Platform-Specific Model (PSM) binds the PIM to AWS resources and deployment configuration. The
+In the built-in AWS path, the Platform-Specific Model (PSM) binds the PIM to AWS resources and deployment configuration. The
 language covers SAM stacks, IAM, Lambda, API Gateway, DynamoDB, messaging, EventBridge, Step
 Functions, and observability. Each model-driven increment invokes six ordered stages for new PSM
 work and for refinement after PIM-to-PSM transformation; they are not product-lifecycle phases.
@@ -14,6 +14,12 @@ mapping and refine the slice before generation. The stage order provides a worki
 earlier stage when review finds a wiring or deployment gap.
 
 ## PSM Stages
+
+These stages and their metamodel bindings describe the built-in AWS path. A
+[custom cloud platform package](custom-cloud-platforms.md) supplies its own PSM language,
+PIM-to-PSM rules, and artifact templates. Users can retain that provider's model alongside
+AWS and generate separate projects from the same CIM and PIM. The generic editor inferred
+from an uploaded metamodel does not supply an AWS process mapping for the new language.
 
 | Stage     | Name                          | In engine | Substages (summary)                                                              |
 | --------- | ----------------------------- | --------- | -------------------------------------------------------------------------------- |

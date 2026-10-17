@@ -6,8 +6,9 @@ computing paradigm and serverless architectural style).
 
 The platform enables users to model, transform, generate, and refine serverless applications
 through formal modeling languages, automated model transformations, code generation, and AI-assisted
-modeling support. The final goal is to produce deployable AWS serverless artifacts while maintaining
-academic rigor, technical quality, and production-readiness.
+modeling support. AWS is the built-in target for generated serverless projects. Users can add
+other cloud targets through PSM metamodels and Epsilon packages and generate separate projects
+from shared business and serverless models.
 
 ## Model-Driven Engineering Approach
 
@@ -17,8 +18,9 @@ The project follows a model-driven engineering approach based on three modeling 
 2. Platform-Independent Model (PIM)
 3. Platform-Specific Model (PSM)
 
-Each modeling level is defined using a formal Domain-Specific Modeling Language (DSML). These DSMLs
-are specified through Ecore metamodels, written in the Emfatic language.
+Each modeling level is defined using a formal Domain-Specific Modeling Language (DSML). The
+built-in metamodels are written in Emfatic and compiled to Ecore. Additional PSM languages
+are supplied directly as Ecore files.
 
 ### CIM Level
 
@@ -35,9 +37,23 @@ systems.
 
 ### PSM Level
 
-The PSM level represents platform-specific structural and behavioral models for AWS serverless
-architecture. It refines the platform-independent serverless model into AWS-specific serverless
-components and structures.
+The PSM level represents the resources and configuration of a selected cloud platform. AWS
+has a built-in language, PIM-to-PSM transformations, and artifact generator. The fixed CIM
+and PIM languages capture the business domain and generic serverless architecture; a provider
+package supplies the concepts and mappings needed for a particular deployment target.
+
+Users add a package through the Cloud platforms settings window. It contains a PSM Ecore
+metamodel and may include ZIP packages of ETL transformation rules, EGX/EGL generation
+scripts and templates, and EVL validation constraints. An Ecore file alone supplies a working
+editor. Users can customize its views, palette groups, and icons without changing the language.
+
+One CIM and PIM can lead to several provider-specific PSMs and generated projects in the
+same project workspace. Each custom package maintains one PSM. Switching providers restores
+that model's editor state; regenerating a custom PSM updates it after confirmation and
+preserves earlier artifact bundles. The artifact explorer shows the selected provider's
+generated project. See [PSM cloud-provider extensions](mde/custom-cloud-platforms.md) for the
+implementation boundaries and [the public guide](../public-docs/docs/guides/custom-cloud-platforms.md)
+for the package contract.
 
 ## Model Transformations and Code Generation
 
@@ -59,8 +75,9 @@ The model transformations are implemented using the Eclipse Epsilon Transformati
 ### Model-to-Text Transformations
 
 Formal model-to-text transformations are defined to generate final deployable artifacts from the PSM
-level. These generated artifacts target the AWS serverless ecosystem and may include configuration
-files, infrastructure definitions (IaC), source code, and other required project files.
+level. The native generator targets the AWS serverless ecosystem and produces infrastructure,
+source code, and supporting project files. Uploaded EGX/EGL packages define the outputs for
+their own providers.
 
 The generated artifacts are intended to be reviewed, refined, and deployed by the developer.
 
@@ -150,8 +167,8 @@ A generation action is available in the editor. When the user clicks the 'genera
 platform performs the appropriate transformation depending on the active tab:
 
 - From CIM, it generates the corresponding PIM model.
-- From PIM, it generates the corresponding PSM model.
-- From PSM, it generates the final deployable AWS serverless artifacts.
+- From PIM, it generates the PSM for the provider selected beside the generation button.
+- From PSM, it generates project artifacts using that provider's scripts and templates.
 
 The platform also includes an artifacts view. This view is designed to resemble an IDE, similar to
 Visual Studio Code. It allows the user to browse generated project files and folders, open and edit
@@ -166,7 +183,7 @@ Additional features may be added in later stages of the project, including:
 - Real-time collaboration
 - Deployment automation
 - Versioning and change tracking
-- Other cloud providers
+- Additional maintained cloud-provider packages and evaluation of their generated projects
 
 ## Academic and Production Goals
 

@@ -6,10 +6,10 @@ MODRISS serves several related roles:
 
 - **Domain experts** describe goals, actors, concepts, policies, processes, and constraints at CIM.
 - **Architects** refine the design into provider-independent serverless responsibilities at PIM.
-- **Cloud engineers** review AWS-specific resources and generated projects at PSM.
+- **Cloud engineers** review provider-specific resources and generated projects at PSM.
 - **Developers** implement protected business-logic regions and test generated code.
 - **Researchers and language engineers** evolve metamodels, constraints, transformations, and
-  generation rules.
+  generation rules, including uploaded packages for additional PSM targets.
 
 ## Main Runtime Components
 
@@ -30,15 +30,25 @@ MODRISS serves several related roles:
 3. Create a CIM model or import the included sample.
 4. Model business intent and validate it.
 5. Transform CIM to PIM and review the generated architecture.
-6. Transform PIM to PSM and review provider-specific resources.
-7. Generate an AWS project from PSM.
+6. Select a cloud provider, transform PIM to its PSM, and review provider-specific resources.
+7. Generate a project using that provider's artifact templates.
 8. Browse, edit, and download the generated artifact.
-9. Validate and deploy it to the selected Floci/LocalStack emulator or a controlled AWS environment.
+9. Validate and deploy it using the target provider's tools. The built-in AWS path supports
+   the selected Floci/LocalStack emulator or a controlled AWS environment.
+
+AWS is available by default. To add another provider, upload its PSM Ecore metamodel and ZIP
+packages of ETL transformation rules and EGX/EGL generation scripts. EVL constraints can be
+uploaded for explicit validation. The same CIM and PIM can support multiple provider PSMs
+and generated projects in one workspace. See [Custom cloud platforms](../guides/custom-cloud-platforms.md)
+for the package contract and the minimal Azure example.
 
 Each model is stored with a revision. Updates and transformations use optimistic concurrency so a
 client cannot silently overwrite a newer revision.
 
 ## Formal Sources of Truth
+
+The repository paths below define the built-in languages and AWS pipeline. For an added
+provider, the project stores its uploaded Ecore metamodel, Epsilon packages, and visual notation.
 
 | Concern                                      | Source                                                                        |
 | -------------------------------------------- | ----------------------------------------------------------------------------- |

@@ -28,6 +28,24 @@ The pipeline moves from CIM to PIM, from PIM to PSM, and from PSM to a generated
 
 See the [Capability-Increment Process](end-to-end-modeling-methodology.md) for the full increment sequence and [Iterative Model Transformations](../architecture/iterative-model-transformations.md) for synchronization during upstream changes.
 
+## Select and extend cloud targets
+
+AWS is the built-in PSM target. Users can add a provider from **Cloud platforms** on the left
+workspace rail by uploading its Ecore metamodel and Epsilon script packages: ETL for PIM-to-PSM
+transformation, EGX/EGL for artifact generation, and optional EVL constraints for explicit
+validation. The [custom cloud platforms guide](custom-cloud-platforms.md) describes the formats
+and the default editor derived from Ecore.
+
+On the PIM tab, select a provider beside the generation button. The label identifies the
+target, such as **Generate Azure PSM**. The same saved CIM and PIM can lead to PSMs for several
+providers and separate generated projects. Each custom package maintains one PSM; regeneration
+updates that model and preserves previous artifact bundles.
+
+The provider tab opens the selected PSM's editor. Its dropdown appears while the tab is active
+and lets you switch providers. The active **Artifacts** tab has its own dropdown for reviewing
+each provider's generated files. Package upload and visual-notation settings remain in
+**Cloud platforms**; editing, validation, and generation use the main workspace.
+
 ## Export and share
 
 Models can be exported as JSON or XMI. Projects and artifacts can be downloaded as ZIP files. The browser artifact explorer can open generated files for review and editing.

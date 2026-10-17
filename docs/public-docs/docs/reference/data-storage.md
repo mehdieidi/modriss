@@ -1,20 +1,22 @@
 # Data and Storage
 
 MODRISS stores runtime state in PostgreSQL through Spring JDBC. Flyway owns schema creation and
-migration. Static metamodels, constraints, transformations, generators, and UI metadata remain
-versioned repository assets rather than database records.
+migration. Built-in metamodels, constraints, transformations, generators, and UI metadata are
+versioned repository assets. User-defined PSM metamodels and script packages are stored with
+their projects in PostgreSQL.
 
 ## Core Data
 
-| Area            | Tables                                                 | Notes                                                |
-| --------------- | ------------------------------------------------------ | ---------------------------------------------------- |
-| Identity        | `users`, `auth_sessions`                               | Password hashes, salts, session expiry               |
-| Projects        | `projects`, `project_members`, `project_active_models` | Ownership, roles, active level models                |
-| Models          | `models`                                               | JSON model, source XMI, metamodel metadata, revision |
-| Imports         | `staged_imports`, `staged_import_payloads`             | Temporary XMI import payloads with expiry            |
-| Artifacts       | `artifacts`, `artifact_files`                          | Generated project metadata and file content          |
-| Jobs            | `mde_jobs`, `mde_job_diagnostics`                      | Operation status, progress, result IDs, diagnostics  |
-| Synchronization | `model_synchronization_records`                        | JSONB raw generated baselines and pending sessions   |
+| Area            | Tables                                                 | Notes                                                  |
+| --------------- | ------------------------------------------------------ | ------------------------------------------------------ |
+| Identity        | `users`, `auth_sessions`                               | Password hashes, salts, session expiry                 |
+| Projects        | `projects`, `project_members`, `project_active_models` | Ownership, roles, active level models                  |
+| Models          | `models`                                               | JSON model, source XMI, metamodel metadata, revision   |
+| Custom PSMs     | `psm_extension_records`                                | Project packages, visual notation, and provider models |
+| Imports         | `staged_imports`, `staged_import_payloads`             | Temporary XMI import payloads with expiry              |
+| Artifacts       | `artifacts`, `artifact_files`                          | Generated project metadata and file content            |
+| Jobs            | `mde_jobs`, `mde_job_diagnostics`                      | Operation status, progress, result IDs, diagnostics    |
+| Synchronization | `model_synchronization_records`                        | JSONB raw generated baselines and pending sessions     |
 
 Project deletion cascades through project-owned models, artifacts, jobs, membership, staged imports,
 and assistant state. User and project references use foreign keys, while level and role values use

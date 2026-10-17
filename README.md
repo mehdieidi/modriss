@@ -10,13 +10,11 @@ Department of Computer Engineering, Sharif University of Technology. It studies 
 It also explores LLM-assisted modeling and the use of large language models to support human modelers
 in authoring, inspecting, explaining, and controlled modification of models expressed in these domain-specific modeling languages.
 
-This repository contains the MODRISS development process, modeling framework, and web-based low-code platform. The current
-platform-specific target is the AWS serverless ecosystem. The platform-independent modeling layer
-and transformation-based architecture are intended to support future extensions to other cloud
-platforms, including Microsoft Azure and Google Cloud Platform (GCP), through project-scoped
-Ecore metamodels, ETL transformations, EGX/EGL generators and optional EVL constraints.
-The [custom cloud platforms guide](docs/public-docs/docs/guides/custom-cloud-platforms.md) explains
-how to keep multiple PSM branches from the same PIM alongside the native AWS path.
+This repository contains the MODRISS development process, modeling framework, and web-based
+low-code platform. AWS is the built-in cloud target. Users can extend the PSM level with their
+own Ecore metamodels and Epsilon transformation and generation packages. A project can retain
+separate PSMs and generated projects for several providers, all derived from the same CIM and
+PIM models. The CIM and PIM languages remain fixed.
 
 ![Low-code platform screenshot](apps/landing/src/assets/modriss-workspace.png)
 
@@ -25,7 +23,7 @@ how to keep multiple PSM branches from the same PIM alongside the native AWS pat
 Serverless computing reduces direct server-management work while creating concerns across
 architecture, configuration, integration, operations, and deployment. MODRISS investigates a
 model-driven methodology that connects domain understanding, provider-independent serverless
-architecture, AWS-specific design, and generated implementation artifacts in a traceable path.
+architecture, provider-specific design, and generated implementation artifacts in a traceable path.
 
 The methodology has two connected parts:
 
@@ -39,10 +37,11 @@ The methodology has two connected parts:
 | Area                 | MODRISS contribution                                                                                                                                                                 |
 | -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | Development process  | An iterative and incremental process definition links modeling work with lifecycle activities, roles, tasks, artifacts, review points, and supporting practices.                     |
-| Modeling framework   | Structured DSMLs describe the problem domain, platform-independent serverless architecture, and AWS-specific serverless design.                                                      |
+| Modeling framework   | Fixed CIM and PIM languages describe the business domain and generic serverless architecture. The PSM language describes the selected cloud platform.                                |
 | Language engineering | Ecore metamodels specify abstract syntax. EVL rules express well-formedness and semantic validation. Browser editors provide concrete notation.                                      |
 | Model refinement     | ETL transformations support semi-automated CIM-to-PIM and PIM-to-PSM refinement. Modelers review and complete decisions that cannot be resolved automatically.                       |
 | Artifact generation  | EGX and EGL templates generate a reviewable AWS project baseline, including infrastructure, Go handlers, contracts, tests, workflows, scripts, documentation, and trace information. |
+| Cloud extensibility  | Users upload PSM metamodels and Epsilon packages to add providers. One CIM and PIM can lead to several provider models and separate generated projects.                              |
 | AI-assisted modeling | A conversational LLM-based assistant supports CIM and PIM modeling activities using the live metamodel as its structural contract.                                                   |
 
 ## Modeling path
@@ -53,11 +52,32 @@ The methodology has two connected parts:
   processes, policies, governance, and requirements without a software or cloud commitment.
 - **PIM, Platform-Independent Model**: serverless services, functions, contracts, data, events,
   workflows, integrations, security, policies, and deployment concerns.
-- **PSM, Platform-Specific Model**: AWS resources and configuration for compute, APIs,
-  storage, messaging, identity, networking, and observability.
+- **PSM, Platform-Specific Model**: resources and configuration for a selected cloud provider.
+  The built-in AWS language covers compute, APIs, storage, messaging, identity, networking,
+  and observability; uploaded Ecore metamodels define the languages for other providers.
 
 Transformations support systematic refinement. Generated models and artifacts remain subject to
 human review and project-specific decisions.
+
+## Extend cloud support
+
+Open **Cloud platforms** from the workspace rail to add a provider package. Supply its PSM
+language as an `.ecore` file, PIM-to-PSM transformation rules as an ETL ZIP, and artifact
+generation scripts and templates as an EGX/EGL ZIP. An optional EVL ZIP supplies constraints
+for explicit model validation. Ecore alone provides an editor; the script packages enable
+the corresponding transformation, generation, and validation actions. Users can customize
+views, palette groups, and icons in the package's **Visual notation** tab.
+
+From the PIM workspace, select a target provider beside the generation button. For example,
+the same saved PIM can produce both the native AWS model and a model for an uploaded Azure
+package. Each custom package maintains one PSM; regenerating it updates that model and keeps
+previous artifact bundles. The provider tab and Artifacts tab let users switch between the
+models and their generated projects without recreating the business or serverless models.
+
+The [custom cloud platforms guide](docs/public-docs/docs/guides/custom-cloud-platforms.md)
+describes the package contract and workflow. A
+[minimal Azure example](methodology/modeling-framework/samples/custom-psm-azure/)
+demonstrates the extension mechanism with small text outputs.
 
 ## Run the platform
 

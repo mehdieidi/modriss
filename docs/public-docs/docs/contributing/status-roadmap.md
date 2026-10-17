@@ -11,6 +11,11 @@
 - Layout and persisted view layout
 - CIM-to-PIM and PIM-to-PSM transformation profiles
 - PSM artifact generation
+- Project packages for user-defined PSM Ecore metamodels, ETL transformations, EGX/EGL
+  generators, and optional EVL constraints
+- Multiple provider PSMs and generated projects from shared CIM and PIM models, with one
+  PSM per custom package and provider selection in the editor and artifact workspace
+- Default editors derived from uploaded Ecore, with editable views, palette groups, and icons
 - Artifact browsing, editing, project ZIP download, and artifact ZIP download
 - Change impact analysis across CIM, PIM, PSM models and generated artifacts
 - PostgreSQL persistence and Flyway migrations
@@ -38,6 +43,7 @@
 - Broader collaboration and versioning workflows
 - Deployment automation beyond generated project scripts
 - Reverse engineering
-- Additional cloud providers
+- Additional maintained provider packages and evaluation of their generated projects; user
+  packages can already extend the PSM level through the workbench
 
 The admin HTTP surface under `/api/admin/**` returns `501` until implemented.
