@@ -735,6 +735,18 @@ final class ModelImportExportService {
         .collect(java.util.stream.Collectors.toSet());
   }
 
+  /** Indexes semantic objects independently of the optional browser graph projection. */
+  Map<String, JsonNode> semanticObjectsById(ModelLevel level, JsonNode model) {
+    Map<String, JsonNode> result = new LinkedHashMap<>();
+    for (SemanticObject object : semanticObjects(model, eClassesByName(level))) {
+      String id = text(object.node(), "id", "");
+      if (!id.isBlank()) {
+        result.putIfAbsent(id, object.node());
+      }
+    }
+    return result;
+  }
+
   Set<String> removedReferenceTargets(ModelLevel level, JsonNode previous, JsonNode current) {
     Map<String, SemanticObject> before =
         semanticObjects(previous, eClassesByName(level)).stream()

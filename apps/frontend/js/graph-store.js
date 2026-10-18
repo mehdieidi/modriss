@@ -2505,6 +2505,7 @@ export function ensureViewContent(
   let materialized;
   if (view.id === mainViewId(typeKey)) {
     materialized = defaultMainView(typeKey, state.graph, view.name, layoutOptions);
+    materialized.name = view.name;
   } else if (definition) {
     materialized = buildViewFromDefinition(
       typeKey,
@@ -2551,6 +2552,7 @@ export function refreshViewContent(
   let refreshed = null;
   if (view.id === mainViewId(typeKey)) {
     refreshed = defaultMainView(typeKey, state.graph, view.name, options);
+    refreshed.name = view.name;
   } else if (definition) {
     refreshed = buildViewFromDefinition(typeKey, state.graph, definition, scopeElement, options);
   }

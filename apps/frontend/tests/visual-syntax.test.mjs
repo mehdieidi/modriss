@@ -5,7 +5,7 @@ globalThis.window = { location: { origin: "http://localhost" }, addEventListener
 globalThis.document = { getElementById: () => null, addEventListener() {} };
 
 const { state } = await import("../js/state.js");
-const { installGraphAndViews, selectElementIdsForView } = await import("../js/graph-store.js");
+const { ensureViewContent, installGraphAndViews, refreshViewContent, selectElementIdsForView } = await import("../js/graph-store.js");
 const { modelingViewDefinition } = await import("../js/modeling-config-data.js");
 
 beforeEach(() => {
@@ -127,4 +127,19 @@ test("saved user viewpoints retain their own name and filters", () => {
   assert.deepEqual(updated.palette, saved.palette);
   assert.deepEqual(updated.canvas, saved.canvas);
   assert.deepEqual(updated.filters, saved.filters);
+});
+
+test("materializing and refreshing the main view preserves its name", () => {
+  const { views } = installGraphAndViews("cim", {
+    name: "Example", eClass: "Model",
+    graph: { elements: [{ id: "actor", eClass: "Actor" }], relationships: [] },
+  }, "Example", { skipFragments: true, skipClientLayout: true, preserveActiveViewId: "view-cim-overview-global", preserveActiveView: true });
+  const main = views.byId.get("view-cim-main");
+  assert.equal(main.name, "Example Main View");
+  assert.equal(main._lazyContent, true);
+  ensureViewContent(main, "cim", { skipClientLayout: true });
+  assert.equal(main.name, "Example Main View");
+  refreshViewContent(main, "cim", { skipClientLayout: true });
+  refreshViewContent(main, "cim", { skipClientLayout: true });
+  assert.equal(main.name, "Example Main View");
 });

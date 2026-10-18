@@ -267,6 +267,11 @@ public final class ModelService {
     throw new PlatformException(404, "View not found: " + viewId);
   }
 
+  /** Resolves semantic objects for view operations without requiring a complete graph projection. */
+  Map<String, JsonNode> semanticObjectsById(ModelLevel level, JsonNode model) {
+    return importExport.semanticObjectsById(level, model);
+  }
+
   private ModelRecord withoutViewPayload(ModelRecord record) {
     if (!(record.modelJson() instanceof ObjectNode objectNode)) {
       return record;

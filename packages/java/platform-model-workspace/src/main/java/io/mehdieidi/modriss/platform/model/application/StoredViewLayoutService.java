@@ -106,6 +106,9 @@ public final class StoredViewLayoutService {
   private LayoutService.LayoutRequest buildRequest(
       ModelLevel level, ObjectNode model, ObjectNode view) {
     Map<String, JsonNode> elements = indexById(model.path("graph").path("elements"), "id");
+    // Views can include root and nested semantic objects omitted by the browser graph.
+    // Resolve against the authoritative semantic tree while retaining graph-only compatibility.
+    elements.putAll(models.semanticObjectsById(level, model));
     Map<String, JsonNode> relationships =
         indexById(model.path("graph").path("relationships"), "id");
     Set<String> hiddenNodeIds = textSet(view.path("hidden").path("elementIds"));
