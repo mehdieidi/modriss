@@ -247,8 +247,9 @@ class StoredViewLayoutServiceTest {
       model.remove("graph");
     }
     ModelRecord created =
-        services.models().create(
-            context.user(), ModelLevel.PIM, context.project().id(), "pim-model", model);
+        services
+            .models()
+            .create(context.user(), ModelLevel.PIM, context.project().id(), "pim-model", model);
     byte[] sourceXmi = services.models().sourceXmi(created).orElseThrow();
 
     StoredViewLayoutService.StoredViewLayoutResponse response =
@@ -271,7 +272,8 @@ class StoredViewLayoutServiceTest {
     ((ArrayNode) expected.path("views")).set(0, response.view());
     assertEquals(expected, persisted.modelJson(), "Layout must only change the requested view");
     assertEquals(created.sourceXmiHash(), persisted.sourceXmiHash());
-    assertTrue(java.util.Arrays.equals(sourceXmi, services.models().sourceXmi(persisted).orElseThrow()));
+    assertTrue(
+        java.util.Arrays.equals(sourceXmi, services.models().sourceXmi(persisted).orElseThrow()));
     assertEquals(created.revision() + 1, persisted.revision());
   }
 
@@ -289,14 +291,22 @@ class StoredViewLayoutServiceTest {
     missing.put("id", "missing-profile");
     missing.put("eClass", "ImplementationProfile");
     ModelRecord created =
-        services.models().create(
-            context.user(), ModelLevel.PIM, context.project().id(), "pim-model", model);
+        services
+            .models()
+            .create(context.user(), ModelLevel.PIM, context.project().id(), "pim-model", model);
 
     PlatformException error =
         assertThrows(
             PlatformException.class,
-            () -> new StoredViewLayoutService(services.models(), new LayoutService())
-                .layout(context.user(), ModelLevel.PIM, created.id(), "view-pim-main", true, "LAYERED"));
+            () ->
+                new StoredViewLayoutService(services.models(), new LayoutService())
+                    .layout(
+                        context.user(),
+                        ModelLevel.PIM,
+                        created.id(),
+                        "view-pim-main",
+                        true,
+                        "LAYERED"));
 
     assertEquals(409, error.status());
     assertEquals("Stored view references missing element 'missing-profile'.", error.getMessage());
@@ -305,40 +315,46 @@ class StoredViewLayoutServiceTest {
 
   /** Creates a PIM whose graph omits a singleton and nested semantic containment objects. */
   private ObjectNode semanticPimModel(PlatformTestFixtures.ServiceStack services) {
-    ObjectNode model = (ObjectNode) services.store().objectMapper().readTree("""
-        {
-          "id": "pim-model", "eClass": "PIMModel", "name": "pim-model",
-          "domainName": "Layout regression", "architectureStyle": "API_FIRST_SERVERLESS",
-          "implementationProfile": {
-            "id": "pim-model-profile", "eClass": "ImplementationProfile",
-            "name": "Implementation profile", "primaryLanguage": "JAVA", "packageManager": "MAVEN"
-          },
-          "services": [{"id": "service", "eClass": "ServerlessService", "name": "Service"}],
-          "configurations": [{
-            "id": "config", "eClass": "ConfigurationSet", "name": "Configuration",
-            "scope": "SERVICE",
-            "parameters": [{"id": "parameter", "eClass": "ConfigParameter", "name": "Parameter"}]
-          }],
-          "graph": {
-            "elements": [{"id": "service", "eClass": "ServerlessService", "name": "Service"}],
-            "relationships": []
-          },
-          "views": [{
-            "id": "view-pim-main", "kind": "MAIN", "layoutProfile": "DEFAULT_LAYERED",
-            "nodes": [
-              {"elementId": "service"}, {"elementId": "pim-model-profile"},
-              {"elementId": "config"}, {"elementId": "parameter"}
-            ],
-            "edges": [{
-              "relationshipId": "config-parameter", "sourceElementId": "config",
-              "targetElementId": "parameter", "visible": true
-            }]
-          }, {
-            "id": "other-view", "nodes": [{"elementId": "service", "x": 43, "y": 27}],
-            "edges": []
-          }]
-        }
-        """);
+    ObjectNode model =
+        (ObjectNode)
+            services
+                .store()
+                .objectMapper()
+                .readTree(
+                    """
+{
+  "id": "pim-model", "eClass": "PIMModel", "name": "pim-model",
+  "domainName": "Layout regression", "architectureStyle": "API_FIRST_SERVERLESS",
+  "implementationProfile": {
+    "id": "pim-model-profile", "eClass": "ImplementationProfile",
+    "name": "Implementation profile", "primaryLanguage": "JAVA", "packageManager": "MAVEN"
+  },
+  "services": [{"id": "service", "eClass": "ServerlessService", "name": "Service"}],
+  "configurations": [{
+    "id": "config", "eClass": "ConfigurationSet", "name": "Configuration",
+    "scope": "SERVICE",
+    "parameters": [{"id": "parameter", "eClass": "ConfigParameter", "name": "Parameter"}]
+  }],
+  "graph": {
+    "elements": [{"id": "service", "eClass": "ServerlessService", "name": "Service"}],
+    "relationships": []
+  },
+  "views": [{
+    "id": "view-pim-main", "kind": "MAIN", "layoutProfile": "DEFAULT_LAYERED",
+    "nodes": [
+      {"elementId": "service"}, {"elementId": "pim-model-profile"},
+      {"elementId": "config"}, {"elementId": "parameter"}
+    ],
+    "edges": [{
+      "relationshipId": "config-parameter", "sourceElementId": "config",
+      "targetElementId": "parameter", "visible": true
+    }]
+  }, {
+    "id": "other-view", "nodes": [{"elementId": "service", "x": 43, "y": 27}],
+    "edges": []
+  }]
+}
+""");
     return model;
   }
 

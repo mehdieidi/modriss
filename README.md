@@ -111,6 +111,15 @@ the PIM and PSM models. From PSM, select **Generate Artifacts** and inspect or d
 generated project. The [climate-relief sample](methodology/modeling-framework/samples/climate-relief-grants/) offers a broader
 end-to-end case study.
 
+For a compact scenario intended for expert and user evaluation, use
+[Community Workshops](methodology/modeling-framework/samples/community-workshops/).
+It includes a familiar booking scenario, requirements and acceptance criteria, a Mermaid use-case
+diagram, an importable CIM reference model, and deterministic end-to-end evaluation scenarios.
+
+For an ecommerce scenario, [Corner Shop](methodology/modeling-framework/samples/corner-shop/)
+models a small stationery shop with multi-item orders, stock holds, online payment, cancellation
+and full refunds, and store collection, with the same CIM and evaluation materials.
+
 See the [quickstart](docs/public-docs/docs/getting-started/quickstart.md) and
 [local-development guide](docs/public-docs/docs/getting-started/local-development.md).
 

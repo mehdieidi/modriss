@@ -1,0 +1,32 @@
+{
+  "status": "SUCCEEDED",
+  "evlRoot": "methodology/modeling-framework/validation/cim",
+  "startedAt": "2026-10-18T21:40:22.608409400Z",
+  "finishedAt": "2026-10-18T21:40:31.697558700Z",
+  "durationMillis": 9089,
+  "totalMillis": 9089,
+  "moduleDiscoveryMillis": 5,
+  "mandatoryViolationCount": 0,
+  "optionalViolationCount": 0,
+  "modules": [
+    {
+      "moduleFile": "methodology/modeling-framework/validation/cim/cim-semantic-validation.evl",
+      "totalMillis": 9071,
+      "parseMillis": 1126,
+      "modelLoadMillis": 3053,
+      "structuralValidationMillis": 320,
+      "evlExecuteMillis": 4433,
+      "violationMappingMillis": 0,
+      "disposeMillis": 12,
+      "violationCount": 0,
+      "diagnosticCount": 0
+    }
+  ],
+  "violations": [],
+  "diagnostics": [],
+  "standardOutput": "",
+  "warningOutput": "",
+  "errorOutput": "",
+  "modelFile": "methodology/modeling-framework/samples/corner-shop/corner-shop.cim.xmi",
+  "modelSha256": "e1b06c6f8e3bae2ccffaf9e424b07dad228519edd4d30bfcd664a47df2a685cb"
+}

@@ -1,0 +1,32 @@
+{
+  "status": "SUCCEEDED",
+  "evlRoot": "methodology/modeling-framework/validation/cim",
+  "startedAt": "2026-10-18T19:38:10.268039800Z",
+  "finishedAt": "2026-10-18T19:38:16.230155700Z",
+  "durationMillis": 5962,
+  "totalMillis": 5962,
+  "moduleDiscoveryMillis": 5,
+  "mandatoryViolationCount": 0,
+  "optionalViolationCount": 0,
+  "modules": [
+    {
+      "moduleFile": "methodology/modeling-framework/validation/cim/cim-semantic-validation.evl",
+      "totalMillis": 5918,
+      "parseMillis": 918,
+      "modelLoadMillis": 2297,
+      "structuralValidationMillis": 186,
+      "evlExecuteMillis": 2406,
+      "violationMappingMillis": 0,
+      "disposeMillis": 10,
+      "violationCount": 0,
+      "diagnosticCount": 0
+    }
+  ],
+  "violations": [],
+  "diagnostics": [],
+  "standardOutput": "",
+  "warningOutput": "",
+  "errorOutput": "",
+  "modelFile": "methodology/modeling-framework/samples/community-workshops/community-workshops.cim.xmi",
+  "modelSha256": "042595b3fd031811900e8ca09333ed70ae132e9a9d8bd67da865ee7c91133a90"
+}
