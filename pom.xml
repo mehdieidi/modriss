@@ -128,6 +128,15 @@
       </plugin>
     </plugins>
   </build>
+  <dependencies>
+    <!-- Resolve the inherited Surefire javaagent even in modules without Mockito tests. -->
+    <dependency>
+      <artifactId>mockito-core</artifactId>
+      <groupId>org.mockito</groupId>
+      <scope>test</scope>
+      <version>${mockito.version}</version>
+    </dependency>
+  </dependencies>
   <dependencyManagement>
     <dependencies>
       <dependency>
