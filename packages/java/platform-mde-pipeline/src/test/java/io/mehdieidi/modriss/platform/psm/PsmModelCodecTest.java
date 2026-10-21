@@ -2,13 +2,48 @@ package io.mehdieidi.modriss.platform.psm;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import io.mehdieidi.modriss.mde.emf.DateAwareXmiResource;
+import java.time.Instant;
+import java.util.Date;
 import java.util.List;
+import org.eclipse.emf.common.util.URI;
 import org.eclipse.emf.ecore.*;
 import org.eclipse.emf.ecore.xmi.impl.XMIResourceImpl;
 import org.junit.jupiter.api.Test;
+import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.node.ObjectNode;
 
 class PsmModelCodecTest {
+  @Test
+  void preservesDateInstantsWithUtcAndNonUtcOffsets() {
+    var factory = EcoreFactory.eINSTANCE;
+    var pkg = factory.createEPackage();
+    pkg.setName("dates");
+    pkg.setNsPrefix("dates");
+    pkg.setNsURI("urn:dates");
+    var type = factory.createEClass();
+    type.setName("Record");
+    pkg.getEClassifiers().add(type);
+    var at = attribute(type, "at", EcorePackage.Literals.EDATE);
+    for (String timestamp :
+        List.of("2026-06-15T00:00:00Z", "2026-06-15T03:30:00+03:30")) {
+      var model =
+          new ObjectMapper()
+              .createObjectNode()
+              .put("eClass", "Record")
+              .put("id", "record")
+              .put("at", timestamp);
+      var resource = new DateAwareXmiResource(URI.createURI("memory:/dates.xmi"));
+      new PsmModelCodec(List.of(pkg)).write(resource, model);
+      assertEquals(
+          Instant.parse("2026-06-15T00:00:00Z"),
+          ((Date) resource.getContents().get(0).eGet(at)).toInstant());
+      assertEquals(
+          "2026-06-15T00:00:00.000+0000",
+          new PsmModelCodec(List.of(pkg)).read(resource).path("at").asText());
+    }
+  }
+
   @Test
   @SuppressWarnings("unchecked")
   void preservesTypedAttributesReservedNamesContainmentsAndReferences() {

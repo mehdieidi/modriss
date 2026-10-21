@@ -4,6 +4,11 @@
   <artifactId>platform-mde-pipeline</artifactId>
   <dependencies>
     <dependency>
+      <artifactId>emf-model-io</artifactId>
+      <groupId>${project.groupId}</groupId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
       <artifactId>emf-compare-standalone</artifactId>
       <groupId>${project.groupId}</groupId>
       <version>${project.version}</version>

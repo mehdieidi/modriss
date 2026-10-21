@@ -1,10 +1,14 @@
 package io.mehdieidi.modriss.mde.validation;
 
+import io.mehdieidi.modriss.mde.emf.DateAwareXmiResource;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Objects;
 import org.eclipse.emf.common.util.URI;
+import org.eclipse.emf.ecore.resource.Resource;
+import org.eclipse.emf.ecore.resource.ResourceSet;
 import org.eclipse.epsilon.common.util.StringProperties;
+import org.eclipse.epsilon.emc.emf.CachedResourceSet;
 import org.eclipse.epsilon.emc.emf.EmfModel;
 import org.eclipse.epsilon.eol.exceptions.models.EolModelLoadingException;
 import org.eclipse.epsilon.eol.models.IModel;
@@ -53,7 +57,21 @@ public record FileEvlModelConfiguration(
    */
   @Override
   public IModel load() throws EolModelLoadingException {
-    EmfModel model = new EmfModel();
+    EmfModel model =
+        new EmfModel() {
+          @Override
+          protected ResourceSet createResourceSet() {
+            return new CachedResourceSet() {
+              @Override
+              public Resource createNewResource(URI uri, String contentType) {
+                if (uri.toString().equals(fileUri(modelFile))) {
+                  return new DateAwareXmiResource(uri);
+                }
+                return super.createNewResource(uri, contentType);
+              }
+            };
+          }
+        };
     StringProperties properties = new StringProperties();
     properties.put(Model.PROPERTY_NAME, name);
     if (!aliases.isEmpty()) {

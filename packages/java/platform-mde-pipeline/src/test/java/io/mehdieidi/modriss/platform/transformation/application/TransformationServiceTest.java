@@ -1,5 +1,6 @@
 package io.mehdieidi.modriss.platform.transformation.application;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
@@ -40,6 +41,8 @@ import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.api.parallel.Execution;
 import org.junit.jupiter.api.parallel.ExecutionMode;
 import org.junit.jupiter.api.parallel.ResourceLock;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.node.ObjectNode;
 
@@ -742,8 +745,11 @@ class TransformationServiceTest {
     assertEquals(SynchronizationStatus.APPLIED, result.status());
     assertEquals(first.id(), repeated.id());
     assertTrue(result.conflicts() == 0);
+    assertEquals(first.revision(), repeated.revision());
+    assertEquals(first.modelJson(), repeated.modelJson());
     assertEquals(revised.revision(), after.sourceRevision());
-    assertTrue(after.baselineVersion() >= before.baselineVersion());
+    assertEquals(before.baselineVersion() + 1, after.baselineVersion());
+    assertArrayEquals(before.rawGeneratedXmi(), after.rawGeneratedXmi());
   }
 
   @Test
@@ -1112,8 +1118,9 @@ class TransformationServiceTest {
   }
 
   /** Catalog F-04/F-05/F-06: persistence failure rolls back the canonical model and baseline. */
-  @Test
-  void persistenceFailureDoesNotAdvanceWorkingOrRawBaseline() throws Exception {
+  @ParameterizedTest
+  @ValueSource(ints = {1, 2, 3})
+  void persistenceFailureDoesNotAdvanceWorkingOrRawBaseline(int successfulWrites) throws Exception {
     PlatformTestFixtures.ServiceStack services =
         PlatformTestFixtures.createServicesWithTransformations(tempDir);
     PlatformTestFixtures.AuthenticatedContext context =
@@ -1127,17 +1134,24 @@ class TransformationServiceTest {
         baselines
             .get(context.project().id(), TransformationDirection.CIM_TO_PIM, cim.id())
             .orElseThrow();
+    byte[] workingXmiBefore = services.models().sourceXmi(working).orElseThrow();
     ObjectNode changed = (ObjectNode) cim.modelJson().deepCopy();
-    changed.put("summary", "transaction failure source revision");
+    // Change generated content so this always exercises a partial Working write and rollback.
+    // A summary-only edit intentionally takes the single-write baseline-only path.
+    changed.put("name", "Transaction failure generated name");
     cim =
         services
             .models()
             .update(context.user(), ModelLevel.CIM, cim.id(), cim.name(), changed, cim.revision());
     String cimId = cim.id();
 
-    services.store().failAfterWrites(1);
-    assertThrows(
-        PlatformException.class, () -> services.transformations().cimToPim(context.user(), cimId));
+    // Fail at index, XMI sidecar, and baseline persistence, respectively.
+    services.store().failAfterWrites(successfulWrites);
+    PlatformException failure =
+        assertThrows(
+            PlatformException.class,
+            () -> services.transformations().cimToPim(context.user(), cimId));
+    assertEquals("Injected persistence failure.", failure.getMessage());
 
     ModelRecord after = services.models().get(context.user(), ModelLevel.PIM, working.id());
     GeneratedBaseline baselineAfter =
@@ -1146,8 +1160,12 @@ class TransformationServiceTest {
             .orElseThrow();
     assertEquals(working.revision(), after.revision());
     assertEquals(working.modelJson(), after.modelJson());
+    assertArrayEquals(workingXmiBefore, services.models().sourceXmi(after).orElseThrow());
     assertEquals(before.baselineVersion(), baselineAfter.baselineVersion());
+    assertEquals(before.sourceRevision(), baselineAfter.sourceRevision());
+    assertEquals(before.sourceFingerprint(), baselineAfter.sourceFingerprint());
     assertEquals(before.rawGeneratedModel(), baselineAfter.rawGeneratedModel());
+    assertArrayEquals(before.rawGeneratedXmi(), baselineAfter.rawGeneratedXmi());
   }
 
   /** Catalog D-04: changing Working while pending makes the session stale. */

@@ -2,6 +2,7 @@ FROM maven:3.9.11-eclipse-temurin-17 AS build
 WORKDIR /workspace
 COPY pom.xml ./
 COPY apps/backend/pom.xml apps/backend/
+COPY packages/java/emf-model-io/pom.xml packages/java/emf-model-io/
 COPY packages/java/emf-compare-standalone/pom.xml packages/java/emf-compare-standalone/
 COPY packages/java/epsilon-model-transformation/pom.xml packages/java/epsilon-model-transformation/
 COPY packages/java/epsilon-model-validation/pom.xml packages/java/epsilon-model-validation/

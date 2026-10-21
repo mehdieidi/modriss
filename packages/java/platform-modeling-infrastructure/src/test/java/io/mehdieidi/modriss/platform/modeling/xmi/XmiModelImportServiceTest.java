@@ -19,6 +19,23 @@ import tools.jackson.databind.ObjectMapper;
 /** Integration coverage for graph extraction from the research-grade XMI fixtures. */
 class XmiModelImportServiceTest {
 
+  @Test
+  void repeatedJsonXmiRoundTripsPreserveSampleDates() throws Exception {
+    XmiModelImportService service = new XmiModelImportService(new ObjectMapper());
+    Path sample =
+        Path.of("..", "..", "..", "methodology", "modeling-framework", "samples", "cim.xmi")
+            .normalize();
+    JsonNode model = service.importModel(ModelLevel.CIM, Files.readAllBytes(sample));
+    for (int cycle = 0; cycle < 3; cycle++) {
+      assertEquals("2026-06-15T00:00:00Z", model.path("hotspots").path(0).path("dueDate").asText());
+      assertEquals("2026-06-10T00:00:00Z", model.path("hotspots").path(1).path("dueDate").asText());
+      assertEquals(
+          "2026-06-12T00:00:00Z",
+          model.path("readiness").path("manualDecisions").path(0).path("dueDate").asText());
+      model = service.importModel(ModelLevel.CIM, service.exportModel(ModelLevel.CIM, model));
+    }
+  }
+
   /** Verifies every sample imports into a connected graph with resolvable edge endpoints. */
   @Test
   void importsEveryLevelWithResolvableGraphRelationships() throws Exception {

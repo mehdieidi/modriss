@@ -1,5 +1,7 @@
 package io.mehdieidi.modriss.platform.modeling.xmi;
 
+import io.mehdieidi.modriss.mde.emf.DateAwareXmiResource;
+import io.mehdieidi.modriss.mde.emf.EmfDateTime;
 import io.mehdieidi.modriss.platform.kernel.ModelLevel;
 import io.mehdieidi.modriss.platform.kernel.PlatformException;
 import io.mehdieidi.modriss.platform.modeling.config.ModelingConfigService;
@@ -43,8 +45,6 @@ import org.eclipse.emf.ecore.resource.impl.ResourceSetImpl;
 import org.eclipse.emf.ecore.util.EcoreUtil;
 import org.eclipse.emf.ecore.xmi.XMLResource;
 import org.eclipse.emf.ecore.xmi.impl.EcoreResourceFactoryImpl;
-import org.eclipse.emf.ecore.xmi.impl.XMIResourceFactoryImpl;
-import org.eclipse.emf.ecore.xmi.impl.XMIResourceImpl;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.node.ArrayNode;
@@ -412,7 +412,7 @@ public final class XmiModelImportService {
     resourceSet
         .getResourceFactoryRegistry()
         .getExtensionToFactoryMap()
-        .put("xmi", new XMIResourceFactoryImpl());
+        .put("xmi", (Resource.Factory) DateAwareXmiResource::new);
     resourceSet.getPackageRegistry().put(EcorePackage.eNS_URI, EcorePackage.eINSTANCE);
     return resourceSet;
   }
@@ -426,7 +426,7 @@ public final class XmiModelImportService {
    * models therefore become quadratic during load. The deferred resolver runs after the document
    * has been materialized, so the complete intrinsic-ID index can be built once and reused.
    */
-  private static final class IndexedXmiResource extends XMIResourceImpl {
+  private static final class IndexedXmiResource extends DateAwareXmiResource {
 
     private boolean intrinsicIdIndexBuilt;
 
@@ -1472,6 +1472,9 @@ public final class XmiModelImportService {
         text = value.asText();
       }
       try {
+        if (type == EcorePackage.Literals.EDATE) {
+          return EmfDateTime.parse(text);
+        }
         return type.getEPackage().getEFactoryInstance().createFromString(type, text);
       } catch (RuntimeException ex) {
         diagnostics.attributeError(

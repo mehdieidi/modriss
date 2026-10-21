@@ -1,5 +1,6 @@
 package io.mehdieidi.modriss.mde.etl;
 
+import io.mehdieidi.modriss.mde.emf.DateAwareXmiResource;
 import java.io.OutputStream;
 import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
@@ -17,9 +18,11 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.eclipse.emf.common.util.URI;
 import org.eclipse.emf.ecore.resource.Resource;
+import org.eclipse.emf.ecore.resource.ResourceSet;
 import org.eclipse.epsilon.common.module.ModuleElement;
 import org.eclipse.epsilon.common.parse.problem.ParseProblem;
 import org.eclipse.epsilon.common.util.StringProperties;
+import org.eclipse.epsilon.emc.emf.CachedResourceSet;
 import org.eclipse.epsilon.emc.emf.EmfModel;
 import org.eclipse.epsilon.eol.exceptions.EolRuntimeException;
 import org.eclipse.epsilon.eol.exceptions.models.EolModelLoadingException;
@@ -397,7 +400,21 @@ public final class EpsilonEtlExecutor {
    */
   private LoadedEtlModel loadModel(EtlModelConfiguration modelConfiguration)
       throws EolModelLoadingException {
-    EmfModel model = new EmfModel();
+    EmfModel model =
+        new EmfModel() {
+          @Override
+          protected ResourceSet createResourceSet() {
+            return new CachedResourceSet() {
+              @Override
+              public Resource createNewResource(URI uri, String contentType) {
+                if (uri.toString().equals(fileUri(modelConfiguration.modelFile()))) {
+                  return new DateAwareXmiResource(uri);
+                }
+                return super.createNewResource(uri, contentType);
+              }
+            };
+          }
+        };
     StringProperties properties = new StringProperties();
     properties.put(Model.PROPERTY_NAME, modelConfiguration.name());
     if (!modelConfiguration.aliases().isEmpty()) {

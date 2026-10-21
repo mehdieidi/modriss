@@ -1,6 +1,8 @@
 package io.mehdieidi.modriss.platform.psm;
 
+import io.mehdieidi.modriss.mde.emf.EmfDateTime;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.IdentityHashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -126,6 +128,9 @@ final class PsmModelCodec {
     }
     if (value instanceof Number || value instanceof Boolean) return JSON.valueToTree(value);
     EDataType type = (EDataType) feature.getEType();
+    if (type == EcorePackage.Literals.EDATE) {
+      return JSON.getNodeFactory().stringNode(EmfDateTime.format((Date) value));
+    }
     return JSON.getNodeFactory()
         .stringNode(type.getEPackage().getEFactoryInstance().convertToString(type, value));
   }
@@ -184,6 +189,7 @@ final class PsmModelCodec {
     if (feature instanceof EReference reference)
       return create(resource, value, reference.getEReferenceType());
     EDataType type = (EDataType) feature.getEType();
+    if (type == EcorePackage.Literals.EDATE) return EmfDateTime.parse(value.asText());
     return type.getEPackage().getEFactoryInstance().createFromString(type, value.asText());
   }
 

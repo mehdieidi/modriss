@@ -32,6 +32,11 @@
   </build>
   <dependencies>
     <dependency>
+      <artifactId>emf-model-io</artifactId>
+      <groupId>${project.groupId}</groupId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
       <artifactId>platform-shared-types</artifactId>
       <groupId>${project.groupId}</groupId>
     </dependency>

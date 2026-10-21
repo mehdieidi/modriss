@@ -1,5 +1,6 @@
 package io.mehdieidi.modriss.platform.psm;
 
+import io.mehdieidi.modriss.mde.emf.DateAwareXmiResource;
 import io.mehdieidi.modriss.mde.etl.EpsilonEtlExecutor;
 import io.mehdieidi.modriss.mde.etl.EtlExecutionException;
 import io.mehdieidi.modriss.mde.etl.EtlExecutionRequest;
@@ -45,7 +46,6 @@ import org.eclipse.emf.ecore.util.Diagnostician;
 import org.eclipse.emf.ecore.util.EcoreUtil;
 import org.eclipse.emf.ecore.xmi.XMLResource;
 import org.eclipse.emf.ecore.xmi.impl.EcoreResourceFactoryImpl;
-import org.eclipse.emf.ecore.xmi.impl.XMIResourceFactoryImpl;
 import org.eclipse.epsilon.egl.EglModule;
 import org.eclipse.epsilon.egl.EgxModule;
 import org.eclipse.epsilon.etl.EtlModule;
@@ -132,7 +132,7 @@ public final class PsmPackageWorker {
     resources
         .getResourceFactoryRegistry()
         .getExtensionToFactoryMap()
-        .put("xmi", new XMIResourceFactoryImpl());
+        .put("xmi", (Resource.Factory) DateAwareXmiResource::new);
     resources.getPackageRegistry().put(EcorePackage.eNS_URI, EcorePackage.eINSTANCE);
     Resource metamodel = resources.getResource(URI.createFileURI(ecore.toString()), true);
     EcoreUtil.resolveAll(resources);

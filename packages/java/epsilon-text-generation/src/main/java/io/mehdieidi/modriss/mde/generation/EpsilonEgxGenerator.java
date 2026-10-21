@@ -1,5 +1,6 @@
 package io.mehdieidi.modriss.mde.generation;
 
+import io.mehdieidi.modriss.mde.emf.DateAwareXmiResource;
 import java.io.InputStream;
 import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
@@ -31,7 +32,6 @@ import org.eclipse.emf.ecore.resource.ResourceSet;
 import org.eclipse.emf.ecore.resource.impl.ResourceSetImpl;
 import org.eclipse.emf.ecore.util.EcoreUtil;
 import org.eclipse.emf.ecore.xmi.impl.EcoreResourceFactoryImpl;
-import org.eclipse.emf.ecore.xmi.impl.XMIResourceFactoryImpl;
 import org.eclipse.epsilon.common.module.ModuleElement;
 import org.eclipse.epsilon.common.parse.problem.ParseProblem;
 import org.eclipse.epsilon.egl.EgxModule;
@@ -721,7 +721,7 @@ public final class EpsilonEgxGenerator {
     resourceSet
         .getResourceFactoryRegistry()
         .getExtensionToFactoryMap()
-        .put("xmi", new XMIResourceFactoryImpl());
+        .put("xmi", (Resource.Factory) DateAwareXmiResource::new);
     resourceSet.getPackageRegistry().put(EcorePackage.eNS_URI, EcorePackage.eINSTANCE);
     return resourceSet;
   }

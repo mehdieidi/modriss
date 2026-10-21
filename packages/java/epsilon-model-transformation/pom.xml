@@ -21,6 +21,11 @@
 
   <dependencies>
     <dependency>
+      <artifactId>emf-model-io</artifactId>
+      <groupId>${project.groupId}</groupId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
       <artifactId>org.eclipse.epsilon.etl.engine</artifactId>
       <groupId>org.eclipse.epsilon</groupId>
       <version>${epsilon.version}</version>
