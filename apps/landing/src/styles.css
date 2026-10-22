@@ -164,6 +164,25 @@ button {
   line-height: 1.78;
   text-align: justify;
 }
+.prose p,
+.section-heading > p,
+.method-equation article > span,
+.contribution-list p,
+.pipeline-intro p,
+.pipeline p,
+.pipeline-note,
+.framework-copy > p,
+.framework-list p,
+.process-summary p,
+.process-map-heading p,
+.process-figure figcaption,
+.prototype-heading > p,
+.workspace-shot figcaption,
+.assistant-figure figcaption,
+.abstract > p,
+.status-section p {
+  text-align: justify;
+}
 .hero-actions {
   display: flex;
   flex-wrap: wrap;
