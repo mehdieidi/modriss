@@ -16,7 +16,7 @@ body { margin: 0; padding: 24px; background: #f5f3ed; color: #102c3a; font-famil
       <marker id="rf-arrow-link" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><path d="M0 0L8 3L0 6Z" fill="#075d5b" /></marker>
     </defs>
     <rect width="960" height="600" fill="#f5f3ed" />
-    <text x="40" y="40" class="detail">RETURNFLOW AUDIT · PROCESS CONTROL DETAIL</text>
+    <text x="40" y="40" class="detail">LIFECYCLE GATE EVIDENCE · PROCESS CONTROL DETAIL</text>
     <text x="40" y="80" style="font: 28px Georgia, serif; fill: #102c3a">A completed task is not an accepted handoff</text>
     <path class="edge" d="M256 188H320" />
     <path class="edge" d="M416 228V268" />

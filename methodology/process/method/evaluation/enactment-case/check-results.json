@@ -25,7 +25,7 @@
     {
       "command": ["node", "methodology/process/method/tools/verify-enactment-evidence.mjs"],
       "exitCode": 0,
-      "stdout": "{\n  \"caseId\": \"returnflow-analytical-2026-09-27\",\n  \"evidenceKind\": \"simulated\",\n  \"status\": \"record-consistent\",\n  \"errors\": [],\n  \"limitation\": \"Checks recorded contracts; does not execute the project or authorize real gates.\"\n}\n",
+      "stdout": "{\n  \"caseId\": \"enactment-analytical-2026-09-27\",\n  \"evidenceKind\": \"simulated\",\n  \"status\": \"record-consistent\",\n  \"errors\": [],\n  \"limitation\": \"Checks recorded contracts; does not execute the project or authorize real gates.\"\n}\n",
       "stderr": ""
     },
     {
@@ -40,14 +40,14 @@
       "stderr": ""
     }
   ],
+  "hashesDescription": "SHA-256 values identify files as checked at the baseline commit; the current case files have since been edited.",
   "sha256": {
     "methodology/process/tools/lib/spem-end-to-end.mjs": "794487223ade24e73f6f74ef7e013bfe1e1d94f8401889d9705e1021a65c8c4c",
     "methodology/process/definitions/end-to-end.json": "5e6ef713dd047ce48c38831754c2032566714147128b4bb420a124d5f5a64790",
     "methodology/process/method/library/method-fragments.json": "e2cfbb9223a8cd649bbdc5846d0ab235bd9a1f975fae1ebff2f6f994f1883284",
-    "methodology/process/method/14-returnflow-enactment-audit.md": "cdd2265d2c7168750694d6304d3b01b522938ad46e2536b51822fd94099f9f58",
     "methodology/process/method/07-evaluation.md": "d7d7f416507320a6f179b3b6b9630c6008a65e9fc8816da3ed1d6cb2a9ba08cd",
-    "methodology/process/method/evaluation/returnflow/handoff-fixture.json": "a12e53331a9f0fae57862d377b5a7ac2ef96e452d3a109e982d5b5a45f3ba4e3",
-    "methodology/process/method/evaluation/returnflow/eidi-assessment.json": "8a9da606963d36f7b8af6509292cf32691c27c800418991ea66a8939a0131322",
+    "methodology/process/method/evaluation/enactment-case/handoff-fixture.json": "a12e53331a9f0fae57862d377b5a7ac2ef96e452d3a109e982d5b5a45f3ba4e3",
+    "methodology/process/method/evaluation/enactment-case/eidi-assessment.json": "8a9da606963d36f7b8af6509292cf32691c27c800418991ea66a8939a0131322",
     "methodology/process/method/tools/verify-enactment-evidence.mjs": "3caecef4f5e0c0cc6d26867ff28139c455cea03319e8bd0e475cdbabd2f6c499",
     "methodology/process/method/tools/verify-enactment-evidence.test.mjs": "776800a839af65ea51e038bd796c2592230fb69260a726d3fa89ee919e0fd129"
   }

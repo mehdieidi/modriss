@@ -30,8 +30,7 @@ public final class EmfDateTime {
       return Date.from(LocalDate.parse(text).atStartOfDay(ZoneOffset.UTC).toInstant());
     }
     TemporalAccessor parsed =
-        DateTimeFormatter.ISO_DATE_TIME.parseBest(
-            text, Instant::from, LocalDateTime::from);
+        DateTimeFormatter.ISO_DATE_TIME.parseBest(text, Instant::from, LocalDateTime::from);
     return Date.from(
         parsed instanceof Instant instant
             ? instant

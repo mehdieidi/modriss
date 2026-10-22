@@ -25,8 +25,7 @@ class PsmModelCodecTest {
     type.setName("Record");
     pkg.getEClassifiers().add(type);
     var at = attribute(type, "at", EcorePackage.Literals.EDATE);
-    for (String timestamp :
-        List.of("2026-06-15T00:00:00Z", "2026-06-15T03:30:00+03:30")) {
+    for (String timestamp : List.of("2026-06-15T00:00:00Z", "2026-06-15T03:30:00+03:30")) {
       var model =
           new ObjectMapper()
               .createObjectNode()

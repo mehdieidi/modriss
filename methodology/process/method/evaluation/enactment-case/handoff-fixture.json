@@ -1,10 +1,10 @@
 {
-  "caseId": "returnflow-analytical-2026-09-27",
+  "caseId": "enactment-analytical-2026-09-27",
   "evidenceKind": "simulated",
   "note": "Constructed research fixture. This is not an actual release approval or an executable model.",
-  "scope": ["RF-01", "RF-02", "RF-03", "RF-04", "RF-05", "RF-07"],
+  "scope": ["RET-01", "RET-02", "RET-03", "RET-04", "RET-05", "RET-07"],
   "revision": {
-    "method": "returnflow-audit-v1",
+    "method": "enactment-case-v1",
     "cim": "conceptual-cim-v1",
     "pim": "conceptual-pim-v2",
     "psm": "conceptual-aws-psm-v2",
@@ -16,12 +16,12 @@
   },
   "evidence": [
     {
-      "id": "RF-REVIEW",
-      "path": "methodology/process/method/14-returnflow-enactment-audit.md",
+      "id": "CASE-REVIEW",
+      "path": "methodology/process/method/evaluation/enactment-case/verification.md",
       "kind": "simulated",
-      "scope": ["RF-01", "RF-02", "RF-03", "RF-04", "RF-05", "RF-07"],
+      "scope": ["RET-01", "RET-02", "RET-03", "RET-04", "RET-05", "RET-07"],
       "revision": {
-        "method": "returnflow-audit-v1",
+        "method": "enactment-case-v1",
         "cim": "conceptual-cim-v1",
         "pim": "conceptual-pim-v2",
         "psm": "conceptual-aws-psm-v2",
@@ -38,7 +38,7 @@
     "decision": "accept",
     "authority": "Farah and Eli (fictional)",
     "reviewDate": "2026-09-27",
-    "evidenceIds": ["RF-REVIEW"],
+    "evidenceIds": ["CASE-REVIEW"],
     "openBlockers": [],
     "exceptions": [],
     "promotion": {
@@ -46,11 +46,11 @@
       "serviceOwner": "Farah (fictional)",
       "responseCoverage": "Named operator and backup throughout exposure until G7",
       "previousLiveCandidate": null,
-      "recovery": "Stop intake, quarantine pending work, reconcile provider outcomes; do not undo completed refunds"
+      "recovery": "Pause intake, quarantine pending work, reconcile external outcomes; do not reverse completed effects"
     }
   },
   "change": {
-    "id": "RF-CHANGE-01",
+    "id": "RET-CHANGE-01",
     "authoritativeOwner": "PSM",
     "disposition": "bounded-mde-release",
     "emergencyDrift": false,
@@ -66,7 +66,7 @@
     "openObligations": [],
     "retainedAssets": [
       {
-        "id": "refund-evidence-archive",
+        "id": "retained-evidence-archive",
         "custodian": "Ari / receiving records service (fictional)",
         "acceptance": "Scenario transfer RT-01 accepted",
         "accessPolicy": "Records-only readers; retired application credentials revoked",

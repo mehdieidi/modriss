@@ -163,13 +163,12 @@ These references provide a basis for the structure. They do not establish that o
 
 ## Enactment-derived handoff controls
 
-The ReturnFlow analytical audit clarifies that G6 assigns promotion and service
-response ownership before first production exposure, including first-release
-recovery without a previous baseline. Gate evidence must match current inputs;
-changed dependencies, conflicts and expired exceptions reopen affected review.
-Persistent model-owned configuration follows its MDE/release path. G8 allows
-retained archives only with verified receiving custody, access control, funded
-cost, expiry and deletion ownership. These are specified controls; practitioner
-effectiveness is not established by the hypothetical walkthrough.
+G6 assigns promotion and service response ownership before first production
+exposure, including first-release recovery without a previous baseline. Gate
+evidence must match current inputs; changed dependencies, conflicts and expired
+exceptions reopen affected review. Persistent model-owned configuration follows
+its MDE/release path. G8 allows retained archives only with verified receiving
+custody, access control, funded cost, expiry and deletion ownership. These are
+specified controls; practitioner effectiveness has not been established.
 
 See [Enactment and critical evaluation](process-evaluation.md).

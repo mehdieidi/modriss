@@ -52,11 +52,14 @@ class EmfDateTimeTest {
         EAttribute attribute =
             (EAttribute) resource.getContents().get(0).eClass().getEStructuralFeature("at");
         assertEquals(
-            expected, ((Date) resource.getContents().get(0).eGet(attribute)).toInstant(), timestamp);
+            expected,
+            ((Date) resource.getContents().get(0).eGet(attribute)).toInstant(),
+            timestamp);
         ByteArrayOutputStream output = new ByteArrayOutputStream();
         resource.save(output, Map.of());
         assertTrue(
-            output.toString(StandardCharsets.UTF_8)
+            output
+                .toString(StandardCharsets.UTF_8)
                 .contains("at=\"2026-06-15T00:00:00.123+0000\""));
         if (canonical == null) canonical = output.toByteArray();
         assertArrayEquals(canonical, output.toByteArray(), timestamp);
@@ -64,7 +67,8 @@ class EmfDateTimeTest {
       assertEquals("2026-06-15T00:00:00.123+0000", EmfDateTime.format(Date.from(expected)));
       for (String timestamp :
           new String[] {"2026-06-15", "2026-06-15T00:00", "2026-06-15T00:00:00Z"}) {
-        assertEquals(Instant.parse("2026-06-15T00:00:00Z"), EmfDateTime.parse(timestamp).toInstant());
+        assertEquals(
+            Instant.parse("2026-06-15T00:00:00Z"), EmfDateTime.parse(timestamp).toInstant());
       }
     } finally {
       TimeZone.setDefault(previous);

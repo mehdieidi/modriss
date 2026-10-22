@@ -67,7 +67,7 @@ export function inspectHandoff(record, root = process.cwd()) {
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  const file = process.argv[2] ?? 'methodology/process/method/evaluation/returnflow/handoff-fixture.json';
+  const file = process.argv[2] ?? 'methodology/process/method/evaluation/enactment-case/handoff-fixture.json';
   const record = JSON.parse(fs.readFileSync(file, 'utf8'));
   const errors = inspectHandoff(record);
   console.log(JSON.stringify({ caseId: record.caseId, evidenceKind: record.evidenceKind, status: errors.length ? 'invalid' : 'record-consistent', errors, limitation: 'Checks recorded contracts; does not execute the project or authorize real gates.' }, null, 2));

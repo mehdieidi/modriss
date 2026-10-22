@@ -79,4 +79,4 @@ SPEM representation.
   `node ../tools/verify-lifecycle-sync.mjs` before treating the artifacts as a
   synchronized baseline.
 
-The ReturnFlow evidence-handoff HTML/SVG in `../diagrams/` is a companion control view. G6 responsibility starts before production exposure; G8 separates live-service closure from funded retained-record custody.
+The evidence-handoff HTML/SVG in `../diagrams/` is a companion control view. G6 responsibility starts before production exposure; G8 separates live-service closure from funded retained-record custody.
