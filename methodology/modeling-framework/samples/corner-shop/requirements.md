@@ -6,7 +6,7 @@ Read the [scenario](README.md), [model guide](model-guide.md), and [evaluation s
 
 <a id="r01"></a>
 
-## R01 — Maintain a small product catalogue
+## R01: Maintain a small product catalogue
 
 **Type:** Functional.
 
@@ -20,7 +20,7 @@ Staff shall create or revise products with a unique immutable SKU, name (1-80 ch
 
 <a id="r02"></a>
 
-## R02 — Browse products
+## R02: Browse products
 
 **Type:** Functional.
 
@@ -34,7 +34,7 @@ Anyone may browse ACTIVE products with SKU, name, current price/revision, curren
 
 <a id="r03"></a>
 
-## R03 — Add stock explicitly
+## R03: Add stock explicitly
 
 **Type:** Functional.
 
@@ -48,7 +48,7 @@ Staff shall add a positive integer quantity from 1 to 1000 to an ACTIVE product 
 
 <a id="r04"></a>
 
-## R04 — Check out a bounded basket
+## R04: Check out a bounded basket
 
 **Type:** Functional.
 
@@ -62,7 +62,7 @@ An identified customer shall submit 1-5 distinct ACTIVE products with integer qu
 
 <a id="r05"></a>
 
-## R05 — Prevent overselling and double release
+## R05: Prevent overselling and double release
 
 **Type:** Business Rule.
 
@@ -76,7 +76,7 @@ Checkout and each later stock-affecting transition shall preserve nonnegative av
 
 <a id="r06"></a>
 
-## R06 — Open a hosted payment session
+## R06: Open a hosted payment session
 
 **Type:** Functional.
 
@@ -90,7 +90,7 @@ The owner of an unexpired AWAITING_PAYMENT order may open its hosted payment ses
 
 <a id="r07"></a>
 
-## R07 — Apply verified payment results
+## R07: Apply verified payment results
 
 **Type:** Business Rule.
 
@@ -104,7 +104,7 @@ Only authenticated provider facts or trusted reconciliation observations may cha
 
 <a id="r08"></a>
 
-## R08 — Expire unpaid orders
+## R08: Expire unpaid orders
 
 **Type:** Functional.
 
@@ -118,7 +118,7 @@ At now >= expiresAt, trusted due processing shall change each still-AWAITING_PAY
 
 <a id="r09"></a>
 
-## R09 — Cancel before packing is complete
+## R09: Cancel before packing is complete
 
 **Type:** Functional.
 
@@ -132,7 +132,7 @@ A customer may cancel only their own AWAITING_PAYMENT or PAID order. Cancellatio
 
 <a id="r10"></a>
 
-## R10 — Complete or expose full refunds
+## R10: Complete or expose full refunds
 
 **Type:** Functional.
 
@@ -146,7 +146,7 @@ Refunds are full amount only, against the verified capture, using one immutable 
 
 <a id="r11"></a>
 
-## R11 — Mark an order ready
+## R11: Mark an order ready
 
 **Type:** Functional.
 
@@ -160,7 +160,7 @@ Staff shall mark only a PAID order with matching captured payment and COMMITTED 
 
 <a id="r12"></a>
 
-## R12 — Record store collection
+## R12: Record store collection
 
 **Type:** Functional.
 
@@ -174,7 +174,7 @@ Staff shall record collection only for a READY order after checking the order re
 
 <a id="r13"></a>
 
-## R13 — Inspect customer and staff order views
+## R13: Inspect customer and staff order views
 
 **Type:** Functional.
 
@@ -188,7 +188,7 @@ Customers shall see only their own orders with immutable line details, total, or
 
 <a id="r14"></a>
 
-## R14 — Deliver relevant order notices
+## R14: Deliver relevant order notices
 
 **Type:** Functional.
 
@@ -202,7 +202,7 @@ Committed paid, cancelled, ready, and refund-completed facts shall create one du
 
 <a id="r15"></a>
 
-## R15 — Make every mutation replay safe
+## R15: Make every mutation replay safe
 
 **Type:** Business Rule.
 
@@ -216,7 +216,7 @@ Customer/staff mutations use verified actor + command kind + client request iden
 
 <a id="r16"></a>
 
-## R16 — Enforce identities and permissions
+## R16: Enforce identities and permissions
 
 **Type:** Security.
 
@@ -230,7 +230,7 @@ Customer identities and verified contact details are provisioned for evaluation.
 
 <a id="r17"></a>
 
-## R17 — Reconcile missing provider results
+## R17: Reconcile missing provider results
 
 **Type:** Quality.
 
@@ -244,7 +244,7 @@ While payment outcome is unresolved, or a refund is pending, trusted processing 
 
 <a id="r18"></a>
 
-## R18 — Calculate totals exactly
+## R18: Calculate totals exactly
 
 **Type:** Business Rule.
 
@@ -258,7 +258,7 @@ All prices and amounts are integer USD cents, bounded as in R01/R04. Line total 
 
 <a id="r19"></a>
 
-## R19 — Recover committed obligations
+## R19: Recover committed obligations
 
 **Type:** Quality.
 
@@ -272,7 +272,7 @@ An acknowledged stock/order/payment transition and its required refund/notice ob
 
 <a id="r20"></a>
 
-## R20 — Handle a small launch burst
+## R20: Handle a small launch burst
 
 **Type:** Quality.
 
@@ -286,7 +286,7 @@ For a documented test deployment, measure 100 catalogue, own-order and checkout 
 
 <a id="r21"></a>
 
-## R21 — Minimize and remove identifying data
+## R21: Minimize and remove identifying data
 
 **Type:** Privacy.
 
@@ -300,7 +300,7 @@ Use only customer identifier, display name, verified email, order history and pr
 
 <a id="r22"></a>
 
-## R22 — Keep accountable history
+## R22: Keep accountable history
 
 **Type:** Audit.
 
@@ -314,7 +314,7 @@ Every successful product/stock/order/payment state change shall record operation
 
 <a id="r23"></a>
 
-## R23 — Make ordering and refund states understandable
+## R23: Make ordering and refund states understandable
 
 **Type:** Quality.
 

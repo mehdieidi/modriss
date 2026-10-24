@@ -6,7 +6,7 @@ Times, state transitions, notice relevance, and experiment reset rules are defin
 
 <a id="r01"></a>
 
-## R01 — Publish a workshop
+## R01: Publish a workshop
 
 **Type:** Functional.
 
@@ -20,7 +20,7 @@ An organizer shall publish an immutable workshop with a title (1-80 characters),
 
 <a id="r02"></a>
 
-## R02 — Browse upcoming workshops
+## R02: Browse upcoming workshops
 
 **Type:** Functional.
 
@@ -34,7 +34,7 @@ Anyone may browse PUBLISHED workshops whose start is in the future, ordered by s
 
 <a id="r03"></a>
 
-## R03 — Request one seat
+## R03: Request one seat
 
 **Type:** Functional.
 
@@ -48,7 +48,7 @@ An identified participant shall request one seat for themselves while the worksh
 
 <a id="r04"></a>
 
-## R04 — Join and order the waiting list
+## R04: Join and order the waiting list
 
 **Type:** Business Rule.
 
@@ -62,7 +62,7 @@ When no seat is available, a seat request shall create WAITLISTED only if fewer 
 
 <a id="r05"></a>
 
-## R05 — Cancel and promote fairly
+## R05: Cancel and promote fairly
 
 **Type:** Functional.
 
@@ -76,7 +76,7 @@ A participant shall cancel their own CONFIRMED or WAITLISTED registration strict
 
 <a id="r06"></a>
 
-## R06 — Cancel a workshop
+## R06: Cancel a workshop
 
 **Type:** Functional.
 
@@ -90,7 +90,7 @@ An organizer shall cancel a PUBLISHED workshop only before start. The workshop a
 
 <a id="r07"></a>
 
-## R07 — View my bookings
+## R07: View my bookings
 
 **Type:** Functional.
 
@@ -104,7 +104,7 @@ An identified participant shall view only their own retained registrations, incl
 
 <a id="r08"></a>
 
-## R08 — View roster and delivery failures
+## R08: View roster and delivery failures
 
 **Type:** Functional.
 
@@ -118,7 +118,7 @@ An organizer shall view a workshop roster with display name, participant identif
 
 <a id="r09"></a>
 
-## R09 — Record attendance
+## R09: Record attendance
 
 **Type:** Functional.
 
@@ -132,7 +132,7 @@ During [start, end), an organizer shall mark a CONFIRMED registration ATTENDED. 
 
 <a id="r10"></a>
 
-## R10 — Close workshops and classify absences
+## R10: Close workshops and classify absences
 
 **Type:** Functional.
 
@@ -146,7 +146,7 @@ At or after end, passage of time shall close each still-PUBLISHED workshop: CONF
 
 <a id="r11"></a>
 
-## R11 — Request due reminders
+## R11: Request due reminders
 
 **Type:** Functional.
 
@@ -160,7 +160,7 @@ During [start minus 24 hours, cutoff), due checks shall request at most one remi
 
 <a id="r12"></a>
 
-## R12 — Prepare and deliver essential notices
+## R12: Prepare and deliver essential notices
 
 **Type:** Functional.
 
@@ -174,7 +174,7 @@ Committed confirmation, waiting assignment, registration cancellation, promotion
 
 <a id="r13"></a>
 
-## R13 — Retry delivery without changing bookings
+## R13: Retry delivery without changing bookings
 
 **Type:** Business Rule.
 
@@ -188,7 +188,7 @@ A failed or timed-out delivery shall retry at least one minute after attempt one
 
 <a id="r14"></a>
 
-## R14 — Limit personal data and retention
+## R14: Limit personal data and retention
 
 **Type:** Privacy.
 
@@ -202,7 +202,7 @@ Collect only verified participant identifier, display name, email, and booking h
 
 <a id="r15"></a>
 
-## R15 — Protect seat and waiting invariants
+## R15: Protect seat and waiting invariants
 
 **Type:** Business Rule.
 
@@ -216,7 +216,7 @@ Each workshop is an independent strong consistency boundary. Confirmed plus atte
 
 <a id="r16"></a>
 
-## R16 — Handle duplicate operations
+## R16: Handle duplicate operations
 
 **Type:** Business Rule.
 
@@ -230,7 +230,7 @@ Every mutation shall carry a stable business operation key. A participant/organi
 
 <a id="r17"></a>
 
-## R17 — Enforce business permissions
+## R17: Enforce business permissions
 
 **Type:** Security.
 
@@ -244,7 +244,7 @@ Only verified participants may mutate or read their own bookings. Only centre or
 
 <a id="r18"></a>
 
-## R18 — Respond promptly under announcement load
+## R18: Respond promptly under announcement load
 
 **Type:** Quality.
 
@@ -258,7 +258,7 @@ With 100 identified participants, up to 20 concurrent requests, and 100 catalogu
 
 <a id="r19"></a>
 
-## R19 — Preserve committed work across failures
+## R19: Preserve committed work across failures
 
 **Type:** Quality.
 
@@ -272,7 +272,7 @@ An acknowledged booking outcome and its notice obligation shall survive worker r
 
 <a id="r20"></a>
 
-## R20 — Keep accountable business history
+## R20: Keep accountable business history
 
 **Type:** Audit.
 
@@ -286,7 +286,7 @@ Every successful workshop or registration state change shall append a business a
 
 <a id="r21"></a>
 
-## R21 — Make outcomes understandable
+## R21: Make outcomes understandable
 
 **Type:** Quality.
 
