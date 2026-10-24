@@ -1,4 +1,5 @@
 import { el } from "./dom.js";
+import { initEditorTutorial } from "./editor-tutorial.js";
 import { state } from "./state.js";
 import { initFrontendTelemetry } from "./telemetry.js";
 import { initTheme, toggleTheme } from "./theme.js";
@@ -1302,12 +1303,13 @@ async function init() {
   updateChatAttachmentLabel();
   if (authState?.promptedLogin) {
     await showProjectDialog();
-    return;
+  } else {
+    const restored = await restoreLastProjectIfPossible();
+    if (!restored) {
+      await showProjectDialog();
+    }
   }
-  const restored = await restoreLastProjectIfPossible();
-  if (!restored) {
-    await showProjectDialog();
-  }
+  initEditorTutorial({ showPalette: showPalettePane });
 }
 
 init().catch((error) => {

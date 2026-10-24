@@ -147,6 +147,7 @@ export function completeModelSave() {
   current.saving = false;
   current.error = "";
   current.lastSavedAt = Date.now();
+  current.successfulSaves = (current.successfulSaves || 0) + 1;
   clearDirtySaveHints();
   updateModelSaveUi();
 }

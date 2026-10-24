@@ -28,6 +28,22 @@ index.html       shell page
 Modeling palettes and notation come from `GET /api/modeling/config` (backend merges Ecore structure
 with UI metadata from `platform-modeling-infrastructure`). The diagram editor uses the AntV G6 canvas renderer.
 
+## First-use tutorial
+
+The first-use editor tutorial starts after authentication and project-list loading. It introduces
+the workspace, then guides a user-created CIM goal/requirement exercise in the Goals and
+Requirements view. It never creates, replaces, validates, or generates model content automatically.
+Users can minimize the tips, go back, or permanently dismiss them with Finish tutorial.
+
+Progress is stored in browser local storage under `modriss.editorTutorial:user:<user-id>` for
+registered users and `modriss.editorTutorial:guest` for guests. Dismissal applies in that browser;
+it does not sync across devices and is lost if site storage is cleared. Interrupted tutorials
+resume, and missing unsaved exercise elements return the user to the appropriate creation step.
+
+Run unit tests with `npm run test:frontend`. The explicit browser check is
+`node apps/frontend/tests/editor-tutorial.browser.mjs` (uses the landing app's Playwright
+installation and a local editor-shell harness with model state supplied at the test boundary).
+
 ## Docs
 
 - [Frontend architecture](../../docs/public-docs/docs/architecture/frontend.md)
