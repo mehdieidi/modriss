@@ -75,6 +75,7 @@ export const el = {
   chatExpandIcon: document.getElementById("chatExpandIcon"),
   chatHistoryBtn: document.getElementById("chatHistoryBtn"),
   chatNewBtn: document.getElementById("chatNewBtn"),
+  chatReportBugBtn: document.getElementById("chatReportBugBtn"),
   chatHistoryPanel: document.getElementById("chatHistoryPanel"),
   chatHistoryCloseBtn: document.getElementById("chatHistoryCloseBtn"),
   chatHistoryList: document.getElementById("chatHistoryList"),

@@ -1011,6 +1011,24 @@
     0 0 0 1px color-mix(in srgb, var(--accent-glow) 36%, transparent);
 }
 
+.chat-report-bug-btn {
+  align-self: center;
+  flex-shrink: 0;
+  margin: 0 12px 10px;
+  padding: 2px 6px;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.chat-report-bug-btn:hover,
+.chat-report-bug-btn:focus-visible {
+  color: var(--text);
+  text-decoration: underline;
+}
+
 .chat-composer.chat-input-expanded {
   border-color: color-mix(in srgb, var(--accent) 48%, var(--border) 52%);
 }

@@ -12,6 +12,7 @@ import { syncMobileDockState } from "./mobile-ui.js";
 import { hasUnsavedModelChanges } from "./model-save-ui.js";
 import { applyTextDirection } from "./text-direction.js";
 import { modelingAssistantConfig, modelingLevelConfig } from "./modeling-config-data.js";
+import { buildChatBugReportUrl } from "./chat-bug-report.js";
 
 const TERMINAL_WORKFLOW_STATES = new Set([
   "EXPLAINED",
@@ -271,6 +272,31 @@ async function createChatSession(
 function chatScopeKey(typeKey = state.activeType) {
   const projectId = state.project?.id;
   return projectId ? `${projectId}:${typeKey}` : String(typeKey || "");
+}
+
+export function reportChatBug() {
+  const scopeKey = chatScopeKey();
+  const session = state.chat.sessions.get(scopeKey);
+  const sameScope = renderedChatScopeKey === scopeKey;
+  const turns = sameScope ? el.chatMessages?.querySelectorAll("[data-chat-durable-run]") : null;
+  const latestTurn = turns?.[turns.length - 1];
+  const url = buildChatBugReportUrl({
+    timestamp: new Date().toISOString(),
+    origin: window.location.origin,
+    userAgent: navigator.userAgent,
+    language: navigator.language,
+    viewport: `${window.innerWidth} × ${window.innerHeight}`,
+    level: levelLabel(),
+    projectId: state.project?.id,
+    modelId: state.modelId,
+    modelRevision: state.modelRevision,
+    sessionId: session?.sessionId,
+    turnId: (sameScope && activeTurnId) || latestTurn?.dataset.chatDurableRun || undefined,
+    turnState: latestTurn?.dataset.chatTurnState,
+    modelName: session?.modelName,
+    unsavedChanges: hasUnsavedModelChanges(),
+  });
+  window.open(url, "_blank", "noopener,noreferrer");
 }
 
 function workflowLabel(state) {
@@ -943,6 +969,7 @@ function renderDurableRun(turn, typeKey) {
     card.appendChild(bubble);
     el.chatMessages.appendChild(card);
   }
+  card.dataset.chatTurnState = turn.state || "QUEUED";
   const bubble = card.firstElementChild;
   bubble.replaceChildren();
   const title = document.createElement("div");

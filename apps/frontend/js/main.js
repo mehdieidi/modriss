@@ -39,6 +39,7 @@ import {
   handleChatSendButtonClick,
   initChatComposer,
   prepareChatWindow,
+  reportChatBug,
   sendChatMessage,
   startNewChatConversation,
   syncChatOpenState,
@@ -1136,6 +1137,7 @@ function bindEvents() {
     });
   });
   el.chatHistoryCloseBtn?.addEventListener("click", closeChatHistoryPanel);
+  el.chatReportBugBtn?.addEventListener("click", reportChatBug);
   el.chatNewBtn?.addEventListener("click", () => {
     startNewChatConversation().catch((error) => {
       setError(error, { prefix: "New conversation failed." });
