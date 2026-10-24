@@ -172,7 +172,11 @@ export function initEditorTutorial({ showPalette } = {}) {
       (step.id !== "project" ||
         document.getElementById("projectOverlay")?.classList.contains("hidden"));
     next.disabled = !complete;
-    const message = step.task ? (complete ? "Step completed. Select Next to continue." : step.task) : "";
+    const message = step.task
+      ? complete
+        ? "Step completed. Select Next to continue."
+        : step.task
+      : "";
     if (task.textContent !== message) task.textContent = message;
     task.hidden = !message;
     persist();
@@ -194,7 +198,9 @@ export function initEditorTutorial({ showPalette } = {}) {
     title.textContent = step.title;
     body.textContent = step.body;
     next.textContent = step.next || "Next";
-    root.querySelector(".editor-tutorial-finish").classList.toggle("hidden", index === TUTORIAL_STEPS.length - 1);
+    root
+      .querySelector(".editor-tutorial-finish")
+      .classList.toggle("hidden", index === TUTORIAL_STEPS.length - 1);
     back.disabled = index === 0;
     previousTarget = null;
     updateTask();

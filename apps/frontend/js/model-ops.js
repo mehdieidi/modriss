@@ -711,7 +711,6 @@ async function buildSavePayloadFromPrepared(selectedName, nextModel) {
 export async function saveCurrentModel({
   rethrow = false,
   quiet = false,
-  skipBeginSave = false,
   force = false,
   forceFullUpdate = false,
 } = {}) {
@@ -727,7 +726,6 @@ export async function saveCurrentModel({
   saveInFlight = performSaveCurrentModel({
     rethrow,
     quiet,
-    skipBeginSave,
     forceFullUpdate,
   }).finally(() => {
     saveInFlight = null;
@@ -738,7 +736,6 @@ export async function saveCurrentModel({
 async function performSaveCurrentModel({
   rethrow = false,
   quiet = false,
-  skipBeginSave = false,
   forceFullUpdate = false,
 } = {}) {
   if (!isModelingType()) {
@@ -753,7 +750,7 @@ async function performSaveCurrentModel({
 
   const doBusy = !quiet;
   try {
-    if (!quiet && !skipBeginSave) {
+    if (!quiet) {
       beginModelSave();
     }
     if (doBusy) {
