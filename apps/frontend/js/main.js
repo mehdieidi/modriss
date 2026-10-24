@@ -45,9 +45,8 @@ import {
   startNewChatConversation,
   syncChatOpenState,
   toggleChatHistoryPanel,
-  uploadChatAttachment,
   updateChatAttachmentLabel,
-} from "./chat.js?v=model-badge-ui-20260814a";
+} from "./chat.js?v=chat-attachments-disabled-20261024";
 import {
   bindProjectDialogActions,
   deleteCurrentProject,
@@ -58,7 +57,6 @@ import {
 } from "./project.js";
 import { setError, setBusy, setStatus } from "./status.js";
 import { formatUserError } from "./errors.js";
-import { CHAT_ATTACHMENT_MAX_BYTES } from "./config.js";
 import { isMobileViewport } from "./responsive.js";
 import { applyTextDirection } from "./text-direction.js";
 import { closeMobilePanels, setMobileBackdropVisible, syncMobileDockState } from "./mobile-ui.js";
@@ -1158,45 +1156,6 @@ function bindEvents() {
   el.chatSendBtn?.addEventListener("click", () => {
     collapseChatInput();
     handleChatSendButtonClick();
-  });
-
-  el.chatFileInput?.addEventListener("change", async (event) => {
-    const files = [...(event.target.files || [])];
-    if (!files.length) return;
-    const existing = state.chat.attachments || [];
-    const available = 3 - existing.length;
-    if (files.length > available) {
-      event.target.value = "";
-      setError(`You can attach at most 3 files to one message.`);
-      return;
-    }
-    const oversized = files.find((file) => file.size > CHAT_ATTACHMENT_MAX_BYTES);
-    if (oversized) {
-      event.target.value = "";
-      setError(`File too large (${oversized.size} bytes). Max ${CHAT_ATTACHMENT_MAX_BYTES} bytes.`);
-      return;
-    }
-    try {
-      const uploaded = [];
-      for (const file of files) {
-        setStatus(`Uploading: ${file.name}`);
-        const attachment = await uploadChatAttachment(file);
-        if (!attachment) throw new Error(`Could not attach ${file.name}.`);
-        uploaded.push({
-          id: attachment.id,
-          name: attachment.fileName || file.name,
-          sizeBytes: attachment.sizeBytes || file.size,
-        });
-      }
-      state.chat.attachments = [...existing, ...uploaded];
-      event.target.value = "";
-      updateChatAttachmentLabel();
-      setStatus(`${uploaded.length} attachment${uploaded.length === 1 ? "" : "s"} added`);
-    } catch (error) {
-      event.target.value = "";
-      updateChatAttachmentLabel();
-      setError(error, { prefix: "Failed to read file." });
-    }
   });
 
   el.chatInput?.addEventListener("keydown", (event) => {

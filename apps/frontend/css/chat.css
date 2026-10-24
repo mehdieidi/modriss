@@ -1054,10 +1054,11 @@
   border: none;
   background: transparent;
   color: var(--muted);
-  cursor: pointer;
+  cursor: not-allowed;
   transition:
     color var(--transition),
     background var(--transition);
+  opacity: 0.58;
 }
 
 .chat-attach-icon.icon-svg.icon-mask {
@@ -1065,13 +1066,9 @@
   height: 16px;
 }
 
-.chat-attach-btn:hover {
+.chat-attach-btn:not(:disabled):hover {
   color: var(--text);
   background: color-mix(in srgb, var(--surface-high) 70%, transparent);
-}
-
-.chat-attach-btn input {
-  display: none;
 }
 
 .chat-file-tag {

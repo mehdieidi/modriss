@@ -1525,9 +1525,6 @@ export async function resumeChatConversation(sessionId) {
   disconnectChatChannel(scopeKey);
   state.chat.sessions.delete(scopeKey);
   state.chat.attachments = [];
-  if (el.chatFileInput) {
-    el.chatFileInput.value = "";
-  }
   updateChatAttachmentLabel();
   resetChatActivityUi();
   closeChatHistoryPanel();
@@ -1545,9 +1542,6 @@ export async function startNewChatConversation() {
   disconnectChatChannel(scopeKey);
   state.chat.sessions.delete(scopeKey);
   state.chat.attachments = [];
-  if (el.chatFileInput) {
-    el.chatFileInput.value = "";
-  }
   updateChatAttachmentLabel();
   resetChatMessagesUi();
   resetChatActivityUi();
@@ -2289,9 +2283,6 @@ export async function sendChatMessage() {
       )
     ) {
       state.chat.attachments = [];
-      if (el.chatFileInput) {
-        el.chatFileInput.value = "";
-      }
       updateChatAttachmentLabel();
     }
     setStatus("Assistant response received");

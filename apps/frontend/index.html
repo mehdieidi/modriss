@@ -39,7 +39,7 @@
     <link href="/css/buttons.css" rel="stylesheet" />
     <link href="/css/sidebar.css" rel="stylesheet" />
     <link href="/css/canvas.css" rel="stylesheet" />
-    <link href="/css/chat.css?v=model-badge-ui-20260814a" rel="stylesheet" />
+    <link href="/css/chat.css?v=chat-attachments-disabled-20261024" rel="stylesheet" />
     <link href="/css/artifact.css" rel="stylesheet" />
     <link href="/css/panels.css" rel="stylesheet" />
     <link href="/css/methodology.css" rel="stylesheet" />
@@ -1175,14 +1175,19 @@
             rows="1"
           ></textarea>
           <div class="chat-composer-footer">
-            <label class="chat-attach-btn" title="Attach a file to your message">
+            <button
+              aria-label="Attachments are unavailable"
+              class="chat-attach-btn"
+              disabled
+              title="Attachments are unavailable"
+              type="button"
+            >
               <span
                 aria-hidden="true"
                 class="chat-attach-icon icon-svg icon-mask"
                 style="--icon-src: url(&quot;/assets/icons/attach.svg&quot;)"
               ></span>
-              <input accept=".txt,.md,.json" id="chatFileInput" multiple type="file" />
-            </label>
+            </button>
             <div
               class="chat-model-badge hidden"
               id="chatModelBadge"
@@ -1627,6 +1632,6 @@
     <link href="/css/psm-platforms.css" rel="stylesheet" />
     <script src="/js/psm-platforms.js" type="module"></script>
     <script src="/backend-config.js?v=docs-link-20260922a"></script>
-    <script src="/js/main.js?v=email-verification-20261006" type="module"></script>
+    <script src="/js/main.js?v=chat-attachments-disabled-20261024" type="module"></script>
   </body>
 </html>

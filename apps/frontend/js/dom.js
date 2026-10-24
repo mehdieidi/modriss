@@ -83,7 +83,6 @@ export const el = {
   chatMessages: document.getElementById("chatMessages"),
   chatInput: document.getElementById("chatInput"),
   chatSendBtn: document.getElementById("chatSendBtn"),
-  chatFileInput: document.getElementById("chatFileInput"),
   chatAttachBar: document.getElementById("chatAttachBar"),
   chatTypingIndicator: document.getElementById("chatTypingIndicator"),
   chatHeaderSubtitle: document.getElementById("chatHeaderSubtitle"),
