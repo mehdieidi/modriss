@@ -793,7 +793,7 @@ async function waitForDurableTurn(turnId, typeKey, eventCursor = 0) {
   try {
     for (;;) {
       latest = await api(`/chatbot/turns/${turnId}`);
-      renderDurableRun(latest, typeKey);
+      renderDurableRun(latest);
       const stateName = String(latest?.state || "");
       const progress = durableProgressForTurn(latest);
       updateThinkingStatus(progress.message, progress.stage, progress.progress);
@@ -912,7 +912,7 @@ function appendDurableTurnActions(turn, typeKey) {
         const undone = await api(`/chatbot/turns/${turn.turnId}/undo`, { method: "POST" });
         if (undone?.modelId)
           await loadModelById(typeKey, undone.modelId, { preserveActiveView: true });
-        appendAssistantDeduped("The last saved checkpoint was undone.");
+        appendAssistantDeduped("The latest saved model changes were undone.");
       } catch (error) {
         setError(error);
       }
@@ -964,7 +964,7 @@ function appendDurableTurnSummary(turn) {
   scrollChatToBottom();
 }
 
-function renderDurableRun(turn, typeKey) {
+function renderDurableRun(turn) {
   if (!turn?.turnId || !el.chatMessages) return;
   let card = el.chatMessages.querySelector(`[data-chat-durable-run="${CSS.escape(turn.turnId)}"]`);
   if (!card) {
@@ -1021,39 +1021,6 @@ function renderDurableRun(turn, typeKey) {
     }
     bubble.appendChild(plan);
   }
-  const checkpoints = Array.isArray(turn.checkpoints) ? turn.checkpoints : [];
-  if (checkpoints.length) {
-    const checkpointList = document.createElement("div");
-    checkpointList.className = "chat-durable-checkpoints";
-    for (const checkpoint of checkpoints) {
-      const row = document.createElement("div");
-      row.className = "chat-durable-checkpoint";
-      const label = document.createElement("span");
-      label.textContent = `Checkpoint ${checkpoint.ordinal}: ${checkpoint.label || "Saved"}`;
-      const rollback = document.createElement("button");
-      rollback.type = "button";
-      rollback.className = "chat-proposal-btn";
-      rollback.textContent = "Roll back";
-      rollback.addEventListener("click", async () => {
-        try {
-          rollback.disabled = true;
-          const result = await api(
-            `/chatbot/turns/${turn.turnId}/checkpoints/${checkpoint.checkpointId}/rollback`,
-            { method: "POST" },
-          );
-          if (result?.modelId)
-            await loadModelById(typeKey, result.modelId, { preserveActiveView: true });
-          appendAssistantDeduped(`Rolled back to checkpoint ${checkpoint.ordinal}.`);
-        } catch (error) {
-          rollback.disabled = false;
-          setError(error);
-        }
-      });
-      row.append(label, rollback);
-      checkpointList.appendChild(row);
-    }
-    bubble.appendChild(checkpointList);
-  }
   if (turn.remainingWork) {
     const remaining = document.createElement("div");
     remaining.className = "chat-proposal-meta";
@@ -1061,50 +1028,11 @@ function renderDurableRun(turn, typeKey) {
     bubble.appendChild(remaining);
   }
   const provenance = Array.isArray(turn.provenance) ? turn.provenance : [];
-  const assumptions = [
-    ...new Set(provenance.map((item) => String(item.assumption || "").trim()).filter(Boolean)),
-  ];
-  if (assumptions.length) {
-    const assumptionList = document.createElement("div");
-    assumptionList.className = "chat-proposal-meta";
-    assumptionList.textContent = `Assumptions: ${assumptions.join(" · ")}`;
-    bubble.appendChild(assumptionList);
-  }
   if (provenance.length) {
     const evidence = document.createElement("div");
     evidence.className = "chat-proposal-meta";
     evidence.textContent = `Evidence linked to ${provenance.length} model element${provenance.length === 1 ? "" : "s"}.`;
     bubble.appendChild(evidence);
-  }
-  if (turn.state === "SUCCEEDED" || turn.state === "PARTIAL") {
-    const feedback = document.createElement("div");
-    feedback.className = "chat-proposal-actions";
-    for (const [accepted, label] of [
-      [true, "Accept"],
-      [false, "Needs changes"],
-    ]) {
-      const button = document.createElement("button");
-      button.type = "button";
-      button.className = "chat-proposal-btn";
-      button.textContent = label;
-      button.addEventListener("click", async () => {
-        try {
-          button.disabled = true;
-          await api(`/chatbot/turns/${turn.turnId}/feedback`, {
-            method: "POST",
-            body: JSON.stringify({ accepted }),
-          });
-          appendAssistantDeduped(
-            accepted ? "Model changes accepted." : "Marked for revision. Tell me what to change.",
-          );
-        } catch (error) {
-          button.disabled = false;
-          setError(error);
-        }
-      });
-      feedback.appendChild(button);
-    }
-    bubble.appendChild(feedback);
   }
   scrollChatToBottom();
 }
