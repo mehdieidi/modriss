@@ -1,6 +1,7 @@
 import { state } from "./state.js";
 import { serializeModel } from "./diagram.js";
 import { isModelingLevel } from "./modeling-config-data.js";
+import { semanticObjectId } from "./model-utils.js";
 import {
   restoreTabGraphState,
   serializeRuntimeFragments,
@@ -135,6 +136,10 @@ export function captureConnectionUndoSnapshot(connection, typeKey = state.active
   if (!isModelingType(typeKey) || !connection?.id) {
     return null;
   }
+  const relationship = state.graph?.relationshipsById?.get(connection.id);
+  if (state.graph?.containmentByParent?.get(semanticObjectId(relationship))?.size) {
+    return captureDiagramUndoSnapshot(typeKey);
+  }
   return {
     kind: "connection-mutation",
     typeKey,
@@ -153,6 +158,15 @@ export function captureDeleteElementUndoSnapshot(
   typeKey = state.activeType,
 ) {
   if (!isModelingType(typeKey) || !node?.id) return null;
+  if (
+    state.graph?.containmentByParent?.get(node.id)?.size ||
+    connections.some((connection) => {
+      const relationship = state.graph?.relationshipsById?.get(connection.id);
+      return state.graph?.containmentByParent?.get(semanticObjectId(relationship))?.size;
+    })
+  ) {
+    return captureDiagramUndoSnapshot(typeKey);
+  }
   return {
     kind: "delete-element",
     typeKey,

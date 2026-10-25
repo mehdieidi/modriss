@@ -1577,6 +1577,20 @@
   ],
   "containers": [
     {
+      "elementType": "DomainRelationship",
+      "palette": ["Multiplicity"],
+      "canvas": ["Multiplicity"],
+      "relationshipKinds": [],
+      "layoutHint": "CONTAINER"
+    },
+    {
+      "elementType": "ProcessTransition",
+      "palette": ["Expression"],
+      "canvas": ["Expression"],
+      "relationshipKinds": [],
+      "layoutHint": "CONTAINER"
+    },
+    {
       "elementType": "Requirement",
       "palette": ["AcceptanceCriterion"],
       "canvas": ["AcceptanceCriterion"],

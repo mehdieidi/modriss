@@ -153,12 +153,16 @@
       }
     },
     "containers": {
+      "description": "Contents canvases for EClasses owning writable containment references, including EClasses rendered as relationship edges. Opening uses the semantic object's identity; presentation remains defined by elements and relationship rules.",
       "type": "array",
       "items": {
         "type": "object",
         "required": ["elementType", "palette", "canvas"],
         "properties": {
-          "elementType": { "type": "string" },
+          "elementType": {
+            "type": "string",
+            "description": "Owner EClass, whether rendered as a node or an edge."
+          },
           "palette": { "type": "array", "items": { "type": "string" } },
           "canvas": { "type": "array", "items": { "type": "string" } },
           "relationshipKinds": { "type": "array", "items": { "type": "string" } },

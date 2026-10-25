@@ -13,6 +13,7 @@ import {
   prepareViewNodeIndex,
   setActiveViewId,
   syncActiveViewFromVisibleGraph,
+  syncContainerViewProfile,
 } from "./graph-store.js";
 import {
   CURRENT_LAYOUT_GEOMETRY_VERSION,
@@ -24,6 +25,7 @@ import {
   modelingContainerDefinition,
   modelingCanvasPaletteTypes,
   modelingContainmentEntryForChildType,
+  modelingContainmentEntriesForChildType,
   modelingContainerFocusPolicy,
   modelingContainmentsForType,
   isModelingLevel,
@@ -42,7 +44,12 @@ import {
   resolveModelingIconSource,
 } from "./modeling-config-data.js";
 import { guidedPaletteFocusTypes } from "./guided-modeling.js";
-import { addReferenceValue, modelTypeMatches } from "./model-utils.js";
+import {
+  addReferenceValue,
+  modelTypeMatches,
+  semanticObjectById,
+  semanticObjectId,
+} from "./model-utils.js";
 import { setStatus } from "./status.js";
 // NOTE: These imports form intentional circular references (ES module live bindings).
 // All functions are only called at runtime (event handlers / async), never at module init.
@@ -92,6 +99,7 @@ import { nodeSizeForDiagram } from "./graph-editor/g6-style.js";
 import { canvasToViewportPoint as graphToViewportPoint } from "./graph-editor/g6-overlays.js";
 import { isFullColorIconSource, resolveThemeColor } from "./theme-colors.js";
 import { activateCanvasTarget } from "./issue-navigation.js";
+import { chooseContainmentSlot } from "./containment-slot-picker.js";
 
 function requiredConfiguredKind(value, context) {
   const kind = String(value || "").trim();
@@ -755,15 +763,11 @@ function containerFocusOwnerType(focus) {
   if (!focus?.elementId) {
     return String(focus?.elementType || "");
   }
-  const element = state.graph?.elementsById?.get(focus.elementId);
+  const element = semanticObjectById(state.graph, focus.elementId);
   return String(element?.eClass || element?.type || focus.elementType || "");
 }
 
 function activeContainerFocus() {
-  const focus = activeCanvasFocus();
-  if (!focus?.elementId) {
-    return null;
-  }
   const view = activeView();
   const policy = modelingContainerFocusPolicy(state.activeType);
   const viewKind = String(policy.viewKind || "FOCUS").toUpperCase();
@@ -771,11 +775,17 @@ function activeContainerFocus() {
   if (
     !view ||
     String(view.kind || "").toUpperCase() !== viewKind ||
-    String(view.scope?.scopeKind || "").toUpperCase() !== scopeKind ||
-    String(view.scope?.rootElementId || "") !== String(focus.elementId)
+    String(view.scope?.scopeKind || "").toUpperCase() !== scopeKind
   ) {
     return null;
   }
+  const owner = semanticObjectById(state.graph, view.scope?.rootElementId);
+  if (!owner || !isContainerElement(owner)) return null;
+  const focus = activeCanvasFocus() || {
+    elementId: semanticObjectId(owner),
+    elementType: elementType(owner),
+    label: elementLabel(owner),
+  };
   return {
     ...focus,
     elementType: containerFocusOwnerType(focus),
@@ -788,7 +798,9 @@ function createContainerFocusView(node) {
   const containerProfile = modelingContainerDefinition(state.activeType, node.type) || {};
   const configuredCanvas = safeArray(containerProfile.canvas).map(String).filter(Boolean);
   const configuredPalette = safeArray(containerProfile.palette).map(String).filter(Boolean);
-  const descendantIds = [...collectContainedDescendantIds(node.id)];
+  const descendantIds = [...collectContainedDescendantIds(node.id)].filter((id) =>
+    state.graph.elementsById.has(id),
+  );
   const descendantSet = new Set(descendantIds);
   const portalIds = new Set();
   const visibleIds = new Set(descendantIds);
@@ -976,9 +988,15 @@ function createNeighborhoodFocusView(node, depth = 1) {
 }
 
 export function openContainerFocus(elementId) {
+  const semantic = semanticObjectById(state.graph, elementId);
   const node =
     state.nodesById.get(elementId) ||
-    state.diagram.nodes.find((candidate) => candidate.id === elementId);
+    state.diagram.nodes.find((candidate) => candidate.id === elementId) ||
+    (semantic && {
+      id: semanticObjectId(semantic),
+      type: elementType(semantic),
+      label: elementLabel(semantic),
+    });
   if (!node || !isContainerElement(node)) {
     return false;
   }
@@ -989,6 +1007,7 @@ export function openContainerFocus(elementId) {
     state.views.byId.get(focusViewId) ||
     savedFocusViewFor(node.id, String(focusPolicy.scopeKind || "CONTAINER")) ||
     createContainerFocusView(node);
+  syncContainerViewProfile(focusView);
   if (!state.views.byId.has(focusViewId)) {
     prepareViewNodeIndex(focusView);
     state.views.byId.set(focusView.id, focusView);
@@ -1007,7 +1026,9 @@ export function openContainerFocus(elementId) {
   state.selectedConnectionId = null;
   materializeActiveView();
   syncCanvasFocusChrome();
-  void renderDiagramAsync({ full: true });
+  void renderDiagramAsync({ full: true }).then(() => {
+    if (state.views.activeViewId === focusView.id) return fitViewportToDiagram({ fit: true });
+  });
   renderPalette();
   notifyModelToolsChanged();
   const descendantCount = collectContainedDescendantIds(node.id).size;
@@ -1459,6 +1480,7 @@ export function centerViewportOnDiagram({ fit = false } = {}) {
 }
 
 export async function fitViewportToDiagram({ fit = true, frames = 2, retry = true } = {}) {
+  const viewId = state.views.activeViewId;
   if (!isModelingLevel(state.activeType)) {
     return false;
   }
@@ -1472,13 +1494,13 @@ export async function fitViewportToDiagram({ fit = true, frames = 2, retry = tru
     console.warn("fitViewportToDiagram: render failed", error);
   }
   await waitForViewportPaint(frames);
-  if (!isModelingLevel(state.activeType)) {
+  if (!isModelingLevel(state.activeType) || state.views.activeViewId !== viewId) {
     return false;
   }
   let applied = applyViewportFit({ fit });
   if (!applied && retry) {
     await waitForViewportPaint(1);
-    if (!isModelingLevel(state.activeType)) {
+    if (!isModelingLevel(state.activeType) || state.views.activeViewId !== viewId) {
       return false;
     }
     applied = applyViewportFit({ fit });
@@ -1826,7 +1848,7 @@ function scopedViewContainmentOwnerType() {
   if (!rootId) {
     return null;
   }
-  const element = state.graph.elementsById.get(rootId);
+  const element = semanticObjectById(state.graph, rootId);
   if (!element || !isContainerElement(element)) {
     return null;
   }
@@ -2588,7 +2610,11 @@ export function renderDiagram() {
 }
 
 export function renderDiagramAsync(options = {}) {
-  return renderDiagramTask.then(() => renderDiagramNow(options));
+  const task = renderDiagramTask.then(() => renderDiagramNow(options));
+  renderDiagramTask = task.catch((error) => {
+    console.error("renderDiagram failed", error);
+  });
+  return task;
 }
 
 async function renderDiagramNow({ full = false } = {}) {
@@ -3023,7 +3049,19 @@ function closePaletteAfterTouchDragStarts() {
   el.mobileDockPaletteBtn?.classList.remove("is-active");
 }
 
-function queuePaletteDrop(type, clientX, clientY) {
+function unavailableContainmentMessage(type, focus) {
+  const label = focus.label || focus.elementType;
+  const declaredSlots = modelingContainmentEntriesForChildType(
+    state.activeType,
+    focus.elementType,
+    type,
+  );
+  return declaredSlots.length
+    ? `All ${type} containment slots in ${label} are occupied. Edit or delete an existing contained element.`
+    : `No containment feature accepts ${type} in ${label}.`;
+}
+
+async function queuePaletteDrop(type, clientX, clientY) {
   const containerFocus = activeContainerFocus();
   const allowedTypes = new Set(paletteTypesForActiveView());
   if (!type || !allowedTypes.has(type)) {
@@ -3038,19 +3076,54 @@ function queuePaletteDrop(type, clientX, clientY) {
   }
   const pos = toCanvasCoordinates(clientX, clientY);
   const node = getDefaultNode(state.activeType, type, Math.round(pos.x), Math.round(pos.y));
+  const viewId = state.views.activeViewId;
+  const typeKey = state.activeType;
+  let selectedSlot = null;
+  if (containerFocus) {
+    const owner = semanticObjectById(state.graph, containerFocus.elementId);
+    const slots = modelingContainmentEntriesForChildType(
+      typeKey,
+      containerFocus.elementType,
+      type,
+      owner,
+    );
+    if (!slots.length) {
+      setStatus(unavailableContainmentMessage(type, containerFocus));
+      return;
+    }
+    selectedSlot =
+      slots.length === 1
+        ? slots[0]
+        : await chooseContainmentSlot(slots, {
+            label: containerFocus.label || containerFocus.elementType,
+            clientX,
+            clientY,
+          });
+    if (!selectedSlot) return;
+  }
+  // Finish any view transition before adding to G6. A pending full sync can
+  // otherwise include the same node that the incremental drop is about to add.
+  await renderDiagramTask;
   requestAnimationFrame(() => {
+    if (state.activeType !== typeKey || state.views.activeViewId !== viewId) return;
     const focus = activeContainerFocus();
-    const owner = focus && state.graph.elementsById.get(focus.elementId);
+    const owner = focus && semanticObjectById(state.graph, focus.elementId);
     const availableSlot =
       focus &&
       owner &&
-      modelingContainmentEntryForChildType(state.activeType, focus.elementType, type, owner);
+      modelingContainmentEntriesForChildType(state.activeType, focus.elementType, type, owner).find(
+        (entry) => entry.feature === selectedSlot?.feature,
+      );
     if (focus && !availableSlot) {
-      setStatus(`No available containment slot for ${type} in ${focus.label || focus.elementType}`);
+      setStatus(unavailableContainmentMessage(type, focus));
       return;
     }
+    if (availableSlot) node.meta.__containmentFeature = availableSlot.feature;
     pushDiagramUndoSnapshot(captureAddElementUndoSnapshot(node.id));
-    assignNodeToSemanticContainer(node);
+    if (!assignNodeToSemanticContainer(node) && focus) {
+      setStatus(`Could not attach ${type} to ${focus.label || focus.elementType}`);
+      return;
+    }
     addNodeToGraphAndActiveView(node);
     applyPaletteDropToCanvas(node);
     const created = state.graph.elementsById.get(node.id);
@@ -3169,17 +3242,17 @@ function assignNodeToFocusedContainer(node) {
   if (!focus) {
     return false;
   }
-  const owner = state.graph.elementsById.get(focus.elementId);
+  const owner = semanticObjectById(state.graph, focus.elementId);
   const ownerNode = state.nodesById.get(focus.elementId);
   if (!owner) {
     return false;
   }
-  const containmentEntry = modelingContainmentEntryForChildType(
+  const containmentEntry = modelingContainmentEntriesForChildType(
     state.activeType,
     focus.elementType,
     node.type,
     owner,
-  );
+  ).find((entry) => entry.feature === node.meta.__containmentFeature);
   if (!containmentEntry?.feature) {
     return false;
   }
@@ -3189,12 +3262,11 @@ function assignNodeToFocusedContainer(node) {
   if (
     !containment ||
     containment.relationshipOnly ||
-    !containmentAcceptsType(containment, node.type) ||
-    (containment.many === false && owner[containment.feature])
+    !containmentAcceptsType(containment, node.type)
   ) {
     return false;
   }
-  node.meta.__ownerId = owner.id;
+  node.meta.__ownerId = semanticObjectId(owner);
   node.meta.__containmentFeature = containment.feature;
   addReferenceValue(owner, containment.feature, node.id, containment.many !== false);
   if (ownerNode?.meta) {
@@ -3213,7 +3285,7 @@ function tryAssignNodeToContainerOwner(node, owner) {
     node.type,
     owner,
   );
-  if (!containment || (containment.many === false && owner[containment.feature])) {
+  if (!containment) {
     return false;
   }
   node.meta.__ownerId = owner.id;

@@ -2697,6 +2697,13 @@
   ],
   "containers": [
     {
+      "elementType": "WorkflowTransition",
+      "palette": ["Expression"],
+      "canvas": ["Expression"],
+      "relationshipKinds": [],
+      "layoutHint": "CONTAINER"
+    },
+    {
       "elementType": "ServerlessService",
       "palette": [
         "Function",

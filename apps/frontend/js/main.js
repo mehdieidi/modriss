@@ -1174,12 +1174,12 @@ function bindEvents() {
   // Attribute panel
   el.attrPanelCloseBtn?.addEventListener("click", closeAttributePanel);
   el.attrPanelOpenBtn?.addEventListener("click", () => {
-    const nodeId = state.selectedNodeId;
-    if (!nodeId) {
+    const elementId = state.selectedNodeId || state.selectedConnectionId;
+    if (!elementId) {
       return;
     }
     closeAttributePanel();
-    openContainerFocus(nodeId);
+    openContainerFocus(elementId);
   });
   bindConnectionDrawStateListener();
   el.attrPanelApplyBtn?.addEventListener("click", () => {

@@ -94,8 +94,7 @@ class ContainedPaletteAuditTest {
       Map<String, Object> palettes = map(modelingLevel.get("containmentPalettes"));
       for (Map<String, Object> owner : elements) {
         if (Boolean.TRUE.equals(owner.get("abstract"))
-            || Boolean.TRUE.equals(owner.get("supportOnly"))
-            || Boolean.TRUE.equals(owner.get("relationshipElement"))) {
+            || Boolean.TRUE.equals(owner.get("supportOnly"))) {
           continue;
         }
         String ownerType = String.valueOf(owner.get("type"));

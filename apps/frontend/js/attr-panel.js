@@ -43,6 +43,8 @@ import {
   nestedContainmentsForType,
   refIds,
   impliedEnumValues,
+  semanticObjectById,
+  semanticObjectId,
 } from "./model-utils.js";
 import { isContainerElement } from "./view-materializer.js";
 import {
@@ -303,7 +305,8 @@ export function openConnectionPanel(connectionId) {
   state.selectedNodeId = null;
   state.selectedNodeIds = new Set();
   state.selectedConnectionId = connectionId;
-  setAttributePanelOpenAction();
+  const relationship = state.graph?.relationshipsById?.get(connectionId);
+  setAttributePanelOpenAction(relationship);
 
   const source = state.nodesById.get(connection.sourceId);
   const target = state.nodesById.get(connection.targetId);
@@ -1801,13 +1804,14 @@ function deleteContainedChild(childId) {
   }
   const parentId = child.__ownerId;
   const feature = child.__containmentFeature;
-  const parent = parentId ? state.graph?.elementsById?.get(parentId) : null;
+  const parent = semanticObjectById(state.graph, parentId);
   const parentNode = parentId ? state.nodesById.get(parentId) : null;
   if (parent && feature) {
     const nextIds = refIds(parent[feature]).filter((id) => id !== childId);
-    parent[feature] = nextIds;
+    const reference = referenceDefinition(parent.eClass || parent.type, feature);
+    parent[feature] = reference?.many === false ? nextIds[0] || null : nextIds;
     if (parentNode?.meta) {
-      parentNode.meta[feature] = nextIds;
+      parentNode.meta[feature] = parent[feature];
     }
     reconcileElementRelationships(parentId);
   }
@@ -2344,6 +2348,11 @@ function referenceOptions(targetType) {
   };
   state.graph?.elementsById?.forEach((element) => {
     addCandidate(element);
+  });
+  state.graph?.relationshipsById?.forEach((relationship) => {
+    if (!relationship.visualOnly && !relationship.containment) {
+      addCandidate({ ...relationship, id: semanticObjectId(relationship) });
+    }
   });
   state.nodesById?.forEach(addCandidate);
   // Focused views can omit the parent container from the runtime graph even

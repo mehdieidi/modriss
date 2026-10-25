@@ -1,5 +1,6 @@
 import {
   modelingContainmentsForType,
+  modelingContainmentValues,
   modelingElementDefinition,
   modelingLevelConfig,
   modelingRelationshipElementTypes,
@@ -281,24 +282,20 @@ function normalizeElement(raw, fallbackType, index, owner = null) {
 
 function collectNestedElements(typeKey, parent, result, seen) {
   nestedContainmentsForType(typeKey, modelTypeOf(parent)).forEach((entry) => {
-    if (entry.relationshipOnly || entry.referenceOnly) {
+    if (entry.referenceOnly) {
       return;
     }
-    const rawValues = entry.singleton
-      ? parent?.[entry.feature]
-        ? [parent[entry.feature]]
-        : []
-      : safeArray(parent?.[entry.feature]);
+    const rawValues = modelingContainmentValues(parent?.[entry.feature], entry.singleton);
     rawValues.forEach((raw, index) => {
       const child = normalizeElement(raw, raw?.eClass || raw?.type || entry.types?.[0], index, {
         id: parent.id,
         feature: entry.feature,
       });
-      if (!child || seen.has(child.id) || isRelationshipElementType(typeKey, modelTypeOf(child))) {
+      if (!child || seen.has(child.id)) {
         return;
       }
       seen.add(child.id);
-      result.push(child);
+      if (!isRelationshipElementType(typeKey, modelTypeOf(child))) result.push(child);
       collectNestedElements(typeKey, child, result, seen);
     });
   });
@@ -311,25 +308,17 @@ export function semanticElementsFromRoot(typeKey, modelJson) {
     return result;
   }
   modelingRootContainments(typeKey).forEach((entry) => {
-    if (entry.relationshipOnly || entry.referenceOnly) {
+    if (entry.referenceOnly) {
       return;
     }
-    const rawValues = entry.singleton
-      ? modelJson?.[entry.feature]
-        ? [modelJson[entry.feature]]
-        : []
-      : safeArray(modelJson?.[entry.feature]);
+    const rawValues = modelingContainmentValues(modelJson?.[entry.feature], entry.singleton);
     rawValues.forEach((raw, index) => {
       const element = normalizeElement(raw, raw?.eClass || raw?.type || entry.types?.[0], index);
-      if (
-        !element ||
-        seen.has(element.id) ||
-        isRelationshipElementType(typeKey, modelTypeOf(element))
-      ) {
+      if (!element || seen.has(element.id)) {
         return;
       }
       seen.add(element.id);
-      result.push(element);
+      if (!isRelationshipElementType(typeKey, modelTypeOf(element))) result.push(element);
       collectNestedElements(typeKey, element, result, seen);
     });
   });
@@ -492,13 +481,22 @@ export function relationshipSemanticCopy(typeKey, relationship, graph = null) {
   return copy;
 }
 
-function appendRelationshipCopy(target, feature, copy) {
+function appendRelationshipCopy(typeKey, target, feature, copy) {
   const existing = target[feature]?.find?.(
     (candidate) => String(candidate?.id) === String(copy?.id),
   );
   if (existing) {
-    if (Array.isArray(existing?.targets) || Array.isArray(copy?.targets)) {
-      existing.targets = [...new Set([...refIds(existing.targets), ...refIds(copy.targets)])];
+    const rule = edgeObjectRules(typeKey).find(
+      (candidate) => candidate.eClass === modelTypeOf(copy),
+    );
+    const targetFeature = rule?.targetFeature;
+    const reference = safeArray(
+      modelingElementDefinition(typeKey, modelTypeOf(copy))?.references,
+    ).find((candidate) => candidate.name === targetFeature);
+    if (targetFeature && reference?.many) {
+      existing[targetFeature] = [
+        ...new Set([...refIds(existing[targetFeature]), ...refIds(copy[targetFeature])]),
+      ];
     }
     return;
   }
@@ -553,11 +551,7 @@ function relationshipFromObject(typeKey, raw, fallbackType, fallbackKind, index,
 
 function collectNestedRelationships(typeKey, parent, result) {
   nestedContainmentsForType(typeKey, modelTypeOf(parent)).forEach((entry) => {
-    const rawValues = entry.singleton
-      ? parent?.[entry.feature]
-        ? [parent[entry.feature]]
-        : []
-      : safeArray(parent?.[entry.feature]);
+    const rawValues = modelingContainmentValues(parent?.[entry.feature], entry.singleton);
     if (entry.relationshipOnly) {
       rawValues.forEach((raw, index) => {
         result.push(
@@ -573,6 +567,7 @@ function collectNestedRelationships(typeKey, parent, result) {
             },
           ),
         );
+        if (raw && typeof raw === "object") collectNestedRelationships(typeKey, raw, result);
       });
       return;
     }
@@ -590,11 +585,7 @@ export function semanticRelationshipsFromRoot(typeKey, modelJson) {
     return result;
   }
   modelingRootContainments(typeKey).forEach((entry) => {
-    const rawValues = entry.singleton
-      ? modelJson?.[entry.feature]
-        ? [modelJson[entry.feature]]
-        : []
-      : safeArray(modelJson?.[entry.feature]);
+    const rawValues = modelingContainmentValues(modelJson?.[entry.feature], entry.singleton);
     if (entry.relationshipOnly) {
       rawValues.forEach((raw, index) => {
         result.push(
@@ -606,6 +597,7 @@ export function semanticRelationshipsFromRoot(typeKey, modelJson) {
             index,
           ),
         );
+        if (raw && typeof raw === "object") collectNestedRelationships(typeKey, raw, result);
       });
       return;
     }
@@ -663,7 +655,25 @@ export function stripRuntimeFields(typeKey, element) {
   return copy;
 }
 
+/** Resolves semantic owners independently of their node or edge presentation. */
+export function semanticObjectById(graph, id) {
+  if (!id) return null;
+  return (
+    graph?.elementsById?.get(id) ||
+    graph?.relationshipsById?.get(id) ||
+    [...(graph?.relationshipsById?.values() || [])].find(
+      (entry) => entry.semanticObjectId === id,
+    ) ||
+    null
+  );
+}
+
+export function semanticObjectId(object) {
+  return String(object?.semanticObjectId || object?.id || "");
+}
+
 function childElementsForContainment(parent, entry, graph, typeKey) {
+  const parentId = semanticObjectId(parent);
   const ids = new Set(refIds(parent?.[entry.feature]));
   const children = [];
   const childIds = new Set();
@@ -675,9 +685,14 @@ function childElementsForContainment(parent, entry, graph, typeKey) {
       return;
     }
     if (
-      (candidate.__ownerId === parent.id && candidate.__containmentFeature === entry.feature) ||
+      (candidate.__ownerId === parentId && candidate.__containmentFeature === entry.feature) ||
       ids.has(candidate.id) ||
-      (graph.parentByChild?.get(candidate.id) === parent.id && ids.size === 0)
+      (graph.parentByChild?.get(candidate.id) === parentId &&
+        ids.size === 0 &&
+        !candidate.__containmentFeature &&
+        nestedContainmentsForType(typeKey, modelTypeOf(parent)).filter((feature) =>
+          safeArray(feature.types).some((type) => modelTypeMatches(typeKey, candidate, type)),
+        ).length === 1)
     ) {
       if (childIds.has(candidate.id)) {
         return;
@@ -931,7 +946,7 @@ function attachNestedContainments(typeKey, copy, sourceElement, graph, visited =
         : stripRuntimeFields(typeKey, child);
       attachNestedContainments(typeKey, childCopy, child, graph, visited);
       if (entry.relationshipOnly) {
-        appendRelationshipCopy({ [entry.feature]: copies }, entry.feature, childCopy);
+        appendRelationshipCopy(typeKey, { [entry.feature]: copies }, entry.feature, childCopy);
       } else {
         copies.push(childCopy);
       }
@@ -983,10 +998,11 @@ export function populateRootContainments(typeKey, root, graph) {
       relationshipSemanticCopy(typeKey, relationship, graph),
       originalById,
     );
+    attachNestedContainments(typeKey, copy, relationship, graph);
     if (containment.singleton) {
       root[containment.feature] = copy;
     } else {
-      appendRelationshipCopy(root, containment.feature, copy);
+      appendRelationshipCopy(typeKey, root, containment.feature, copy);
     }
   });
   return root;
@@ -1043,10 +1059,11 @@ export async function populateRootContainmentsAsync(typeKey, root, graph) {
       relationshipSemanticCopy(typeKey, relationship, graph),
       originalById,
     );
+    attachNestedContainments(typeKey, copy, relationship, graph);
     if (containment.singleton) {
       root[containment.feature] = copy;
     } else {
-      appendRelationshipCopy(root, containment.feature, copy);
+      appendRelationshipCopy(typeKey, root, containment.feature, copy);
     }
     processed += 1;
     if (processed % POPULATE_CONTAINMENTS_YIELD_EVERY === 0) {

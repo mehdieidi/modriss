@@ -549,7 +549,44 @@ export function modelingContainerDefinition(typeKey, ownerType) {
   return palette ? { elementType: ownerKey, palette: palette.types, canvas: palette.canvas } : null;
 }
 
+/** Writable containment, rather than canvas presentation, determines whether a class can open. */
+export function modelingCanOpenContents(typeKey, ownerType) {
+  const definition = modelingElementDefinition(typeKey, ownerType);
+  if (!definition || definition.supportOnly) {
+    return false;
+  }
+  return (
+    modelingContainmentsForType(typeKey, ownerType).some((entry) => !entry.relationshipOnly) ||
+    Boolean(modelingContainerDefinition(typeKey, ownerType))
+  );
+}
+
 export function modelingContainmentEntryForChildType(typeKey, ownerType, childType, owner = null) {
+  return modelingContainmentEntriesForChildType(typeKey, ownerType, childType, owner)[0] || null;
+}
+
+function containmentValueIsPresent(value) {
+  if (Array.isArray(value)) return value.some(containmentValueIsPresent);
+  if (value && typeof value === "object") return Object.keys(value).length > 0;
+  return typeof value === "string" && value.trim().length > 0;
+}
+
+/** Reads containment values without treating an empty collection as a child EObject. */
+export function modelingContainmentValues(value, singleton = false) {
+  if (Array.isArray(value)) return value.filter(containmentValueIsPresent);
+  return singleton && containmentValueIsPresent(value) ? [value] : [];
+}
+
+export function modelingContainmentFeatureHasCapacity(feature, owner) {
+  return !owner || feature.many !== false || !containmentValueIsPresent(owner[feature.feature]);
+}
+
+export function modelingContainmentEntriesForChildType(
+  typeKey,
+  ownerType,
+  childType,
+  owner = null,
+) {
   const ownerKey = String(ownerType || "");
   const palettes = modelingLevelConfig(typeKey).containmentPalettes;
   const entry = palettes?.[ownerKey];
@@ -557,25 +594,23 @@ export function modelingContainmentEntryForChildType(typeKey, ownerType, childTy
   const configured = features.filter((feature) =>
     (feature?.types || []).some((type) => modelingTypeMatches(typeKey, type, childType)),
   );
-  const hasCapacity = (feature) => !owner || feature.many !== false || !owner[feature.feature];
+  const hasCapacity = (feature) => modelingContainmentFeatureHasCapacity(feature, owner);
   if (configured.length) {
-    return configured.find(hasCapacity) || null;
+    return configured.filter(hasCapacity);
   }
-  const containment = modelingContainmentsForType(typeKey, ownerKey).find(
-    (candidate) =>
-      !candidate.relationshipOnly &&
-      hasCapacity(candidate) &&
-      (candidate.types || []).some((type) => modelingTypeMatches(typeKey, type, childType)),
-  );
-  if (!containment) {
-    return null;
-  }
-  return {
-    feature: containment.feature,
-    targetType: containment.targetType,
-    types: containment.types,
-    many: containment.many !== false,
-  };
+  return modelingContainmentsForType(typeKey, ownerKey)
+    .filter(
+      (candidate) =>
+        !candidate.relationshipOnly &&
+        hasCapacity(candidate) &&
+        (candidate.types || []).some((type) => modelingTypeMatches(typeKey, type, childType)),
+    )
+    .map((containment) => ({
+      feature: containment.feature,
+      targetType: containment.targetType,
+      types: containment.types,
+      many: containment.many !== false,
+    }));
 }
 
 const elementDefinitionByType = new Map();

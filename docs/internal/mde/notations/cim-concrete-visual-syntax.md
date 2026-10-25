@@ -164,6 +164,8 @@ ownership when it is actually a cross-object membership link.
 | `BoundedContextCandidate`  | `UbiquitousLanguageTerm`                                          | Terms form the language glossary of one boundary.                                                         |
 | `Command`                  | `CommandOutcome`                                                  | Outcomes explain success, emitted events, errors, and output without flooding the behavior view.          |
 | `DomainEntity`             | `LifecycleStateDefinition`, `BusinessInvariant`                   | Lifecycle and invariants are entity-local detail.                                                         |
+| `DomainRelationship`       | `Multiplicity`                                                    | Open the edge to create its `sourceMultiplicity` and `targetMultiplicity` in distinct Ecore slots.        |
+| `ProcessTransition`        | `Expression`                                                      | Open the transition edge to create or edit its contained `condition`.                                     |
 | `ValueObject`              | `InformationItem`                                                 | Value-object fields are structural detail; the value object remains the domain-level node.                |
 | `AggregateCandidate`       | `BusinessInvariant`                                               | Boundary invariants belong to the aggregate focus. Root/member/command/event links remain semantic edges. |
 | `InformationItem`          | `InformationItem`                                                 | Recursive `subItems` are the one data-structure hierarchy that benefits from nesting.                     |

@@ -16,6 +16,56 @@ class ModelingConfigServiceTest {
   /** Service under test. */
   private final ModelingConfigService service = new ModelingConfigService();
 
+  @Test
+  void relationshipContentsExposeEcoreSlotsAndConfiguredCanvases() {
+    for (String[] example :
+        List.of(
+            new String[] {
+              "cim",
+              "DomainRelationship",
+              "Multiplicity",
+              "sourceMultiplicity",
+              "targetMultiplicity"
+            },
+            new String[] {"cim", "ProcessTransition", "Expression", "condition"},
+            new String[] {"pim", "WorkflowTransition", "Expression", "condition"})) {
+      Map<String, Object> configured = level(example[0]);
+      Map<String, Object> owner = element(listOfMaps(configured.get("elements")), example[1]);
+      assertTrue(Boolean.TRUE.equals(owner.get("relationshipElement")));
+      Map<String, Object> palette = map(map(configured.get("containmentPalettes")).get(example[1]));
+      assertTrue(stringList(palette.get("types")).contains(example[2]));
+      assertTrue(stringList(palette.get("canvas")).contains(example[2]));
+      List<String> features =
+          listOfMaps(palette.get("features")).stream()
+              .map(feature -> String.valueOf(feature.get("feature")))
+              .toList();
+      for (int i = 3; i < example.length; i++) {
+        assertTrue(features.contains(example[i]), example[1] + "." + example[i]);
+      }
+    }
+  }
+
+  @Test
+  void unconfiguredContainmentCanvasesUseTheirEcoreDerivedChildTypes() {
+    int checked = 0;
+    for (String key : List.of("cim", "pim", "psm")) {
+      Map<String, Object> configured = level(key);
+      List<String> explicitOwners =
+          listOfMaps(configured.get("containers")).stream()
+              .map(profile -> String.valueOf(profile.get("elementType")))
+              .toList();
+      for (Map.Entry<String, Object> entry :
+          map(configured.get("containmentPalettes")).entrySet()) {
+        if (!explicitOwners.contains(entry.getKey())) {
+          Map<String, Object> palette = map(entry.getValue());
+          assertEquals(palette.get("types"), palette.get("canvas"), key + " " + entry.getKey());
+          checked++;
+        }
+      }
+    }
+    assertTrue(checked > 0);
+  }
+
   /** Verifies that Ecore-derived structural fields coexist with JSON-owned UI metadata. */
   @Test
   void exposesEcoreDerivedStructureAndJsonOwnedUiMetadata() {

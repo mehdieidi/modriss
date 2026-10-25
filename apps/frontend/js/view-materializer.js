@@ -6,12 +6,7 @@ import {
   selectElementIdsForView,
   selectRelationshipIdsForView,
 } from "./graph-store.js";
-import {
-  modelingContainmentsForType,
-  modelingContainerDefinition,
-  modelingElementDefinition,
-  modelingLevelConfig,
-} from "./modeling-config-data.js";
+import { modelingCanOpenContents } from "./modeling-config-data.js";
 
 export const CURRENT_LAYOUT_GEOMETRY_VERSION = 3;
 
@@ -63,56 +58,9 @@ function pruneIsolatedGeneratedNodes(graph, view, elementIds, relationshipIds) {
   return elementIds.filter((elementId) => connected.has(elementId) || pinned.has(elementId));
 }
 
-const containerTypeCache = new Map();
-let containerCacheConfigVersion = -1;
-
-function ensureContainerCacheFresh() {
-  const version = Number(state.modelingConfig?.config?.version || 0);
-  if (version !== containerCacheConfigVersion) {
-    containerTypeCache.clear();
-    containerCacheConfigVersion = version;
-  }
-}
-
-function containerCacheKey(typeKey, type) {
-  return `${typeKey}:${type}`;
-}
-
-function hasContainmentCapacity(typeKey, type, definition) {
-  if (!definition) {
-    return false;
-  }
-  const containments = modelingContainmentsForType(typeKey, type);
-  if (containments.some((entry) => !entry.relationshipOnly)) {
-    return true;
-  }
-  if (modelingContainerDefinition(typeKey, elementType(element))) {
-    return true;
-  }
-  const palette = modelingLevelConfig(typeKey).containmentPalettes?.[type];
-  return Boolean(palette?.types?.length);
-}
-
 export function isContainerElement(elementOrType, typeKey = state.activeType) {
-  ensureContainerCacheFresh();
   const type = typeof elementOrType === "string" ? elementOrType : elementType(elementOrType);
-  const cacheKey = containerCacheKey(typeKey, type);
-  if (containerTypeCache.has(cacheKey)) {
-    return containerTypeCache.get(cacheKey);
-  }
-  let result = false;
-  try {
-    const definition = modelingElementDefinition(typeKey, type);
-    if (!definition || definition.relationshipElement || definition.supportOnly) {
-      result = false;
-    } else {
-      result = hasContainmentCapacity(typeKey, type, definition);
-    }
-  } catch {
-    result = false;
-  }
-  containerTypeCache.set(cacheKey, result);
-  return result;
+  return modelingCanOpenContents(typeKey, type);
 }
 
 function runtimeNode(elementId, viewNode) {

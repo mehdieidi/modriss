@@ -3,6 +3,8 @@ import { emptyDiagram, genId, yieldToMain } from "./utils.js";
 import { ensureReadableLayout, nodeSizeForType } from "./layout-engine.js";
 import {
   modelingContainmentsForType,
+  modelingContainmentValues,
+  modelingCanOpenContents,
   modelingContainerDefinition,
   modelingElementDefinition,
   isModelingLevel,
@@ -25,6 +27,8 @@ import {
   semanticRelationshipsFromRoot,
   semanticGraphHasChanges,
   modelTypeMatches,
+  semanticObjectById,
+  semanticObjectId,
 } from "./model-utils.js";
 
 const viewNodeIndexes = new WeakMap();
@@ -73,27 +77,7 @@ function isStructuralNestRelationship(relationship, typeKey = state.activeType) 
 }
 
 function scopeElementHasContainmentCapacity(typeKey, element) {
-  const type = semanticType(element);
-  try {
-    const definition = modelingElementDefinition(typeKey, type);
-    if (!definition || definition.relationshipElement || definition.supportOnly) {
-      return false;
-    }
-    if (definition.visualRole === "container") {
-      return true;
-    }
-    const containments = modelingContainmentsForType(typeKey, type);
-    if (containments.some((entry) => !entry.relationshipOnly)) {
-      return true;
-    }
-    if (modelingContainerDefinition(typeKey, type)) {
-      return true;
-    }
-    const palette = modelingLevelConfig(typeKey).containmentPalettes?.[type];
-    return Boolean(palette?.types?.length);
-  } catch {
-    return false;
-  }
+  return modelingCanOpenContents(typeKey, semanticType(element));
 }
 
 function scopeElementIsContainer(typeKey, element) {
@@ -353,14 +337,7 @@ function normalizeConfiguredSemanticElement(typeKey, raw, fallbackType, index, o
 function collectConfiguredNestedElements(typeKey, parent, result, seen) {
   const parentType = semanticType(parent);
   configuredContainments(typeKey, parentType).forEach((entry) => {
-    if (entry.relationshipOnly) {
-      return;
-    }
-    const values = entry.singleton
-      ? parent?.[entry.feature]
-        ? [parent[entry.feature]]
-        : []
-      : safeArray(parent?.[entry.feature]);
+    const values = modelingContainmentValues(parent?.[entry.feature], entry.singleton);
     values.forEach((raw, index) => {
       if (!raw || typeof raw !== "object") {
         return;
@@ -375,7 +352,13 @@ function collectConfiguredNestedElements(typeKey, parent, result, seen) {
           feature: entry.feature,
         },
       );
-      if (!child || seen.has(child.id)) {
+      // Edge objects stay in the relationship index, but their contained children
+      // participate in the semantic graph just like children of node containers.
+      if (!child) {
+        collectConfiguredNestedElements(typeKey, raw, result, seen);
+        return;
+      }
+      if (seen.has(child.id)) {
         return;
       }
       seen.add(child.id);
@@ -393,14 +376,7 @@ function semanticElementsFromConfiguredRoot(typeKey, modelJson) {
   }
   const rootContainments = modelingRootContainments(typeKey);
   rootContainments.forEach((entry) => {
-    if (entry.relationshipOnly) {
-      return;
-    }
-    const values = entry.singleton
-      ? modelJson?.[entry.feature]
-        ? [modelJson[entry.feature]]
-        : []
-      : safeArray(modelJson?.[entry.feature]);
+    const values = modelingContainmentValues(modelJson?.[entry.feature], entry.singleton);
     values.forEach((raw, index) => {
       if (!raw || typeof raw !== "object") {
         return;
@@ -411,7 +387,11 @@ function semanticElementsFromConfiguredRoot(typeKey, modelJson) {
         raw.eClass || raw.type || entry.types?.[0],
         index,
       );
-      if (!element || seen.has(element.id)) {
+      if (!element) {
+        collectConfiguredNestedElements(typeKey, raw, result, seen);
+        return;
+      }
+      if (seen.has(element.id)) {
         return;
       }
       seen.add(element.id);
@@ -535,6 +515,21 @@ function isContainerScopeView(view) {
     String(view?.scope?.scopeKind || "").toUpperCase() === "CONTAINER" &&
     Boolean(view?.scope?.rootElementId)
   );
+}
+
+export function syncContainerViewProfile(view, typeKey = state.activeType, graph = state.graph) {
+  if (!isContainerScopeView(view)) return view;
+  const owner = semanticObjectById(graph, view.scope.rootElementId);
+  const profile = owner && modelingContainerDefinition(typeKey, semanticType(owner));
+  if (!profile) return view;
+  view.palette = safeArray(profile.palette).map(String);
+  view.canvas = safeArray(profile.canvas).map(String);
+  view.filters = {
+    ...view.filters,
+    elementTypes: [...view.canvas],
+    relationshipKinds: safeArray(profile.relationshipKinds).map(String),
+  };
+  return view;
 }
 
 function relationshipDedupeKey(relationship) {
@@ -983,7 +978,7 @@ function clearGraphRelationshipsDirty(graph = state.graph) {
 function updateElementOwnershipIndex(graph, elementId) {
   const element = graph.elementsById.get(elementId);
   const ownerId = String(element?.__ownerId || "").trim();
-  if (ownerId && ownerId !== elementId && graph.elementsById.has(ownerId)) {
+  if (ownerId && ownerId !== elementId && semanticObjectById(graph, ownerId)) {
     addToIndex(graph.containmentByParent, ownerId, elementId);
     if (!graph.parentByChild.has(elementId)) {
       graph.parentByChild.set(elementId, ownerId);
@@ -1111,14 +1106,19 @@ function rebuildGraphIndexes(graph, typeKey = state.activeType) {
     }
   });
 
-  graph.elementsById.forEach((element, elementId) => {
+  const indexOwnership = (element) => {
+    const elementId = semanticObjectId(element);
     const ownerId = String(element.__ownerId || "").trim();
-    if (ownerId && ownerId !== elementId && graph.elementsById.has(ownerId)) {
+    if (ownerId && ownerId !== elementId && semanticObjectById(graph, ownerId)) {
       addToIndex(graph.containmentByParent, ownerId, elementId);
       if (!graph.parentByChild.has(elementId)) {
         graph.parentByChild.set(elementId, ownerId);
       }
     }
+  };
+  graph.elementsById.forEach(indexOwnership);
+  graph.relationshipsById.forEach((relationship) => {
+    if (!relationship.visualOnly && !relationship.containment) indexOwnership(relationship);
   });
 
   graph.elementsById.forEach((element, elementId) => {
@@ -1134,6 +1134,43 @@ function rebuildGraphIndexes(graph, typeKey = state.activeType) {
     if (!graph.parentByChild.has(elementId)) {
       graph.parentByChild.set(elementId, parent.id);
     }
+  });
+}
+
+function indexRelationshipContents(graph, typeKey) {
+  if (!isModelingLevel(typeKey)) return;
+  const contained = [];
+  const seenElements = new Set(graph.elementsById.keys());
+  graph.relationshipsById.forEach((relationship) => {
+    collectConfiguredNestedElements(
+      typeKey,
+      {
+        ...relationship,
+        id: semanticObjectId(relationship),
+      },
+      contained,
+      seenElements,
+    );
+  });
+  contained.forEach((element, index) => {
+    const normalized = normalizeElement(element, index);
+    graph.elementsById.set(normalized.id, normalized);
+  });
+  graph.relationshipsById.forEach((relationship) => {
+    const ownerId = semanticObjectId(relationship);
+    configuredContainments(typeKey, semanticType(relationship)).forEach((entry) => {
+      referenceIds(relationship[entry.feature]).forEach((childId) => {
+        const child = graph.elementsById.get(childId);
+        if (
+          !child ||
+          (child.__ownerId && child.__ownerId !== ownerId) ||
+          !entry.types.some((type) => modelTypeMatches(typeKey, child, type))
+        )
+          return;
+        child.__ownerId = ownerId;
+        child.__containmentFeature ||= entry.feature;
+      });
+    });
   });
 }
 
@@ -1175,6 +1212,10 @@ function buildGraph(typeKey, modelJson) {
     }
     graph.relationshipsById.set(normalized.id, normalized);
   });
+
+  // Some saved models carry edge contents in their graph relationship records.
+  // Index those declared children too, so an occupied slot always has an editable child.
+  indexRelationshipContents(graph, typeKey);
 
   if (isModelingLevel(typeKey)) {
     synthesizeContainmentRelationships(graph, typeKey);
@@ -1438,7 +1479,12 @@ function containedDescendantElementIds(graph, rootElementId) {
   const queue = [...(graph.containmentByParent?.get(rootId) || [])];
   while (queue.length) {
     const childId = String(queue.shift() || "").trim();
-    if (!childId || result.has(childId) || !graph.elementsById.has(childId)) {
+    if (
+      !childId ||
+      childId === rootId ||
+      result.has(childId) ||
+      !semanticObjectById(graph, childId)
+    ) {
       continue;
     }
     result.add(childId);
@@ -1452,11 +1498,11 @@ function containedDescendantElementIds(graph, rootElementId) {
 
 function semanticParentId(graph, elementId, element) {
   const ownerId = String(element?.__ownerId || "").trim();
-  if (ownerId && graph.elementsById.has(ownerId)) {
+  if (ownerId && semanticObjectById(graph, ownerId)) {
     return ownerId;
   }
   const parentId = String(graph.parentByChild?.get(elementId) || "").trim();
-  return parentId && graph.elementsById.has(parentId) ? parentId : "";
+  return parentId && semanticObjectById(graph, parentId) ? parentId : "";
 }
 
 function isDescendantOfScopeRoot(graph, elementId, scopeRootId) {
@@ -1565,7 +1611,7 @@ export function selectElementIdsForView(graph, view, typeKey) {
     candidates = new Set(explicitNodeIds);
   } else if (isContainerScope) {
     candidates = containedDescendantElementIds(graph, view.scope.rootElementId);
-    const containerType = semanticType(graph.elementsById.get(view.scope.rootElementId));
+    const containerType = semanticType(semanticObjectById(graph, view.scope.rootElementId));
     const container = modelingContainerDefinition(typeKey, containerType);
     const canvasTypes = safeArray(container?.canvas).map(String).filter(Boolean);
     if (canvasTypes.length) {
@@ -2226,6 +2272,7 @@ function normalizeView(view, graph, typeKey, modelName, { deferLayout = false } 
   normalized.filters.relationshipKinds = safeArray(normalized.filters.relationshipKinds).map(
     String,
   );
+  syncContainerViewProfile(normalized, typeKey, graph);
   const definition = matchingViewDefinition(typeKey, normalized);
   normalized.pinnedElementIds = normalized.pinnedElementIds.filter((elementId) =>
     graph.elementsById.has(elementId),
@@ -2499,7 +2546,7 @@ export function ensureViewContent(
   }
   const definition = matchingViewDefinition(typeKey, view);
   const scopeElement = view.scope?.rootElementId
-    ? state.graph.elementsById.get(view.scope.rootElementId)
+    ? semanticObjectById(state.graph, view.scope.rootElementId)
     : null;
   const layoutOptions = { skipClientLayout };
   let materialized;
@@ -2547,7 +2594,7 @@ export function refreshViewContent(
     hidden: view.hidden,
   };
   const scopeElement = view.scope?.rootElementId
-    ? state.graph.elementsById.get(view.scope.rootElementId)
+    ? semanticObjectById(state.graph, view.scope.rootElementId)
     : null;
   let refreshed = null;
   if (view.id === mainViewId(typeKey)) {
@@ -2831,6 +2878,7 @@ function buildGraphFromSnapshot(snapshot, typeKey = state.activeType) {
   });
   graph.validationIssues = safeArray(snapshot?.validationIssues).map(clone);
   graph.manualBacklog = safeArray(snapshot?.manualBacklog).map(clone);
+  indexRelationshipContents(graph, typeKey);
   rebuildGraphIndexes(graph);
   return graph;
 }
@@ -3269,6 +3317,13 @@ export function addNodeToGraphAndActiveView(node) {
     y: node.y,
   });
   state.graph.elementsById.set(node.id, element);
+  const owner = semanticObjectById(state.graph, element.__ownerId);
+  if (owner && element.__containmentFeature) {
+    const reference = referenceDefinition(semanticType(owner), element.__containmentFeature);
+    if (reference?.containment && !reference.readonly) {
+      addReferenceValue(owner, reference.name, element.id, reference.many !== false);
+    }
+  }
   const view = activeView();
   const ownerId = String(element.__ownerId || node.meta?.__ownerId || "");
   const includeInActiveView =
@@ -3293,6 +3348,16 @@ export function removeElementFromGraph(elementId) {
   if (!id) {
     return;
   }
+  const element = state.graph.elementsById.get(id);
+  const owner = semanticObjectById(state.graph, element?.__ownerId);
+  if (owner && element.__containmentFeature) {
+    const reference = referenceDefinition(semanticType(owner), element.__containmentFeature);
+    removeReferenceValue(owner, element.__containmentFeature, id, reference?.many !== false);
+  }
+  const parentId = state.graph.parentByChild.get(id);
+  state.graph.containmentByParent.get(parentId)?.delete(id);
+  state.graph.parentByChild.delete(id);
+  removeOwnedContents(id);
   const relationshipIds = [
     ...new Set([
       ...(state.graph.relationshipsBySource.get(id) || []),
@@ -3301,18 +3366,12 @@ export function removeElementFromGraph(elementId) {
   ];
   const relationshipIdSet = new Set(relationshipIds);
   relationshipIds.forEach((relationshipId) => {
-    const relationship = state.graph.relationshipsById.get(relationshipId);
-    if (relationship?.semanticFeature) {
-      removePreviousSemanticReference(relationship, {
-        sourceElementId: relationship.semanticSourceElementId || relationship.sourceElementId,
-        targetElementId: relationship.semanticTargetElementId || relationship.targetElementId,
-        feature: relationship.semanticFeature,
-      });
-    }
-    removeRelationshipFromGraphIndexes(state.graph, relationship);
-    state.graph.relationshipsById.delete(relationshipId);
+    removeRelationshipFromGraph(relationshipId);
   });
   state.graph.elementsById.delete(id);
+  state.nodesById.delete(id);
+  if (state.diagram?.nodes)
+    state.diagram.nodes = state.diagram.nodes.filter((node) => node.id !== id);
   markGraphRelationshipsDirty(state.graph);
   state.views.byId.forEach((view) => {
     view.nodes = safeArray(view.nodes).filter((node) => node.elementId !== id);
@@ -3666,12 +3725,37 @@ export function addConnectionToGraphAndActiveView(edge, { addToActiveView = true
   notifyRelationshipGraphChanged();
 }
 
+function removeOwnedContents(ownerId) {
+  const children = [...(state.graph.containmentByParent.get(ownerId) || [])];
+  state.graph.containmentByParent.delete(ownerId);
+  children.forEach((childId) => {
+    if (state.graph.elementsById.has(childId)) removeElementFromGraph(childId);
+    else {
+      const projections = [...state.graph.relationshipsById.values()].filter(
+        (relationship) => semanticObjectId(relationship) === childId,
+      );
+      projections.forEach((relationship) => removeRelationshipFromGraph(relationship.id));
+    }
+  });
+}
+
 export function removeRelationshipFromGraph(relationshipId) {
   const id = String(relationshipId || "");
   if (!id) {
     return;
   }
   const relationship = state.graph.relationshipsById.get(id);
+  const ownerId = semanticObjectId(relationship);
+  const hasOtherProjection =
+    ownerId &&
+    [...state.graph.relationshipsById.values()].some(
+      (candidate) => candidate.id !== id && semanticObjectId(candidate) === ownerId,
+    );
+  if (ownerId && !hasOtherProjection) {
+    removeOwnedContents(ownerId);
+    state.graph.containmentByParent.get(relationship.__ownerId)?.delete(ownerId);
+    state.graph.parentByChild.delete(ownerId);
+  }
   if (relationship?.semanticFeature) {
     removePreviousSemanticReference(relationship, {
       sourceElementId: relationship.semanticSourceElementId || relationship.sourceElementId,
@@ -3680,6 +3764,7 @@ export function removeRelationshipFromGraph(relationshipId) {
     });
   }
   state.graph.relationshipsById.delete(id);
+  state.connectionsById.delete(id);
   if (state.diagram?.connections) {
     state.diagram.connections = state.diagram.connections.filter((edge) => edge.id !== id);
   }

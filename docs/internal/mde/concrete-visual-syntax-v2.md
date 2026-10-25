@@ -75,6 +75,15 @@ npm run migrate:all -w @modriss/notation-migrate
   to a container, the editor offers only legal contained targets, opens the container focus canvas
   for the selected internal target, and records an outer visual-only summary edge for zoomed-out
   readability.
+- Class-based relationship edges can also own a contents canvas. Select the edge and use **Open**
+  in its attributes pane, then drag its configured contained types from the palette. The owner is
+  the semantic relationship object, including when several canvas edges project that object.
+  Writable Ecore containment features define the slots; CVS `containers` controls the palette and
+  canvas for both node and edge owners. When a dropped class fits multiple available features,
+  the editor asks which feature to populate. Filled singleton features cannot be overwritten.
+  Contents, ownership, and canvas positions survive save/reload; deleting the owner removes its
+  contents, and undo restores them. The admin Containers editor identifies relationship owners and
+  offers their Ecore-derived child types. This behavior is shared by CIM, PIM, and PSM.
 - Dashboard layout semantics are stored on CVS views through `semanticDashboardColumns`; the
   backend layout service consumes those columns from stored view JSON instead of owning DSML class
   groups.

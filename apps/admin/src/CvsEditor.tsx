@@ -19,6 +19,7 @@ import {
 import { ChangeEvent, ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import { api } from "./api";
 import { PaletteGroup, paletteGroups, renamePaletteGroup } from "./cvs-palette-groups";
+import { containerEditingCatalog } from "./cvs-containers";
 
 type CvsDocument = Record<string, any>;
 type EditorSection =
@@ -677,8 +678,8 @@ function ViewsEditor({ doc, selected, setSelected, mutate }: any) {
 function ContainersEditor({ doc, selected, setSelected, mutate }: any) {
   const index = selected.containers ?? -1;
   const container = doc.containers?.[index];
-  const allTypes = (doc.elements || []).map((item: any) => item.type).filter(Boolean);
-  const ownerOptions = [...new Set<string>([container?.elementType, ...allTypes].filter(Boolean))];
+  const { ownerTypes, childTypes, edgeTypes } = containerEditingCatalog(doc, container?.elementType);
+  const ownerOptions = [...new Set<string>([container?.elementType, ...ownerTypes].filter(Boolean))];
   const toggle = (field: "palette" | "canvas", type: string) =>
     mutate((draft: any) => {
       const values = new Set(draft.containers[index][field] || []);
@@ -689,16 +690,16 @@ function ContainersEditor({ doc, selected, setSelected, mutate }: any) {
     <>
       <SectionHead
         title="Containers"
-        description="Choose which element types appear in the palette and canvas after opening a container."
+        description="Configure the contents canvas opened from a node or a class-based relationship edge. Ecore containment references determine the available child types."
         action={
           <button
             className="primary-action"
             onClick={() => {
-              const availableOwners = allTypes.filter((type: string) => !(doc.containers || []).some((item: any) => item.elementType === type));
+              const availableOwners = ownerTypes.filter((type: string) => !(doc.containers || []).some((item: any) => item.elementType === type));
               const type = window.prompt(`Container EClass (choose from: ${availableOwners.join(", ")})`, availableOwners[0] || "");
               if (!type?.trim()) return;
-              if (!allTypes.includes(type.trim())) {
-                window.alert("Choose an EClass from the metamodel-derived list.");
+              if (!ownerTypes.includes(type.trim())) {
+                window.alert("Choose an EClass with writable containment references from the metamodel-derived list.");
                 return;
               }
               mutate((draft: any) => {
@@ -718,6 +719,7 @@ function ContainersEditor({ doc, selected, setSelected, mutate }: any) {
           <button className={index === itemIndex ? "view-card active" : "view-card"} key={itemIndex} onClick={() => setSelected({ containers: itemIndex })}>
             <span>{item.elementType}</span>
             <strong>{doc.elements?.find((element: any) => element.type === item.elementType)?.displayName || item.elementType}</strong>
+            {edgeTypes.has(item.elementType) && <small>Relationship edge contents</small>}
             <small>{(item.palette || []).length} palette · {(item.canvas || []).length} canvas</small>
           </button>
         ))}
@@ -726,11 +728,12 @@ function ContainersEditor({ doc, selected, setSelected, mutate }: any) {
         <section className="panel empty-inline">Select a container profile.</section>
       ) : (
         <section className="panel view-editor">
-          <SelectField label="Container element type" value={container.elementType} options={ownerOptions} onChange={(value) => mutate((draft: any) => (draft.containers[index].elementType = value))} />
+          <SelectField label="Owner EClass (node or relationship)" value={container.elementType} options={ownerOptions} onChange={(value) => mutate((draft: any) => (draft.containers[index].elementType = value))} />
+          {edgeTypes.has(container.elementType) && <p>Select the relationship edge in the workbench and use Open in its attributes pane to edit these contents.</p>}
           <SelectField label="Layout hint" value={container.layoutHint || "CONTAINER"} options={layoutHints} onChange={(value) => mutate((draft: any) => (draft.containers[index].layoutHint = value))} />
           <div className="dual-list">
-            <TypePool title="Palette" active={container.palette || []} allTypes={allTypes} onToggle={(type) => toggle("palette", type)} />
-            <TypePool title="Canvas" active={container.canvas || []} allTypes={allTypes} onToggle={(type) => toggle("canvas", type)} />
+            <TypePool title="Palette" active={container.palette || []} allTypes={childTypes} onToggle={(type) => toggle("palette", type)} />
+            <TypePool title="Canvas" active={container.canvas || []} allTypes={childTypes} onToggle={(type) => toggle("canvas", type)} />
           </div>
           <div className="containment-facts">
             <strong>Ecore containment references</strong>

@@ -708,12 +708,15 @@ public final class ModelingConfigService {
       }
       if (!paletteTypes.isEmpty()) {
         List<String> canvasTypes =
-            objectStringList(configured.get("canvas")).stream()
-                .filter(
-                    type ->
-                        containmentPaletteElement(
-                            elementsByType.get(type), relationshipElementTypes))
-                .toList();
+            (hasConfiguredContainer
+                    ? objectStringList(configured.get("canvas"))
+                    : new ArrayList<>(paletteTypes))
+                .stream()
+                    .filter(
+                        type ->
+                            containmentPaletteElement(
+                                elementsByType.get(type), relationshipElementTypes))
+                    .toList();
         palettes.put(
             ownerType,
             Map.ofEntries(
