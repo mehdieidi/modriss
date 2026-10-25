@@ -12,6 +12,14 @@ The method package also contains an exhaustive fictional
 with generated task, role, work-product, and G0–G8 coverage ledgers. It is an
 analytical consistency test, not empirical validation.
 
+The public methodology guide documents the Phase 0 [serverless suitability criteria and research](../../docs/public-docs/docs/guides/serverless-suitability.md).
+The modeling chatbot can assess a project specification using the
+[packaged criteria and literature review](../../packages/java/platform-modeling-assistant/src/main/resources/assistant/serverless-suitability.md).
+The assessment supplies evidence for the Feasibility and Serverless Suitability Record (MF-02)
+without changing a model. The architect reviews the findings and conditions before the project
+team makes the G0 decision. See the [implementation and test notes](../../docs/internal/ai/serverless-suitability.md)
+for details.
+
 Canonical, machine-readable **iterative-incremental** process definitions for CIM, PIM,
 PSM, generated-artifact deployment readiness, and the end-to-end pipeline. Each process
 is a MODRISS JSON representation mapped to SPEM 2.0: reusable method content contains

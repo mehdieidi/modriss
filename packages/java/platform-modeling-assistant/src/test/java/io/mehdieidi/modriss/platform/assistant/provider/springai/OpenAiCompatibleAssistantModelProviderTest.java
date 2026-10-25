@@ -13,6 +13,47 @@ import org.junit.jupiter.api.Test;
 
 class OpenAiCompatibleAssistantModelProviderTest {
 
+  @Test
+  void conversationalRequestsAndResponsesHaveNoModelActionOrJsonContract() throws Exception {
+    var prompt =
+        new AssistantPrompt(
+            "Assess the project using the supplied criteria.",
+            "Project specification",
+            List.of(),
+            List.of(),
+            "serverless_suitability");
+    var body =
+        OpenAiCompatibleAssistantModelProvider.textRequest(
+            new ObjectMapper(), prompt, "test", prompt.user(), 8000);
+    assertFalse(body.has("tools"));
+    assertFalse(body.has("tool_choice"));
+    assertFalse(body.has("response_format"));
+    assertEquals(8000, body.path("max_tokens").asInt());
+    assertTrue(body.path("messages").path(0).path("content").asText().contains(prompt.system()));
+    var response =
+        OpenAiCompatibleAssistantModelProvider.textChatResponse(
+            new ObjectMapper(),
+            "{\"choices\":[{\"message\":{\"content\":\"Could you clarify the latency"
+                + " requirement?\"}}]}",
+            "test");
+    assertEquals(
+        "Could you clarify the latency requirement?", response.getResult().getOutput().getText());
+  }
+
+  @Test
+  void emptyConversationalContentIsARetryableTransportFailure() {
+    assertEquals(
+        502,
+        assertThrows(
+                PlatformException.class,
+                () ->
+                    OpenAiCompatibleAssistantModelProvider.textChatResponse(
+                        new ObjectMapper(),
+                        "{\"choices\":[{\"finish_reason\":\"length\",\"message\":{\"content\":\"\"}}]}",
+                        "test"))
+            .status());
+  }
+
   @org.junit.jupiter.api.Test
   void parsesProviderTokenResetDurations() {
     org.junit.jupiter.api.Assertions.assertEquals(

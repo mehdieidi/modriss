@@ -7,6 +7,7 @@ import java.util.function.Supplier;
  */
 public final class DurableTurnExecutionContext {
   private static final ThreadLocal<String> CURRENT = new ThreadLocal<>();
+  private static final ThreadLocal<String> FULL_SOURCE = new ThreadLocal<>();
 
   private DurableTurnExecutionContext() {}
 
@@ -23,5 +24,24 @@ public final class DurableTurnExecutionContext {
 
   public static String turnId() {
     return CURRENT.get();
+  }
+
+  /**
+   * Keeps the full specification available to read-only analysis outside modeling slice windows.
+   */
+  public static <T> T with(String turnId, String fullSource, Supplier<T> invocation) {
+    String previous = FULL_SOURCE.get();
+    if (fullSource == null) FULL_SOURCE.remove();
+    else FULL_SOURCE.set(fullSource);
+    try {
+      return with(turnId, invocation);
+    } finally {
+      if (previous == null) FULL_SOURCE.remove();
+      else FULL_SOURCE.set(previous);
+    }
+  }
+
+  public static String fullSource() {
+    return FULL_SOURCE.get();
   }
 }

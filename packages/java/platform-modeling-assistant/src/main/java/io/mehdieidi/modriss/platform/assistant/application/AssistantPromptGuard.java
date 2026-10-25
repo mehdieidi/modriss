@@ -48,7 +48,8 @@ public class AssistantPromptGuard {
                         bound(redact(snippet.content()), snippetLimit(snippet))))
             .toList();
     int maxSystemChars =
-        prompt.system().contains("Attached context file:")
+        (prompt.system().contains("Attached context file:")
+                || "serverless_suitability".equals(prompt.requiredTool()))
             ? Math.max(properties.maxSystemChars(), 32000)
             : properties.maxSystemChars();
     return new AssistantModelProvider.AssistantPrompt(

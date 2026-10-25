@@ -134,6 +134,20 @@ public abstract class AbstractAssistantModelProvider implements AssistantModelPr
     return reply(content, model, response, prompt);
   }
 
+  @Override
+  public AssistantReply completeText(AssistantPrompt rawPrompt) {
+    requireAvailable();
+    AssistantPrompt prompt = promptGuard.sanitize(rawPrompt);
+    String model = model();
+    String providerCallId = providerCallId();
+    logRequest(prompt, model, providerCallId);
+    long started = System.nanoTime();
+    var response = hardening.providerCall(providerKey, model, () -> callTextModel(prompt, model));
+    String content = response.getResult().getOutput().getText();
+    logResponse(model, content, providerCallId, started);
+    return reply(content, model, response, prompt);
+  }
+
   protected abstract String baseUrl();
 
   protected abstract boolean apiKeyConfigured();
@@ -142,6 +156,20 @@ public abstract class AbstractAssistantModelProvider implements AssistantModelPr
 
   protected abstract ChatOptions.Builder<?> options(
       String model, boolean toolsRequested, AssistantPrompt prompt);
+
+  protected abstract ChatOptions.Builder<?> textOptions(String model);
+
+  /** A conversational call has neither tool callbacks nor an output schema. */
+  protected org.springframework.ai.chat.model.ChatResponse callTextModel(
+      AssistantPrompt prompt, String model) {
+    Prompt request =
+        new Prompt(
+            java.util.List.of(
+                new SystemMessage(SYSTEM_GUARDRAIL + "\n" + prompt.system()),
+                new UserMessage(userWithContext(prompt))),
+            textOptions(model).build());
+    return cancellableProviderCall(() -> chatModel().call(request));
+  }
 
   /**
    * Calls the provider model directly so ChatClient never tries to execute an LLM action as a tool.

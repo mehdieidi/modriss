@@ -15,13 +15,14 @@ ChatbotController
        -> CONCEPTUAL_GENERATION -> ConceptualInstanceModelWorkflow
        -> INSPECT_AGENT         -> checked inspect/contract action loop
        -> ANSWER                -> read-only EXPLAIN_MODEL mode
+       -> SERVERLESS_SUITABILITY -> read-only research-grounded project assessment
   -> private ModelWorkspace
   -> ModelService.validateStructural(...)
   -> expected-revision atomic checkpoint
 ```
 
 Users never choose an internal strategy. The LLM returns one allowlisted value from
-`CONCEPTUAL_GENERATION`, `INSPECT_AGENT`, or `ANSWER`; deterministic structural facts restrict the
+`CONCEPTUAL_GENERATION`, `INSPECT_AGENT`, `ANSWER`, or `SERVERLESS_SUITABILITY`; deterministic structural facts restrict the
 legal set. Request keywords, aliases, and regex routing are not used.
 
 Fresh model creation and coherent non-destructive evolution may use conceptual generation. The LLM
@@ -72,9 +73,53 @@ so older durable workflows can resume. Backend code owns stable IDs, exact contr
 containment/reference enforcement, destructive confirmation, source evidence, private mutation,
 validation, and persistence.
 
+## Serverless suitability
+
+`ServerlessSuitabilityWorkflow` sends the project specification and the complete
+[`assistant/serverless-suitability.md`](src/main/resources/assistant/serverless-suitability.md)
+criteria to the LLM. The chatbot routes assessment requests, uploaded specifications and follow-up
+questions through this workflow. Routing uses the LLM's interpretation of the request, without
+keyword matching. Assessment receives the full upload; ordinary modeling keeps its existing source
+windows.
+
+The LLM receives the twelve criteria and writes the user-facing response in Markdown. It decides
+whether the evidence supports a recommendation, provisional advice or clarification questions.
+Detailed assessments should explain the relevant criteria, cite the supplied sources, distinguish
+assumptions from requirements and identify conditions for adoption. Hybrid recommendations should
+describe which components to model and which services to deliver separately.
+
+There is no assessment JSON schema or Java verdict classifier. The backend does not reject advice
+because a component label disagrees with a verdict, or require twelve rows before returning useful
+questions. `completeText` uses a separate conversational transport with no JSON response format or
+model tools, even when modeling calls use the configured JSON or native-tool protocol. Non-empty
+LLM text is returned directly. An empty response can request another LLM answer within the turn's
+call budget. No canned analysis or deterministic recommendation is substituted. Provider outages,
+authentication failures, timeouts and cancellation remain technical failures.
+
+Assessment has no model tools and cannot validate or change a model or commit a checkpoint. It
+calls neither EVL nor structural model validation. Provider call budgets, auditing, deadlines,
+cancellation and chat rendering use the existing assistant infrastructure.
+
+Run the focused offline tests without linters or formatters:
+
+```powershell
+mvn -o -pl packages/java/platform-modeling-assistant -am test '-Dtest=ServerlessSuitabilityWorkflowTest,AgentTurnLoopTest,AssistantPromptGuardTest,OpenAiCompatibleAssistantModelProviderTest,GeminiAssistantModelProviderTest,ConfiguredAssistantModelProviderTest' '-Dsurefire.failIfNoSpecifiedTests=false' '-Dcheckstyle.skip=true' '-Dpmd.skip=true' '-Dspotbugs.skip=true' '-Dspotless.skip=true'
+```
+
+The optional live tests use the production provider, model, endpoint, proxy and credentials from
+the repository `.env`. Environment variables and system properties take precedence. These tests
+make paid API calls and save synthetic project reports and usage under
+`target/serverless-suitability-conversation-live/`. An independent LLM review evaluates response
+quality in the live tests only; it never blocks a user response:
+
+```powershell
+mvn -o -Pllm-provider-tests -pl packages/java/platform-modeling-assistant -am test '-Dtest=ServerlessSuitabilityLiveTest' '-Dmodriss.suitability.live=true' '-Dsurefire.failIfNoSpecifiedTests=false' '-Dcheckstyle.skip=true' '-Dpmd.skip=true' '-Dspotbugs.skip=true' '-Dspotless.skip=true'
+```
+
 ## Provider protocol
 
-The deployed Arvan profile uses JSON content rather than native tool calls:
+The deployed Arvan profile uses JSON content for modeling calls. Suitability conversations use
+the text transport regardless of this setting:
 
 ```dotenv
 MODRISS_AI_PROVIDER=openai

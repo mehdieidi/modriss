@@ -12,13 +12,47 @@ Provider truncation, structural problems, capacity conflicts, missing requiremen
 
 The user works with one chatbot. Internally, the LLM selects a strategy that is allowed by the model's structural state:
 
-| Strategy                | Use                                                                                             |
-| ----------------------- | ----------------------------------------------------------------------------------------------- |
-| `CONCEPTUAL_GENERATION` | Create a fresh CIM or PIM model, or make a coherent additive change to an existing one.         |
-| `INSPECT_AGENT`         | Make a focused edit, work on selected elements, resume a turn, or handle a destructive request. |
-| `ANSWER`                | Explain a model without changing it.                                                            |
+| Strategy                 | Use                                                                                             |
+| ------------------------ | ----------------------------------------------------------------------------------------------- |
+| `CONCEPTUAL_GENERATION`  | Create a fresh CIM or PIM model, or make a coherent additive change to an existing one.         |
+| `INSPECT_AGENT`          | Make a focused edit, work on selected elements, resume a turn, or handle a destructive request. |
+| `ANSWER`                 | Explain a model without changing it.                                                            |
+| `SERVERLESS_SUITABILITY` | Assess project suitability for serverless and MODRISS without changing a model.                 |
 
 The backend does not infer business meaning from prompt keywords or canned templates.
+
+## Serverless suitability analysis
+
+The methodology's [serverless suitability analysis](serverless-suitability.md) explains all twelve
+criteria, the assessment procedure, hybrid boundaries and the supporting research.
+
+Paste a project specification into the chat, then ask for an assessment. The paperclip control is
+currently disabled in the browser UI; document uploads remain available through the backend API.
+
+> Would serverless and MODRISS suit this project? Explain your recommendation. If a hybrid architecture would work, identify which parts to model and which to deliver as external services.
+
+Include the workload's peaks and idle periods, task durations and resource needs, response times or deadlines, and state and consistency requirements. Describe external integrations, security and data residency constraints, costs, operating responsibilities and any provider restrictions. You can answer follow-up questions in the same conversation.
+
+The LLM uses the twelve criteria to explain whether serverless, a hybrid design or another approach
+fits the project. The research guidance describes `SUITABLE`, `HYBRID`, `UNSUITABLE` and
+`INSUFFICIENT_INFORMATION` outcomes, but the conversation has no required labels or report format.
+With incomplete requirements, the assistant can give provisional advice and ask the questions that
+matter. A detailed response should cite relevant sources and explain assumptions, conditions and
+next steps. Missing facts remain unresolved, and other benefits cannot compensate for an unmet
+mandatory constraint. The criteria's classification accuracy has not been scientifically validated.
+
+A hybrid recommendation identifies a useful serverless subset to model in MODRISS and describes the
+separately delivered components and their interfaces. Managed databases, storage, identity services
+and third-party APIs can also be ordinary dependencies in a serverless design; their presence alone
+does not require a hybrid recommendation. Check metamodel and generator support before proceeding,
+including support for serverless containers or other managed products. The proposed runtime behavior
+also needs verification.
+
+The backend returns the LLM's answer directly, without semantic rejection rules or a canned
+recommendation. It cannot produce an assessment when the provider is unavailable, credentials are
+invalid or the request is cancelled or times out. These are reported as technical problems.
+
+Assessment leaves the model unchanged. It creates no elements, runs no model validation and commits no checkpoint. Review the recommendation before asking for model creation in a separate turn. Uploads are assessed in full; if they exceed the provider's context limit, the request fails without silently omitting requirements. The project team remains responsible for the inception/G0 decision.
 
 ## Conceptual generation and evolution
 

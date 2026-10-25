@@ -33,6 +33,11 @@ public interface AssistantModelProvider {
    */
   AssistantReply complete(AssistantPrompt prompt);
 
+  /** Completes a conversational response without model tools or a structured-output contract. */
+  default AssistantReply completeText(AssistantPrompt prompt) {
+    return complete(prompt);
+  }
+
   /**
    * Completes one structured-output prompt without tool callbacks. Providers may override this to
    * use native JSON/schema response settings; the default preserves compatibility.

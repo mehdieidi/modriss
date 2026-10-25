@@ -48,3 +48,8 @@ The modeling-path, lifecycle, and delivery-engine SVGs are copied into
 `docs/public-docs/docs/assets/diagrams/` for the public site. Refresh those copies when a source
 diagram changes. When implementation behavior changes, update this package together with the
 affected source-of-truth files.
+
+The public [serverless suitability guide](docs/guides/serverless-suitability.md) and the assistant's
+[packaged research criteria](../../packages/java/platform-modeling-assistant/src/main/resources/assistant/serverless-suitability.md)
+share criterion identifiers C01 to C12 and source identifiers A1 to A4, I1 to I5, and M1 to M2.
+Update both when the criteria, evidence or assessment procedure changes.

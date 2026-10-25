@@ -45,6 +45,11 @@ public final class ConfiguredAssistantModelProvider implements AssistantModelPro
   }
 
   @Override
+  public AssistantReply completeText(AssistantPrompt prompt) {
+    return primary().completeText(prompt);
+  }
+
+  @Override
   public AssistantReply completeStructured(AssistantPrompt prompt) {
     return withFallback(provider -> provider.completeStructured(prompt));
   }

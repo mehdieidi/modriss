@@ -17,6 +17,23 @@ import org.junit.jupiter.api.Test;
 class ConfiguredAssistantModelProviderTest {
 
   @Test
+  void conversationsReachTheConfiguredTextTransportWithoutToolOrStructuredCalls() {
+    var properties = mock(AiProperties.class);
+    when(properties.providerKind()).thenReturn(AiProperties.Provider.OPENAI);
+    var openai = mock(OpenAiCompatibleAssistantModelProvider.class);
+    var gemini = mock(GeminiAssistantModelProvider.class);
+    var prompt = new AssistantModelProvider.AssistantPrompt("Assess", "Project", null);
+    var reply =
+        new AssistantModelProvider.AssistantReply("What latency is required?", "openai", "test");
+    when(openai.completeText(prompt)).thenReturn(reply);
+    var configured = new ConfiguredAssistantModelProvider(properties, openai, gemini);
+    assertEquals(reply, configured.completeText(prompt));
+    verify(openai, never()).completeStructured(any());
+    verify(openai, never()).completeWithTools(any());
+    org.mockito.Mockito.verifyNoInteractions(gemini);
+  }
+
+  @Test
   void neverFallsThroughToAnUnselectedProvider() {
     AiProperties properties =
         new AiProperties(

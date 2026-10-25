@@ -26,6 +26,10 @@ first G7 handover, continues while any release is live, and ends at G8.
 | **1. Active product construction and evolution** | Repeat model-driven increment, release qualification, progressive promotion, handover, and outcome-review activities while the product remains active.                                                      |
 | **2. Retire, migrate, and close**                | Authorize retirement, communicate with users, migrate or dispose of data, reconcile retained records, close integrations/access, decommission infrastructure, verify cost cessation, and retain knowledge.  |
 
+For the Phase 0 assessment, use the [serverless suitability criteria](serverless-suitability.md).
+They cover workload fit, deployment constraints and the boundary between the
+MODRISS models and separately delivered components in a hybrid architecture.
+
 The continuous-delivery cycle repeats activities _inside Phase 1_; no phase
 repeats. Phase 2 begins only after an explicit retirement decision. Operations
 and Maintenance coexists with active-product delivery and continues through

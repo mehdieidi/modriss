@@ -92,10 +92,28 @@ public class GeminiAssistantModelProvider extends AbstractAssistantModelProvider
       boolean toolsRequested,
       io.mehdieidi.modriss.platform.assistant.provider.AssistantModelProvider.AssistantPrompt
           prompt) {
+    if ("assistant_strategy".equals(prompt.requiredTool())) {
+      String schema = io.mehdieidi.modriss.platform.assistant.agent.AgentTurnLoop.strategySchema();
+      return GoogleGenAiChatOptions.builder()
+          .model(model)
+          .temperature(0.0)
+          .responseMimeType("application/json")
+          .outputSchema(schema)
+          .maxOutputTokens(
+              Math.min(properties.tokenBudget(), capabilities().maxCompletionTokens()));
+    }
     return GoogleGenAiChatOptions.builder()
         .model(model)
         .temperature(0.2)
         .toolCallbacks(toolCallbacks(prompt))
+        .maxOutputTokens(Math.min(properties.tokenBudget(), capabilities().maxCompletionTokens()));
+  }
+
+  @Override
+  protected GoogleGenAiChatOptions.Builder textOptions(String model) {
+    return GoogleGenAiChatOptions.builder()
+        .model(model)
+        .temperature(0.0)
         .maxOutputTokens(Math.min(properties.tokenBudget(), capabilities().maxCompletionTokens()));
   }
 

@@ -273,10 +273,13 @@ public final class DurableAssistantTurnWorker {
       }
       String durableMessage = message;
       String durableSource = sourceForAgent;
+      String fullSpecification =
+          units.isEmpty() ? turn.sourceText() : annotatedSourceUnits(units, units);
       AgentTurnLoop.WorkflowMode durableRoute = route;
       var result =
           io.mehdieidi.modriss.platform.assistant.application.DurableTurnExecutionContext.with(
               turn.id(),
+              fullSpecification,
               () ->
                   assistant.durableMessage(
                       user,

@@ -1,11 +1,11 @@
 # Current LLM modeling workflow
 
-Updated: 2026-09-09
+Updated: 2026-10-25
 
 This document describes the implementation currently in the repository. It distinguishes shipped
 behavior from proposed production hardening.
 
-## One durable product, three internal outcomes
+## Routing choices
 
 Users interact with one chatbot and never select a modeling engine.
 
@@ -18,6 +18,7 @@ REST message
        -> CONCEPTUAL_GENERATION
        -> INSPECT_AGENT
        -> ANSWER -> read-only EXPLAIN_MODEL workflow
+       -> SERVERLESS_SUITABILITY -> read-only project suitability assessment
   -> private ModelWorkspace
   -> structural Ecore/EMF validation
   -> revision-checked atomic commit and checkpoint
@@ -43,23 +44,30 @@ The worker first uses durable structural state:
 The adaptive decision is an LLM call with the closed schema:
 
 ```json
-{ "strategy": "CONCEPTUAL_GENERATION|INSPECT_AGENT|ANSWER" }
+{ "strategy": "CONCEPTUAL_GENERATION|INSPECT_AGENT|ANSWER|SERVERLESS_SUITABILITY" }
 ```
 
 The backend supplies only structural facts such as model level, model emptiness, source character
 count, destructive-confirmation state, and the legal strategies. It does not inspect request
 keywords. Safety restrictions are deterministic:
 
-| Structural situation                | Legal semantic choices           | Effective mutation path                           |
-| ----------------------------------- | -------------------------------- | ------------------------------------------------- |
-| Empty, fresh, non-destructive model | conceptual or `ANSWER` intention | conceptual mutation or read-only explanation      |
-| Non-empty, non-destructive model    | conceptual, inspect, or `ANSWER` | coherent evolution, surgical edit, or explanation |
-| Selected elements                   | agent action loop                | inspect/contract agent                            |
-| Resumed durable work                | persisted workflow               | inspect/contract plan/repair                      |
-| Confirmed destructive request       | agent action loop                | inspect/contract agent with preconditions         |
+| Structural situation                | Legal semantic choices                        | Effective mutation path                         |
+| ----------------------------------- | --------------------------------------------- | ----------------------------------------------- |
+| Empty, fresh, non-destructive model | conceptual, `ANSWER`, or suitability          | conceptual mutation or read-only response       |
+| Non-empty, non-destructive model    | conceptual, inspect, `ANSWER`, or suitability | evolution, surgical edit, or read-only response |
+| Selected elements                   | agent action loop                             | inspect/contract agent                          |
+| Resumed durable work                | persisted workflow                            | inspect/contract plan/repair                    |
+| Confirmed destructive request       | agent action loop                             | inspect/contract agent with preconditions       |
 
 If the strategy response is malformed, one bounded correction requests only the tiny schema.
 Strategy calls and their tokens are included in the durable provider-call audit.
+
+`SERVERLESS_SUITABILITY` handles inception/MF-02 assessments. It sends the full specification and
+versioned criteria to the configured LLM through `completeText`. The LLM writes its advice or
+clarification questions in Markdown, with no assessment schema, verdict classifier or semantic
+rejection step. Assessment receives every uploaded source unit and has no access to model tools.
+It cannot validate or commit a model. The assistant module README links to the criteria and has
+instructions for optional live tests.
 
 `ANSWER` maps to the enforced read-only explanation workflow. Mutation actions are unavailable on
 that route.

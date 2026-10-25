@@ -37,6 +37,7 @@ const WORKFLOW_LABELS = Object.freeze({
 const THINKING_STAGE_LABELS = Object.freeze({
   READING_MODEL: "Reading your model",
   ANALYZING_SOURCE: "Analyzing source document",
+  ASSESSING_SUITABILITY: "Assessing serverless suitability",
   QUERYING_METAMODEL: "Inspecting the metamodel",
   ROUTING: "Choosing an approach",
   BLUEPRINTING: "Designing the model structure",
@@ -60,6 +61,7 @@ const DURABLE_WORKFLOW_LABELS = Object.freeze({
   ANSWER: "Model explanation",
   EXPLAIN_MODEL: "Model explanation",
   EXPLAIN_METAMODEL: "Metamodel explanation",
+  SERVERLESS_SUITABILITY: "Serverless suitability",
   RESUME_REPAIR: "Resumed model update",
 });
 
@@ -103,6 +105,12 @@ function assistantProgressForEvent(eventType, payload = {}) {
     };
   }
   if (eventType === "assistant.trace.step") {
+    if (payload?.stage === "ASSESSING_SUITABILITY") {
+      return {
+        stage: "ASSESSING_SUITABILITY",
+        message: "Checking whether serverless fits your project.",
+      };
+    }
     const step = Number(payload?.step) || 1;
     return {
       stage: "PLANNING",
@@ -1801,7 +1809,7 @@ export function buildChatWelcomeCard() {
   welcome.className = "chat-welcome";
   welcome.innerHTML = `<span aria-hidden="true" class="chat-welcome-icon icon-svg icon-mask" style="--icon-src: url('/assets/icons/chatbot.svg');"></span>
     <div class="chat-welcome-title">Modeling Assistant</div>
-    <div class="chat-welcome-text">I can help you create, modify, and understand your models. Ask me anything or describe what you'd like to build.</div>`;
+    <div class="chat-welcome-text">Describe the model you want to create, ask for changes, or discuss an existing design. You can also share a project specification for a serverless suitability assessment.</div>`;
   return welcome;
 }
 

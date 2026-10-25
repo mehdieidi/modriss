@@ -256,6 +256,64 @@ public class OpenAiCompatibleAssistantModelProvider extends AbstractAssistantMod
     }
   }
 
+  @Override
+  protected OpenAiChatOptions.Builder textOptions(String model) {
+    return OpenAiChatOptions.builder()
+        .model(model)
+        .temperature(0.0)
+        .maxCompletionTokens(
+            Math.min(properties.tokenBudget(), capabilities().maxCompletionTokens()));
+  }
+
+  @Override
+  protected org.springframework.ai.chat.model.ChatResponse callTextModel(
+      AssistantPrompt prompt, String model) {
+    try {
+      var mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+      var body =
+          textRequest(
+              mapper,
+              prompt,
+              model,
+              userWithContext(prompt),
+              Math.min(properties.maxCompletionTokens(), capabilities().maxCompletionTokens()));
+      var response = sendChatRequest(mapper, body);
+      if (response.statusCode() / 100 != 2)
+        throw new PlatformException(
+            response.statusCode(),
+            "AI provider returned HTTP "
+                + response.statusCode()
+                + "."
+                + providerErrorSnippet(response.body()));
+      return textChatResponse(mapper, response.body(), model);
+    } catch (PlatformException failure) {
+      throw failure;
+    } catch (Exception failure) {
+      throw new IllegalStateException("OpenAI-compatible conversation request failed", failure);
+    }
+  }
+
+  /** Only transport settings are selected here. The LLM writes the complete user response. */
+  static com.fasterxml.jackson.databind.node.ObjectNode textRequest(
+      com.fasterxml.jackson.databind.ObjectMapper mapper,
+      AssistantPrompt prompt,
+      String model,
+      String user,
+      int completionLimit) {
+    var body = mapper.createObjectNode();
+    body.put("model", model);
+    body.put("temperature", 0.0);
+    body.put("max_tokens", completionLimit);
+    applyModelGenerationControls(body, model);
+    var messages = body.putArray("messages");
+    messages
+        .addObject()
+        .put("role", "system")
+        .put("content", SYSTEM_GUARDRAIL + "\n" + prompt.system());
+    messages.addObject().put("role", "user").put("content", user);
+    return body;
+  }
+
   /**
    * Calls compatible endpoints in JSON-object mode without depending on native function calling.
    *
@@ -410,6 +468,24 @@ public class OpenAiCompatibleAssistantModelProvider extends AbstractAssistantMod
       String requestedModel,
       String requiredAction)
       throws com.fasterxml.jackson.core.JsonProcessingException {
+    return chatResponse(mapper, responseBody, requestedModel, requiredAction, true);
+  }
+
+  static org.springframework.ai.chat.model.ChatResponse textChatResponse(
+      com.fasterxml.jackson.databind.ObjectMapper mapper,
+      String responseBody,
+      String requestedModel)
+      throws com.fasterxml.jackson.core.JsonProcessingException {
+    return chatResponse(mapper, responseBody, requestedModel, null, false);
+  }
+
+  private static org.springframework.ai.chat.model.ChatResponse chatResponse(
+      com.fasterxml.jackson.databind.ObjectMapper mapper,
+      String responseBody,
+      String requestedModel,
+      String requiredAction,
+      boolean structured)
+      throws com.fasterxml.jackson.core.JsonProcessingException {
     var root = mapper.readTree(responseBody);
     var choice = root.path("choices").path(0);
     var message = choice.path("message");
@@ -417,8 +493,12 @@ public class OpenAiCompatibleAssistantModelProvider extends AbstractAssistantMod
     if (content.isBlank()) {
       String finishReason = choice.path("finish_reason").asText("unknown");
       throw new PlatformException(
-          "length".equalsIgnoreCase(finishReason) ? 502 : 422,
-          "AI provider returned no structured JSON content (finish_reason=" + finishReason + ").");
+          !structured || "length".equalsIgnoreCase(finishReason) ? 502 : 422,
+          "AI provider returned no "
+              + (structured ? "structured JSON content" : "response text")
+              + " (finish_reason="
+              + finishReason
+              + ").");
     }
     content = normalizeRequiredJsonAction(mapper, content, requiredAction);
     var usage = root.path("usage");
