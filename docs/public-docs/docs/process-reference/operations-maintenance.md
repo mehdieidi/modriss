@@ -14,6 +14,13 @@ Operate the service and manage production, maintenance, and improvement demand t
 
 An operational item can finish as runbook or service work, follow the shortest safe model-driven change path, or enter a planned release backlog. Emergency restoration remains temporary until the authoritative source and downstream outputs are reconciled.
 
+<figure class="doc-diagram">
+  <a class="doc-diagram__link" href="../../assets/diagrams/process-reference/operations.svg" aria-label="Open full-size diagram: Kanban controls a service item, not the lifecycle">
+    <img src="../../assets/diagrams/process-reference/operations.svg" alt="Service work is requested, made ready, pulled into progress under WIP control, verified, and completed; observation and incident or maintenance work feed this ongoing service system." loading="lazy" />
+  </a>
+  <figcaption>Requested → Ready → In Progress → Verify → Done. The workflow policy defines WIP controls and service expectations; Done closes one item.</figcaption>
+</figure>
+
 ## Activity summary
 
 | Activity                              | Purpose                                                                                                                                                         | Task uses | Iterative |
@@ -269,6 +276,13 @@ The primary performer is **Quality Engineer**. The work normally involves Servic
 <small>Activity: `e2e.ops.a4`</small>
 
 Evolve the product through controlled impact analysis, authoritative-source change, release, and emergency-fix reconciliation.
+
+<figure class="doc-diagram">
+  <a class="doc-diagram__link" href="../../assets/diagrams/process-reference/change-routing.svg" aria-label="Open full-size diagram: Three destinations for operational demand">
+    <img src="../../assets/diagrams/process-reference/change-routing.svg" alt="A maintenance item is routed to operations-only work, the smallest affected model-driven delivery activity, or a planned release backlog; product changes return through release controls and G7." loading="lazy" />
+  </a>
+  <figcaption>Choose the disposition explicitly. Emergency restoration remains temporary until its authoritative source and downstream evidence are reconciled.</figcaption>
+</figure>
 
 This activity is iterative. Repeat it when evidence changes, a review finds rework, or the current item needs another controlled refinement.
 

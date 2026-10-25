@@ -4,6 +4,13 @@ This page documents the **SPEM Milestone with MODRISS evidence and authority ext
 
 A milestone marks a meaningful decision in the process. MODRISS adds explicit authority and required-evidence references so a gate cannot pass only because its preceding tasks are complete. The decision record should state acceptance, conditional acceptance, redirection, rework, deferral, or closure as applicable.
 
+<figure class="doc-diagram">
+  <a class="doc-diagram__link" href="../../../assets/diagrams/process-reference/gate-review.svg" aria-label="Open full-size diagram: Evidence review and the next authorized scope">
+    <img src="../../../assets/diagrams/process-reference/gate-review.svg" alt="A task produces evidence tied to a scope and revision, the named authorities review it, and acceptance authorizes that scope while unresolved findings return to source correction and a new review." loading="lazy" />
+  </a>
+  <figcaption>Task completion supplies evidence. The named authorities decide acceptance and record conditions or rework for the specific scope and revision.</figcaption>
+</figure>
+
 ## Summary
 
 | Gate                 | Decision                                   | Authorities | Required evidence |

@@ -4,6 +4,13 @@ This page documents the **SPEM TaskDefinition and TaskUse** elements used by the
 
 A TaskDefinition describes reusable work. A TaskUse places that definition inside an activity and binds it to process performers and work-product uses. The same responsibility may appear in another process context with different inputs, outputs, or selected steps.
 
+<figure class="doc-diagram">
+  <a class="doc-diagram__link" href="../../../assets/diagrams/process-reference/psm-task.svg" aria-label="Open full-size diagram: Deploy Lambda functions">
+    <img src="../../../assets/diagrams/process-reference/psm-task.svg" alt="Cloud Platform Engineer performs deploy lambda functions, consuming Event Fabric, SAM Stack Scaffold, Security Baseline, Network &amp; Identity, Deployment Strategy and producing Lambda Compute Layer." loading="lazy" />
+  </a>
+  <figcaption>Example task: Deploy Lambda functions. All declared inputs and outputs are shown; the detailed task entry below supplies the full procedure and criteria.</figcaption>
+</figure>
+
 ## Summary
 
 | Task                                                     | Primary role            | Inputs | Outputs | Task uses |

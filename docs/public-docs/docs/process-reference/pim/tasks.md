@@ -4,6 +4,13 @@ This page documents the **SPEM TaskDefinition and TaskUse** elements used by the
 
 A TaskDefinition describes reusable work. A TaskUse places that definition inside an activity and binds it to process performers and work-product uses. The same responsibility may appear in another process context with different inputs, outputs, or selected steps.
 
+<figure class="doc-diagram">
+  <a class="doc-diagram__link" href="../../../assets/diagrams/process-reference/pim-task.svg" aria-label="Open full-size diagram: Define functions and contracts">
+    <img src="../../../assets/diagrams/process-reference/pim-task.svg" alt="Solution Architect performs define functions and contracts, consuming Data Architecture, Service Boundary Map, Contract Catalog and producing Compute Catalog." loading="lazy" />
+  </a>
+  <figcaption>Example task: Define functions and contracts. All declared inputs and outputs are shown; the detailed task entry below supplies the full procedure and criteria.</figcaption>
+</figure>
+
 ## Summary
 
 | Task                                                     | Primary role       | Inputs | Outputs | Task uses |

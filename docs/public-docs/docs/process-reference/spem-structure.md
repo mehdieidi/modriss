@@ -2,6 +2,13 @@
 
 The MODRISS process documentation follows the central SPEM separation between **method content** and **process structure**. This distinction prevents reusable teaching from being confused with one occurrence of work in a lifecycle.
 
+<figure class="doc-diagram">
+  <a class="doc-diagram__link" href="../../assets/diagrams/process-reference/spem-bindings.svg" aria-label="Open full-size diagram: Reusable method content and its process uses">
+    <img src="../../assets/diagrams/process-reference/spem-bindings.svg" alt="Task, role and work-product definitions are reused through TaskUse, RoleUse and WorkProductUse; ProcessPerformer and ProcessParameter bind roles and directional evidence to an activity's task occurrence." loading="lazy" />
+  </a>
+  <figcaption>Definitions describe reusable teaching. Uses place that teaching inside an activity; performers and parameters make accountability and evidence direction explicit.</figcaption>
+</figure>
+
 | Public documentation section | SPEM element                        | Meaning in MODRISS                                                   |
 | ---------------------------- | ----------------------------------- | -------------------------------------------------------------------- |
 | Tasks                        | TaskDefinition                      | Reusable instructions, criteria, and evidence expectations           |

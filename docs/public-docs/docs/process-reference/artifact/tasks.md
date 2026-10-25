@@ -4,6 +4,13 @@ This page documents the **SPEM TaskDefinition and TaskUse** elements used by the
 
 A TaskDefinition describes reusable work. A TaskUse places that definition inside an activity and binds it to process performers and work-product uses. The same responsibility may appear in another process context with different inputs, outputs, or selected steps.
 
+<figure class="doc-diagram">
+  <a class="doc-diagram__link" href="../../../assets/diagrams/process-reference/artifact-task.svg" aria-label="Open full-size diagram: Run reproducible build and infrastructure validation">
+    <img src="../../../assets/diagrams/process-reference/artifact-task.svg" alt="Quality Engineer performs run reproducible build and infrastructure validation, consuming Environment Configuration Contract, Security Review Record, Generated Project Baseline and producing Verification Evidence." loading="lazy" />
+  </a>
+  <figcaption>Example task: Run reproducible build and infrastructure validation. All declared inputs and outputs are shown; the detailed task entry below supplies the full procedure and criteria.</figcaption>
+</figure>
+
 ## Summary
 
 | Task                                                 | Primary role            | Inputs | Outputs | Task uses |

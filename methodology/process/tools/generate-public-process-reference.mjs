@@ -4,6 +4,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { resolveTaskUse } from "./lib/process-walk.mjs";
+import { generatePublicProcessDiagrams, processFigure } from "./lib/public-process-diagrams.mjs";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../..");
 const DEFINITIONS = path.join(ROOT, "methodology/process/definitions");
@@ -13,6 +14,7 @@ const definitions = Object.fromEntries(levels.map((level) => [
   level,
   JSON.parse(fs.readFileSync(path.join(DEFINITIONS, `${level}.json`), "utf8")),
 ]));
+const diagramCount = generatePublicProcessDiagrams(ROOT, definitions);
 
 const title = { "end-to-end": "Development and Delivery", cim: "CIM modeling", pim: "PIM modeling", psm: "PSM modeling", artifact: "Generated-artifact readiness" };
 const guide = { "end-to-end": "../guides/full-lifecycle-method.md", cim: "../guides/cim-modeling-methodology.md", pim: "../guides/pim-modeling-methodology.md", psm: "../guides/psm-modeling-methodology.md", artifact: "../guides/generated-artifacts.md" };
@@ -33,7 +35,7 @@ These sources explain the standards and practices on which the process structure
 - [The Kanban Guide](https://kanbanguides.org/the-kanban-guide/)
 - [FinOps Framework](https://www.finops.org/framework/)
 - [AWS Well-Architected Serverless Applications Lens](https://docs.aws.amazon.com/wellarchitected/latest/serverless-applications-lens/welcome.html)
-- [Brinkkemper, Method engineering](https://doi.org/10.1016/S0950-5849(95)01059-9)
+- [Brinkkemper, Method engineering](<https://doi.org/10.1016/S0950-5849(95)01059-9>)
 - [Asadi, Esfahani, and Ramsin, Process patterns for MDA-based software development](https://mason.gmu.edu/~nesfaha2/Publications/SERA2010.pdf)
 `;
 
@@ -89,6 +91,8 @@ function renderStage(process, stage, depth = 0) {
   const hashes = "#".repeat(Math.min(3 + depth, 6));
   const tasks = (stage.taskUses || []).map((use) => resolveTaskUse(process, use)).filter(Boolean);
   let out = `${hashes} ${stage.name}\n\n<small>${stage.activityKind || stage.type || "Activity"}: \`${stage.id}\`</small>\n\n${stage.objective || "This activity groups related work and provides a reviewable point in the process."}\n\n`;
+  if (stage.id === "e2e.rel.a1") out += processFigure("release");
+  if (stage.id === "e2e.ops.a4") out += processFigure("change-routing");
   if (stage.iterative) out += "This activity is iterative. Repeat it when evidence changes, a review finds rework, or the current item needs another controlled refinement.\n\n";
   for (const task of tasks) out += renderTask(process, task, `${hashes}#`) + "\n";
   for (const child of stage.subStages || []) out += renderStage(process, child, depth + 1);
@@ -103,6 +107,7 @@ This page explains every phase, activity, and task in the Development and Delive
 
 The entries are practical descriptions. They do not require separate job titles or documents. Tailoring may combine work while preserving ownership, required evidence, and gate obligations.
 
+${processFigure("lifecycle")}
 ## Phase summary
 
 | Phase | Purpose | Activities | Entry conditions | Exit conditions |
@@ -112,6 +117,7 @@ ${process.phases.map((phase) => `| ${esc(phase.name)} | ${esc(phase.objective)} 
 `;
   for (const phase of process.phases) {
     out += `## ${phase.name}\n\n<small>Phase: \`${phase.id}\`</small>\n\n${phase.objective}\n\n**Entry conditions**\n\n${list(phase.entryCriteria)}\n\n**Exit conditions**\n\n${list(phase.exitCriteria)}\n\n`;
+    out += processFigure({ "e2e.ph0": "inception", "e2e.ph1": "increment", "e2e.ph2": "retirement" }[phase.id]);
     for (const stage of phase.stages || []) out += renderStage(process, stage);
   }
   return out + commonReferences;
@@ -136,6 +142,7 @@ ${list(component.exitCriteria)}
 
 An operational item can finish as runbook or service work, follow the shortest safe model-driven change path, or enter a planned release backlog. Emergency restoration remains temporary until the authoritative source and downstream outputs are reconciled.
 
+${processFigure("operations")}
 ## Activity summary
 
 | Activity | Purpose | Task uses | Iterative |
@@ -183,6 +190,7 @@ This section is the exhaustive public reference for the two coordinated MODRISS 
 
 The child-process catalogs describe the reusable method content used inside Development and Delivery. Together, these pages cover every canonical phase, activity, stage, task, role, work product, guidance item, and gate exposed by the process definitions.
 
+${processFigure("lifecycle", 1)}
 ## Start with the process you are performing
 
 - [Development and Delivery](development-delivery.md) explains all work from product intent to closure.
@@ -257,6 +265,7 @@ function renderActivitiesPage(scope) {
   const taskNames = names(scope.process.methodContent.taskDefinitions);
   let out = sectionIntro(scope, "phases and activities", "SPEM process-structure Activity, Phase, and TaskUse");
   out += "A phase establishes a significant lifecycle period and normally ends at a major checkpoint. An activity groups related work within a phase or process component. A TaskUse places reusable task guidance into that process context. Entry and exit conditions describe evidence states; they are not calendar dates.\n\n";
+  out += processFigure(scope.key === "development-delivery" ? "lifecycle" : scope.key === "operations-maintenance" ? "operations" : `${scope.key}-activities`, 3);
   out += "## Summary\n\n| Phase or activity | SPEM type | Contained by | Task uses | Execution |\n| --- | --- | --- | ---: | --- |\n";
   for (const { activity, parent } of activities) out += `| ${esc(activity.name)} | ${esc(activity.type || activity.activityKind || "Activity")} | ${esc(parent?.name || "Process")} | ${(activity.taskUses || []).length} | ${esc([activity.iterative && "iterative", activity.isOngoing && "ongoing", activity.isEventDriven && "event-driven"].filter(Boolean).join(", ") || "defined sequence")} |\n`;
   out += "\n## Detailed activities\n\n";
@@ -264,6 +273,8 @@ function renderActivitiesPage(scope) {
     const heading = "#".repeat(Math.min(2 + depth, 6));
     const taskUses = activity.taskUses || [];
     out += `${heading} ${activity.name}\n\n<small>${activity.type || "Activity"}${activity.activityKind ? ` · ${activity.activityKind}` : ""}: \`${activity.id}\`${parent ? ` · contained by **${parent.name}**` : ""}</small>\n\n${activity.objective || "This process element groups related work and its review evidence."}\n\n`;
+    const detailDiagram = { "e2e.ph0": "inception", "e2e.ph1": "increment", "e2e.rel.a1": "release", "e2e.ph2": "retirement", "e2e.ops.a4": "change-routing" }[activity.id];
+    if (detailDiagram) out += processFigure(detailDiagram, 3);
     if (activity.entryCriteria?.length) out += `**Entry conditions**\n\n${list(activity.entryCriteria)}\n\n`;
     if (activity.exitCriteria?.length) out += `**Exit conditions**\n\n${list(activity.exitCriteria)}\n\n`;
     const activityRoles = refs(activity.roleUseRefs?.map((id) => scope.process.roleUses.find((use) => use.id === id)?.roleDefinitionRef).filter(Boolean), roleNames);
@@ -283,6 +294,7 @@ function renderTasksPage(scope) {
   const activityNames = new Map(activities.map(({ activity }) => [activity.id, activity.name]));
   let out = sectionIntro(scope, "tasks", "SPEM TaskDefinition and TaskUse");
   out += "A TaskDefinition describes reusable work. A TaskUse places that definition inside an activity and binds it to process performers and work-product uses. The same responsibility may appear in another process context with different inputs, outputs, or selected steps.\n\n";
+  out += processFigure(`${scope.key}-task`, 3);
   const roleNames = names(scope.process.methodContent.roleDefinitions);
   out += "## Summary\n\n| Task | Primary role | Inputs | Outputs | Task uses |\n| --- | --- | ---: | ---: | ---: |\n";
   for (const task of tasks) out += `| ${esc(task.name)} | ${esc(roleNames.get(task.primaryPerformerRoleRef) || task.primaryPerformerRoleRef || "Not assigned")} | ${(task.inputWorkProductRefs || []).length} | ${(task.outputWorkProductRefs || []).length} | ${taskUses.filter((item) => item.taskDefinitionRef === task.id).length} |\n`;
@@ -327,6 +339,7 @@ function renderWorkProductsPage(scope) {
   if (scope.component?.id) activityIds.add(scope.component.id);
   let out = sectionIntro(scope, "work products", "SPEM WorkProductDefinition, WorkProductUse, and ProcessParameter");
   out += "A WorkProductDefinition describes maintained information or a tangible result. WorkProductUse binds that definition to an activity or task as an input or output. ProcessParameter makes the direction explicit. A work product can be stored in several physical files or systems if its identity, owner, revision, and evidence links remain clear.\n\n";
+  if (scope.key === "development-delivery") out += processFigure("evidence-lineage", 3);
   out += "## Summary\n\n| Work product | Kind | Producing tasks | Consuming tasks | Uses |\n| --- | --- | ---: | ---: | ---: |\n";
   for (const wp of workProducts) {
     const producerCount = tasks.filter((task) => task.outputWorkProductRefs?.includes(wp.id)).length;
@@ -360,6 +373,7 @@ function renderGatesPage(scope) {
   const wpNames = names(scope.process.methodContent.workProductDefinitions);
   let out = sectionIntro(scope, "gates and milestones", "SPEM Milestone with MODRISS evidence and authority extensions");
   out += "A milestone marks a meaningful decision in the process. MODRISS adds explicit authority and required-evidence references so a gate cannot pass only because its preceding tasks are complete. The decision record should state acceptance, conditional acceptance, redirection, rework, deferral, or closure as applicable.\n\n";
+  out += processFigure("gate-review", 3);
   out += "## Summary\n\n| Gate | Decision | Authorities | Required evidence |\n| --- | --- | ---: | ---: |\n";
   for (const gate of scope.gates || []) out += `| ${esc(gate.gateId || gate.id)} | ${esc(gate.name)} | ${(gate.authorityRoleRefs || []).length} | ${(gate.requiredEvidenceRefs || []).length} |\n`;
   out += "\n## Detailed gates and milestones\n\n";
@@ -372,7 +386,9 @@ function renderRelationshipsPage(scope) {
   const ids = new Set([...activities.map(({ activity }) => activity.id), ...taskUses.map((item) => item.id)]);
   const sequences = (scope.process.workSequences || []).filter((item) => ids.has(item.predecessorRef) || ids.has(item.successorRef));
   let out = sectionIntro(scope, "flow and bindings", "SPEM WorkSequence, ProcessPerformer, and ProcessParameter");
-  out += "WorkSequence records explicit process flow. ProcessPerformer binds a role use to a task use. ProcessParameter binds a work-product use to a task use and states whether it enters or leaves the task. These relationships make dependencies inspectable and prevent document order from being treated as hidden process logic.\n\n## Summary\n\n| Relationship area | Items | What it controls |\n| --- | ---: | --- |\n| Work sequences | " + sequences.length + " | Ordering, iteration, feedback, and conditional flow |\n| Task uses | " + taskUses.length + " | Placement of reusable tasks in activities |\n| Process performers | " + taskUses.reduce((sum, item) => sum + (item.processPerformers || []).length, 0) + " | Primary and supporting role bindings |\n| Process parameters | " + taskUses.reduce((sum, item) => sum + (item.processParameters || []).length, 0) + " | Input and output work-product bindings |\n\n## Work sequences\n\n";
+  out += "WorkSequence records explicit process flow. ProcessPerformer binds a role use to a task use. ProcessParameter binds a work-product use to a task use and states whether it enters or leaves the task. These relationships make dependencies inspectable and prevent document order from being treated as hidden process logic.\n\n";
+  out += processFigure("spem-bindings", 3);
+  out += "## Summary\n\n| Relationship area | Items | What it controls |\n| --- | ---: | --- |\n| Work sequences | " + sequences.length + " | Ordering, iteration, feedback, and conditional flow |\n| Task uses | " + taskUses.length + " | Placement of reusable tasks in activities |\n| Process performers | " + taskUses.reduce((sum, item) => sum + (item.processPerformers || []).length, 0) + " | Primary and supporting role bindings |\n| Process parameters | " + taskUses.reduce((sum, item) => sum + (item.processParameters || []).length, 0) + " | Input and output work-product bindings |\n\n## Work sequences\n\n";
   for (const item of sequences) out += `### ${item.predecessorRef} → ${item.successorRef}\n\n<small>WorkSequence: \`${item.id}\` · ${item.linkKind || item.relation || "dependency"}</small>\n\n${item.guidance || "Complete the predecessor condition before treating the successor as ready."}\n\n${item.condition ? `**Condition:** ${item.condition}\n\n` : ""}`;
   out += "## Task performer and parameter bindings\n\n";
   for (const use of taskUses) {
@@ -382,24 +398,40 @@ function renderRelationshipsPage(scope) {
 }
 
 function renderSpemStructure() {
-  return `# How the process maps to SPEM\n\nThe MODRISS process documentation follows the central SPEM separation between **method content** and **process structure**. This distinction prevents reusable teaching from being confused with one occurrence of work in a lifecycle.\n\n| Public documentation section | SPEM element | Meaning in MODRISS |\n| --- | --- | --- |\n| Tasks | TaskDefinition | Reusable instructions, criteria, and evidence expectations |\n| Roles | RoleDefinition | Reusable responsibility and competence |\n| Work products | WorkProductDefinition | Reusable description of an input, output, model, record, or artifact |\n| Guidance | Guidance | Supporting advice for performing or tailoring work |\n| Phases and activities | Phase and Activity | The lifecycle context that organizes work |\n| Task occurrences | TaskUse | Use of a TaskDefinition within an Activity |\n| Role participation | RoleUse and ProcessPerformer | Use of a role in an Activity and its connection to a TaskUse |\n| Input and output bindings | WorkProductUse and ProcessParameter | Use of a work product and its direction for a TaskUse |\n| Flow | WorkSequence | An explicit predecessor-successor relationship and its condition |\n| Gates | Milestone | A significant evidence-based decision point |\n\nMODRISS uses labeled extensions for execution state, governance, metamodel coverage, iteration, change routing, and evidence-based gate decisions. These additions support the executable platform. They do not claim to be native SPEM metaclasses.\n\n## Reading an item page\n\nStart with **Phases and activities** to locate the current work. Open **Tasks** for the procedure and completion conditions. Use **Roles** to assign accountability and collaboration. Consult **Work products** to understand the evidence entering and leaving the task. Apply the relevant **Guidance**, then use **Gates and milestones** when an authority decision is required.\n\n${commonReferences}`;
+  return `# How the process maps to SPEM\n\nThe MODRISS process documentation follows the central SPEM separation between **method content** and **process structure**. This distinction prevents reusable teaching from being confused with one occurrence of work in a lifecycle.\n\n${processFigure("spem-bindings")}\n| Public documentation section | SPEM element | Meaning in MODRISS |\n| --- | --- | --- |\n| Tasks | TaskDefinition | Reusable instructions, criteria, and evidence expectations |\n| Roles | RoleDefinition | Reusable responsibility and competence |\n| Work products | WorkProductDefinition | Reusable description of an input, output, model, record, or artifact |\n| Guidance | Guidance | Supporting advice for performing or tailoring work |\n| Phases and activities | Phase and Activity | The lifecycle context that organizes work |\n| Task occurrences | TaskUse | Use of a TaskDefinition within an Activity |\n| Role participation | RoleUse and ProcessPerformer | Use of a role in an Activity and its connection to a TaskUse |\n| Input and output bindings | WorkProductUse and ProcessParameter | Use of a work product and its direction for a TaskUse |\n| Flow | WorkSequence | An explicit predecessor-successor relationship and its condition |\n| Gates | Milestone | A significant evidence-based decision point |\n\nMODRISS uses labeled extensions for execution state, governance, metamodel coverage, iteration, change routing, and evidence-based gate decisions. These additions support the executable platform. They do not claim to be native SPEM metaclasses.\n\n## Reading an item page\n\nStart with **Phases and activities** to locate the current work. Open **Tasks** for the procedure and completion conditions. Use **Roles** to assign accountability and collaboration. Consult **Work products** to understand the evidence entering and leaving the task. Apply the relevant **Guidance**, then use **Gates and milestones** when an authority decision is required.\n\n${commonReferences}`;
+}
+
+function writeReference(relativePath, content) {
+  const filename = path.join(OUTPUT, relativePath);
+  // Preserve existing table spacing when the generated cells have not changed.
+  // Adding figures should not rewrite unrelated catalogs or require a formatter.
+  if (fs.existsSync(filename)) {
+    const tablePattern = /^\|[^\n]*(?:\n\|[^\n]*)*/gm;
+    const tableKey = (table) => table.split("\n").map((row) => row.split(/(?<!\\)\|/).map((cell) => {
+      const value = cell.trim();
+      return /^:?-+:?$/.test(value) ? value.replace(/-+/g, "---") : value;
+    }).join("|")).join("\n");
+    const existingTables = new Map([...fs.readFileSync(filename, "utf8").matchAll(tablePattern)].map(([table]) => [tableKey(table), table]));
+    content = content.replace(tablePattern, (table) => existingTables.get(tableKey(table)) || table);
+  }
+  fs.writeFileSync(filename, content);
 }
 
 fs.mkdirSync(OUTPUT, { recursive: true });
-fs.writeFileSync(path.join(OUTPUT, "index.md"), renderIndex());
-fs.writeFileSync(path.join(OUTPUT, "development-delivery.md"), renderDevelopment());
-fs.writeFileSync(path.join(OUTPUT, "operations-maintenance.md"), renderOperations());
-fs.writeFileSync(path.join(OUTPUT, "spem-structure.md"), renderSpemStructure());
+writeReference("index.md", renderIndex());
+writeReference("development-delivery.md", renderDevelopment());
+writeReference("operations-maintenance.md", renderOperations());
+writeReference("spem-structure.md", renderSpemStructure());
 for (const key of ["development-delivery", "operations-maintenance", "cim", "pim", "psm", "artifact"]) {
   const scope = scopeFor(key);
   const dir = path.join(OUTPUT, key);
   fs.mkdirSync(dir, { recursive: true });
-  fs.writeFileSync(path.join(dir, "activities.md"), renderActivitiesPage(scope));
-  fs.writeFileSync(path.join(dir, "tasks.md"), renderTasksPage(scope));
-  fs.writeFileSync(path.join(dir, "roles.md"), renderRolesPage(scope));
-  fs.writeFileSync(path.join(dir, "work-products.md"), renderWorkProductsPage(scope));
-  fs.writeFileSync(path.join(dir, "guidance.md"), renderGuidancePage(scope));
-  fs.writeFileSync(path.join(dir, "gates.md"), renderGatesPage(scope));
-  fs.writeFileSync(path.join(dir, "relationships.md"), renderRelationshipsPage(scope));
+  writeReference(`${key}/activities.md`, renderActivitiesPage(scope));
+  writeReference(`${key}/tasks.md`, renderTasksPage(scope));
+  writeReference(`${key}/roles.md`, renderRolesPage(scope));
+  writeReference(`${key}/work-products.md`, renderWorkProductsPage(scope));
+  writeReference(`${key}/guidance.md`, renderGuidancePage(scope));
+  writeReference(`${key}/gates.md`, renderGatesPage(scope));
+  writeReference(`${key}/relationships.md`, renderRelationshipsPage(scope));
 }
-console.log(`Generated public process reference in ${OUTPUT}`);
+console.log(`Generated public process reference and ${diagramCount} diagrams in ${OUTPUT}`);

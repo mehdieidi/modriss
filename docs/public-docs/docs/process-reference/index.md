@@ -4,6 +4,13 @@ This section is the exhaustive public reference for the two coordinated MODRISS 
 
 The child-process catalogs describe the reusable method content used inside Development and Delivery. Together, these pages cover every canonical phase, activity, stage, task, role, work product, guidance item, and gate exposed by the process definitions.
 
+<figure class="doc-diagram">
+  <a class="doc-diagram__link" href="../assets/diagrams/process-reference/lifecycle.svg" aria-label="Open full-size diagram: Development, operations, and shared closure">
+    <img src="../assets/diagrams/process-reference/lifecycle.svg" alt="Three sequential development phases contain repeatable delivery activities, while Operations and Maintenance runs from the first G7 handover until G8 acceptance and no live releases remain." loading="lazy" />
+  </a>
+  <figcaption>Phases occur once. Delivery activities repeat inside Phase 1; Operations continues through retirement until shared G8 closure.</figcaption>
+</figure>
+
 ## Start with the process you are performing
 
 - [Development and Delivery](development-delivery.md) explains all work from product intent to closure.

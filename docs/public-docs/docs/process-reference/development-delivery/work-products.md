@@ -4,6 +4,13 @@ This page documents the **SPEM WorkProductDefinition, WorkProductUse, and Proces
 
 A WorkProductDefinition describes maintained information or a tangible result. WorkProductUse binds that definition to an activity or task as an input or output. ProcessParameter makes the direction explicit. A work product can be stored in several physical files or systems if its identity, owner, revision, and evidence links remain clear.
 
+<figure class="doc-diagram">
+  <a class="doc-diagram__link" href="../../../assets/diagrams/process-reference/evidence-lineage.svg" aria-label="Open full-size diagram: Traceable evidence across an increment and release">
+    <img src="../../../assets/diagrams/process-reference/evidence-lineage.svg" alt="Increment evidence identifies CIM, PIM and PSM revisions plus transformation runs, generated baseline identity, verification results, and release and operational records so changed sources reveal downstream review impact." loading="lazy" />
+  </a>
+  <figcaption>Keep exact revisions and transformation runs linked. A changed source requires affected outputs and acceptance evidence to be refreshed.</figcaption>
+</figure>
+
 ## Summary
 
 | Work product                                     | Kind     | Producing tasks | Consuming tasks | Uses |

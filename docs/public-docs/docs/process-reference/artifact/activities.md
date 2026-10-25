@@ -4,6 +4,13 @@ This page documents the **SPEM process-structure Activity, Phase, and TaskUse** 
 
 A phase establishes a significant lifecycle period and normally ends at a major checkpoint. An activity groups related work within a phase or process component. A TaskUse places reusable task guidance into that process context. Entry and exit conditions describe evidence states; they are not calendar dates.
 
+<figure class="doc-diagram">
+  <a class="doc-diagram__link" href="../../../assets/diagrams/process-reference/artifact-activities.svg" aria-label="Open full-size diagram: ARTIFACT activity and evidence flow">
+    <img src="../../../assets/diagrams/process-reference/artifact-activities.svg" alt="Inspect &amp; Baseline Generated Project leads to Harden Environment &amp; Delivery Configuration leads to Verify Release Candidate leads to Approve Release &amp; Operational Handover; feedback returns to affected source activities before readiness is reconsidered." loading="lazy" />
+  </a>
+  <figcaption>Four readiness stages turn generated output into a verified handover package. Findings reopen the affected source and readiness work.</figcaption>
+</figure>
+
 ## Summary
 
 | Phase or activity                           | SPEM type | Contained by                                | Task uses | Execution        |

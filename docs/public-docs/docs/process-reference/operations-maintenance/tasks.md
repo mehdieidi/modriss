@@ -4,6 +4,13 @@ This page documents the **SPEM TaskDefinition and TaskUse** elements used by the
 
 A TaskDefinition describes reusable work. A TaskUse places that definition inside an activity and binds it to process performers and work-product uses. The same responsibility may appear in another process context with different inputs, outputs, or selected steps.
 
+<figure class="doc-diagram">
+  <a class="doc-diagram__link" href="../../../assets/diagrams/process-reference/operations-maintenance-task.svg" aria-label="Open full-size diagram: Assess and route a maintenance change">
+    <img src="../../../assets/diagrams/process-reference/operations-maintenance-task.svg" alt="Delivery Lead performs assess and route a maintenance change, consuming Service Work Item, Kanban Service-Delivery Policy and Board, Operational Evidence, Incident and Change Record, Situational Method Profile, Increment and Integrated Plan Record, Product and System Charter, Release, Recovery, Handover and Promotion Record and producing Increment and Integrated Plan Record, Operational Evidence, Incident and Change Record, Service Work Item." loading="lazy" />
+  </a>
+  <figcaption>Example task: Assess and route a maintenance change. All declared inputs and outputs are shown; the detailed task entry below supplies the full procedure and criteria.</figcaption>
+</figure>
+
 ## Summary
 
 | Task                                                  | Primary role     | Inputs | Outputs | Task uses |

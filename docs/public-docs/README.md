@@ -49,6 +49,11 @@ The modeling-path, lifecycle, and delivery-engine SVGs are copied into
 diagram changes. When implementation behavior changes, update this package together with the
 affected source-of-truth files.
 
+The complete process reference and its diagrams are generated together. From the repository root,
+run `node methodology/process/tools/generate-public-process-reference.mjs`. Diagram sources and
+review guidance are in `methodology/process/method/diagrams/process-reference/README.md`; the public
+SVG copies use the existing documentation theme and full-size image viewer.
+
 The public [serverless suitability guide](docs/guides/serverless-suitability.md) and the assistant's
 [packaged research criteria](../../packages/java/platform-modeling-assistant/src/main/resources/assistant/serverless-suitability.md)
 share criterion identifiers C01 to C12 and source identifiers A1 to A4, I1 to I5, and M1 to M2.

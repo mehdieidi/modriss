@@ -4,6 +4,13 @@ This page documents the **SPEM process-structure Activity, Phase, and TaskUse** 
 
 A phase establishes a significant lifecycle period and normally ends at a major checkpoint. An activity groups related work within a phase or process component. A TaskUse places reusable task guidance into that process context. Entry and exit conditions describe evidence states; they are not calendar dates.
 
+<figure class="doc-diagram">
+  <a class="doc-diagram__link" href="../../../assets/diagrams/process-reference/pim-activities.svg" aria-label="Open full-size diagram: PIM activity and evidence flow">
+    <img src="../../../assets/diagrams/process-reference/pim-activities.svg" alt="Architecture &amp; Slice Framing leads to Contracts &amp; Data leads to Compute &amp; Exposure leads to Integration &amp; Orchestration leads to Assurance &amp; Configuration leads to Platform Readiness; feedback returns to affected source activities before readiness is reconsidered." loading="lazy" />
+  </a>
+  <figcaption>Follow the activity sequence for the current slice. Readiness findings reopen affected work; the next slice starts after review and adaptation.</figcaption>
+</figure>
+
 ## Summary
 
 | Phase or activity            | SPEM type | Contained by                 | Task uses | Execution        |

@@ -4,6 +4,13 @@ This page explains every phase, activity, and task in the Development and Delive
 
 The entries are practical descriptions. They do not require separate job titles or documents. Tailoring may combine work while preserving ownership, required evidence, and gate obligations.
 
+<figure class="doc-diagram">
+  <a class="doc-diagram__link" href="../../assets/diagrams/process-reference/lifecycle.svg" aria-label="Open full-size diagram: Development, operations, and shared closure">
+    <img src="../../assets/diagrams/process-reference/lifecycle.svg" alt="Three sequential development phases contain repeatable delivery activities, while Operations and Maintenance runs from the first G7 handover until G8 acceptance and no live releases remain." loading="lazy" />
+  </a>
+  <figcaption>Phases occur once. Delivery activities repeat inside Phase 1; Operations continues through retirement until shared G8 closure.</figcaption>
+</figure>
+
 ## Phase summary
 
 | Phase                                   | Purpose                                                                                                                                                                             | Activities | Entry conditions | Exit conditions |
@@ -27,6 +34,13 @@ Establish the product/system purpose, process profile, team topology, quality ba
 - The method profile is approved
 - Teams, ownership, dependencies, and decision rights are explicit
 - The first increment has a testable outcome hypothesis
+
+<figure class="doc-diagram">
+  <a class="doc-diagram__link" href="../../assets/diagrams/process-reference/inception.svg" aria-label="Open full-size diagram: From product intent to an authorized method">
+    <img src="../../assets/diagrams/process-reference/inception.svg" alt="Product intent feeds feasibility and G0, then tailoring, team coordination, and quality, security, and operations baselines support the G1 decision." loading="lazy" />
+  </a>
+  <figcaption>G0 decides pursue, explore, redirect, or stop. G1 accepts the method, ownership, controls, and first increment hypothesis.</figcaption>
+</figure>
 
 ### Product and System Intent
 
@@ -500,6 +514,13 @@ Construct and evolve the product through repeatable model-driven increments and 
 
 - Retirement is authorized and no development or release work remains in flight
 
+<figure class="doc-diagram">
+  <a class="doc-diagram__link" href="../../assets/diagrams/process-reference/increment.svg" aria-label="Open full-size diagram: The model-driven increment and its feedback">
+    <img src="../../assets/diagrams/process-reference/increment.svg" alt="An increment runs through CIM, PIM, PSM, generation, and readiness with G2 to G5 decisions; transformations connect the model levels and source changes replay affected downstream work." loading="lazy" />
+  </a>
+  <figcaption>One capability slice moves through the model levels. G5 can accept, require rework, or defer; an accepted slice can join a release or start the next increment.</figcaption>
+</figure>
+
 ### Frame Increment
 
 <small>MODRISS::Stage: `e2e.p0.increment-planning`</small>
@@ -909,6 +930,13 @@ The primary performer is **Method Engineer**. The work normally involves Deliver
 
 Compose and verify a release from accepted increment records.
 
+<figure class="doc-diagram">
+  <a class="doc-diagram__link" href="../../assets/diagrams/process-reference/release.svg" aria-label="Open full-size diagram: Release qualification and operations handover">
+    <img src="../../assets/diagrams/process-reference/release.svg" alt="Accepted increments form an immutable release candidate reviewed at G6, progressively promoted with rollback capability, handed to Operations at G7, and reviewed for outcomes." loading="lazy" />
+  </a>
+  <figcaption>G6 authorizes release before production traffic. G7 records the operational handover; failed promotion retains the last accepted operating baseline.</figcaption>
+</figure>
+
 #### Assemble the release candidate
 
 <small>Task definition: `e2e.rel.a1.t1`</small>
@@ -1146,6 +1174,13 @@ Retire a product or service safely, preserve required knowledge and evidence, an
 - Users, data, integrations, environments, and operational ownership are safely transitioned or closed
 - Required records and lessons are retained
 - Shared G8 closure evidence is accepted and no live release remains
+
+<figure class="doc-diagram">
+  <a class="doc-diagram__link" href="../../assets/diagrams/process-reference/retirement.svg" aria-label="Open full-size diagram: Retirement and the shared closure evidence">
+    <img src="../../assets/diagrams/process-reference/retirement.svg" alt="An approved retirement plan leads to migration, decommissioning, and records verification; closure requires both retirement evidence and Operations confirmation that no release remains live." loading="lazy" />
+  </a>
+  <figcaption>Retirement and live-service shutdown have a shared G8 decision. Retained records still need an accepted, funded custodian after closure.</figcaption>
+</figure>
 
 ### Retirement Decision & Plan
 

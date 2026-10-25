@@ -4,6 +4,13 @@ This page documents the **SPEM TaskDefinition and TaskUse** elements used by the
 
 A TaskDefinition describes reusable work. A TaskUse places that definition inside an activity and binds it to process performers and work-product uses. The same responsibility may appear in another process context with different inputs, outputs, or selected steps.
 
+<figure class="doc-diagram">
+  <a class="doc-diagram__link" href="../../../assets/diagrams/process-reference/development-delivery-task.svg" aria-label="Open full-size diagram: Assess feasibility and serverless suitability">
+    <img src="../../../assets/diagrams/process-reference/development-delivery-task.svg" alt="Solution Architect performs assess feasibility and serverless suitability, consuming Product and System Charter and producing Feasibility and Serverless Suitability Record, Risk and Opportunity Register." loading="lazy" />
+  </a>
+  <figcaption>Example task: Assess feasibility and serverless suitability. All declared inputs and outputs are shown; the detailed task entry below supplies the full procedure and criteria.</figcaption>
+</figure>
+
 ## Summary
 
 | Task                                                   | Primary role             | Inputs | Outputs | Task uses |

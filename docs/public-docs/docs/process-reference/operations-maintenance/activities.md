@@ -4,6 +4,13 @@ This page documents the **SPEM process-structure Activity, Phase, and TaskUse** 
 
 A phase establishes a significant lifecycle period and normally ends at a major checkpoint. An activity groups related work within a phase or process component. A TaskUse places reusable task guidance into that process context. Entry and exit conditions describe evidence states; they are not calendar dates.
 
+<figure class="doc-diagram">
+  <a class="doc-diagram__link" href="../../../assets/diagrams/process-reference/operations.svg" aria-label="Open full-size diagram: Kanban controls a service item, not the lifecycle">
+    <img src="../../../assets/diagrams/process-reference/operations.svg" alt="Service work is requested, made ready, pulled into progress under WIP control, verified, and completed; observation and incident or maintenance work feed this ongoing service system." loading="lazy" />
+  </a>
+  <figcaption>Requested → Ready → In Progress → Verify → Done. The workflow policy defines WIP controls and service expectations; Done closes one item.</figcaption>
+</figure>
+
 ## Summary
 
 | Phase or activity                     | SPEM type | Contained by | Task uses | Execution |
@@ -78,6 +85,13 @@ Restore service and address systemic causes while preserving traceability and le
 <small>Activity · Activity: `e2e.ops.a4`</small>
 
 Evolve the product through controlled impact analysis, authoritative-source change, release, and emergency-fix reconciliation.
+
+<figure class="doc-diagram">
+  <a class="doc-diagram__link" href="../../../assets/diagrams/process-reference/change-routing.svg" aria-label="Open full-size diagram: Three destinations for operational demand">
+    <img src="../../../assets/diagrams/process-reference/change-routing.svg" alt="A maintenance item is routed to operations-only work, the smallest affected model-driven delivery activity, or a planned release backlog; product changes return through release controls and G7." loading="lazy" />
+  </a>
+  <figcaption>Choose the disposition explicitly. Emergency restoration remains temporary until its authoritative source and downstream evidence are reconciled.</figcaption>
+</figure>
 
 **Participating roles**
 
