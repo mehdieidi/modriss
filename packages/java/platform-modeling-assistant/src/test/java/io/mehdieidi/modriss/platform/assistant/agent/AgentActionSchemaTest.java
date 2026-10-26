@@ -14,11 +14,34 @@ import tools.jackson.databind.ObjectMapper;
 
 class AgentActionSchemaTest {
   @Test
+  void existingElementEditsHaveNoCreateSchemaOrContainmentExpansion() throws Exception {
+    var knowledge =
+        new io.mehdieidi.modriss.platform.assistant.metamodel.MetamodelKnowledgeService(
+            new io.mehdieidi.modriss.platform.assistant.patch.AssistantMetamodelSchemaService());
+    var types = List.of(knowledge.typeContract(ModelLevel.CIM, "DomainEntity"));
+    var schema =
+        new ObjectMapper().readTree(AgentActionSchema.json(types, "commit_model_batch", true));
+    var properties =
+        schema.path("oneOf").path(0).path("properties").path("arguments").path("properties");
+    assertEquals(0, properties.path("creates").path("maxItems").asInt(-1));
+    assertFalse(properties.path("creates").toString().contains("clientRef"));
+    assertTrue(properties.path("updates").toString().contains("name"));
+    assertTrue(schema.toString().length() / 4 < 5000);
+  }
+
+  @Test
   void declaresAClosedNativeActionEnvelope() throws Exception {
     var schema = new ObjectMapper().readTree(AgentActionSchema.json());
     assertEquals("object", schema.path("type").asText());
     assertTrue(schema.path("oneOf").isArray());
     assertTrue(schema.path("oneOf").size() >= 4);
+    // additionalProperties only sees properties declared in its own schema, not in oneOf.
+    assertFalse(schema.has("additionalProperties"));
+    for (var variant : schema.path("oneOf")) {
+      assertFalse(variant.path("additionalProperties").asBoolean());
+      assertTrue(variant.path("properties").has("action"));
+      assertTrue(variant.path("properties").has("arguments"));
+    }
   }
 
   @Test

@@ -51,6 +51,14 @@ public class AssistantPatchCompiler {
                 .orElse(root.path("eClass").asText("")));
     ArrayNode elements = root.withObject(visualContainer).withArray("elements");
     ArrayNode relationships = root.withObject(visualContainer).withArray("relationships");
+    java.util.Set<String> plannedDeletionIds = new java.util.LinkedHashSet<>();
+    semantic.operations().stream()
+        .filter(java.util.Objects::nonNull)
+        .filter(operation -> operation.type() == SemanticModelPatch.OperationType.DELETE_ELEMENT)
+        .forEach(
+            operation ->
+                collectContainedIds(
+                    locateElement(root, operation.targetElementId()).node(), plannedDeletionIds));
     for (SemanticModelPatch.Operation operation : semantic.operations()) {
       if (operation == null || operation.type() == null) {
         throw new PlatformException(400, "Assistant semantic operation type is required.");
@@ -238,6 +246,12 @@ public class AssistantPatchCompiler {
           affected.add(operation.targetElementId());
         }
         case DELETE_ELEMENT -> {
+          java.util.Set<String> deletedIds = new java.util.LinkedHashSet<>();
+          collectContainedIds(locateElement(root, operation.targetElementId()).node(), deletedIds);
+          // Match EMF deletion: unlink references to the removed objects without inventing
+          // replacement endpoints. Required links remain subject to structural validation.
+          unlinkDeletedReferences(
+              root, root, "", level, deletedIds, plannedDeletionIds, patch, inverse);
           List<LocatedElement> located =
               locateDeletedElements(root, operation.targetElementId()).stream()
                   .sorted(this::compareForRemoval)
@@ -246,21 +260,155 @@ public class AssistantPatchCompiler {
             throw new PlatformException(
                 404, "Assistant could not locate element: " + operation.targetElementId());
           }
-          located.forEach(
-              element ->
-                  patch.add(new ModelService.ModelPatchOperation("remove", element.path(), null)));
-          located.stream()
-              .sorted(this::compareForRestore)
-              .forEach(
-                  element ->
-                      inverse.add(
+          List<ModelService.ModelPatchOperation> restores =
+              located.stream()
+                  .sorted(this::compareForRestore)
+                  .map(
+                      element ->
                           new ModelService.ModelPatchOperation(
-                              "add", element.path(), element.node().deepCopy())));
+                              "add", element.path(), element.node().deepCopy()))
+                  .toList();
+          inverse.addAll(0, restores);
+          located.forEach(
+              element -> {
+                var removal = new ModelService.ModelPatchOperation("remove", element.path(), null);
+                patch.add(removal);
+                applyOperation(root, removal);
+              });
           affected.add(operation.targetElementId());
         }
       }
     }
     return new CompiledPatch(patch, inverse, affected);
+  }
+
+  private void collectContainedIds(JsonNode node, java.util.Set<String> ids) {
+    if (node.isObject()) {
+      String id = node.path("id").asText("");
+      if (!id.isBlank()) ids.add(id);
+    }
+    if (node.isContainer()) node.forEach(child -> collectContainedIds(child, ids));
+  }
+
+  private void unlinkDeletedReferences(
+      JsonNode modelRoot,
+      JsonNode node,
+      String path,
+      io.mehdieidi.modriss.platform.kernel.ModelLevel level,
+      java.util.Set<String> deletedIds,
+      java.util.Set<String> plannedDeletionIds,
+      List<ModelService.ModelPatchOperation> patch,
+      List<ModelService.ModelPatchOperation> inverse) {
+    if (node.isObject()) {
+      if (plannedDeletionIds.contains(node.path("id").asText(""))
+          || deletedIds.contains(node.path("source").asText(""))
+          || deletedIds.contains(node.path("target").asText(""))) return;
+      schemas
+          .tryCanonicalType(level, node.path("eClass").asText(""))
+          .flatMap(type -> schemas.typeSchema(level, type))
+          .ifPresent(
+              type ->
+                  type.references().stream()
+                      .filter(reference -> !reference.containment())
+                      .forEach(
+                          reference -> {
+                            JsonNode previous = node.get(reference.name());
+                            if (previous == null || previous.isNull()) return;
+                            JsonNode replacement = previous;
+                            if (previous.isArray()) {
+                              ArrayNode retained = JsonNodeFactory.instance.arrayNode();
+                              previous.forEach(
+                                  value -> {
+                                    if (!deletedIds.contains(referenceId(value)))
+                                      retained.add(value.deepCopy());
+                                  });
+                              if (retained.size() != previous.size()) replacement = retained;
+                            } else if (deletedIds.contains(referenceId(previous))) {
+                              replacement = JsonNodeFactory.instance.nullNode();
+                            }
+                            if (!replacement.equals(previous)) {
+                              if (reference.required()
+                                  && (replacement.isNull()
+                                      || replacement.isArray() && replacement.isEmpty())
+                                  && (node.path("id").asText("").isBlank()
+                                      || path.equals(
+                                          locateElement(modelRoot, node.path("id").asText())
+                                              .path()))) {
+                                throw new RequiredReferenceDeletionException(
+                                    node.path("id").asText(""),
+                                    node.path("name").asText(node.path("id").asText("")),
+                                    type.name(),
+                                    reference.name(),
+                                    java.util.Set.copyOf(deletedIds));
+                              }
+                              String referencePath = path + "/" + escapePointer(reference.name());
+                              patch.add(
+                                  new ModelService.ModelPatchOperation(
+                                      "replace", referencePath, replacement));
+                              inverse.add(
+                                  0,
+                                  new ModelService.ModelPatchOperation(
+                                      "replace", referencePath, previous.deepCopy()));
+                              ((ObjectNode) node).set(reference.name(), replacement);
+                            }
+                          }));
+      // Snapshot entries because reference values may have been replaced above.
+      node.properties()
+          .forEach(
+              entry ->
+                  unlinkDeletedReferences(
+                      modelRoot,
+                      entry.getValue(),
+                      path + "/" + escapePointer(entry.getKey()),
+                      level,
+                      deletedIds,
+                      plannedDeletionIds,
+                      patch,
+                      inverse));
+    } else if (node.isArray()) {
+      for (int index = 0; index < node.size(); index++) {
+        unlinkDeletedReferences(
+            modelRoot,
+            node.get(index),
+            path + "/" + index,
+            level,
+            deletedIds,
+            plannedDeletionIds,
+            patch,
+            inverse);
+      }
+    }
+  }
+
+  /** A requested removal would empty a surviving element's mandatory Ecore reference. */
+  public static final class RequiredReferenceDeletionException extends PlatformException {
+    public RequiredReferenceDeletionException(
+        String ownerId,
+        String ownerName,
+        String ownerType,
+        String reference,
+        java.util.Set<String> deletedIds) {
+      super(
+          422,
+          "Cannot delete "
+              + deletedIds
+              + ": "
+              + ownerType
+              + " '"
+              + ownerName
+              + "' ("
+              + ownerId
+              + ") requires at least one target for '"
+              + reference
+              + "'. This deletion would leave that required reference empty. No changes were"
+              + " made.");
+    }
+  }
+
+  private String referenceId(JsonNode value) {
+    return value.isObject()
+        ? value.path("$ref").asText(value.path("id").asText(""))
+        : value.asText("");
   }
 
   /**

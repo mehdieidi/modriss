@@ -82,6 +82,56 @@ class OpenAiCompatibleAssistantModelProviderTest {
   private final ObjectMapper mapper = new ObjectMapper();
 
   @Test
+  void jsonTransportActuallySendsTheExactEditSchemaAtTheCommitGate() throws Exception {
+    var knowledge =
+        new io.mehdieidi.modriss.platform.assistant.metamodel.MetamodelKnowledgeService(
+            new io.mehdieidi.modriss.platform.assistant.patch.AssistantMetamodelSchemaService());
+    var contracts =
+        List.of(
+            knowledge.typeContract(
+                io.mehdieidi.modriss.platform.kernel.ModelLevel.CIM, "InformationItem"));
+    var prompt =
+        new AssistantPrompt(
+            "executor", "rename the item", List.of(), contracts, "commit_model_batch");
+    var body =
+        OpenAiCompatibleAssistantModelProvider.jsonRequest(
+            mapper, prompt, "test", prompt.user(), 8000);
+    String system = body.path("messages").path(0).path("content").asText();
+    String marker = "authoritative action schema:\n";
+    String schemaText =
+        system.substring(
+            system.indexOf(marker) + marker.length(), system.indexOf("\nDo not use markdown"));
+    var variants = mapper.readTree(schemaText).path("oneOf");
+    assertEquals(1, variants.size());
+    assertEquals(
+        "commit_model_batch",
+        variants.path(0).path("properties").path("action").path("const").asText());
+    var arguments = variants.path(0).path("properties").path("arguments").path("properties");
+    assertTrue(arguments.path("updates").path("items").path("properties").has("elementId"));
+    assertTrue(arguments.path("updates").path("items").path("properties").has("attributes"));
+    assertTrue(
+        arguments.path("deletions").path("items").path("properties").has("preconditionHash"));
+    assertFalse(arguments.has("batch"));
+    assertFalse(arguments.has("deletes"));
+    assertTrue(system.contains("\"name\""));
+    assertEquals("json_object", body.path("response_format").path("type").asText());
+  }
+
+  @Test
+  void jsonTransportPreservesConceptualAndStrategyDocumentContracts() {
+    for (String document :
+        List.of("assistant_strategy", "conceptual_blueprint", "conceptual_instance_slice")) {
+      var prompt = new AssistantPrompt("document schema", "user", List.of(), List.of(), document);
+      var body =
+          OpenAiCompatibleAssistantModelProvider.jsonRequest(mapper, prompt, "test", "user", 8000);
+      String system = body.path("messages").path(0).path("content").asText();
+      assertTrue(system.contains("document schema"));
+      assertFalse(system.contains("authoritative action schema"));
+      assertFalse(system.contains("commit_model_batch"));
+    }
+  }
+
+  @Test
   void translatesExactlyOneNativeResponseToolCallToTheClosedActionEnvelope() throws Exception {
     var message =
         mapper.readTree(

@@ -1,0 +1,58 @@
+{
+  "id": "root",
+  "eClass": "CIMModel",
+  "modelLevel": "CIM",
+  "domainName": "Library lending",
+  "informationItems": [
+    { "id": "load-id", "eClass": "InformationItem", "name": "Load ID", "type": "IDENTIFIER" },
+    { "id": "borrower-name", "eClass": "InformationItem", "name": "Borrower name", "type": "TEXT" }
+  ],
+  "entities": [
+    {
+      "id": "book",
+      "eClass": "DomainEntity",
+      "name": "Book",
+      "identityStrategy": "NATURAL_KEY",
+      "identityAttributes": ["borrower-name"],
+      "primaryIdentityAttribute": "borrower-name"
+    },
+    {
+      "id": "loan",
+      "eClass": "DomainEntity",
+      "name": "Loan",
+      "identityStrategy": "NATURAL_KEY",
+      "identityAttributes": ["borrower-name"],
+      "primaryIdentityAttribute": "borrower-name"
+    }
+  ],
+  "relationships": [
+    {
+      "id": "book-loan",
+      "eClass": "DomainRelationship",
+      "name": "Book loans",
+      "source": "book",
+      "target": "loan",
+      "sourceMultiplicity": {
+        "id": "source-multiplicity",
+        "eClass": "Multiplicity",
+        "name": "Book cardinality",
+        "lowerBound": null,
+        "upperBound": null
+      },
+      "targetMultiplicity": {
+        "id": "target-multiplicity",
+        "eClass": "Multiplicity",
+        "name": "Loan cardinality",
+        "lowerBound": null,
+        "upperBound": null
+      }
+    }
+  ],
+  "diagram": {
+    "elements": [
+      { "id": "load-id", "eClass": "InformationItem", "name": "Load ID" },
+      { "id": "borrower-name", "eClass": "InformationItem", "name": "Borrower name" }
+    ],
+    "relationships": []
+  }
+}

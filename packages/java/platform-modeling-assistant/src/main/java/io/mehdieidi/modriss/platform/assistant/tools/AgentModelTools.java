@@ -173,8 +173,9 @@ public final class AgentModelTools {
    */
   public JsonNode inspectModel(InspectionSelector selector) {
     InspectionSelector effective = selector == null ? InspectionSelector.all() : selector;
+    JsonNode root = active().workspace().snapshot();
     List<InspectedElement> elements = new ArrayList<>();
-    collectInspected(active().workspace().snapshot(), null, null, elements);
+    collectInspected(root, null, null, elements);
     List<InspectedElement> filtered =
         elements.stream()
             .filter(item -> effective.ids().isEmpty() || effective.ids().contains(item.id()))
@@ -195,14 +196,7 @@ public final class AgentModelTools {
     result.put("pageSize", pageSize);
     ArrayNode records = result.putArray("elements");
     for (InspectedElement item : filtered.subList(from, to)) {
-      ObjectNode record = records.addObject();
-      record.put("id", item.id());
-      record.put("eClass", item.eClass());
-      if (item.name() != null && !item.name().isBlank()) record.put("name", item.name());
-      if (item.ownerId() != null) record.put("ownerId", item.ownerId());
-      if (item.ownerFeature() != null) record.put("ownerFeature", item.ownerFeature());
-      ArrayNode outgoing = record.putArray("outgoingReferences");
-      item.outgoingReferences().forEach(outgoing::add);
+      appendInspectionRecord(records.addObject(), item, root);
     }
     return result;
   }
@@ -275,14 +269,32 @@ public final class AgentModelTools {
 
   private void collectInspected(
       JsonNode node, String ownerId, String ownerFeature, List<InspectedElement> items) {
+    List<InspectedElement> records = new ArrayList<>();
+    collectInspectionRecords(node, ownerId, ownerFeature, records);
+    Map<String, InspectedElement> byId = new LinkedHashMap<>();
+    records.forEach(item -> byId.putIfAbsent(item.id(), item));
+    items.addAll(byId.values());
+  }
+
+  private void collectInspectionRecords(
+      JsonNode node, String ownerId, String ownerFeature, List<InspectedElement> items) {
     if (node == null) return;
     if (node.isObject()) {
       String id = node.path("id").asText("").trim();
       String eClass = node.path("eClass").asText("").trim();
       if (!id.isBlank() && !eClass.isBlank()) {
         List<String> outgoing = new ArrayList<>();
-        node.properties()
-            .forEach(entry -> collectReferenceIds(entry.getValue(), entry.getKey(), outgoing));
+        contracts.all(active().level()).stream()
+            .filter(type -> type.eClass().equals(eClass))
+            .findFirst()
+            .ifPresent(
+                type ->
+                    type.references().stream()
+                        .filter(reference -> !reference.containment())
+                        .forEach(
+                            reference ->
+                                collectReferenceIds(
+                                    node.get(reference.name()), reference.name(), outgoing)));
         items.add(
             new InspectedElement(
                 id,
@@ -291,28 +303,26 @@ public final class AgentModelTools {
                 ownerId,
                 ownerFeature,
                 outgoing));
-        node.properties()
-            .forEach(entry -> collectInspected(entry.getValue(), id, entry.getKey(), items));
+        forEachModelField(
+            node, (feature, child) -> collectInspectionRecords(child, id, feature, items));
         return;
       }
     }
     if (node.isObject())
-      node.properties()
-          .forEach(entry -> collectInspected(entry.getValue(), ownerId, entry.getKey(), items));
+      forEachModelField(
+          node, (feature, child) -> collectInspectionRecords(child, ownerId, feature, items));
     else if (node.isArray())
-      node.forEach(child -> collectInspected(child, ownerId, ownerFeature, items));
+      node.forEach(child -> collectInspectionRecords(child, ownerId, ownerFeature, items));
   }
 
   private void collectReferenceIds(JsonNode node, String feature, List<String> references) {
     if (node == null) return;
-    if (node.isTextual()
-        && (feature.endsWith("Id") || feature.endsWith("Ids") || feature.endsWith("Ref")))
-      references.add(feature + "=" + node.asText());
-    else if (node.isArray() && (feature.endsWith("Ids") || feature.endsWith("Refs")))
-      node.forEach(
-          value -> {
-            if (value.isTextual()) references.add(feature + "=" + value.asText());
-          });
+    if (node.isTextual()) references.add(feature + "=" + node.asText());
+    else if (node.isArray()) node.forEach(value -> collectReferenceIds(value, feature, references));
+    else if (node.isObject()) {
+      String id = node.path("$ref").asText(node.path("id").asText(""));
+      if (!id.isBlank()) references.add(feature + "=" + id);
+    }
   }
 
   /**
@@ -326,7 +336,8 @@ public final class AgentModelTools {
     JsonNode root = active().workspace().snapshot();
     Map<String, Integer> typeCounts = new TreeMap<>();
     List<String> elements = new ArrayList<>();
-    collectModelContext(root, root.path("id").asText(), typeCounts, elements);
+    collectModelContext(
+        root, root.path("id").asText(), typeCounts, elements, new java.util.HashSet<>());
     StringBuilder modelContext = new StringBuilder();
     modelContext
         .append("rootId=")
@@ -349,12 +360,16 @@ public final class AgentModelTools {
   }
 
   private void collectModelContext(
-      JsonNode node, String rootId, Map<String, Integer> typeCounts, List<String> elements) {
+      JsonNode node,
+      String rootId,
+      Map<String, Integer> typeCounts,
+      List<String> elements,
+      Set<String> seenIds) {
     if (node == null) return;
     if (node.isObject()) {
       String type = node.path("eClass").asText("").trim();
       String id = node.path("id").asText("").trim();
-      if (!type.isEmpty()) {
+      if (!type.isEmpty() && (id.isEmpty() || seenIds.add(id))) {
         typeCounts.merge(type, 1, Integer::sum);
         if (!id.isEmpty() && !id.equals(rootId) && elements.size() < 80) {
           String name = node.path("name").asText(node.path("label").asText("")).trim();
@@ -368,8 +383,12 @@ public final class AgentModelTools {
         }
       }
     }
-    if (node.isContainer())
-      node.forEach(child -> collectModelContext(child, rootId, typeCounts, elements));
+    if (node.isObject())
+      forEachModelField(
+          node,
+          (feature, child) -> collectModelContext(child, rootId, typeCounts, elements, seenIds));
+    else if (node.isArray())
+      node.forEach(child -> collectModelContext(child, rootId, typeCounts, elements, seenIds));
   }
 
   public List<JsonNode> searchModel(String query) {
@@ -441,7 +460,25 @@ public final class AgentModelTools {
               + "evidence alone cannot create a checkpoint.");
     }
     if (!batch.deletions().isEmpty() && !destructiveConfirmed) {
-      throw new PlatformException(409, "Deletion requires turn confirmation.");
+      // The LLM selects the elements. Hashes belong to the server's inspected snapshot, not to
+      // generated text. Freeze them once so approval cannot reselect targets or invent hashes.
+      var deletions =
+          batch.deletions().stream()
+              .map(
+                  deletion ->
+                      new ModelCommandBatch.Deletion(
+                          deletion.elementId(),
+                          elementHash(find(active().workspace().snapshot(), deletion.elementId()))))
+              .toList();
+      batch =
+          new ModelCommandBatch(
+              batch.creates(),
+              batch.updates(),
+              batch.connections(),
+              deletions,
+              batch.evidence(),
+              batch.planSummary(),
+              batch.turnComplete());
     }
     Context active = active();
     List<Operation> operations = new ArrayList<>();
@@ -620,10 +657,17 @@ public final class AgentModelTools {
       resolveExistingOrBatchRef(evidence.elementRef(), refs, "Evidence elementRef");
     }
     SemanticModelPatch semantic = new SemanticModelPatch(operations);
-    ModelWorkspace.MutationResult result =
+    var compiled =
         commandCompiler == null
-            ? active.workspace().mutate(semantic)
-            : mutateAtomically(active.workspace(), semantic);
+            ? active.workspace().compile(semantic)
+            : commandCompiler.compile(active.workspace().snapshot(), semantic);
+    if (!batch.deletions().isEmpty() && !destructiveConfirmed) {
+      active.workspace().validateCandidate(compiled);
+      throw new ConfirmationRequiredException(
+          new io.mehdieidi.modriss.platform.assistant.domain.PendingModelBatch(
+              batch, active.workspace().baseRevision()));
+    }
+    ModelWorkspace.MutationResult result = active.workspace().mutate(compiled);
     // Provider clientRefs are valid only inside this patch.  Persisted provenance must point at
     // stable model UUIDs so evidence can be navigated and audited after the turn completes.
     List<ModelCommandBatch.Evidence> resolvedEvidence =
@@ -647,6 +691,20 @@ public final class AgentModelTools {
             batch.planSummary(),
             batch.turnComplete());
     return result;
+  }
+
+  public static final class ConfirmationRequiredException extends PlatformException {
+    private final io.mehdieidi.modriss.platform.assistant.domain.PendingModelBatch proposal;
+
+    public ConfirmationRequiredException(
+        io.mehdieidi.modriss.platform.assistant.domain.PendingModelBatch proposal) {
+      super(409, "Deletion requires turn confirmation.");
+      this.proposal = proposal;
+    }
+
+    public io.mehdieidi.modriss.platform.assistant.domain.PendingModelBatch proposal() {
+      return proposal;
+    }
   }
 
   private ReferenceContract normalizeConnectionReference(
@@ -981,7 +1039,19 @@ public final class AgentModelTools {
   private void collect(JsonNode node, java.util.function.Consumer<JsonNode> visitor) {
     if (node == null) return;
     visitor.accept(node);
-    if (node.isContainer()) node.forEach(child -> collect(child, visitor));
+    if (node.isObject()) forEachModelField(node, (feature, child) -> collect(child, visitor));
+    else if (node.isArray()) node.forEach(child -> collect(child, visitor));
+  }
+
+  /** Semantic objects win over transport projections, which can retain stale names and values. */
+  private void forEachModelField(
+      JsonNode node, java.util.function.BiConsumer<String, JsonNode> visitor) {
+    node.properties().stream()
+        .filter(entry -> !"graph".equals(entry.getKey()) && !"diagram".equals(entry.getKey()))
+        .forEach(entry -> visitor.accept(entry.getKey(), entry.getValue()));
+    for (String projection : List.of("graph", "diagram")) {
+      if (node.has(projection)) visitor.accept(projection, node.get(projection));
+    }
   }
 
   private boolean matches(JsonNode node, String field, String needle) {

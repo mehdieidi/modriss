@@ -303,7 +303,7 @@ Cite errors in issues. Return JSON without code fences.
         new ObjectMapper().writeValueAsString(results));
   }
 
-  private AssistantModelProvider liveProvider() throws Exception {
+  AssistantModelProvider liveProvider() throws Exception {
     AiProperties properties = properties();
     assertTrue(
         properties.enabled(),

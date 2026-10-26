@@ -21,6 +21,16 @@ public final class AgentActionSchema {
    * closed over precisely those Ecore contracts; an invented attribute cannot reach EMF.
    */
   public static String json(List<TypeContract> patchContracts) {
+    return json(patchContracts, null);
+  }
+
+  /** Keeps JSON-object transports on the same typed workflow gate as native tools. */
+  public static String json(List<TypeContract> patchContracts, String requiredAction) {
+    return json(patchContracts, requiredAction, false);
+  }
+
+  public static String json(
+      List<TypeContract> patchContracts, String requiredAction, boolean existingElementsOnly) {
     try {
       ObjectMapper mapper = new ObjectMapper();
       var variants = mapper.createArrayNode();
@@ -35,17 +45,24 @@ public final class AgentActionSchema {
             {"answer_user", "respond_to_user"},
             {"ask_user", "respond_to_user"}
           }) {
+        if (requiredAction != null && !requiredAction.equals(action[0])) continue;
         var variant = variants.addObject();
         variant.put("type", "object");
         variant.put("additionalProperties", false);
         variant.putArray("required").add("action").add("arguments");
         var properties = variant.putObject("properties");
         properties.putObject("action").put("const", action[0]);
-        properties.set("arguments", mapper.valueToTree(toolSchema(action[1], patchContracts)));
+        properties.set(
+            "arguments",
+            mapper.valueToTree(toolSchema(action[1], patchContracts, existingElementsOnly)));
+      }
+      if (variants.isEmpty()) {
+        throw new IllegalArgumentException("Unknown assistant action: " + requiredAction);
       }
       var root = mapper.createObjectNode();
       root.put("type", "object");
-      root.put("additionalProperties", false);
+      // Each variant closes its own properties. Closing this union without declaring properties
+      // here would reject action and arguments even when a variant accepts them.
       root.set("oneOf", variants);
       return mapper.writeValueAsString(root);
     } catch (java.io.IOException ex) {
@@ -59,11 +76,19 @@ public final class AgentActionSchema {
 
   /** Returns a closed schema for one tool, constrained by the described Ecore contracts. */
   public static Map<String, Object> toolSchema(String toolName, List<TypeContract> patchContracts) {
-    if (!toolNames().contains(toolName) && !"apply_draft_patch".equals(toolName)) {
+    return toolSchema(toolName, patchContracts, false);
+  }
+
+  public static Map<String, Object> toolSchema(
+      String toolName, List<TypeContract> patchContracts, boolean existingElementsOnly) {
+    if (!toolNames().contains(toolName)
+        && !"apply_draft_patch".equals(toolName)
+        && !"ask_user".equals(toolName)
+        && !"answer_user".equals(toolName)) {
       throw new IllegalArgumentException("Unknown assistant tool: " + toolName);
     }
     return switch (toolName) {
-      case "respond_to_user" ->
+      case "respond_to_user", "ask_user", "answer_user" ->
           object(Map.of("message", nonEmptyStringSchema()), List.of("message"));
       case "analyze_source_units" -> sourceAnalysisSchema();
       case "plan_cim_blueprint" -> cimBlueprintSchema();
@@ -71,13 +96,18 @@ public final class AgentActionSchema {
       case "inspect_model" -> inspectModelSchema();
       case "describe_types" ->
           object(Map.of("names", array(stringSchema(), null)), List.of("names"));
-      case "commit_model_batch", "apply_draft_patch" -> patchSchema(patchContracts);
+      case "commit_model_batch", "apply_draft_patch" ->
+          patchSchema(patchContracts, existingElementsOnly);
       default -> throw new IllegalArgumentException("Unknown assistant tool: " + toolName);
     };
   }
 
-  private static Map<String, Object> patchSchema(List<TypeContract> contracts) {
-    Map<String, Object> createItem = createSchema(contracts == null ? List.of() : contracts);
+  private static Map<String, Object> patchSchema(
+      List<TypeContract> contracts, boolean existingElementsOnly) {
+    Map<String, Object> createItem =
+        existingElementsOnly
+            ? Map.of("type", "object")
+            : createSchema(contracts == null ? List.of() : contracts);
     Map<String, Object> update =
         object(
             Map.of(
@@ -113,7 +143,7 @@ public final class AgentActionSchema {
             List.of("elementRef", "sourceUnitId", "requirementId", "kind", "assumption"));
     return object(
         Map.of(
-            "creates", array(createItem, 48),
+            "creates", array(createItem, existingElementsOnly ? 0 : 48),
             "updates", array(update, 48),
             "connections", array(connection, 96),
             "deletions", array(deletion, null),

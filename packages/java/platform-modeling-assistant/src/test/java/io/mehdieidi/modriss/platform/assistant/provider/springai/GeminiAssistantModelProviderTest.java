@@ -11,6 +11,15 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 
 class GeminiAssistantModelProviderTest {
+  @Test
+  void aBlockedEditCanAskForTheDependencyDecisionWithoutMutationTools() {
+    var callbacks =
+        GeminiAssistantModelProvider.toolCallbacks(
+            new AssistantPrompt("system", "user", List.of(), List.of(), "ask_user", true));
+    assertEquals(1, callbacks.size());
+    assertEquals("ask_user", callbacks.get(0).getToolDefinition().name());
+    assertTrue(callbacks.get(0).getToolDefinition().inputSchema().contains("message"));
+  }
 
   @Test
   void conversationsHaveNoToolsOrOutputSchemaWhileRoutingRemainsStructured() {

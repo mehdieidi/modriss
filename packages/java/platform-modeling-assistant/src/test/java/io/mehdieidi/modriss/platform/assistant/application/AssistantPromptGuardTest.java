@@ -54,9 +54,10 @@ class AssistantPromptGuardTest {
     AssistantModelProvider.AssistantPrompt sanitized =
         guard.sanitize(
             new AssistantModelProvider.AssistantPrompt(
-                "system", "user", List.of(), List.of(contract), "commit_model_batch"));
+                "system", "user", List.of(), List.of(contract), "commit_model_batch", true));
 
     assertTrue(sanitized.patchContracts().contains(contract));
     assertEquals("commit_model_batch", sanitized.requiredTool());
+    assertTrue(sanitized.existingElementsOnly());
   }
 }

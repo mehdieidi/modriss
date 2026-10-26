@@ -234,6 +234,22 @@ public final class DurableAssistantTurnWorker {
           store.require(
               Path.of("users", turn.userId() + ".json"), UserRecord.class, "User not found.");
       boolean destructiveConfirmed = turn.message().startsWith(CONFIRMED_DESTRUCTION_PREFIX);
+      var pendingProposal =
+          destructiveConfirmed
+              ? turns
+                  .workflow(turn.id())
+                  .map(AssistantTurnStore.Workflow::plan)
+                  .filter(plan -> plan != null && plan.path("pendingModelBatch").isObject())
+                  .map(
+                      plan ->
+                          store
+                              .objectMapper()
+                              .treeToValue(
+                                  plan.path("pendingModelBatch"),
+                                  io.mehdieidi.modriss.platform.assistant.domain.PendingModelBatch
+                                      .class))
+                  .orElse(null)
+              : null;
       String message =
           destructiveConfirmed
               ? turn.message().substring(CONFIRMED_DESTRUCTION_PREFIX.length())
@@ -280,6 +296,7 @@ public final class DurableAssistantTurnWorker {
           io.mehdieidi.modriss.platform.assistant.application.DurableTurnExecutionContext.with(
               turn.id(),
               fullSpecification,
+              pendingProposal,
               () ->
                   assistant.durableMessage(
                       user,
@@ -413,7 +430,9 @@ public final class DurableAssistantTurnWorker {
       AssistantTurn.State state =
           turns.cancellationRequested(turn.id())
               ? AssistantTurn.State.CANCELLED
-              : AssistantTurn.State.SUCCEEDED;
+              : result.needsInput()
+                  ? AssistantTurn.State.NEEDS_INPUT
+                  : AssistantTurn.State.SUCCEEDED;
       boolean progressivePhaseCompleted =
           result.sourceAnalysis() != null
               || result.sourceBlueprint() != null
@@ -579,6 +598,20 @@ public final class DurableAssistantTurnWorker {
       // PARTIAL is deliberately durable state on this same turn. Resume reclaims it from the
       // checkpoint; no child turn or string-encoded continuation is created.
     } catch (io.mehdieidi.modriss.platform.kernel.PlatformException ex) {
+      for (Throwable cause = ex; cause != null; cause = cause.getCause()) {
+        if (cause
+            instanceof
+            io.mehdieidi.modriss.platform.assistant.tools.AgentModelTools
+                    .ConfirmationRequiredException
+                pending) {
+          var plan = store.objectMapper().createObjectNode();
+          plan.set("pendingModelBatch", store.objectMapper().valueToTree(pending.proposal()));
+          turns.saveWorkflow(
+              new AssistantTurnStore.Workflow(
+                  turn.id(), "PENDING_MODEL_BATCH", "NEEDS_CONFIRMATION", null, plan));
+          break;
+        }
+      }
       if (ex instanceof AgentTurnLoop.TurnExecutionException turnFailure) {
         turns.setProviderCallCount(
             turn.id(), Math.max(0, turn.providerCalls()) + turnFailure.providerCalls());
@@ -1017,6 +1050,7 @@ public final class DurableAssistantTurnWorker {
 
   static boolean isDurablePlan(tools.jackson.databind.JsonNode plan) {
     if (plan == null || plan.isNull() || plan.isMissingNode() || !plan.isObject()) return false;
+    if (plan.path("pendingModelBatch").isObject()) return true;
     if (plan.path("slices").isArray() && !plan.path("slices").isEmpty()) return true;
     if (plan.path("sourceUnitIds").isArray() && !plan.path("sourceUnitIds").isEmpty()) return true;
     return plan.path("obligationLedger").isObject()

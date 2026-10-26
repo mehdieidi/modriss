@@ -26,6 +26,135 @@ class AgentModelToolsTest {
 
   private final ObjectMapper mapper = new ObjectMapper();
 
+  @org.junit.jupiter.params.ParameterizedTest
+  @org.junit.jupiter.params.provider.ValueSource(booleans = {false, true})
+  void requiredDeletionIsRejectedBeforeConfirmationOrMutation(boolean confirmed) throws Exception {
+    var model =
+        mapper.readTree(
+            """
+{"id":"root","eClass":"CIMModel","modelLevel":"CIM","domainName":"Lending",
+"informationItems":[{"id":"item","eClass":"InformationItem","name":"Loan ID","type":"IDENTIFIER"}],
+"entities":[{"id":"loan","eClass":"DomainEntity","name":"Loan","identityStrategy":"NATURAL_KEY",
+"identityAttributes":["item"],"primaryIdentityAttribute":"item"}]}
+""");
+    var workspace =
+        new ModelWorkspace(ModelLevel.CIM, "m", 1, model, new AssistantPatchCompiler(), null);
+    var tools = cimTools();
+    tools.bind(ModelLevel.CIM, workspace);
+    String hash =
+        tools
+            .inspectNeighborhoods(List.of("item"))
+            .path("neighborhoods")
+            .path(0)
+            .path("center")
+            .path("preconditionHash")
+            .asText();
+    var batch =
+        new ModelCommandBatch(
+            List.of(),
+            List.of(),
+            List.of(),
+            List.of(new ModelCommandBatch.Deletion("item", hash)),
+            List.of(),
+            "Delete Loan ID",
+            true);
+    var failure =
+        assertThrows(
+            AssistantPatchCompiler.RequiredReferenceDeletionException.class,
+            () -> tools.commitModelBatch(batch, confirmed));
+    assertTrue(failure.getMessage().contains("Loan"));
+    assertEquals(model, workspace.snapshot());
+    assertTrue(workspace.patch().isEmpty());
+  }
+
+  @Test
+  void findsInboundReferencesFromEcoreRatherThanFieldNameSuffixes() throws Exception {
+    AgentModelTools tools = cimTools();
+    var model =
+        mapper.readTree(
+            """
+{"id":"root","eClass":"CIMModel","modelLevel":"CIM","domainName":"Lending",
+"informationItems":[{"id":"item","eClass":"InformationItem","name":"Loan ID","type":"IDENTIFIER"}],
+"entities":[{"id":"loan","eClass":"DomainEntity","name":"Loan","identityStrategy":"SURROGATE_KEY",
+"identityAttributes":["item"],"primaryIdentityAttribute":"item"}]}
+""");
+    tools.bind(
+        ModelLevel.CIM,
+        new ModelWorkspace(ModelLevel.CIM, "m", 1, model, new AssistantPatchCompiler(), null));
+    var neighborhood = tools.inspectNeighborhoods(List.of("item")).path("neighborhoods").path(0);
+    assertEquals(1, neighborhood.path("inboundReferences").size());
+    assertEquals("loan", neighborhood.path("inboundReferences").path(0).path("id").asText());
+    assertTrue(
+        neighborhood
+            .path("inboundReferences")
+            .path(0)
+            .path("outgoingReferences")
+            .toString()
+            .contains("identityAttributes=item"));
+    assertTrue(
+        neighborhood
+            .path("inboundReferences")
+            .path(0)
+            .path("outgoingReferences")
+            .toString()
+            .contains("primaryIdentityAttribute=item"));
+  }
+
+  @Test
+  void inspectionAndHashesUseOneAuthoritativeSemanticObjectBeforeStaleCanvasCopies()
+      throws Exception {
+    var model =
+        mapper.readTree(
+            """
+{"id":"root","eClass":"CIMModel","modelLevel":"CIM",
+"graph":{"elements":[{"id":"item","eClass":"InformationItem","name":"Load ID"}],"relationships":[]},
+"diagram":{"elements":[{"id":"item","eClass":"InformationItem","name":"Load ID"}],"relationships":[]},
+"informationItems":[{"id":"item","eClass":"InformationItem","name":"load identity","type":"TEXT"}]}
+""");
+    AgentModelTools tools = cimTools();
+    tools.bind(
+        ModelLevel.CIM,
+        new ModelWorkspace(ModelLevel.CIM, "m", 1, model, new AssistantPatchCompiler(), null));
+
+    var inspection =
+        tools.inspectModel(
+            new AgentModelTools.InspectionSelector(
+                List.of("item"), List.of(), List.of(), null, 0, 50));
+    assertEquals(1, inspection.path("total").asInt());
+    assertEquals("load identity", inspection.path("elements").path(0).path("name").asText());
+    assertEquals(
+        "informationItems", inspection.path("elements").path(0).path("ownerFeature").asText());
+    assertEquals(model.path("informationItems").path(0), tools.readModel("item"));
+    assertEquals(1, tools.inspectSummary().path("typeCounts").path("InformationItem").asInt());
+    assertTrue(tools.modelContext().contains("InformationItem=1"));
+    assertTrue(!tools.modelContext().contains("name=Load ID"));
+    String hash = inspection.path("elements").path(0).path("preconditionHash").asText();
+    assertTrue(!hash.isBlank());
+    assertEquals(
+        hash,
+        tools
+            .inspectNeighborhoods(List.of("item"))
+            .path("neighborhoods")
+            .path(0)
+            .path("center")
+            .path("preconditionHash")
+            .asText());
+    var result =
+        tools.commitModelBatch(
+            new ModelCommandBatch(
+                List.of(),
+                List.of(),
+                List.of(),
+                List.of(new ModelCommandBatch.Deletion("item", hash)),
+                List.of(),
+                "Deleted item",
+                true),
+            true);
+    assertTrue(result.model().path("informationItems").isEmpty());
+    assertTrue(result.model().path("graph").path("elements").isEmpty());
+    assertTrue(result.model().path("diagram").path("elements").isEmpty());
+  }
+
   @Test
   void rejectsUnknownTypeWithActionableSuggestion() throws Exception {
     var knowledge = new MetamodelKnowledgeService(new AssistantMetamodelSchemaService());

@@ -490,6 +490,21 @@ public class ChatbotController {
       throw new PlatformException(404, "Assistant turn not found.");
     if (previous.state() != AssistantTurn.State.NEEDS_CONFIRMATION)
       throw new PlatformException(409, "This turn has no pending destructive action.");
+    var proposalWorkflow =
+        turns
+            .workflow(previous.id())
+            .filter(
+                workflow ->
+                    workflow.plan() != null
+                        && workflow.plan().path("pendingModelBatch").isObject());
+    Long approvedRevision =
+        proposalWorkflow
+            .map(
+                workflow -> workflow.plan().path("pendingModelBatch").path("baseRevision").asLong())
+            .orElse(
+                previous.expectedRevision() == null
+                    ? previous.revision()
+                    : previous.expectedRevision());
     Instant acceptedAt = Instant.now();
     AssistantTurn next =
         new AssistantTurn(
@@ -499,7 +514,7 @@ public class ChatbotController {
             previous.projectId(),
             previous.level(),
             previous.modelId(),
-            previous.revision(),
+            approvedRevision,
             "confirm-" + previous.id() + "-" + java.util.UUID.randomUUID(),
             DurableAssistantTurnWorker.CONFIRMED_DESTRUCTION_PREFIX + previous.message(),
             previous.sourceText(),
@@ -510,7 +525,7 @@ public class ChatbotController {
             null,
             null,
             false,
-            previous.revision(),
+            approvedRevision,
             0,
             0,
             previous.coveragePercent(),
@@ -520,6 +535,11 @@ public class ChatbotController {
             0,
             0);
     turns.create(next);
+    proposalWorkflow.ifPresent(
+        workflow ->
+            turns.saveWorkflow(
+                new AssistantTurnStore.Workflow(
+                    next.id(), "CONFIRMED_MODEL_BATCH", "CONFIRMED", null, workflow.plan())));
     turns.appendEvent(next.id(), "turn.stage", java.util.Map.of("stage", "DESTRUCTION_CONFIRMED"));
     turns.audit(
         next.id(), "DESTRUCTION_CONFIRMED", java.util.Map.of("previousTurnId", previous.id()));

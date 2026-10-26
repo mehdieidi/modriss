@@ -249,6 +249,13 @@ public final class AgenticTurnService {
       AgentTurnLoop.WorkflowMode mode,
       boolean persistModel) {
     ModelRecord current = models.get(user, level, modelId);
+    var approvedProposal = destructiveConfirmed ? DurableTurnExecutionContext.pendingBatch() : null;
+    if (approvedProposal != null && approvedProposal.baseRevision() != current.revision()) {
+      throw new io.mehdieidi.modriss.platform.kernel.PlatformException(
+          409,
+          "The model changed after the deletion proposal. Review the current model before"
+              + " confirming again.");
+    }
     if (persistConversation && memory != null)
       memory.appendMessage(sessionId, "USER", message, Map.of());
     String contextualMessage = contextualMessage(sessionId, message);
@@ -310,7 +317,8 @@ public final class AgenticTurnService {
         turn.sourceAnalysis(),
         workspace.patch(),
         workspace.snapshot(),
-        expectedRevision);
+        expectedRevision,
+        turn.needsInput());
   }
 
   /** Persists a durable draft after the worker has opened its checkpoint transaction. */
@@ -369,5 +377,6 @@ public final class AgenticTurnService {
       tools.jackson.databind.JsonNode sourceAnalysis,
       List<ModelService.ModelPatchOperation> modelPatch,
       tools.jackson.databind.JsonNode candidateModel,
-      long baseRevision) {}
+      long baseRevision,
+      boolean needsInput) {}
 }

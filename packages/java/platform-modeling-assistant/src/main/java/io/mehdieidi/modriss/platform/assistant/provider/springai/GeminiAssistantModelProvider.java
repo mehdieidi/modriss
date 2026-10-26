@@ -146,7 +146,10 @@ public class GeminiAssistantModelProvider extends AbstractAssistantModelProvider
           prompt) {
     try {
       var mapper = new com.fasterxml.jackson.databind.ObjectMapper();
-      var schema = mapper.valueToTree(AgentActionSchema.toolSchema(name, prompt.patchContracts()));
+      var schema =
+          mapper.valueToTree(
+              AgentActionSchema.toolSchema(
+                  name, prompt.patchContracts(), prompt.existingElementsOnly()));
       normalizeSchemaForGemini(schema);
       return mapper.writeValueAsString(schema);
     } catch (com.fasterxml.jackson.core.JsonProcessingException ex) {

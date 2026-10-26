@@ -17,6 +17,121 @@ class AssistantPatchCompilerTest {
   private final AssistantPatchCompiler compiler = new AssistantPatchCompiler();
 
   @Test
+  void deletionUnlinksEcoreReferencesWithoutDeletingDependentObjectsAndUndoRestoresThem()
+      throws Exception {
+    var model =
+        mapper.readTree(
+            """
+{"id":"root","eClass":"CIMModel","modelLevel":"CIM","domainName":"Lending",
+"informationItems":[{"id":"item","eClass":"InformationItem","name":"Loan ID","type":"IDENTIFIER"},
+{"id":"other","eClass":"InformationItem","name":"Other ID","type":"IDENTIFIER"}],
+"entities":[{"id":"loan","eClass":"DomainEntity","name":"Loan","description":"item",
+"identityStrategy":"SURROGATE_KEY","identityAttributes":["item","other"],"primaryIdentityAttribute":"other"}],
+"diagram":{"elements":[{"id":"loan","eClass":"DomainEntity","identityAttributes":["item"],
+"primaryIdentityAttribute":"item"}],"relationships":[]}}
+""");
+    var semantic =
+        new SemanticModelPatch(
+            List.of(
+                new SemanticModelPatch.Operation(
+                    SemanticModelPatch.OperationType.DELETE_ELEMENT,
+                    "item",
+                    "InformationItem",
+                    null,
+                    null,
+                    null)));
+    var compiled = compiler.compile(model, semantic);
+    var result = compiler.apply(model, compiled);
+
+    assertEquals(1, result.path("entities").size());
+    assertEquals("other", result.at("/entities/0/identityAttributes/0").asText());
+    assertEquals(1, result.at("/entities/0/identityAttributes").size());
+    assertEquals("other", result.at("/entities/0/primaryIdentityAttribute").asText());
+    assertEquals("item", result.at("/entities/0/description").asText());
+    assertEquals("other", result.at("/informationItems/0/id").asText());
+    compiled.inversePatch().forEach(operation -> compiler.applyOperation(result, operation));
+    assertEquals(model, result);
+  }
+
+  @Test
+  void rejectsDeletionThatWouldEmptyAMandatoryEcoreReference() throws Exception {
+    var model =
+        mapper.readTree(
+            """
+{"id":"root","eClass":"CIMModel","modelLevel":"CIM",
+"informationItems":[{"id":"item","eClass":"InformationItem","name":"Loan ID","type":"IDENTIFIER"}],
+"entities":[{"id":"loan","eClass":"DomainEntity","name":"Loan","identityStrategy":"NATURAL_KEY",
+"identityAttributes":["item"],"primaryIdentityAttribute":"item"}],
+"diagram":{"elements":[],"relationships":[]}}
+""");
+    var before = model.deepCopy();
+    var failure =
+        assertThrows(
+            AssistantPatchCompiler.RequiredReferenceDeletionException.class,
+            () ->
+                compiler.compile(
+                    model,
+                    new SemanticModelPatch(
+                        List.of(
+                            new SemanticModelPatch.Operation(
+                                SemanticModelPatch.OperationType.DELETE_ELEMENT,
+                                "item",
+                                "InformationItem",
+                                null,
+                                null,
+                                null)))));
+    assertTrue(failure.getMessage().contains("Loan"));
+    assertTrue(failure.getMessage().contains("identityAttributes"));
+    assertEquals(before, model);
+  }
+
+  @Test
+  void deletionRetainsReplacementReferencesChosenInTheSameBatch() throws Exception {
+    var model =
+        mapper.readTree(
+            """
+{"id":"root","eClass":"CIMModel","modelLevel":"CIM","domainName":"Lending",
+"informationItems":[{"id":"item","eClass":"InformationItem","type":"IDENTIFIER"},
+{"id":"other","eClass":"InformationItem","type":"IDENTIFIER"}],
+"entities":[{"id":"loan","eClass":"DomainEntity","name":"Loan","identityStrategy":"SURROGATE_KEY",
+"identityAttributes":["item"],"primaryIdentityAttribute":"item"}],
+"diagram":{"elements":[],"relationships":[]}}
+""");
+    var compiled =
+        compiler.compile(
+            model,
+            new SemanticModelPatch(
+                List.of(
+                    new SemanticModelPatch.Operation(
+                        SemanticModelPatch.OperationType.CONNECT_ELEMENTS,
+                        "other",
+                        "InformationItem",
+                        null,
+                        "loan",
+                        "identityAttributes"),
+                    new SemanticModelPatch.Operation(
+                        SemanticModelPatch.OperationType.CONNECT_ELEMENTS,
+                        "other",
+                        "InformationItem",
+                        null,
+                        "loan",
+                        "primaryIdentityAttribute"),
+                    new SemanticModelPatch.Operation(
+                        SemanticModelPatch.OperationType.DELETE_ELEMENT,
+                        "item",
+                        "InformationItem",
+                        null,
+                        null,
+                        null))));
+    var result = compiler.apply(model, compiled);
+    assertEquals("other", result.at("/entities/0/primaryIdentityAttribute").asText());
+    assertEquals(1, result.at("/entities/0/identityAttributes").size());
+    assertEquals("other", result.at("/entities/0/identityAttributes/0").asText());
+    compiled.inversePatch().forEach(operation -> compiler.applyOperation(result, operation));
+    assertEquals(model, result);
+  }
+
+  @Test
   void compilesStableIdAttributeUpdateWithoutModelAuthoredJsonPointer() throws Exception {
     var model =
         mapper.readTree(

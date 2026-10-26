@@ -62,19 +62,28 @@ public final class ModelWorkspace {
     return mutate(compiled);
   }
 
+  /** Compiles a proposal without changing the private working copy. */
+  public synchronized AssistantPatchCompiler.CompiledPatch compile(SemanticModelPatch operations) {
+    return compiler.compile(model, operations);
+  }
+
+  /** Checks a destructive proposal before it is offered for confirmation. */
+  public synchronized void validateCandidate(AssistantPatchCompiler.CompiledPatch compiled) {
+    validateCandidate(compiler.apply(model, compiled));
+  }
+
+  private void validateCandidate(ObjectNode candidate) {
+    if (structuralValidator == null) return;
+    ModelService.ValidationResult validation =
+        structuralValidator.validateStructural(level, candidate);
+    if (validation == null || !validation.valid())
+      throw new StructuralValidationException(validation);
+  }
+
   /** Applies a complete precompiled structural batch to this isolated workspace. */
   public synchronized MutationResult mutate(AssistantPatchCompiler.CompiledPatch compiled) {
     ObjectNode candidate = compiler.apply(model, compiled);
-    if (structuralValidator != null) {
-      ModelService.ValidationResult validation =
-          structuralValidator.validateStructural(level, candidate);
-      if (validation == null || !validation.valid()) {
-        throw new io.mehdieidi.modriss.platform.kernel.PlatformException(
-            422,
-            "Assistant draft patch was rejected by Ecore validation: "
-                + (validation == null ? "no validation result" : validation.issues()));
-      }
-    }
+    validateCandidate(candidate);
     model = candidate;
     patch.addAll(compiled.patch());
     inversePatch.addAll(0, compiled.inversePatch());
@@ -90,6 +99,10 @@ public final class ModelWorkspace {
 
   public synchronized ObjectNode snapshot() {
     return model.deepCopy();
+  }
+
+  public long baseRevision() {
+    return baseRevision;
   }
 
   public synchronized List<ModelService.ModelPatchOperation> patch() {
@@ -116,4 +129,22 @@ public final class ModelWorkspace {
       List<ModelService.ModelPatchOperation> operations,
       List<String> affectedElementIds,
       JsonNode model) {}
+
+  /** Keeps structural diagnostics machine-readable for the agent's bounded repair step. */
+  public static final class StructuralValidationException
+      extends io.mehdieidi.modriss.platform.kernel.PlatformException {
+    private final ModelService.ValidationResult validation;
+
+    public StructuralValidationException(ModelService.ValidationResult validation) {
+      super(
+          422,
+          "Assistant draft patch was rejected by Ecore validation: "
+              + (validation == null ? "no validation result" : validation.issues()));
+      this.validation = validation;
+    }
+
+    public ModelService.ValidationResult validation() {
+      return validation;
+    }
+  }
 }

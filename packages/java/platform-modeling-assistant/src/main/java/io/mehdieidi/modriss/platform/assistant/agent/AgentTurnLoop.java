@@ -379,6 +379,8 @@ public final class AgentTurnLoop {
       boolean sourceBacked = sourceDocument != null && !sourceDocument.isBlank();
       WorkflowMode effectiveMode = mode == null ? WorkflowMode.AUTO : mode;
       boolean readOnlyMode = effectiveMode.readOnly();
+      var confirmedProposal =
+          destructiveConfirmed && !readOnlyMode ? DurableTurnExecutionContext.pendingBatch() : null;
       boolean sourceAnalysisPresent =
           sourceDocument != null && sourceDocument.contains("<source-analysis");
       boolean sourceBlueprintPresent =
@@ -413,12 +415,14 @@ public final class AgentTurnLoop {
       boolean fullModelInspected = false;
       boolean editPlanReady = false;
       boolean enforcedInspectionReady = false;
+      boolean editNeedsDecision = false;
       int repairAttempts = 0;
       String lastRejectedBatchSummary = "";
       String lastRejectedBatchJson = "";
       String firstRejectedBatchJson = "";
       JsonNode lastRejectedBatchArguments = null;
       String exactContracts = null;
+      String editInspectionContext = "";
       List<TypeContract> patchContracts = List.of();
       JsonNode modelingPlan = null;
       JsonNode sourceAnalysis = null;
@@ -460,6 +464,27 @@ public final class AgentTurnLoop {
                   + " eClasses, sourceUnitIds, required contract names, relationships, and"
                   + " coherent slices.";
         }
+      }
+      if (confirmedProposal != null) {
+        var types = new LinkedHashSet<String>();
+        var ids = new LinkedHashSet<String>();
+        confirmedProposal.batch().creates().forEach(create -> types.add(create.eClass()));
+        confirmedProposal.batch().updates().forEach(update -> ids.add(update.elementId()));
+        confirmedProposal.batch().deletions().forEach(deletion -> ids.add(deletion.elementId()));
+        ids.forEach(id -> types.add(turnTools.readModel(id).path("eClass").asText()));
+        patchContracts =
+            confirmedProposal.batch().creates().isEmpty()
+                ? turnTools.describeExactTypes(List.copyOf(types))
+                : turnTools.describeTypes(List.copyOf(types));
+        exactContracts = compactContracts(patchContracts);
+        editPlanReady = true;
+        enforcedInspectionReady = true;
+        fullModelInspected = true;
+        system =
+            executorSystemPrompt(level, sourceBacked, sourceBlueprintPresent, existingModelContent);
+        editInspectionContext =
+            "\n\nConfirmed model proposal inspection:\n"
+                + turnTools.inspectNeighborhoods(List.copyOf(ids));
       }
       Map<String, List<TypeContract>> contractCache = new ConcurrentHashMap<>();
       for (int step = 1; step <= maxSteps; step++) {
@@ -504,51 +529,74 @@ public final class AgentTurnLoop {
         AssistantPrompt providerPrompt =
             new AssistantPrompt(
                 system,
-                user,
+                user + editInspectionContext,
                 snippets,
                 patchContracts,
-                requiredTool(
-                    readOnlyMode,
-                    sourceBacked,
-                    sourceAnalysisPresent,
-                    sourceBlueprintPresent,
-                    editPlanReady,
-                    exactContracts));
-        reply =
-            ProviderRequestContext.with(
-                () -> canceled.get() || cancellationRequested.getAsBoolean(),
-                stopReason,
-                () -> provider.completeStructured(providerPrompt));
-        long providerLatency =
-            java.util.concurrent.TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - providerStarted);
-        metrics.recordAssistantPhaseDuration("provider", providerLatency);
-        if (reply.usage().reported()) {
-          promptTokens += Math.max(0L, reply.usage().promptTokens());
-          completionTokens += Math.max(0L, reply.usage().completionTokens());
-          metrics.recordAssistantTokenUsage(
-              "input", reply.provider(), Math.max(0L, reply.usage().promptTokens()));
-          metrics.recordAssistantTokenUsage(
-              "output", reply.provider(), Math.max(0L, reply.usage().completionTokens()));
+                editNeedsDecision
+                    ? "answer_user"
+                    : requiredTool(
+                        readOnlyMode,
+                        sourceBacked,
+                        sourceAnalysisPresent,
+                        sourceBlueprintPresent,
+                        editPlanReady,
+                        exactContracts),
+                existingElementsOnly(modelingPlan)
+                    || (confirmedProposal != null
+                        && confirmedProposal.batch().creates().isEmpty()));
+        if (confirmedProposal != null && step == 1) {
+          // Replay the approved LLM output, without another provider call or a new deletion plan.
+          reply =
+              new AssistantModelProvider.AssistantReply(
+                  mapper.writeValueAsString(
+                      Map.of(
+                          "action", "commit_model_batch", "arguments", confirmedProposal.batch())),
+                  provider.metadata().provider(),
+                  provider.metadata().model());
         } else {
-          metrics.recordAssistantTokenEstimate("input", reply.provider(), estimatedInputTokens);
-          metrics.recordAssistantTokenEstimate(
-              "output", reply.provider(), estimateTokens(reply.content().length()));
+          reply =
+              ProviderRequestContext.with(
+                  () -> canceled.get() || cancellationRequested.getAsBoolean(),
+                  stopReason,
+                  () -> provider.completeStructured(providerPrompt));
+          long providerLatency =
+              java.util.concurrent.TimeUnit.NANOSECONDS.toMillis(
+                  System.nanoTime() - providerStarted);
+          metrics.recordAssistantPhaseDuration("provider", providerLatency);
+          if (reply.usage().reported()) {
+            promptTokens += Math.max(0L, reply.usage().promptTokens());
+            completionTokens += Math.max(0L, reply.usage().completionTokens());
+            metrics.recordAssistantTokenUsage(
+                "input", reply.provider(), Math.max(0L, reply.usage().promptTokens()));
+            metrics.recordAssistantTokenUsage(
+                "output", reply.provider(), Math.max(0L, reply.usage().completionTokens()));
+          } else {
+            metrics.recordAssistantTokenEstimate("input", reply.provider(), estimatedInputTokens);
+            metrics.recordAssistantTokenEstimate(
+                "output", reply.provider(), estimateTokens(reply.content().length()));
+          }
+          providerCallDetails.add(
+              new io.mehdieidi.modriss.platform.assistant.turn.AssistantTurnStore.ProviderCall(
+                  reply.provider(),
+                  reply.model(),
+                  providerLatency,
+                  reply.usage().promptTokens(),
+                  reply.usage().completionTokens(),
+                  reply.usage().reported(),
+                  reply.systemPrompt(),
+                  reply.userPrompt()));
         }
-        providerCallDetails.add(
-            new io.mehdieidi.modriss.platform.assistant.turn.AssistantTurnStore.ProviderCall(
-                reply.provider(),
-                reply.model(),
-                providerLatency,
-                reply.usage().promptTokens(),
-                reply.usage().completionTokens(),
-                reply.usage().reported(),
-                reply.systemPrompt(),
-                reply.userPrompt()));
         check(canceled, deadline, cancellationRequested, stopReason);
         AgentAction action;
         try {
           action = actions.parse(reply.content());
           metrics.recordAssistantAction(action.tool().wireName(), step);
+          if (editNeedsDecision && action.tool() != AgentAction.Kind.ANSWER_USER) {
+            throw new PlatformException(
+                422,
+                "The edit is blocked by a structural dependency. Only answer_user is permitted; no"
+                    + " mutations are authorized.");
+          }
           if (sourceBacked
               && !readOnlyMode
               && !sourceAnalysisPresent
@@ -617,7 +665,7 @@ public final class AgentTurnLoop {
               throw new PlatformException(
                   422, "Source-backed modeling requires a durable plan before completion.");
             }
-            if (mutatingPlanWithoutCheckpoint(modelingPlan, turnTools)) {
+            if (mutatingPlanWithoutCheckpoint(modelingPlan, turnTools) && !editNeedsDecision) {
               if (ProviderCallBudget.hasRemaining()) {
                 user =
                     followUpContext(userMessage, sourceDocument)
@@ -686,26 +734,17 @@ public final class AgentTurnLoop {
               continue;
             }
             if (looksLikeProtocolArtifact(message)) {
-              if (ProviderCallBudget.hasRemaining()) {
-                user =
-                    followUpContext(userMessage, sourceDocument)
-                        + "\n\n"
-                        + "Your previous answer_user message was a protocol artifact, not a"
-                        + " user-facing answer. Return exactly one answer_user action whose"
-                        + " arguments.message is a concise plain-language summary of the completed"
-                        + " work. Do not include JSON, action/tool fields, markdown fences, or"
-                        + " internal protocol data. Do not mutate the model again.";
-                continue;
-              }
               throw new PlatformException(
                   422,
-                  "The provider returned a protocol artifact instead of a user-facing answer.");
+                  "The provider returned a protocol artifact instead of a user-facing answer."
+                      + " Tool commands must be submitted as actions, never as arguments.message."
+                      + " No model work has been completed by this answer.");
             }
             return new TurnResult(
                 message,
                 workspace.patch(),
                 workspace.inversePatch(),
-                readOnlyMode ? null : turnTools.validateModel(),
+                readOnlyMode || editNeedsDecision ? null : turnTools.validateModel(),
                 reply.provider(),
                 reply.model(),
                 null,
@@ -715,7 +754,8 @@ public final class AgentTurnLoop {
                 providerCallDetails,
                 modelingPlan,
                 null,
-                null);
+                null,
+                editNeedsDecision || action.tool() == AgentAction.Kind.ASK_USER);
           }
           switch (action.tool()) {
             case ANALYZE_SOURCE_UNITS -> {
@@ -819,6 +859,16 @@ public final class AgentTurnLoop {
                             new AgentModelTools.InspectionSelector(
                                 relevantIds, List.of(), List.of(), null, 0, 50));
                 JsonNode neighborhoods = turnTools.inspectNeighborhoods(relevantIds);
+                // Calls are stateless. Retain inspected IDs and deletion hashes through contract
+                // retrieval and repair instead of making the LLM reconstruct or invent them.
+                editInspectionContext =
+                    "\n\nEnforced model inspection sequence completed by backend."
+                        + "\n1. Summary:\n"
+                        + summary
+                        + "\n2. Relevant existing elements:\n"
+                        + selected
+                        + "\n3. Neighborhoods:\n"
+                        + neighborhoods;
                 fullModelInspected = true;
                 enforcedInspectionReady = true;
                 patchContracts =
@@ -828,13 +878,6 @@ public final class AgentTurnLoop {
                     followUpContext(userMessage, sourceDocument)
                         + "\n\nCurrent durable modeling checkpoint:\n"
                         + currentSlicePlan(modelingPlan)
-                        + "\n\nEnforced model inspection sequence completed by backend."
-                        + "\n1. Summary:\n"
-                        + summary
-                        + "\n2. Relevant existing elements:\n"
-                        + selected
-                        + "\n3. Neighborhoods:\n"
-                        + neighborhoods
                         + executionContractGuidance(
                             exactContracts,
                             capabilities,
@@ -877,18 +920,57 @@ public final class AgentTurnLoop {
                 continue;
               }
               check(canceled, deadline, cancellationRequested, stopReason);
+              lastRejectedBatchJson = boundedRejectedBatch(action.arguments());
+              lastRejectedBatchArguments = action.arguments().deepCopy();
+              if (firstRejectedBatchJson.isBlank()) {
+                firstRejectedBatchJson = lastRejectedBatchJson;
+              }
               ModelCommandBatch batch = normalizeSourceEvidence(command(action), sourceDocument);
+              if (existingElementsOnly(modelingPlan) && !batch.creates().isEmpty()) {
+                throw new PlatformException(
+                    422,
+                    "This edit plan changes existing elements only. Do not create replacements or"
+                        + " other new elements.");
+              }
+              if (confirmedProposal != null) {
+                var approvedIds =
+                    confirmedProposal.batch().deletions().stream()
+                        .map(ModelCommandBatch.Deletion::elementId)
+                        .collect(java.util.stream.Collectors.toSet());
+                var requestedIds =
+                    batch.deletions().stream()
+                        .map(ModelCommandBatch.Deletion::elementId)
+                        .collect(java.util.stream.Collectors.toSet());
+                if (!approvedIds.equals(requestedIds)) {
+                  throw new PlatformException(
+                      422,
+                      "Keep exactly the approved deletion targets while repairing this batch.");
+                }
+                var approved = confirmedProposal.batch();
+                if (!approved.creates().equals(batch.creates())
+                    || !approved.updates().equals(batch.updates())
+                    || !approved.connections().equals(batch.connections())) {
+                  throw new PlatformException(
+                      422,
+                      "Confirmation authorizes exactly the proposed changes. Do not add repairs,"
+                          + " replacements, updates, or connections.");
+                }
+                batch =
+                    new ModelCommandBatch(
+                        batch.creates(),
+                        batch.updates(),
+                        batch.connections(),
+                        confirmedProposal.batch().deletions(),
+                        batch.evidence(),
+                        batch.planSummary(),
+                        batch.turnComplete());
+              }
               validateSourceEvidence(batch, sourceDocument);
               validateSourceEvidenceIds(batch, sourceDocument);
               validatePlannedSourceSliceCoverage(batch, sourceDocument, modelingPlan);
               validateSourceCheckpointUsefulness(
                   batch, sourceDocument, modelingPlan, patchContracts);
               lastRejectedBatchSummary = batchSummary(batch);
-              lastRejectedBatchJson = boundedRejectedBatch(action.arguments());
-              lastRejectedBatchArguments = action.arguments().deepCopy();
-              if (firstRejectedBatchJson.isBlank()) {
-                firstRejectedBatchJson = lastRejectedBatchJson;
-              }
               if (sourceBacked && !batch.deletions().isEmpty()) {
                 throw new PlatformException(
                     422,
@@ -1039,11 +1121,13 @@ public final class AgentTurnLoop {
                   selectedContractNames(
                       level, workspace, modelingPlan, names, selectedContractLimit);
               String cacheKey = level.name() + ":" + String.join(",", selectedNames);
+              boolean exactTypesOnly =
+                  existingElementsOnly(modelingPlan) || capabilities.maxContractCount() <= 2;
               patchContracts =
                   contractCache.computeIfAbsent(
                       cacheKey,
                       ignored ->
-                          capabilities.maxContractCount() <= 2
+                          exactTypesOnly
                               ? turnTools.describeExactTypes(selectedNames)
                               : turnTools.describeTypes(selectedNames));
               exactContracts = compactContracts(patchContracts);
@@ -1096,6 +1180,46 @@ public final class AgentTurnLoop {
           }
         } catch (PlatformException toolFailure) {
           metrics.recordAssistantMalformedAction(actionFailureReason(toolFailure));
+          if (editNeedsDecision) {
+            if (repairableToolFailure(toolFailure)
+                && repairAttempts++ < 2
+                && ProviderCallBudget.hasRemaining()) {
+              user +=
+                  "\nYour response was rejected: "
+                      + toolFailure.getMessage()
+                      + " Return only answer_user with a plain-language explanation in"
+                      + " arguments.message. No model changes were saved.";
+              continue;
+            }
+            throw toolFailure;
+          }
+          if (!editNeedsDecision
+              && (toolFailure
+                      instanceof
+                      io.mehdieidi.modriss.platform.assistant.patch.AssistantPatchCompiler
+                          .RequiredReferenceDeletionException
+                  || toolFailure instanceof ModelWorkspace.StructuralValidationException
+                      && (existingElementsOnly(modelingPlan) || confirmedProposal != null))
+              && ProviderCallBudget.hasRemaining()) {
+            // A narrow edit is not permission to complete or redesign the surrounding model.
+            // Keep validation strict and let the LLM explain the actual dependency decision.
+            editNeedsDecision = true;
+            system = readOnlySystemPrompt(level, WorkflowMode.EXPLAIN_MODEL);
+            user =
+                followUpContext(userMessage, sourceDocument)
+                    + "\n\n"
+                    + "The requested edit cannot pass structural validation within its authorized"
+                    + " scope. No changes were saved. Diagnostic:\n"
+                    + repairDiagnostic(toolFailure, turnTools, lastRejectedBatchArguments)
+                    + "\n"
+                    + "Return answer_user with one concise, plain-language explanation of the"
+                    + " specific dependency or incomplete draft blocking this edit. Name the"
+                    + " requested item and the dependent model element. Say explicitly that no"
+                    + " changes were made. Do not claim success, create a replacement, repair"
+                    + " unrelated elements, or suggest silently deleting dependents. Do not ask for"
+                    + " deletion confirmation or permission to invent a replacement.";
+            continue;
+          }
           if (readOnlyMode
               && repairableToolFailure(toolFailure)
               && repairAttempts < 1
@@ -1121,6 +1245,10 @@ public final class AgentTurnLoop {
               && ProviderCallBudget.hasRemaining()) {
             repairAttempts++;
             metrics.recordAssistantRepairReason(actionFailureReason(toolFailure));
+            patchContracts =
+                structuralRepairContracts(
+                    level, turnTools, patchContracts, toolFailure, lastRejectedBatchArguments);
+            exactContracts = patchContracts.isEmpty() ? null : compactContracts(patchContracts);
             // Rebuild a bounded repair request instead of recursively appending failed prompts.
             // It carries the original work item, exact contracts, rejected draft, and diagnostics
             // without recursively appending prior repair prompts.
@@ -1152,7 +1280,15 @@ public final class AgentTurnLoop {
                     + " Return the complete corrected atomic batch. Add or correct only missing"
                     + " planned source units,"
                     + " concepts, required attributes, required references, and invalid"
-                    + " relationships. Do not replan, do not replace previously covered"
+                    + " relationships. Structural diagnostics may identify incomplete EXISTING"
+                    + " elements outside the requested edit. Their exact repair contracts and"
+                    + " current attributes are supplied below. Include the minimum required"
+                    + " attribute/reference repairs for those diagnosed elements in this same"
+                    + " atomic batch, while retaining the requested edit or deletion. Choose"
+                    + " values from the supplied model facts and explain any assumptions in"
+                    + " evidence or planSummary. Never delete unrelated elements to silence a"
+                    + " diagnostic. Do not repeat the unchanged rejected batch."
+                    + " Do not replan, do not replace previously covered"
                     + " sourceUnitIds unless the diagnostic says they are invalid, and preserve"
                     + " exact clientRefs when possible. Do not describe types, inspect the"
                     + " model, repeat the rejected patch, or add unrelated elements. For"
@@ -1204,30 +1340,13 @@ public final class AgentTurnLoop {
                 + "issue before replying. Diagnostics:\n"
                 + currentValidation.issues();
       }
-      if (reply == null)
-        throw new PlatformException(502, "The model provider returned no response.");
       check(canceled, deadline, cancellationRequested, stopReason);
-      if (!readOnlyMode && validation == null) validation = turnTools.validateModel();
-      if (validation != null) metrics.recordAssistantStructuralValidation(validation.valid());
-      if (validation != null && !validation.valid() && !workspace.patch().isEmpty())
-        throw new PlatformException(
-            422, "The working model failed structural validation: " + validation.issues());
-      publish(sessionId, "assistant.plan", Map.of("items", turnTools.plan()));
-      return new TurnResult(
-          reply.content(),
-          workspace.patch(),
-          workspace.inversePatch(),
-          validation,
-          reply.provider(),
-          reply.model(),
-          turnTools.committedBatch(),
-          ProviderCallBudget.count(),
-          promptTokens,
-          completionTokens,
-          providerCallDetails,
-          modelingPlan,
-          null,
-          null);
+      // Every accepted terminal action returns above. Exhausting steps (including the last
+      // rejected batch or read-only inspection) must never publish raw provider protocol as a
+      // successful chat answer or allow the durable worker to mark unfinished work succeeded.
+      throw new PlatformException(
+          502,
+          "The model provider did not produce a valid terminal action within the turn budget.");
     } catch (PlatformException ex) {
       throw new TurnExecutionException(
           ex, ProviderCallBudget.count(), promptTokens, completionTokens, providerCallDetails);
@@ -1410,7 +1529,8 @@ public final class AgentTurnLoop {
         List.copyOf(calls),
         result.modelingPlan(),
         result.sourceBlueprint(),
-        result.sourceAnalysis());
+        result.sourceAnalysis(),
+        result.needsInput());
   }
 
   /** Shared with the opt-in live routing regression suite. */
@@ -1504,6 +1624,13 @@ public final class AgentTurnLoop {
   /** Detects structured tool envelopes accidentally rendered as the assistant's chat message. */
   private boolean looksLikeProtocolArtifact(String message) {
     String value = message == null ? "" : message.trim();
+    if (value.startsWith("```")) {
+      int firstNewline = value.indexOf('\n');
+      int closingFence = value.lastIndexOf("```");
+      if (firstNewline >= 0 && closingFence > firstNewline) {
+        value = value.substring(firstNewline + 1, closingFence).trim();
+      }
+    }
     if (!(value.startsWith("{") || value.startsWith("["))) return false;
     try {
       JsonNode parsed = mapper.readTree(value);
@@ -1635,7 +1762,7 @@ public final class AgentTurnLoop {
             List.of(),
             Math.max(2, capabilities.maxContractCount()));
     if (names.isEmpty()) return List.of();
-    return capabilities.maxContractCount() <= 2
+    return existingElementsOnly(modelingPlan) || capabilities.maxContractCount() <= 2
         ? turnTools.describeExactTypes(names)
         : turnTools.describeTypes(names);
   }
@@ -1648,7 +1775,7 @@ public final class AgentTurnLoop {
       int selectedContractLimit) {
     LinkedHashSet<String> selectedNames = new LinkedHashSet<>();
     String rootType = workspace.snapshot().path("eClass").asText("").trim();
-    if (!rootType.isBlank()) selectedNames.add(rootType);
+    if (!existingElementsOnly(modelingPlan) && !rootType.isBlank()) selectedNames.add(rootType);
     for (String preferred : emptyModelFirstSliceTypes(level, workspace)) {
       if (selectedNames.size() >= selectedContractLimit) break;
       if (!preferred.isBlank()) selectedNames.add(preferred);
@@ -1662,6 +1789,13 @@ public final class AgentTurnLoop {
       if (guides.isKnownType(level, name)) selectedNames.add(name.trim());
     }
     return selectedNames.stream().limit(selectedContractLimit).toList();
+  }
+
+  private boolean existingElementsOnly(JsonNode plan) {
+    return plan != null
+        && "EDIT_MODEL".equals(plan.path("intent").asText())
+        && plan.path("newElements").isArray()
+        && plan.path("newElements").isEmpty();
   }
 
   private List<String> relevantElementIds(AgentModelTools turnTools, JsonNode plan, int limit) {
@@ -1918,6 +2052,10 @@ inspection, type contract retrieval, or patch generation. Its arguments must be:
 "reuseTargets":["existing names to inspect or reuse"],"newElements":["planned new element names"],
 "requiredContracts":["ExactType"],"slices":[{"label":"Core architecture",
 "purpose":"...","requiredContracts":["ExactType"],"sourceUnitIds":["src-id"]}]}.
+For a requested rename or deletion, use EDIT_MODEL, list only the requested changes in features,
+and leave newElements empty. Deletion is removal, never replacement. Do not add a replacement,
+reassign an identity, or repair unrelated draft content unless the user explicitly requested it.
+Selected canvas elements are focus hints; identify the target from the current user's request.
 The plan is durable backend state. The backend adds Ecore-derived containment-owner contracts.
 commit_model_batch arguments must match this shape:
 {"creates":[{"clientRef":"tmp_stable_name","eClass":"ExactType","attributes":{},
@@ -2005,6 +2143,17 @@ You are a modeling executor for a %s model. Return exactly one JSON object or on
 matching the supplied action schema. The backend already accepted a durable modeling plan for this
 turn. Follow only the current checkpoint slice, the backend inspection facts, and exact contracts
 returned by describe_types.
+
+Submit edits using {"action":"commit_model_batch","arguments":{"creates":[],
+"updates":[{"elementId":"inspected-id","attributes":{"attribute":"value"},
+"preconditionHash":"inspected-hash"}],"connections":[],
+"deletions":[{"elementId":"inspected-id","preconditionHash":"inspected-hash"}],
+"evidence":[],"planSummary":"Plain-language summary of the changes","turnComplete":true}}.
+Include only the requested operations; use empty arrays for unused operation kinds. An attribute
+edit belongs in updates with elementId and attributes. A deletion belongs in deletions with
+elementId and the exact preconditionHash from inspection. Do not emit a batch array, deletes,
+an id field in place of elementId, or a tool command inside answer_user. Preserve all unrelated
+elements and attributes. A narrow edit does not require creating any elements or evidence.
 
 Use describe_types once when exact contracts are missing. After exact contracts are supplied, the
 next action must be commit_model_batch. Never invent EClasses, attributes, containment features,
@@ -2094,12 +2243,96 @@ validation.
     return failure.status() == 400 || failure.status() == 404 || failure.status() == 422;
   }
 
+  private List<TypeContract> structuralRepairContracts(
+      ModelLevel level,
+      AgentModelTools turnTools,
+      List<TypeContract> current,
+      PlatformException failure,
+      JsonNode rejectedArguments) {
+    if (!(failure instanceof ModelWorkspace.StructuralValidationException structural)
+        || structural.validation() == null) return current;
+    Map<String, TypeContract> contracts = new java.util.LinkedHashMap<>();
+    current.forEach(contract -> contracts.put(contract.eClass(), contract));
+    var needed = new LinkedHashSet<String>();
+    structural.validation().issues().stream()
+        .filter(issue -> "ERROR".equals(issue.severity()))
+        .map(ModelService.ValidationIssue::issueClass)
+        .filter(name -> name != null && guides.isKnownType(level, name))
+        .forEach(needed::add);
+    JsonNode neighborhoods = turnTools.inspectNeighborhoods(rejectedDeletionIds(rejectedArguments));
+    neighborhoods
+        .path("neighborhoods")
+        .forEach(
+            neighborhood ->
+                neighborhood
+                    .path("inboundReferences")
+                    .forEach(
+                        element -> {
+                          String type = element.path("eClass").asText("");
+                          if (guides.isKnownType(level, type)) needed.add(type);
+                        }));
+    if (!needed.isEmpty()) {
+      // Include mandatory reference targets and containment owners so the closed repair schema
+      // permits the LLM to repair dependent objects, rather than just naming impossible links.
+      turnTools
+          .describeTypes(List.copyOf(needed))
+          .forEach(contract -> contracts.put(contract.eClass(), contract));
+    }
+    return List.copyOf(contracts.values());
+  }
+
+  private List<String> rejectedDeletionIds(JsonNode arguments) {
+    if (arguments == null) return List.of();
+    var ids = new LinkedHashSet<String>();
+    arguments
+        .path("deletions")
+        .forEach(
+            deletion -> {
+              String id = deletion.path("elementId").asText("");
+              if (!id.isBlank()) ids.add(id);
+            });
+    return List.copyOf(ids);
+  }
+
   private JsonNode repairDiagnostic(
       PlatformException failure, AgentModelTools turnTools, JsonNode rejectedArguments) {
     var diagnostic = mapper.createObjectNode();
     diagnostic.put("status", failure.status());
     diagnostic.put("category", actionFailureReason(failure));
     diagnostic.put("message", failure.getMessage() == null ? "" : failure.getMessage());
+    if (failure instanceof ModelWorkspace.StructuralValidationException structural
+        && structural.validation() != null) {
+      diagnostic.set("structuralIssues", mapper.valueToTree(structural.validation().issues()));
+      var elements = diagnostic.putArray("affectedExistingElements");
+      var affectedIds = new LinkedHashSet<String>();
+      structural.validation().issues().stream()
+          .filter(issue -> "ERROR".equals(issue.severity()))
+          .map(ModelService.ValidationIssue::elementId)
+          .filter(id -> id != null && !id.isBlank())
+          .forEach(affectedIds::add);
+      var neighborhoods = turnTools.inspectNeighborhoods(rejectedDeletionIds(rejectedArguments));
+      diagnostic.set("deletionDependencies", neighborhoods);
+      neighborhoods
+          .path("neighborhoods")
+          .forEach(
+              neighborhood ->
+                  neighborhood
+                      .path("inboundReferences")
+                      .forEach(
+                          element -> {
+                            String id = element.path("id").asText("");
+                            if (!id.isBlank()) affectedIds.add(id);
+                          }));
+      affectedIds.forEach(
+          id -> {
+            try {
+              elements.add(turnTools.readModel(id));
+            } catch (PlatformException missing) {
+              // Newly generated objects are present in the rejected batch, not the saved model.
+              if (missing.status() != 404) throw missing;
+            }
+          });
+    }
     diagnostic.put(
         "requiredAction",
         "Return one corrected tool call using only inspected ids, described contracts, and valid"
@@ -3156,7 +3389,42 @@ validation.
           providerCallDetails,
       JsonNode modelingPlan,
       JsonNode sourceBlueprint,
-      JsonNode sourceAnalysis) {}
+      JsonNode sourceAnalysis,
+      boolean needsInput) {
+    public TurnResult(
+        String message,
+        List<ModelService.ModelPatchOperation> patch,
+        List<ModelService.ModelPatchOperation> inversePatch,
+        ModelService.ValidationResult validation,
+        String provider,
+        String model,
+        ModelCommandBatch commandBatch,
+        int providerCalls,
+        long promptTokens,
+        long completionTokens,
+        List<io.mehdieidi.modriss.platform.assistant.turn.AssistantTurnStore.ProviderCall>
+            providerCallDetails,
+        JsonNode modelingPlan,
+        JsonNode sourceBlueprint,
+        JsonNode sourceAnalysis) {
+      this(
+          message,
+          patch,
+          inversePatch,
+          validation,
+          provider,
+          model,
+          commandBatch,
+          providerCalls,
+          promptTokens,
+          completionTokens,
+          providerCallDetails,
+          modelingPlan,
+          sourceBlueprint,
+          sourceAnalysis,
+          false);
+    }
+  }
 
   /** Durable router mode. Read-only modes never mutate, checkpoint, validate, or repair. */
   public enum WorkflowMode {

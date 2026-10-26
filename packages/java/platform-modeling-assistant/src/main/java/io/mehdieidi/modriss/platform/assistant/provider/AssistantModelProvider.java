@@ -71,7 +71,17 @@ public interface AssistantModelProvider {
       String user,
       List<ContextSnippet> snippets,
       List<TypeContract> patchContracts,
-      String requiredTool) {
+      String requiredTool,
+      boolean existingElementsOnly) {
+
+    public AssistantPrompt(
+        String system,
+        String user,
+        List<ContextSnippet> snippets,
+        List<TypeContract> patchContracts,
+        String requiredTool) {
+      this(system, user, snippets, patchContracts, requiredTool, false);
+    }
 
     public AssistantPrompt(
         String system,

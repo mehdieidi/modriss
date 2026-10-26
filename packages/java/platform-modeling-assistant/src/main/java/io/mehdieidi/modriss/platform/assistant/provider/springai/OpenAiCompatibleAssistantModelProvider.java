@@ -128,7 +128,7 @@ public class OpenAiCompatibleAssistantModelProvider extends AbstractAssistantMod
                               .description(
                                   "MODRISS assistant tool; backend validates and executes it.")
                               .inputType(String.class)
-                              .inputSchema(toolArgumentsSchema(name, prompt.patchContracts()))
+                              .inputSchema(toolArgumentsSchema(name, prompt))
                               .build())
               .toList());
       builder.parallelToolCalls(false);
@@ -161,7 +161,9 @@ public class OpenAiCompatibleAssistantModelProvider extends AbstractAssistantMod
                                                           .equals(prompt.requiredTool())
                                                       ? AgentTurnLoop.strategySchema()
                                                       : AgentActionSchema.json(
-                                                          prompt.patchContracts()));
+                                                          prompt.patchContracts(),
+                                                          prompt.requiredTool(),
+                                                          prompt.existingElementsOnly()));
     }
     return builder;
   }
@@ -199,7 +201,8 @@ public class OpenAiCompatibleAssistantModelProvider extends AbstractAssistantMod
                   + prompt.system()
                   + "\n\nNATIVE TOOL PROTOCOL (authoritative): Do not return an action JSON object"
                   + " or prose. Call exactly one supplied function. For an explanation, answer,"
-                  + " or necessary clarification, you MUST call respond_to_user with a non-empty"
+                  + " or necessary clarification, call the supplied response function"
+                  + " (respond_to_user, answer_user, or ask_user) with a non-empty"
                   + " message. Use inspect_model or describe_types only for the corresponding"
                   + " read step; use analyze_source_units for source analysis,"
                   + " plan_cim_blueprint for CIM blueprint planning, plan_model_edit for a"
@@ -219,7 +222,9 @@ public class OpenAiCompatibleAssistantModelProvider extends AbstractAssistantMod
         function.put("description", toolDescription(name));
         function.set(
             "parameters",
-            mapper.valueToTree(AgentActionSchema.toolSchema(name, prompt.patchContracts())));
+            mapper.valueToTree(
+                AgentActionSchema.toolSchema(
+                    name, prompt.patchContracts(), prompt.existingElementsOnly())));
       }
       // The workflow executes exactly one action at a time. Once exact contracts have been
       // returned, the executor permits only a terminal mutation; leaving every read tool
@@ -327,41 +332,15 @@ public class OpenAiCompatibleAssistantModelProvider extends AbstractAssistantMod
       String model) {
     try {
       var mapper = new com.fasterxml.jackson.databind.ObjectMapper();
-      var body = mapper.createObjectNode();
-      body.put("model", model);
-      body.put("temperature", 0.0);
       int completionLimit =
           completionLimit(prompt.requiredTool(), properties.maxCompletionTokens());
-      body.put("max_tokens", Math.min(completionLimit, capabilities().maxCompletionTokens()));
-      applyModelGenerationControls(body, model);
-      var messages = body.putArray("messages");
-      boolean structuredDocument = isStructuredDocument(prompt.requiredTool());
-      String requiredAction =
-          prompt.requiredTool() == null
-              ? ""
-              : structuredDocument
-                  ? "\n\n"
-                      + "WORKFLOW GATE: Return only the requested structured document in this"
-                      + " response."
-                  : "\n\nWORKFLOW GATE: Return action '"
-                      + prompt.requiredTool()
-                      + "' in this response. Do not choose another action.";
-      messages
-          .addObject()
-          .put("role", "system")
-          .put(
-              "content",
-              SYSTEM_GUARDRAIL
-                  + "\n"
-                  + prompt.system()
-                  + "\n\nSTRICT JSON PROTOCOL: Return exactly one JSON object matching the"
-                  + (structuredDocument
-                      ? " requested structured-document schema."
-                      : " action envelope described above.")
-                  + " Do not use markdown, prose, or provider function calls."
-                  + requiredAction);
-      messages.addObject().put("role", "user").put("content", userWithContext(prompt));
-      body.putObject("response_format").put("type", "json_object");
+      var body =
+          jsonRequest(
+              mapper,
+              prompt,
+              model,
+              userWithContext(prompt),
+              Math.min(completionLimit, capabilities().maxCompletionTokens()));
       var response = sendChatRequest(mapper, body);
       if (response.statusCode() / 100 != 2) {
         String errorBody = providerErrorSnippet(response.body());
@@ -379,6 +358,46 @@ public class OpenAiCompatibleAssistantModelProvider extends AbstractAssistantMod
     } catch (Exception ex) {
       throw new IllegalStateException("OpenAI-compatible JSON request failed", ex);
     }
+  }
+
+  static com.fasterxml.jackson.databind.node.ObjectNode jsonRequest(
+      com.fasterxml.jackson.databind.ObjectMapper mapper,
+      AssistantPrompt prompt,
+      String model,
+      String user,
+      int completionLimit) {
+    var body = mapper.createObjectNode();
+    body.put("model", model);
+    body.put("temperature", 0.0);
+    body.put("max_tokens", completionLimit);
+    applyModelGenerationControls(body, model);
+    boolean structuredDocument = isStructuredDocument(prompt.requiredTool());
+    String protocol =
+        "\n\nSTRICT JSON PROTOCOL: Return exactly one JSON object matching the"
+            + (structuredDocument
+                ? " requested structured-document schema."
+                : " following authoritative action schema:\n"
+                    + AgentActionSchema.json(
+                        prompt.patchContracts(),
+                        prompt.requiredTool(),
+                        prompt.existingElementsOnly()))
+            + "\nDo not use markdown, prose, or provider function calls.";
+    if (prompt.requiredTool() != null) {
+      protocol +=
+          structuredDocument
+              ? "\nWORKFLOW GATE: Return only the requested structured document in this response."
+              : "\nWORKFLOW GATE: Return action '"
+                  + prompt.requiredTool()
+                  + "' in this response. Do not choose another action.";
+    }
+    var messages = body.putArray("messages");
+    messages
+        .addObject()
+        .put("role", "system")
+        .put("content", SYSTEM_GUARDRAIL + "\n" + prompt.system() + protocol);
+    messages.addObject().put("role", "user").put("content", user);
+    body.putObject("response_format").put("type", "json_object");
+    return body;
   }
 
   /** Applies model-family protocol controls only; modeling decisions remain entirely LLM-owned. */
@@ -822,6 +841,8 @@ public class OpenAiCompatibleAssistantModelProvider extends AbstractAssistantMod
     String action =
         switch (name) {
           case "respond_to_user" -> "answer_user";
+          case "ask_user" -> "ask_user";
+          case "answer_user" -> "answer_user";
           case "analyze_source_units", "plan_cim_blueprint" -> name;
           case "plan_model_edit" -> "plan_model_edit";
           case "inspect_model", "describe_types" -> name;
@@ -856,6 +877,8 @@ public class OpenAiCompatibleAssistantModelProvider extends AbstractAssistantMod
   private static String toolDescription(String name) {
     return switch (name) {
       case "respond_to_user" -> "Return the final user-facing answer in message.";
+      case "ask_user" -> "Ask the user the specific decision needed to continue safely.";
+      case "answer_user" -> "Explain the result to the user in plain language.";
       case "analyze_source_units" ->
           "Analyze source units into compact LLM-authored modeling concepts with source ids.";
       case "plan_cim_blueprint" ->
@@ -868,15 +891,12 @@ public class OpenAiCompatibleAssistantModelProvider extends AbstractAssistantMod
     };
   }
 
-  private static String toolArgumentsSchema(
-      String name,
-      java.util.List<
-              io.mehdieidi.modriss.platform.assistant.metamodel.MetamodelKnowledgeService
-                  .TypeContract>
-          patchContracts) {
+  private static String toolArgumentsSchema(String name, AssistantPrompt prompt) {
     try {
       return new com.fasterxml.jackson.databind.ObjectMapper()
-          .writeValueAsString(AgentActionSchema.toolSchema(name, patchContracts));
+          .writeValueAsString(
+              AgentActionSchema.toolSchema(
+                  name, prompt.patchContracts(), prompt.existingElementsOnly()));
     } catch (com.fasterxml.jackson.core.JsonProcessingException ex) {
       throw new IllegalStateException("Unable to encode native assistant tool schema", ex);
     }

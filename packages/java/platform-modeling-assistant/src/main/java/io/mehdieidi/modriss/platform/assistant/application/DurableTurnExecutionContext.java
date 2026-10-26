@@ -8,6 +8,8 @@ import java.util.function.Supplier;
 public final class DurableTurnExecutionContext {
   private static final ThreadLocal<String> CURRENT = new ThreadLocal<>();
   private static final ThreadLocal<String> FULL_SOURCE = new ThreadLocal<>();
+  private static final ThreadLocal<io.mehdieidi.modriss.platform.assistant.domain.PendingModelBatch>
+      PENDING_BATCH = new ThreadLocal<>();
 
   private DurableTurnExecutionContext() {}
 
@@ -43,5 +45,25 @@ public final class DurableTurnExecutionContext {
 
   public static String fullSource() {
     return FULL_SOURCE.get();
+  }
+
+  public static io.mehdieidi.modriss.platform.assistant.domain.PendingModelBatch pendingBatch() {
+    return PENDING_BATCH.get();
+  }
+
+  public static <T> T with(
+      String turnId,
+      String fullSource,
+      io.mehdieidi.modriss.platform.assistant.domain.PendingModelBatch proposal,
+      Supplier<T> invocation) {
+    var previous = PENDING_BATCH.get();
+    if (proposal == null) PENDING_BATCH.remove();
+    else PENDING_BATCH.set(proposal);
+    try {
+      return with(turnId, fullSource, invocation);
+    } finally {
+      if (previous == null) PENDING_BATCH.remove();
+      else PENDING_BATCH.set(previous);
+    }
   }
 }

@@ -57,7 +57,8 @@ public class AssistantPromptGuard {
         user,
         snippets,
         prompt.patchContracts(),
-        prompt.requiredTool());
+        prompt.requiredTool(),
+        prompt.existingElementsOnly());
   }
 
   /**

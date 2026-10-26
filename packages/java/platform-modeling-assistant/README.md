@@ -73,6 +73,38 @@ so older durable workflows can resume. Backend code owns stable IDs, exact contr
 containment/reference enforcement, destructive confirmation, source evidence, private mutation,
 validation, and persistence.
 
+The JSON-object transport sends the generated action schema, constrained to the typed next action
+once a plan is accepted. Rename and delete requests use the same batch compiler as other edits.
+Inspection prefers authoritative semantic objects over canvas copies, returns one record per stable
+ID, and supplies deletion precondition hashes. Inspection facts and rejected payloads remain in
+context during bounded LLM repairs. Step exhaustion is a workflow failure; raw provider responses
+are never substituted for a successful terminal action.
+
+Existing-element edit plans retrieve exact contracts without expanding root ownership or mandatory
+construction targets. Their provider schema forbids creates, and the executor independently rejects
+replacement elements. Creation and additive feature plans retain construction contract expansion.
+Inspection derives references from Ecore rather than field-name suffixes. Deletion unlinks references
+to removed objects; dependent entities are preserved. A narrow edit blocked by structural conformance
+returns an LLM-authored explanation in `NEEDS_INPUT` without mutating the model. It does not silently repair
+unrelated draft content, substitute an identity, or delete dependent entities to pass validation.
+
+Deletion confirmation stores the provider-authored batch in the existing durable workflow JSON,
+bound to the inspected revision and server-computed element hashes. Approval replays that batch
+before making any provider call. It cannot widen the approved batch with new creates, updates, or
+connections. Required-reference deletions are rejected before confirmation; the LLM explains the
+dependency rather than offering or applying an expanded repair batch. A
+changed model revision remains a conflict. Confirmation never regenerates the deletion plan.
+
+`SurgicalModelEditTest` covers small edits, confirmation, repair, and exhausted turns;
+`StructuralRepairModelEditTest` checks that incomplete unrelated multiplicities cannot authorize repairs.
+`apps/frontend/tests/assistant-model-edit.test.mjs` checks their canvas rendering. The opt-in paid
+`SurgicalModelEditLiveTest` runs adaptive rename/delete against the configured provider on a synthetic
+model with real structural validation:
+
+```powershell
+mvn -o -Pllm-provider-tests -pl packages/java/platform-modeling-assistant -am test '-Dtest=SurgicalModelEditLiveTest' '-Dmodriss.edits.live=true' '-Dsurefire.failIfNoSpecifiedTests=false' '-Dcheckstyle.skip=true' '-Dpmd.skip=true' '-Dspotbugs.skip=true' '-Dspotless.skip=true'
+```
+
 ## Serverless suitability
 
 `ServerlessSuitabilityWorkflow` sends the project specification and the complete
