@@ -9,7 +9,6 @@ import io.mehdieidi.modriss.platform.model.application.ModelService;
 import io.mehdieidi.modriss.platform.model.domain.ModelRecord;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -18,12 +17,9 @@ import java.util.Set;
 import org.springframework.stereotype.Service;
 import tools.jackson.databind.JsonNode;
 
-/** Builds impact trees from transformation trace links and artifact generation metadata. */
+/** Follows recorded transformation and generation edges, using model-scoped element identities. */
 @Service
 public class ImpactAnalysisService {
-
-  private static final int MAX_DEPTH = 8;
-
   private final ModelService models;
   private final ArtifactService artifacts;
 
@@ -34,470 +30,340 @@ public class ImpactAnalysisService {
 
   public ElementImpactResponse elementImpact(
       UserRecord user, ModelLevel level, String modelId, String elementId) {
-    ModelRecord focalModel = models.get(user, level, modelId);
-    Workspace workspace = workspace(user, focalModel.projectId());
-    IndexedModel focalIndexed = workspace.model(modelId);
-    if (focalIndexed == null) {
-      throw new PlatformException(404, "Model not found.");
+    ModelRecord model = models.get(user, level, modelId);
+    Workspace workspace = workspace(user, model.projectId());
+    NodeKey focal = new NodeKey(modelId, elementId);
+    ElementRef ref = workspace.nodes.get(focal);
+    if (ref == null) {
+      throw new PlatformException(
+          404, "Element not found in the saved model. Save your changes and try again.");
     }
-    ElementRef focalElement =
-        focalIndexed
-            .ref(elementId, "FOCAL_ELEMENT")
-            .orElseGet(() -> missingRef(focalModel, elementId));
+    Traversal upstream = workspace.walk(List.of(focal), true);
+    Traversal downstream = workspace.walk(List.of(focal), false);
+    Set<TraceEdge> edges = new LinkedHashSet<>(upstream.edges);
+    edges.addAll(downstream.edges);
     return new ElementImpactResponse(
-        focalElement,
-        upstream(workspace, focalIndexed, elementId),
-        downstream(workspace, focalIndexed, elementId),
-        connected(focalIndexed, elementId));
+        ref,
+        upstream.nodes,
+        downstream.nodes,
+        List.of(),
+        List.copyOf(edges),
+        java.util.stream.Stream.concat(upstream.notices.stream(), downstream.notices.stream())
+            .distinct()
+            .toList());
   }
 
   public ArtifactImpactResponse artifactImpact(UserRecord user, String artifactId) {
+    return artifactImpact(user, artifactId, null);
+  }
+
+  public ArtifactImpactResponse artifactImpact(
+      UserRecord user, String artifactId, String filePath) {
     ArtifactRecord artifact = artifacts.get(user, artifactId);
+    if (filePath != null && !artifact.files().containsKey(filePath)) {
+      throw new PlatformException(404, "Artifact file not found.");
+    }
     Workspace workspace = workspace(user, artifact.projectId());
+    // Use the authorized, repaired record even when a legacy summary lacks trace metadata.
+    workspace.addArtifact(artifact);
+    List<NodeKey> starts =
+        workspace.nodes.keySet().stream()
+            .filter(key -> artifactId.equals(key.modelId))
+            .filter(key -> filePath == null || filePath.equals(key.elementId))
+            .toList();
+    Traversal upstream = workspace.walk(starts, true);
+    List<ElementRef> sourceElements =
+        upstream.nodes.stream().filter(ref -> !"ARTIFACT".equals(ref.modelType())).toList();
     List<ModelAncestor> ancestors = new ArrayList<>();
-    String sourceModelId = text(artifact.modelJson(), "sourceModelId", "");
+    String sourceId = text(artifact.modelJson(), "sourceModelId");
     Set<String> visited = new LinkedHashSet<>();
-    while (!sourceModelId.isBlank() && visited.add(sourceModelId)) {
-      IndexedModel source = workspace.model(sourceModelId);
-      if (source == null) {
-        break;
-      }
-      ancestors.add(
-          new ModelAncestor(
-              source.record.id(), source.record.level().apiName(), source.record.name()));
-      sourceModelId = text(source.record.modelJson(), "sourceModelId", "");
+    while (!sourceId.isBlank() && visited.add(sourceId)) {
+      ModelRecord source = workspace.models.get(sourceId);
+      if (source == null) break;
+      ancestors.add(new ModelAncestor(source.id(), source.level().apiName(), source.name()));
+      sourceId = text(source.modelJson(), "sourceModelId");
     }
     return new ArtifactImpactResponse(
-        artifact.id(), "ARTIFACT", artifact.name(), artifact.modelJson(), ancestors);
-  }
-
-  private List<ElementRef> upstream(Workspace workspace, IndexedModel focal, String elementId) {
-    List<ElementRef> refs = new ArrayList<>();
-    collectUpstream(workspace, focal, elementId, refs, new LinkedHashSet<>(), 0);
-    return distinct(refs);
-  }
-
-  private void collectUpstream(
-      Workspace workspace,
-      IndexedModel current,
-      String elementId,
-      List<ElementRef> refs,
-      Set<String> visited,
-      int depth) {
-    if (depth >= MAX_DEPTH || !visited.add(current.record.id() + "|" + elementId)) {
-      return;
-    }
-    String sourceModelId = text(current.record.modelJson(), "sourceModelId", "");
-    if (sourceModelId.isBlank()) {
-      return;
-    }
-    IndexedModel source = workspace.model(sourceModelId);
-    if (source == null) {
-      return;
-    }
-    List<TraceLink> links = current.reverseTrace(elementId);
-    if (links.isEmpty()) {
-      String generatedFrom = current.generatedFrom(elementId);
-      if (!generatedFrom.isBlank()) {
-        links = List.of(new TraceLink(generatedFrom, elementId, "GENERATED_FROM", "generatedFrom"));
-      }
-    }
-    for (TraceLink link : links) {
-      source
-          .ref(link.sourceElementId(), link.relationship())
-          .ifPresent(
-              ref -> {
-                refs.add(ref);
-                collectUpstream(
-                    workspace, source, link.sourceElementId(), refs, visited, depth + 1);
-              });
-    }
-  }
-
-  private List<ElementRef> downstream(Workspace workspace, IndexedModel focal, String elementId) {
-    List<ElementRef> refs = new ArrayList<>();
-    ArrayDeque<TraversalNode> queue = new ArrayDeque<>();
-    Set<String> visited = new LinkedHashSet<>();
-    queue.add(new TraversalNode(focal.record.id(), elementId, 0));
-    while (!queue.isEmpty()) {
-      TraversalNode cursor = queue.removeFirst();
-      if (cursor.depth >= MAX_DEPTH || !visited.add(cursor.modelId + "|" + cursor.elementId)) {
-        continue;
-      }
-      for (IndexedModel target : workspace.childModels(cursor.modelId)) {
-        List<TraceLink> links = target.forwardTrace(cursor.elementId);
-        if (links.isEmpty()) {
-          links = target.generatedFromMatches(cursor.elementId);
-        }
-        for (TraceLink link : links) {
-          target
-              .ref(link.targetElementId(), link.relationship())
-              .ifPresent(
-                  ref -> {
-                    refs.add(ref);
-                    queue.add(
-                        new TraversalNode(
-                            target.record.id(), link.targetElementId(), cursor.depth + 1));
-                  });
-        }
-      }
-      for (ArtifactRecord artifact : workspace.childArtifacts(cursor.modelId)) {
-        if (artifactPathsForElement(artifact, cursor.elementId).isEmpty()) {
-          continue;
-        }
-        refs.add(
-            new ElementRef(
-                artifact.id(),
-                "ARTIFACT",
-                artifact.name(),
-                cursor.modelId,
-                cursor.elementId,
-                "Generated Artifact",
-                artifact.name(),
-                "GENERATED_ARTIFACT"));
-      }
-    }
-    return distinct(refs);
-  }
-
-  private List<ElementRef> connected(IndexedModel model, String elementId) {
-    List<ElementRef> refs = new ArrayList<>();
-    JsonNode relationships = model.record.modelJson().path("graph").path("relationships");
-    if (!relationships.isArray()) {
-      return refs;
-    }
-    for (JsonNode relationship : relationships) {
-      String kind =
-          firstText(text(relationship, "kind", ""), text(relationship, "relationshipType", ""));
-      if ("TRACE".equalsIgnoreCase(kind)) {
-        continue;
-      }
-      String source =
-          firstText(text(relationship, "sourceElementId", ""), text(relationship, "source", ""));
-      String target =
-          firstText(text(relationship, "targetElementId", ""), text(relationship, "target", ""));
-      String peer = "";
-      if (elementId.equals(source)) {
-        peer = target;
-      } else if (elementId.equals(target)) {
-        peer = source;
-      }
-      if (!peer.isBlank()) {
-        model.ref(peer, kind.isBlank() ? "CONNECTED" : kind).ifPresent(refs::add);
-      }
-    }
-    return distinct(refs);
-  }
-
-  private List<String> artifactPathsForElement(ArtifactRecord artifact, String elementId) {
-    JsonNode traceability = artifact.modelJson().path("traceability");
-    if (!traceability.isObject()) {
-      return List.of();
-    }
-    JsonNode paths = traceability.path(elementId);
-    if (!paths.isArray()) {
-      return List.of();
-    }
-    List<String> values = new ArrayList<>();
-    for (JsonNode path : paths) {
-      String value = path.asText("");
-      if (!value.isBlank()) {
-        values.add(value);
-      }
-    }
-    return values;
+        artifact.id(),
+        "ARTIFACT",
+        artifact.name(),
+        artifact.modelJson(),
+        ancestors,
+        sourceElements,
+        upstream.edges,
+        workspace.ambiguousFiles.getOrDefault(artifactId, Set.of()).stream()
+            .filter(path -> filePath == null || filePath.equals(path))
+            .findAny()
+            .map(path -> List.of(legacyNotice(artifact.name())))
+            .orElse(List.of()));
   }
 
   private Workspace workspace(UserRecord user, String projectId) {
-    Map<String, IndexedModel> indexedModels = new LinkedHashMap<>();
+    Workspace workspace = new Workspace();
     for (ModelLevel level : ModelLevel.values()) {
       for (ModelRecord model : models.list(user, level, projectId)) {
-        indexedModels.put(model.id(), new IndexedModel(model));
+        workspace.models.put(model.id(), model);
+        Map<String, JsonNode> elements = new LinkedHashMap<>();
+        collectElements(model.modelJson(), elements);
+        // Some older editor records store elements only in the semantic graph.
+        for (JsonNode element : model.modelJson().path("graph").path("elements")) {
+          String id = text(element, "id");
+          if (!id.isBlank()) elements.putIfAbsent(id, element);
+        }
+        workspace.elements.put(model.id(), elements);
+        elements.forEach(
+            (id, element) ->
+                workspace.nodes.put(
+                    new NodeKey(model.id(), id),
+                    new ElementRef(
+                        model.id(),
+                        model.level().name(),
+                        model.name(),
+                        text(model.modelJson(), "sourceModelId"),
+                        id,
+                        firstText(text(element, "eClass"), text(element, "type"), "Model Element"),
+                        firstText(
+                            text(element, "name"),
+                            text(element, "label"),
+                            text(element, "displayName"),
+                            id),
+                        "MODEL_ELEMENT")));
       }
     }
-    List<ArtifactRecord> projectArtifacts = artifacts.list(user, projectId);
-    return new Workspace(indexedModels, projectArtifacts);
-  }
-
-  private ElementRef missingRef(ModelRecord model, String elementId) {
-    return new ElementRef(
-        model.id(),
-        model.level().name(),
-        model.name(),
-        text(model.modelJson(), "sourceModelId", null),
-        elementId,
-        "Model Element",
-        elementId,
-        "FOCAL_ELEMENT");
-  }
-
-  private List<ElementRef> distinct(List<ElementRef> refs) {
-    Map<String, ElementRef> byKey = new LinkedHashMap<>();
-    for (ElementRef ref : refs) {
-      byKey.putIfAbsent(ref.modelId() + "|" + ref.elementId() + "|" + ref.relationship(), ref);
+    for (ModelRecord target : workspace.models.values()) {
+      String sourceId = text(target.modelJson(), "sourceModelId");
+      if (!workspace.models.containsKey(sourceId)) continue;
+      List<JsonNode> traces = new ArrayList<>();
+      collectTraces(target.modelJson(), traces, false);
+      for (JsonNode trace : traces) {
+        workspace.addEdge(
+            new TraceEdge(
+                sourceId,
+                firstText(text(trace, "sourceElementId"), text(trace, "source")),
+                target.id(),
+                firstText(text(trace, "targetElementId"), text(trace, "target")),
+                firstText(text(trace, "linkType"), "TRANSFORMS_TO"),
+                text(trace, "transformationRule")));
+      }
+      // generatedFrom is provenance, never an alias for the target element's identity.
+      workspace
+          .elements
+          .get(target.id())
+          .forEach(
+              (id, element) -> {
+                NodeKey destination = new NodeKey(target.id(), id);
+                String origin = text(element, "generatedFrom");
+                if (!origin.isBlank()
+                    && workspace.incoming.getOrDefault(destination, List.of()).isEmpty()) {
+                  workspace.addEdge(
+                      new TraceEdge(
+                          sourceId, origin, target.id(), id, "GENERATED_FROM", "generatedFrom"));
+                }
+              });
     }
-    return new ArrayList<>(byKey.values());
+    for (ArtifactRecord artifact : artifacts.listSummaries(user, projectId)) {
+      workspace.addArtifact(artifact);
+    }
+    return workspace;
   }
 
-  private static String text(JsonNode node, String field, String fallback) {
-    JsonNode value = node == null ? null : node.get(field);
-    if (value == null || value.isNull()) {
-      return fallback;
+  private static void collectElements(JsonNode node, Map<String, JsonNode> elements) {
+    if (node.isObject()) {
+      String id = text(node, "id");
+      if (!id.isBlank()) elements.putIfAbsent(id, node);
+      node.properties()
+          .forEach(
+              entry -> {
+                if (!Set.of("graph", "diagram", "views").contains(entry.getKey())) {
+                  collectElements(entry.getValue(), elements);
+                }
+              });
+    } else if (node.isArray()) {
+      node.forEach(child -> collectElements(child, elements));
     }
-    String text = value.asText("");
-    return text.isBlank() ? fallback : text;
+  }
+
+  private static void collectTraces(JsonNode node, List<JsonNode> traces, boolean traceContainer) {
+    if (node.isObject()) {
+      if (traceContainer || "TraceLink".equals(text(node, "eClass"))) traces.add(node);
+      node.properties()
+          .forEach(
+              entry -> {
+                if (!Set.of("diagram", "views").contains(entry.getKey())) {
+                  collectTraces(entry.getValue(), traces, "traceLinks".equals(entry.getKey()));
+                }
+              });
+    } else if (node.isArray()) {
+      node.forEach(child -> collectTraces(child, traces, traceContainer));
+    }
+  }
+
+  private static String text(JsonNode node, String field) {
+    return node == null ? "" : node.path(field).asText("");
   }
 
   private static String firstText(String... values) {
     for (String value : values) {
-      if (value != null && !value.isBlank()) {
-        return value;
-      }
+      if (!value.isBlank()) return value;
     }
     return "";
   }
 
-  private static void addAlias(Set<String> aliases, JsonNode node, String field) {
-    String value = text(node, field, "");
-    if (!value.isBlank()) {
-      aliases.add(value);
+  private static Set<String> legacyKeys(JsonNode element) {
+    Set<String> keys = new LinkedHashSet<>();
+    for (String field :
+        List.of(
+            "id",
+            "traceId",
+            "externalId",
+            "sourceQualifiedName",
+            "logicalId",
+            "physicalName",
+            "name",
+            "displayName",
+            "label")) {
+      String key = text(element, field);
+      if (!key.isBlank()) keys.add(key);
     }
+    return keys;
   }
 
-  private record Workspace(Map<String, IndexedModel> models, List<ArtifactRecord> artifacts) {
-    IndexedModel model(String modelId) {
-      return models.get(modelId);
-    }
-
-    List<IndexedModel> childModels(String sourceModelId) {
-      return models.values().stream()
-          .filter(
-              model -> sourceModelId.equals(text(model.record.modelJson(), "sourceModelId", "")))
-          .sorted(Comparator.comparing(model -> model.record.level().ordinal()))
-          .toList();
-    }
-
-    List<ArtifactRecord> childArtifacts(String sourceModelId) {
-      return artifacts.stream()
-          .filter(artifact -> sourceModelId.equals(text(artifact.modelJson(), "sourceModelId", "")))
-          .toList();
-    }
+  private static String legacyNotice(String artifactName) {
+    return "Some file traces in "
+        + artifactName
+        + " use a shared legacy trace key and cannot identify an exact source. Regenerate this"
+        + " artifact to include those files in impact analysis.";
   }
 
-  private static final class IndexedModel {
-    private final ModelRecord record;
-    private final Map<String, JsonNode> elementsById = new LinkedHashMap<>();
-    private final Map<String, Set<String>> aliasesById = new LinkedHashMap<>();
-    private final List<TraceLink> traces = new ArrayList<>();
+  private static final class Workspace {
+    private final Map<String, ModelRecord> models = new LinkedHashMap<>();
+    private final Map<String, Map<String, JsonNode>> elements = new LinkedHashMap<>();
+    private final Map<NodeKey, ElementRef> nodes = new LinkedHashMap<>();
+    private final Map<NodeKey, List<TraceEdge>> incoming = new LinkedHashMap<>();
+    private final Map<NodeKey, List<TraceEdge>> outgoing = new LinkedHashMap<>();
+    private final Set<TraceEdge> edges = new LinkedHashSet<>();
+    private final Map<NodeKey, Set<String>> sourceNotices = new LinkedHashMap<>();
+    private final Map<String, Set<String>> ambiguousFiles = new LinkedHashMap<>();
 
-    IndexedModel(ModelRecord record) {
-      this.record = record;
-      indexElement(record.modelJson());
-      JsonNode graphElements = record.modelJson().path("graph").path("elements");
-      if (graphElements.isArray()) {
-        graphElements.forEach(this::indexElement);
+    void addEdge(TraceEdge edge) {
+      if (!nodes.containsKey(edge.source())
+          || !nodes.containsKey(edge.target())
+          || !edges.add(edge)) return;
+      incoming.computeIfAbsent(edge.target(), ignored -> new ArrayList<>()).add(edge);
+      outgoing.computeIfAbsent(edge.source(), ignored -> new ArrayList<>()).add(edge);
+    }
+
+    void addArtifact(ArtifactRecord artifact) {
+      String sourceId = text(artifact.modelJson(), "sourceModelId");
+      if (!models.containsKey(sourceId)) return;
+      // Only files with recorded, resolvable generation provenance participate in impact.
+      JsonNode traceability = artifact.modelJson().path("traceability");
+      if (!traceability.isObject()) return;
+      Map<String, Set<String>> idsByKey = new LinkedHashMap<>();
+      if (artifact.modelJson().path("traceabilityVersion").asInt(0) < 2) {
+        elements
+            .get(sourceId)
+            .forEach(
+                (id, element) ->
+                    legacyKeys(element)
+                        .forEach(
+                            key ->
+                                idsByKey
+                                    .computeIfAbsent(key, ignored -> new LinkedHashSet<>())
+                                    .add(id)));
       }
-      collectElements(record.modelJson());
-      collectTraces(record.modelJson());
+      traceability
+          .properties()
+          .forEach(
+              entry -> {
+                if (!nodes.containsKey(new NodeKey(sourceId, entry.getKey()))
+                    || !entry.getValue().isArray()) return;
+                for (JsonNode pathNode : entry.getValue()) {
+                  String path = pathNode.asText("");
+                  if (path.isBlank() || !artifact.files().containsKey(path)) continue;
+                  boolean ambiguous =
+                      legacyKeys(elements.get(sourceId).get(entry.getKey())).stream()
+                          .flatMap(key -> idsByKey.getOrDefault(key, Set.of()).stream())
+                          .filter(id -> !id.equals(entry.getKey()))
+                          .anyMatch(
+                              id -> {
+                                for (JsonNode otherPath : traceability.path(id)) {
+                                  if (path.equals(otherPath.asText(""))) return true;
+                                }
+                                return false;
+                              });
+                  if (ambiguous) {
+                    ambiguousFiles
+                        .computeIfAbsent(artifact.id(), ignored -> new LinkedHashSet<>())
+                        .add(path);
+                    sourceNotices
+                        .computeIfAbsent(
+                            new NodeKey(sourceId, entry.getKey()), ignored -> new LinkedHashSet<>())
+                        .add(legacyNotice(artifact.name()));
+                    continue;
+                  }
+                  nodes.putIfAbsent(
+                      new NodeKey(artifact.id(), path),
+                      new ElementRef(
+                          artifact.id(),
+                          "ARTIFACT",
+                          artifact.name(),
+                          sourceId,
+                          path,
+                          "Generated File",
+                          path,
+                          "GENERATED_ARTIFACT"));
+                  addEdge(
+                      new TraceEdge(
+                          sourceId,
+                          entry.getKey(),
+                          artifact.id(),
+                          path,
+                          "GENERATED_ARTIFACT",
+                          text(artifact.modelJson().path("generationRules"), path)));
+                }
+              });
     }
 
-    OptionalRef ref(String elementId, String relationship) {
-      String resolved = resolveAlias(elementId);
-      JsonNode node = resolved.isBlank() ? null : elementsById.get(resolved);
-      if (node == null) {
-        return OptionalRef.empty();
-      }
-      String type = firstText(text(node, "eClass", ""), text(node, "type", ""), "Model Element");
-      String name =
-          firstText(
-              text(node, "label", ""),
-              text(node, "displayName", ""),
-              text(node, "name", ""),
-              text(node, "id", ""),
-              resolved);
-      return OptionalRef.of(
-          new ElementRef(
-              record.id(),
-              record.level().name(),
-              record.name(),
-              text(record.modelJson(), "sourceModelId", null),
-              resolved,
-              type,
-              name,
-              relationship));
-    }
-
-    List<TraceLink> forwardTrace(String sourceElementId) {
-      Set<String> sourceAliases = aliases(sourceElementId);
-      return traces.stream()
-          .filter(trace -> sourceAliases.contains(trace.sourceElementId()))
-          .filter(trace -> !trace.targetElementId().isBlank())
-          .toList();
-    }
-
-    List<TraceLink> reverseTrace(String targetElementId) {
-      Set<String> targetAliases = aliases(targetElementId);
-      return traces.stream()
-          .filter(trace -> targetAliases.contains(trace.targetElementId()))
-          .filter(trace -> !trace.sourceElementId().isBlank())
-          .toList();
-    }
-
-    List<TraceLink> generatedFromMatches(String sourceElementId) {
-      Set<String> sourceAliases = aliases(sourceElementId);
-      List<TraceLink> links = new ArrayList<>();
-      for (Map.Entry<String, JsonNode> entry : elementsById.entrySet()) {
-        String generatedFrom = text(entry.getValue(), "generatedFrom", "");
-        if (sourceAliases.contains(generatedFrom)) {
-          links.add(
-              new TraceLink(sourceElementId, entry.getKey(), "GENERATED_FROM", "generatedFrom"));
+    Traversal walk(List<NodeKey> starts, boolean reverse) {
+      Set<NodeKey> visited = new LinkedHashSet<>(starts);
+      ArrayDeque<NodeKey> queue = new ArrayDeque<>(starts);
+      List<ElementRef> reached = new ArrayList<>();
+      Set<TraceEdge> traversed = new LinkedHashSet<>();
+      Set<String> notices = new LinkedHashSet<>();
+      while (!queue.isEmpty()) {
+        NodeKey cursor = queue.removeFirst();
+        notices.addAll(sourceNotices.getOrDefault(cursor, Set.of()));
+        for (TraceEdge edge : (reverse ? incoming : outgoing).getOrDefault(cursor, List.of())) {
+          traversed.add(edge);
+          NodeKey next = reverse ? edge.source() : edge.target();
+          if (visited.add(next)) {
+            reached.add(nodes.get(next));
+            queue.addLast(next);
+          }
         }
       }
-      return links;
-    }
-
-    String generatedFrom(String elementId) {
-      String resolved = resolveAlias(elementId);
-      JsonNode node = elementsById.get(resolved);
-      return text(node, "generatedFrom", "");
-    }
-
-    private Set<String> aliases(String elementId) {
-      String resolved = resolveAlias(elementId);
-      Set<String> aliases = new LinkedHashSet<>();
-      if (elementId != null && !elementId.isBlank()) {
-        aliases.add(elementId);
-      }
-      if (!resolved.isBlank()) {
-        aliases.add(resolved);
-        aliases.addAll(aliasesById.getOrDefault(resolved, Set.of()));
-      }
-      return aliases;
-    }
-
-    private String resolveAlias(String alias) {
-      if (alias == null || alias.isBlank()) {
-        return "";
-      }
-      if (elementsById.containsKey(alias)) {
-        return alias;
-      }
-      for (Map.Entry<String, Set<String>> entry : aliasesById.entrySet()) {
-        if (entry.getValue().contains(alias)) {
-          return entry.getKey();
-        }
-      }
-      return alias;
-    }
-
-    private void collectElements(JsonNode node) {
-      if (node == null || node.isNull()) {
-        return;
-      }
-      if (node.isObject()) {
-        indexElement(node);
-        node.properties().forEach(entry -> collectElements(entry.getValue()));
-      } else if (node.isArray()) {
-        node.forEach(this::collectElements);
-      }
-    }
-
-    private void indexElement(JsonNode node) {
-      String id = text(node, "id", "");
-      if (id.isBlank()) {
-        return;
-      }
-      elementsById.putIfAbsent(id, node);
-      Set<String> aliases = aliasesById.computeIfAbsent(id, ignored -> new LinkedHashSet<>());
-      aliases.add(id);
-      for (String field :
-          List.of(
-              "traceId",
-              "externalId",
-              "sourceQualifiedName",
-              "name",
-              "displayName",
-              "label",
-              "logicalId",
-              "physicalName",
-              "generatedFrom")) {
-        addAlias(aliases, node, field);
-      }
-    }
-
-    private void collectTraces(JsonNode node) {
-      if (node == null || node.isNull()) {
-        return;
-      }
-      if (node.isObject()) {
-        TraceLink.from(node).ifPresent(traces::add);
-        node.properties().forEach(entry -> collectTraces(entry.getValue()));
-      } else if (node.isArray()) {
-        node.forEach(this::collectTraces);
-      }
+      return new Traversal(reached, List.copyOf(traversed), List.copyOf(notices));
     }
   }
 
-  private record TraversalNode(String modelId, String elementId, int depth) {}
+  private record NodeKey(String modelId, String elementId) {}
 
-  private record TraceLink(
+  private record Traversal(List<ElementRef> nodes, List<TraceEdge> edges, List<String> notices) {}
+
+  public record TraceEdge(
+      String sourceModelId,
       String sourceElementId,
+      String targetModelId,
       String targetElementId,
       String relationship,
       String transformationRule) {
-    static OptionalRefTrace from(JsonNode node) {
-      String source = firstText(text(node, "sourceElementId", ""), text(node, "source", ""));
-      String target = firstText(text(node, "targetElementId", ""), text(node, "target", ""));
-      if (source.isBlank() || target.isBlank()) {
-        return OptionalRefTrace.empty();
-      }
-      String relationship =
-          firstText(
-              text(node, "linkType", ""),
-              text(node, "kind", ""),
-              text(node, "relationshipType", ""));
-      String rule = text(node, "transformationRule", "");
-      if (relationship.isBlank() && rule.isBlank()) {
-        return OptionalRefTrace.empty();
-      }
-      return OptionalRefTrace.of(
-          new TraceLink(source, target, firstText(relationship, rule), rule));
-    }
-  }
-
-  private record OptionalRef(ElementRef value) {
-    static OptionalRef of(ElementRef value) {
-      return new OptionalRef(value);
+    private NodeKey source() {
+      return new NodeKey(sourceModelId, sourceElementId);
     }
 
-    static OptionalRef empty() {
-      return new OptionalRef(null);
-    }
-
-    void ifPresent(java.util.function.Consumer<ElementRef> consumer) {
-      if (value != null) {
-        consumer.accept(value);
-      }
-    }
-
-    ElementRef orElseGet(java.util.function.Supplier<ElementRef> supplier) {
-      return value == null ? supplier.get() : value;
-    }
-  }
-
-  private record OptionalRefTrace(TraceLink value) {
-    static OptionalRefTrace of(TraceLink value) {
-      return new OptionalRefTrace(value);
-    }
-
-    static OptionalRefTrace empty() {
-      return new OptionalRefTrace(null);
-    }
-
-    void ifPresent(java.util.function.Consumer<TraceLink> consumer) {
-      if (value != null) {
-        consumer.accept(value);
-      }
+    private NodeKey target() {
+      return new NodeKey(targetModelId, targetElementId);
     }
   }
 
@@ -505,14 +371,19 @@ public class ImpactAnalysisService {
       ElementRef focalElement,
       List<ElementRef> upstream,
       List<ElementRef> downstream,
-      List<ElementRef> connectedElements) {}
+      List<ElementRef> connectedElements,
+      List<TraceEdge> traceEdges,
+      List<String> notices) {}
 
   public record ArtifactImpactResponse(
       String modelId,
       String modelType,
       String modelName,
       JsonNode metadata,
-      List<ModelAncestor> ancestors) {}
+      List<ModelAncestor> ancestors,
+      List<ElementRef> upstream,
+      List<TraceEdge> traceEdges,
+      List<String> notices) {}
 
   public record ModelAncestor(String id, String type, String name) {}
 

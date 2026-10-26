@@ -5,6 +5,7 @@ import io.mehdieidi.modriss.platform.kernel.ModelLevel;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 /** Provides traceability and change-impact analysis across models and generated artifacts. */
@@ -31,7 +32,9 @@ public class ImpactController {
 
   @GetMapping("/api/impact/artifact/{artifactId}")
   ImpactAnalysisService.ArtifactImpactResponse artifactImpact(
-      @RequestHeader("X-Auth-Token") String token, @PathVariable("artifactId") String artifactId) {
-    return impact.artifactImpact(auth.user(token), artifactId);
+      @RequestHeader("X-Auth-Token") String token,
+      @PathVariable("artifactId") String artifactId,
+      @RequestParam(value = "filePath", required = false) String filePath) {
+    return impact.artifactImpact(auth.user(token), artifactId, filePath);
   }
 }

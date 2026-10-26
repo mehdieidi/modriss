@@ -1459,7 +1459,7 @@ paths:
             type: string
       responses:
         "200":
-          description: Element impact graph containing focal element, upstream chain, downstream tree, and connected peers
+          description: Unique upstream and downstream trace nodes with explicit transformation and generation edges. Artifact nodes identify individual files.
           content:
             application/json:
               schema:
@@ -1472,11 +1472,17 @@ paths:
     get:
       tags: [Impact]
       summary: Analyze generated artifact lineage
-      description: Returns artifact metadata and the ordered model ancestors used to generate it.
+      description: Returns recorded contributing elements and their upstream trace edges, plus model ancestry metadata. Model ancestry alone is not element impact.
       parameters:
         - name: artifactId
           in: path
           required: true
+          schema:
+            type: string
+        - name: filePath
+          in: query
+          required: false
+          description: Exact relative path. Restricts lineage to every recorded contributor to this file.
           schema:
             type: string
       responses:
@@ -4706,7 +4712,7 @@ components:
           items: { type: string }
     ElementImpactResponse:
       type: object
-      required: [focalElement, upstream, downstream, connectedElements]
+      required: [focalElement, upstream, downstream, connectedElements, traceEdges]
       properties:
         focalElement: { $ref: "#/components/schemas/ImpactElement" }
         upstream:
@@ -4717,7 +4723,33 @@ components:
           items: { $ref: "#/components/schemas/ImpactElement" }
         connectedElements:
           type: array
+          description: Reserved for compatibility; empty. Ordinary model relationships do not establish transformation impact.
           items: { $ref: "#/components/schemas/ImpactElement" }
+        traceEdges:
+          type: array
+          items: { $ref: "#/components/schemas/ImpactTraceEdge" }
+        notices:
+          type: array
+          description: Explains excluded ambiguous legacy file provenance and how to regenerate it.
+          items: { type: string }
+    ImpactTraceEdge:
+      type: object
+      required:
+        [
+          sourceModelId,
+          sourceElementId,
+          targetModelId,
+          targetElementId,
+          relationship,
+          transformationRule,
+        ]
+      properties:
+        sourceModelId: { type: string }
+        sourceElementId: { type: string }
+        targetModelId: { type: string }
+        targetElementId: { type: string }
+        relationship: { type: string }
+        transformationRule: { type: string }
     ImpactElement:
       type: object
       properties:
@@ -4725,13 +4757,15 @@ components:
         modelType: { type: string }
         modelName: { type: string }
         sourceModelId: { type: string }
-        elementId: { type: string }
+        elementId:
+          type: string
+          description: Model-scoped element ID, or the exact relative file path for ARTIFACT nodes.
         elementType: { type: string }
         elementName: { type: string }
         relationship: { type: string }
     ArtifactImpactResponse:
       type: object
-      required: [ancestors]
+      required: [ancestors, upstream, traceEdges]
       properties:
         modelId: { type: string }
         modelType: { type: string }
@@ -4741,6 +4775,16 @@ components:
         ancestors:
           type: array
           items: { $ref: "#/components/schemas/ModelAncestor" }
+        upstream:
+          type: array
+          description: All contributing elements and their transitive transformation sources. Empty when no recorded provenance exists.
+          items: { $ref: "#/components/schemas/ImpactElement" }
+        traceEdges:
+          type: array
+          items: { $ref: "#/components/schemas/ImpactTraceEdge" }
+        notices:
+          type: array
+          items: { type: string }
     ModelAncestor:
       type: object
       properties:

@@ -57,7 +57,11 @@ operation Map recordArtifact(pathText : String, kindText : String, ruleNameText 
   rowMap.put("path", pathText);
   rowMap.put("artifactKind", kindText);
   rowMap.put("generatedBy", ruleNameText);
-  rowMap.put("sourceStableIds", sourceSeq);
+  // Stable keys can be inherited by several PSM elements. Preserve them for existing
+  // reports and protected regions, but record exact model IDs for impact analysis.
+  var stableSeq = sourceSeq.collect(sourceObj | sourceObj.stableKey()).asOrderedSet().asSequence();
+  rowMap.put("sourceStableIds", stableSeq);
+  rowMap.put("sourceElementIds", sourceSeq.collect(sourceObj | sourceObj.id).select(sourceId | sourceId.isPresent()).asOrderedSet().asSequence());
   rowMap.put("sections", Sequence{});
   rowMap.put("generatedChecksum", "COMPUTED_AFTER_WRITE");
   rowMap.put("mergeStrategy", mergeStrategyText);
@@ -71,7 +75,7 @@ operation Map recordArtifact(pathText : String, kindText : String, ruleNameText 
       regionMap.put("sourceStableId", "");
     }
     else {
-      regionMap.put("sourceStableId", sourceSeq.first());
+      regionMap.put("sourceStableId", stableSeq.first());
     }
     regionMap.put("regionKind", regionIdText);
     regionMap.put("requiredForProduction", mergeStrategyText = "PRESERVE_PROTECTED_REGIONS");
@@ -80,6 +84,21 @@ operation Map recordArtifact(pathText : String, kindText : String, ruleNameText 
     self.get("protectedRegionRows").add(regionMap);
   }
   return rowMap;
+}
+
+/** Sources whose contained configuration is rendered together, such as a SAM stack or ASL document. */
+operation Any containedArtifactSources() : Sequence {
+  var sources = OrderedSet{};
+  var pending = Sequence{self};
+  while (pending.notEmpty()) {
+    var sourceObj = pending.first();
+    pending.removeAt(0);
+    if (sourceObj.isKindOf(KERNEL!TraceableElement)) {
+      sources.add(sourceObj);
+    }
+    pending.addAll(sourceObj.eContents());
+  }
+  return sources.asSequence();
 }
 
 /** Adds or records record protected region. */

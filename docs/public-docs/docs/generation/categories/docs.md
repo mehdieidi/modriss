@@ -4,6 +4,14 @@ Documentation templates expose the generated system's architecture, deployment, 
 
 The category contains 17 EGX generation rules and 17 EGL templates.
 
+The artifact trace records `sourceElementIds` (exact PSM element IDs), `sourceStableIds`
+(the generator's stable keys), and `generatedBy` for each file. Stable keys can be inherited by
+several PSM resources, so impact analysis uses the exact IDs. Generation rules pass their source
+objects to `recordArtifact`; rules that render multiple elements declare all contributing
+sources, including the rendered contents of SAM stacks and ASL documents and the routes and
+schema models used by OpenAPI generation. This provenance is separate from ordinary model
+relationships. Existing protected-region identities continue to use stable keys.
+
 ## Template inventory
 
 | Template                                       | What it contains                                  |     Size |

@@ -4133,7 +4133,7 @@ export function startConnectionFromNode(nodeId, preferredKind = null) {
 // ── Impact highlight (called by renderNodes and impact module) ────────────────
 
 export function highlightImpactedNodes() {
-  ensureCanvas();
+  if (isModelingLevel(state.activeType)) ensureCanvas();
   updateCanvasImpactState();
 }
 

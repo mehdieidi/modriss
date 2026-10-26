@@ -308,6 +308,8 @@ public final class TransformationService {
           metadata.put("sourceModelHash", sourceModelHash(source));
           metadata.put("sourceModelLevel", source.level().name());
           metadata.set("traceability", generated.traceability());
+          metadata.put("traceabilityVersion", 2);
+          metadata.set("generationRules", generated.generationRules());
           long persistStarted = System.nanoTime();
           ArtifactRecord artifact =
               artifactService.create(
@@ -516,7 +518,13 @@ public final class TransformationService {
         throw new PlatformException(500, "PSM-to-artifact generation did not produce files.");
       }
       validateGeneratedArtifactCompleteness(source, files);
-      return new GeneratedArtifact(files, artifactTraceability(source, artifactTrace));
+      ObjectNode generationRules = store.objectMapper().createObjectNode();
+      for (JsonNode row : artifactTrace.path("artifacts")) {
+        String path = row.path("path").asText("");
+        if (!path.isBlank()) generationRules.put(path, row.path("generatedBy").asText(""));
+      }
+      return new GeneratedArtifact(
+          files, artifactTraceability(source, artifactTrace), generationRules);
     } catch (PlatformException ex) {
       throw ex;
     } catch (EgxGenerationException ex) {
@@ -583,82 +591,7 @@ public final class TransformationService {
    * @return JSON object keyed by source PSM element id
    */
   private ObjectNode artifactTraceability(ModelRecord source, JsonNode artifactTrace) {
-    Map<String, Set<String>> pathsByElement = new LinkedHashMap<>();
-    Map<String, Set<String>> aliasesByElement = sourceElementAliases(source.modelJson());
-    for (JsonNode artifact : artifactTrace.path("artifacts")) {
-      String path = artifact.path("path").asText("");
-      if (path.isBlank()) {
-        continue;
-      }
-      JsonNode stableIds = artifact.path("sourceStableIds");
-      if (!stableIds.isArray()) {
-        continue;
-      }
-      for (JsonNode stableIdNode : stableIds) {
-        String stableId = stableIdNode.asText("");
-        if (stableId.isBlank()) {
-          continue;
-        }
-        for (Map.Entry<String, Set<String>> entry : aliasesByElement.entrySet()) {
-          if (entry.getValue().contains(stableId)) {
-            pathsByElement
-                .computeIfAbsent(entry.getKey(), ignored -> new LinkedHashSet<>())
-                .add(path);
-          }
-        }
-      }
-    }
-    ObjectNode traceability = store.objectMapper().createObjectNode();
-    pathsByElement.forEach(
-        (elementId, paths) -> {
-          ArrayNode array = traceability.putArray(elementId);
-          paths.stream().sorted().forEach(array::add);
-        });
-    return traceability;
-  }
-
-  /** Indexes source model elements by all stable identities used by artifact generation. */
-  private Map<String, Set<String>> sourceElementAliases(JsonNode modelJson) {
-    Map<String, Set<String>> aliases = new LinkedHashMap<>();
-    collectElementAliases(modelJson, aliases);
-    JsonNode graphElements = modelJson.path("graph").path("elements");
-    if (graphElements.isArray()) {
-      graphElements.forEach(element -> collectElementAliases(element, aliases));
-    }
-    return aliases;
-  }
-
-  private void collectElementAliases(JsonNode node, Map<String, Set<String>> aliases) {
-    if (node == null || node.isNull()) {
-      return;
-    }
-    if (node.isObject()) {
-      String id = text(node, "id", "");
-      if (!id.isBlank()) {
-        Set<String> values = aliases.computeIfAbsent(id, ignored -> new LinkedHashSet<>());
-        for (String field :
-            java.util.List.of(
-                "id",
-                "traceId",
-                "externalId",
-                "sourceQualifiedName",
-                "name",
-                "displayName",
-                "label",
-                "logicalId",
-                "physicalName")) {
-          String value = text(node, field, "");
-          if (!value.isBlank()) {
-            values.add(value);
-          }
-        }
-      }
-      node.properties().forEach(entry -> collectElementAliases(entry.getValue(), aliases));
-      return;
-    }
-    if (node.isArray()) {
-      node.forEach(child -> collectElementAliases(child, aliases));
-    }
+    return ArtifactTraceability.build(source.modelJson(), artifactTrace, store.objectMapper());
   }
 
   /**
@@ -1289,5 +1222,6 @@ public final class TransformationService {
    * @param files generated files keyed by artifact-relative path
    * @param traceability source element id to generated file paths
    */
-  private record GeneratedArtifact(Map<String, String> files, ObjectNode traceability) {}
+  private record GeneratedArtifact(
+      Map<String, String> files, ObjectNode traceability, ObjectNode generationRules) {}
 }

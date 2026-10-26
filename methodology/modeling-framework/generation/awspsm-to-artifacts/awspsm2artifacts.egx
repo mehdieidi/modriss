@@ -50,7 +50,7 @@ rule ProjectScaffold {
   }
   /** Records or verifies results after execution. */
   post {
-    emitCtx().recordArtifact("generated/reports/project-scaffold.txt", "PROJECT_SCAFFOLD", "AWSPSM2ART_ProjectScaffold", Sequence{awsRoot().stableKey()}, "OVERWRITE_GENERATED", Sequence{});
+    emitCtx().recordArtifact("generated/reports/project-scaffold.txt", "PROJECT_SCAFFOLD", "AWSPSM2ART_ProjectScaffold", Sequence{awsRoot()}, "OVERWRITE_GENERATED", Sequence{});
   }
 }
 
@@ -66,7 +66,7 @@ rule PackageManifest {
   }
   /** Records or verifies results after execution. */
   post {
-    emitCtx().recordArtifact("go.mod", "PACKAGE_MANIFEST", "AWSPSM2ART_PackageManifest", Sequence{awsRoot().stableKey()}, "OVERWRITE_GENERATED", Sequence{});
+    emitCtx().recordArtifact("go.mod", "PACKAGE_MANIFEST", "AWSPSM2ART_PackageManifest", Sequence{awsRoot()}, "OVERWRITE_GENERATED", Sequence{});
   }
 }
 
@@ -79,7 +79,7 @@ rule Gitignore {
   parameters : Map {"awsRoot" = awsRoot(), "emitCtx" = emitCtx()}
   /** Records or verifies results after execution. */
   post {
-    emitCtx().recordArtifact(".gitignore", "GITIGNORE", "AWSPSM2ART_Gitignore", Sequence{awsRoot().stableKey()}, "PRESERVE_PROTECTED_REGIONS", Sequence{awsRoot().manualRegionId("gitignore")});
+    emitCtx().recordArtifact(".gitignore", "GITIGNORE", "AWSPSM2ART_Gitignore", Sequence{awsRoot()}, "PRESERVE_PROTECTED_REGIONS", Sequence{awsRoot().manualRegionId("gitignore")});
   }
 }
 
@@ -92,7 +92,7 @@ rule Makefile {
   parameters : Map {"awsRoot" = awsRoot(), "emitCtx" = emitCtx()}
   /** Records or verifies results after execution. */
   post {
-    emitCtx().recordArtifact("Makefile", "MAKEFILE", "AWSPSM2ART_Makefile", Sequence{awsRoot().stableKey()}, "PRESERVE_PROTECTED_REGIONS", Sequence{awsRoot().manualRegionId("makefile-customizations")});
+    emitCtx().recordArtifact("Makefile", "MAKEFILE", "AWSPSM2ART_Makefile", Sequence{awsRoot()}, "PRESERVE_PROTECTED_REGIONS", Sequence{awsRoot().manualRegionId("makefile-customizations")});
   }
 }
 
@@ -114,7 +114,7 @@ rule StackToSamTemplate transform stackObj : AWSPSMCORE!SamStack {
   }
   /** Records or verifies results after execution. */
   post {
-    emitCtx().recordArtifact(stackPathText, "SAM_TEMPLATE", "AWSPSM2ART_Stack_To_SamTemplate", Sequence{stackObj.stableKey()}, "PRESERVE_PROTECTED_REGIONS", Sequence{stackObj.manualRegionId("yaml-extension")});
+    emitCtx().recordArtifact(stackPathText, "SAM_TEMPLATE", "AWSPSM2ART_Stack_To_SamTemplate", stackObj.containedArtifactSources(), "PRESERVE_PROTECTED_REGIONS", Sequence{stackObj.manualRegionId("yaml-extension")});
   }
 }
 
@@ -130,7 +130,7 @@ rule SamConfig {
   }
   /** Records or verifies results after execution. */
   post {
-    emitCtx().recordArtifact("samconfig.toml", "SAM_CONFIG", "AWSPSM2ART_SamConfig", Sequence{awsRoot().stableKey()}, "PRESERVE_PROTECTED_REGIONS", Sequence{awsRoot().manualRegionId("samconfig-local-overrides")});
+    emitCtx().recordArtifact("samconfig.toml", "SAM_CONFIG", "AWSPSM2ART_SamConfig", Sequence{awsRoot()}, "PRESERVE_PROTECTED_REGIONS", Sequence{awsRoot().manualRegionId("samconfig-local-overrides")});
   }
 }
 
@@ -146,7 +146,7 @@ rule StageEnvironment transform stageObj : AWSPSMCORE!AwsStage {
   }
   /** Records or verifies results after execution. */
   post {
-    emitCtx().recordArtifact(stageObj.envPath(), "ENVIRONMENT_CONFIG", "AWSPSM2ART_Stage_Environment", Sequence{stageObj.stableKey()}, "OVERWRITE_GENERATED", Sequence{});
+    emitCtx().recordArtifact(stageObj.envPath(), "ENVIRONMENT_CONFIG", "AWSPSM2ART_Stage_Environment", Sequence{stageObj}, "OVERWRITE_GENERATED", Sequence{});
   }
 }
 
@@ -160,7 +160,7 @@ rule LocalEnvironmentFile {
   parameters : Map {"stageNameText" = "local", "environmentClassText" = "LOCAL", "emitCtx" = emitCtx()}
   /** Records or verifies results after execution. */
   post {
-    emitCtx().recordArtifact("env/local.json", "ENVIRONMENT_CONFIG", "AWSPSM2ART_Default_Local_Environment", Sequence{awsRoot().stableKey()}, "OVERWRITE_GENERATED", Sequence{});
+    emitCtx().recordArtifact("env/local.json", "ENVIRONMENT_CONFIG", "AWSPSM2ART_Default_Local_Environment", Sequence{awsRoot()}, "OVERWRITE_GENERATED", Sequence{});
   }
 }
 
@@ -174,7 +174,7 @@ rule DevEnvironmentFile {
   parameters : Map {"stageNameText" = "dev", "environmentClassText" = "DEV", "emitCtx" = emitCtx()}
   /** Records or verifies results after execution. */
   post {
-    emitCtx().recordArtifact("env/dev.json", "ENVIRONMENT_CONFIG", "AWSPSM2ART_Default_Dev_Environment", Sequence{awsRoot().stableKey()}, "OVERWRITE_GENERATED", Sequence{});
+    emitCtx().recordArtifact("env/dev.json", "ENVIRONMENT_CONFIG", "AWSPSM2ART_Default_Dev_Environment", Sequence{awsRoot()}, "OVERWRITE_GENERATED", Sequence{});
   }
 }
 
@@ -188,7 +188,7 @@ rule TestEnvironmentFile {
   parameters : Map {"stageNameText" = "test", "environmentClassText" = "TEST", "emitCtx" = emitCtx()}
   /** Records or verifies results after execution. */
   post {
-    emitCtx().recordArtifact("env/test.json", "ENVIRONMENT_CONFIG", "AWSPSM2ART_Default_Test_Environment", Sequence{awsRoot().stableKey()}, "OVERWRITE_GENERATED", Sequence{});
+    emitCtx().recordArtifact("env/test.json", "ENVIRONMENT_CONFIG", "AWSPSM2ART_Default_Test_Environment", Sequence{awsRoot()}, "OVERWRITE_GENERATED", Sequence{});
   }
 }
 
@@ -202,7 +202,7 @@ rule StagingEnvironmentFile {
   parameters : Map {"stageNameText" = "staging", "environmentClassText" = "STAGING", "emitCtx" = emitCtx()}
   /** Records or verifies results after execution. */
   post {
-    emitCtx().recordArtifact("env/staging.json", "ENVIRONMENT_CONFIG", "AWSPSM2ART_Default_Staging_Environment", Sequence{awsRoot().stableKey()}, "OVERWRITE_GENERATED", Sequence{});
+    emitCtx().recordArtifact("env/staging.json", "ENVIRONMENT_CONFIG", "AWSPSM2ART_Default_Staging_Environment", Sequence{awsRoot()}, "OVERWRITE_GENERATED", Sequence{});
   }
 }
 
@@ -216,7 +216,7 @@ rule ProdExampleEnvironmentFile {
   parameters : Map {"stageNameText" = "prod", "environmentClassText" = "PROD", "emitCtx" = emitCtx()}
   /** Records or verifies results after execution. */
   post {
-    emitCtx().recordArtifact("env/prod.example.json", "ENVIRONMENT_CONFIG", "AWSPSM2ART_Default_Prod_Example_Environment", Sequence{awsRoot().stableKey()}, "OVERWRITE_GENERATED", Sequence{});
+    emitCtx().recordArtifact("env/prod.example.json", "ENVIRONMENT_CONFIG", "AWSPSM2ART_Default_Prod_Example_Environment", Sequence{awsRoot()}, "OVERWRITE_GENERATED", Sequence{});
   }
 }
 
@@ -235,7 +235,8 @@ rule ApiToOpenApi transform apiObj : AWSPSMAPI!ApiGatewayApi {
   }
   /** Records or verifies results after execution. */
   post {
-    emitCtx().recordArtifact(apiObj.openApiPath(), "OPENAPI", "AWSPSM2ART_Api_To_OpenApi", Sequence{apiObj.stableKey()}, "PRESERVE_PROTECTED_REGIONS", Sequence{apiObj.manualRegionId("openapi-extension")});
+    var apiSources = Sequence{apiObj}.includingAll(apiObj.routes).includingAll(apiObj.collectOpenApiSchemaModels(apiObj.routes));
+    emitCtx().recordArtifact(apiObj.openApiPath(), "OPENAPI", "AWSPSM2ART_Api_To_OpenApi", apiSources, "PRESERVE_PROTECTED_REGIONS", Sequence{apiObj.manualRegionId("openapi-extension")});
   }
 }
 
@@ -253,7 +254,7 @@ rule WorkflowToAsl transform stateMachineObj : AWSPSMWORKFLOW!StepFunctionStateM
   }
   /** Records or verifies results after execution. */
   post {
-    emitCtx().recordArtifact(stateMachineObj.aslPath(), "ASL_JSON", "AWSPSM2ART_Workflow_To_Asl", Sequence{stateMachineObj.stableKey()}, "OVERWRITE_GENERATED", Sequence{});
+    emitCtx().recordArtifact(stateMachineObj.aslPath(), "ASL_JSON", "AWSPSM2ART_Workflow_To_Asl", Sequence{stateMachineObj}.includingAll(stateMachineObj.aslDocument.containedArtifactSources()), "OVERWRITE_GENERATED", Sequence{});
   }
 }
 
@@ -277,7 +278,7 @@ rule LambdaToHandler transform awsFn : AWSPSMCOMPUTE!AwsLambdaFunction {
       awsFn.manualRegionId("business-logic"),
       awsFn.manualRegionId("custom-error-mapping")
     };
-    emitCtx().recordArtifact(awsFn.handlerPath(emitCtx()), "LAMBDA_HANDLER", "AWSPSM2ART_Lambda_To_Handler", Sequence{awsFn.stableKey()}, "PRESERVE_PROTECTED_REGIONS", regionSeq);
+    emitCtx().recordArtifact(awsFn.handlerPath(emitCtx()), "LAMBDA_HANDLER", "AWSPSM2ART_Lambda_To_Handler", Sequence{awsFn}, "PRESERVE_PROTECTED_REGIONS", regionSeq);
   }
 }
 
@@ -294,7 +295,7 @@ rule LambdaToLocalSchema transform awsFn : AWSPSMCOMPUTE!AwsLambdaFunction {
   }
   /** Records or verifies results after execution. */
   post {
-    emitCtx().recordArtifact(awsFn.localSchemaPath(emitCtx()), "JSON_SCHEMA", "AWSPSM2ART_Contract_To_JsonSchema", Sequence{awsFn.stableKey()}, "OVERWRITE_GENERATED", Sequence{});
+    emitCtx().recordArtifact(awsFn.localSchemaPath(emitCtx()), "JSON_SCHEMA", "AWSPSM2ART_Contract_To_JsonSchema", Sequence{awsFn}, "OVERWRITE_GENERATED", Sequence{});
   }
 }
 
@@ -311,7 +312,7 @@ rule LambdaToUnitTest transform awsFn : AWSPSMCOMPUTE!AwsLambdaFunction {
   }
   /** Records or verifies results after execution. */
   post {
-    emitCtx().recordArtifact(awsFn.unitTestPath(emitCtx()), "UNIT_TEST", "AWSPSM2ART_Lambda_To_UnitTest", Sequence{awsFn.stableKey()}, "PRESERVE_PROTECTED_REGIONS", Sequence{awsFn.manualRegionId("unit-custom-fixtures"), awsFn.manualRegionId("unit-custom-assertions"), awsFn.manualRegionId("unit-edge-cases")});
+    emitCtx().recordArtifact(awsFn.unitTestPath(emitCtx()), "UNIT_TEST", "AWSPSM2ART_Lambda_To_UnitTest", Sequence{awsFn}, "PRESERVE_PROTECTED_REGIONS", Sequence{awsFn.manualRegionId("unit-custom-fixtures"), awsFn.manualRegionId("unit-custom-assertions"), awsFn.manualRegionId("unit-edge-cases")});
   }
 }
 
@@ -328,7 +329,7 @@ rule LambdaToIntegrationTest transform awsFn : AWSPSMCOMPUTE!AwsLambdaFunction {
   }
   /** Records or verifies results after execution. */
   post {
-    emitCtx().recordArtifact(awsFn.integrationTestPath(emitCtx()), "INTEGRATION_TEST", "AWSPSM2ART_Lambda_To_IntegrationTest", Sequence{awsFn.stableKey()}, "PRESERVE_PROTECTED_REGIONS", Sequence{awsFn.manualRegionId("integration-external-setup"), awsFn.manualRegionId("integration-cleanup"), awsFn.manualRegionId("integration-assertions")});
+    emitCtx().recordArtifact(awsFn.integrationTestPath(emitCtx()), "INTEGRATION_TEST", "AWSPSM2ART_Lambda_To_IntegrationTest", Sequence{awsFn}, "PRESERVE_PROTECTED_REGIONS", Sequence{awsFn.manualRegionId("integration-external-setup"), awsFn.manualRegionId("integration-cleanup"), awsFn.manualRegionId("integration-assertions")});
   }
 }
 
@@ -345,7 +346,7 @@ rule WorkflowToTest transform stateMachineObj : AWSPSMWORKFLOW!StepFunctionState
   }
   /** Records or verifies results after execution. */
   post {
-    emitCtx().recordArtifact(stateMachineObj.workflowTestPath(emitCtx()), "WORKFLOW_TEST", "AWSPSM2ART_Workflow_To_Test", Sequence{stateMachineObj.stableKey()}, "PRESERVE_PROTECTED_REGIONS", Sequence{stateMachineObj.manualRegionId("workflow-assertions")});
+    emitCtx().recordArtifact(stateMachineObj.workflowTestPath(emitCtx()), "WORKFLOW_TEST", "AWSPSM2ART_Workflow_To_Test", Sequence{stateMachineObj}, "PRESERVE_PROTECTED_REGIONS", Sequence{stateMachineObj.manualRegionId("workflow-assertions")});
   }
 }
 
@@ -363,7 +364,7 @@ rule EventBridgeRuleToFixture transform bridgeRuleObj : AWSPSMEVENTS!EventBridge
   }
   /** Records or verifies results after execution. */
   post {
-    emitCtx().recordArtifact(bridgeRuleObj.eventFixturePath(), "EVENT_FIXTURE", "AWSPSM2ART_EventBridgeRule_To_Fixture", Sequence{bridgeRuleObj.stableKey()}, "OVERWRITE_GENERATED", Sequence{});
+    emitCtx().recordArtifact(bridgeRuleObj.eventFixturePath(), "EVENT_FIXTURE", "AWSPSM2ART_EventBridgeRule_To_Fixture", Sequence{bridgeRuleObj}, "OVERWRITE_GENERATED", Sequence{});
   }
 }
 
@@ -380,7 +381,7 @@ rule SqsQueueToFixture transform queueObj : AWSPSMMESSAGING!SqsQueue {
   }
   /** Records or verifies results after execution. */
   post {
-    emitCtx().recordArtifact(queueObj.queueFixturePath(), "EVENT_FIXTURE", "AWSPSM2ART_SqsQueue_To_Fixture", Sequence{queueObj.stableKey()}, "OVERWRITE_GENERATED", Sequence{});
+    emitCtx().recordArtifact(queueObj.queueFixturePath(), "EVENT_FIXTURE", "AWSPSM2ART_SqsQueue_To_Fixture", Sequence{queueObj}, "OVERWRITE_GENERATED", Sequence{});
   }
 }
 
@@ -397,7 +398,7 @@ rule SnsTopicToFixture transform topicObj : AWSPSMMESSAGING!SnsTopic {
   }
   /** Records or verifies results after execution. */
   post {
-    emitCtx().recordArtifact(topicObj.topicFixturePath(), "EVENT_FIXTURE", "AWSPSM2ART_SnsTopic_To_Fixture", Sequence{topicObj.stableKey()}, "OVERWRITE_GENERATED", Sequence{});
+    emitCtx().recordArtifact(topicObj.topicFixturePath(), "EVENT_FIXTURE", "AWSPSM2ART_SnsTopic_To_Fixture", Sequence{topicObj}, "OVERWRITE_GENERATED", Sequence{});
   }
 }
 
@@ -409,7 +410,7 @@ rule ApiSchemaCatalog {
   overwrite : true
   parameters : Map {"schemaIdText" = "schemas/api/generated-api.schema.json", "schemaTitleText" = "Generated API Schema Catalog", "emitCtx" = emitCtx()}
   /** Records or verifies results after execution. */
-  post { emitCtx().recordArtifact("schemas/api/generated-api.schema.json", "JSON_SCHEMA", "AWSPSM2ART_Api_Schema_Catalog", Sequence{awsRoot().stableKey()}, "OVERWRITE_GENERATED", Sequence{}); }
+  post { emitCtx().recordArtifact("schemas/api/generated-api.schema.json", "JSON_SCHEMA", "AWSPSM2ART_Api_Schema_Catalog", Sequence{awsRoot()}, "OVERWRITE_GENERATED", Sequence{}); }
 }
 
 /** Generates artifacts or model elements for Event Schema Catalog. */
@@ -420,7 +421,7 @@ rule EventSchemaCatalog {
   overwrite : true
   parameters : Map {"schemaIdText" = "schemas/events/generated-event.schema.json", "schemaTitleText" = "Generated Event Schema Catalog", "emitCtx" = emitCtx()}
   /** Records or verifies results after execution. */
-  post { emitCtx().recordArtifact("schemas/events/generated-event.schema.json", "JSON_SCHEMA", "AWSPSM2ART_Event_Schema_Catalog", Sequence{awsRoot().stableKey()}, "OVERWRITE_GENERATED", Sequence{}); }
+  post { emitCtx().recordArtifact("schemas/events/generated-event.schema.json", "JSON_SCHEMA", "AWSPSM2ART_Event_Schema_Catalog", Sequence{awsRoot()}, "OVERWRITE_GENERATED", Sequence{}); }
 }
 
 /** Generates artifacts or model elements for Message Schema Catalog. */
@@ -431,7 +432,7 @@ rule MessageSchemaCatalog {
   overwrite : true
   parameters : Map {"schemaIdText" = "schemas/messages/generated-message.schema.json", "schemaTitleText" = "Generated Message Schema Catalog", "emitCtx" = emitCtx()}
   /** Records or verifies results after execution. */
-  post { emitCtx().recordArtifact("schemas/messages/generated-message.schema.json", "JSON_SCHEMA", "AWSPSM2ART_Message_Schema_Catalog", Sequence{awsRoot().stableKey()}, "OVERWRITE_GENERATED", Sequence{}); }
+  post { emitCtx().recordArtifact("schemas/messages/generated-message.schema.json", "JSON_SCHEMA", "AWSPSM2ART_Message_Schema_Catalog", Sequence{awsRoot()}, "OVERWRITE_GENERATED", Sequence{}); }
 }
 
 /** Generates artifacts or model elements for Error Schema Catalog. */
@@ -442,7 +443,7 @@ rule ErrorSchemaCatalog {
   overwrite : true
   parameters : Map {"schemaIdText" = "schemas/errors/generated-error.schema.json", "schemaTitleText" = "Generated Error Schema Catalog", "emitCtx" = emitCtx()}
   /** Records or verifies results after execution. */
-  post { emitCtx().recordArtifact("schemas/errors/generated-error.schema.json", "JSON_SCHEMA", "AWSPSM2ART_Error_Schema_Catalog", Sequence{awsRoot().stableKey()}, "OVERWRITE_GENERATED", Sequence{}); }
+  post { emitCtx().recordArtifact("schemas/errors/generated-error.schema.json", "JSON_SCHEMA", "AWSPSM2ART_Error_Schema_Catalog", Sequence{awsRoot()}, "OVERWRITE_GENERATED", Sequence{}); }
 }
 
 /** Generates artifacts or model elements for Data Schema Catalog. */
@@ -453,7 +454,7 @@ rule DataSchemaCatalog {
   overwrite : true
   parameters : Map {"schemaIdText" = "schemas/data/generated-data.schema.json", "schemaTitleText" = "Generated Data Schema Catalog", "emitCtx" = emitCtx()}
   /** Records or verifies results after execution. */
-  post { emitCtx().recordArtifact("schemas/data/generated-data.schema.json", "JSON_SCHEMA", "AWSPSM2ART_Data_Schema_Catalog", Sequence{awsRoot().stableKey()}, "OVERWRITE_GENERATED", Sequence{}); }
+  post { emitCtx().recordArtifact("schemas/data/generated-data.schema.json", "JSON_SCHEMA", "AWSPSM2ART_Data_Schema_Catalog", Sequence{awsRoot()}, "OVERWRITE_GENERATED", Sequence{}); }
 }
 
 /** Generates artifacts or model elements for Structured Document Artifact. */
@@ -466,7 +467,7 @@ rule StructuredDocumentArtifact transform documentObj : KERNEL!StructuredDocumen
   parameters : Map {"documentObj" = documentObj, "emitCtx" = emitCtx()}
   /** Records or verifies results after execution. */
   post {
-    emitCtx().recordArtifact(documentObj.documentPath(), documentObj.documentPath().pathKind(), "AWSPSM2ART_StructuredDocument", Sequence{documentObj.stableKey()}, "OVERWRITE_GENERATED", Sequence{});
+    emitCtx().recordArtifact(documentObj.documentPath(), documentObj.documentPath().pathKind(), "AWSPSM2ART_StructuredDocument", Sequence{documentObj}, "OVERWRITE_GENERATED", Sequence{});
   }
 }
 
@@ -479,7 +480,7 @@ rule TestFixturesReadme {
   overwrite : true
   parameters : Map {"awsRoot" = awsRoot(), "emitCtx" = emitCtx()}
   /** Records or verifies results after execution. */
-  post { emitCtx().recordArtifact("tests/fixtures/README.md", "TEST_FIXTURE_DOC", "AWSPSM2ART_Test_Fixtures_Readme", Sequence{awsRoot().stableKey()}, "OVERWRITE_GENERATED", Sequence{}); }
+  post { emitCtx().recordArtifact("tests/fixtures/README.md", "TEST_FIXTURE_DOC", "AWSPSM2ART_Test_Fixtures_Readme", Sequence{awsRoot()}, "OVERWRITE_GENERATED", Sequence{}); }
 }
 
 /** Generates artifacts or model elements for Shared Runtime Logger. */
@@ -490,7 +491,7 @@ rule SharedRuntimeLogger {
   overwrite : true
   parameters : Map {"awsRoot" = awsRoot(), "emitCtx" = emitCtx()}
   /** Records or verifies results after execution. */
-  post { emitCtx().recordArtifact("src/shared/logger." + emitCtx().sourceExtension(), "SHARED_RUNTIME", "AWSPSM2ART_SharedRuntimeLogger", Sequence{awsRoot().stableKey()}, "OVERWRITE_GENERATED", Sequence{}); }
+  post { emitCtx().recordArtifact("src/shared/logger." + emitCtx().sourceExtension(), "SHARED_RUNTIME", "AWSPSM2ART_SharedRuntimeLogger", Sequence{awsRoot()}, "OVERWRITE_GENERATED", Sequence{}); }
 }
 
 /** Generates artifacts or model elements for Shared Runtime Tracer. */
@@ -501,7 +502,7 @@ rule SharedRuntimeTracer {
   overwrite : true
   parameters : Map {"awsRoot" = awsRoot(), "emitCtx" = emitCtx()}
   /** Records or verifies results after execution. */
-  post { emitCtx().recordArtifact("src/shared/tracer." + emitCtx().sourceExtension(), "SHARED_RUNTIME", "AWSPSM2ART_SharedRuntimeTracer", Sequence{awsRoot().stableKey()}, "OVERWRITE_GENERATED", Sequence{}); }
+  post { emitCtx().recordArtifact("src/shared/tracer." + emitCtx().sourceExtension(), "SHARED_RUNTIME", "AWSPSM2ART_SharedRuntimeTracer", Sequence{awsRoot()}, "OVERWRITE_GENERATED", Sequence{}); }
 }
 
 /** Generates artifacts or model elements for Shared Runtime Metrics. */
@@ -512,7 +513,7 @@ rule SharedRuntimeMetrics {
   overwrite : true
   parameters : Map {"awsRoot" = awsRoot(), "emitCtx" = emitCtx()}
   /** Records or verifies results after execution. */
-  post { emitCtx().recordArtifact("src/shared/metrics." + emitCtx().sourceExtension(), "SHARED_RUNTIME", "AWSPSM2ART_SharedRuntimeMetrics", Sequence{awsRoot().stableKey()}, "OVERWRITE_GENERATED", Sequence{}); }
+  post { emitCtx().recordArtifact("src/shared/metrics." + emitCtx().sourceExtension(), "SHARED_RUNTIME", "AWSPSM2ART_SharedRuntimeMetrics", Sequence{awsRoot()}, "OVERWRITE_GENERATED", Sequence{}); }
 }
 
 /** Generates artifacts or model elements for Shared Runtime Errors. */
@@ -523,7 +524,7 @@ rule SharedRuntimeErrors {
   overwrite : true
   parameters : Map {"awsRoot" = awsRoot(), "emitCtx" = emitCtx()}
   /** Records or verifies results after execution. */
-  post { emitCtx().recordArtifact("src/shared/errors." + emitCtx().sourceExtension(), "SHARED_RUNTIME", "AWSPSM2ART_SharedRuntimeErrors", Sequence{awsRoot().stableKey()}, "OVERWRITE_GENERATED", Sequence{}); }
+  post { emitCtx().recordArtifact("src/shared/errors." + emitCtx().sourceExtension(), "SHARED_RUNTIME", "AWSPSM2ART_SharedRuntimeErrors", Sequence{awsRoot()}, "OVERWRITE_GENERATED", Sequence{}); }
 }
 
 /** Generates artifacts or model elements for Shared Runtime Validation. */
@@ -534,7 +535,7 @@ rule SharedRuntimeValidation {
   overwrite : true
   parameters : Map {"awsRoot" = awsRoot(), "emitCtx" = emitCtx()}
   /** Records or verifies results after execution. */
-  post { emitCtx().recordArtifact("src/shared/validation." + emitCtx().sourceExtension(), "SHARED_RUNTIME", "AWSPSM2ART_SharedRuntimeValidation", Sequence{awsRoot().stableKey()}, "OVERWRITE_GENERATED", Sequence{}); }
+  post { emitCtx().recordArtifact("src/shared/validation." + emitCtx().sourceExtension(), "SHARED_RUNTIME", "AWSPSM2ART_SharedRuntimeValidation", Sequence{awsRoot()}, "OVERWRITE_GENERATED", Sequence{}); }
 }
 
 /** Generates artifacts or model elements for Shared Runtime Config. */
@@ -545,7 +546,7 @@ rule SharedRuntimeConfig {
   overwrite : true
   parameters : Map {"awsRoot" = awsRoot(), "emitCtx" = emitCtx()}
   /** Records or verifies results after execution. */
-  post { emitCtx().recordArtifact("src/shared/config." + emitCtx().sourceExtension(), "SHARED_RUNTIME", "AWSPSM2ART_SharedRuntimeConfig", Sequence{awsRoot().stableKey()}, "OVERWRITE_GENERATED", Sequence{}); }
+  post { emitCtx().recordArtifact("src/shared/config." + emitCtx().sourceExtension(), "SHARED_RUNTIME", "AWSPSM2ART_SharedRuntimeConfig", Sequence{awsRoot()}, "OVERWRITE_GENERATED", Sequence{}); }
 }
 
 /** Generates artifacts or model elements for Shared Runtime Idempotency. */
@@ -556,7 +557,7 @@ rule SharedRuntimeIdempotency {
   overwrite : true
   parameters : Map {"awsRoot" = awsRoot(), "emitCtx" = emitCtx()}
   /** Records or verifies results after execution. */
-  post { emitCtx().recordArtifact("src/shared/idempotency." + emitCtx().sourceExtension(), "SHARED_RUNTIME", "AWSPSM2ART_SharedRuntimeIdempotency", Sequence{awsRoot().stableKey()}, "PRESERVE_PROTECTED_REGIONS", Sequence{awsRoot().manualRegionId("idempotency-key-derivation")}); }
+  post { emitCtx().recordArtifact("src/shared/idempotency." + emitCtx().sourceExtension(), "SHARED_RUNTIME", "AWSPSM2ART_SharedRuntimeIdempotency", Sequence{awsRoot()}, "PRESERVE_PROTECTED_REGIONS", Sequence{awsRoot().manualRegionId("idempotency-key-derivation")}); }
 }
 
 /** Generates artifacts or model elements for Shared Runtime Event Publisher. */
@@ -567,7 +568,7 @@ rule SharedRuntimeEventPublisher {
   overwrite : true
   parameters : Map {"awsRoot" = awsRoot(), "emitCtx" = emitCtx()}
   /** Records or verifies results after execution. */
-  post { emitCtx().recordArtifact("src/shared/event-publisher." + emitCtx().sourceExtension(), "SHARED_RUNTIME", "AWSPSM2ART_SharedRuntimeEventPublisher", Sequence{awsRoot().stableKey()}, "OVERWRITE_GENERATED", Sequence{}); }
+  post { emitCtx().recordArtifact("src/shared/event-publisher." + emitCtx().sourceExtension(), "SHARED_RUNTIME", "AWSPSM2ART_SharedRuntimeEventPublisher", Sequence{awsRoot()}, "OVERWRITE_GENERATED", Sequence{}); }
 }
 
 /** Generates artifacts or model elements for Shared Runtime Data Access. */
@@ -578,7 +579,7 @@ rule SharedRuntimeDataAccess {
   overwrite : true
   parameters : Map {"awsRoot" = awsRoot(), "emitCtx" = emitCtx()}
   /** Records or verifies results after execution. */
-  post { emitCtx().recordArtifact("src/shared/data-access." + emitCtx().sourceExtension(), "SHARED_RUNTIME", "AWSPSM2ART_SharedRuntimeDataAccess", Sequence{awsRoot().stableKey()}, "OVERWRITE_GENERATED", Sequence{}); }
+  post { emitCtx().recordArtifact("src/shared/data-access." + emitCtx().sourceExtension(), "SHARED_RUNTIME", "AWSPSM2ART_SharedRuntimeDataAccess", Sequence{awsRoot()}, "OVERWRITE_GENERATED", Sequence{}); }
 }
 
 /** Generates artifacts or model elements for Contract Tests. */
@@ -590,7 +591,7 @@ rule ContractTests {
   overwrite : true
   parameters : Map {"awsRoot" = awsRoot(), "emitCtx" = emitCtx()}
   /** Records or verifies results after execution. */
-  post { emitCtx().recordArtifact("tests/contract/generated_contracts_test." + emitCtx().testExtension(), "CONTRACT_TEST", "AWSPSM2ART_ContractTests", Sequence{awsRoot().stableKey()}, "PRESERVE_PROTECTED_REGIONS", Sequence{awsRoot().manualRegionId("contract-custom-assertions")}); }
+  post { emitCtx().recordArtifact("tests/contract/generated_contracts_test." + emitCtx().testExtension(), "CONTRACT_TEST", "AWSPSM2ART_ContractTests", Sequence{awsRoot()}, "PRESERVE_PROTECTED_REGIONS", Sequence{awsRoot().manualRegionId("contract-custom-assertions")}); }
 }
 
 /** Generates artifacts or model elements for Event Tests. */
@@ -602,7 +603,7 @@ rule EventTests {
   overwrite : true
   parameters : Map {"awsRoot" = awsRoot(), "emitCtx" = emitCtx()}
   /** Records or verifies results after execution. */
-  post { emitCtx().recordArtifact("tests/events/generated_events_test." + emitCtx().testExtension(), "EVENT_TEST", "AWSPSM2ART_EventTests", Sequence{awsRoot().stableKey()}, "PRESERVE_PROTECTED_REGIONS", Sequence{awsRoot().manualRegionId("event-custom-assertions")}); }
+  post { emitCtx().recordArtifact("tests/events/generated_events_test." + emitCtx().testExtension(), "EVENT_TEST", "AWSPSM2ART_EventTests", Sequence{awsRoot()}, "PRESERVE_PROTECTED_REGIONS", Sequence{awsRoot().manualRegionId("event-custom-assertions")}); }
 }
 
 /** Generates artifacts or model elements for Security Tests. */
@@ -614,7 +615,7 @@ rule SecurityTests {
   overwrite : true
   parameters : Map {"awsRoot" = awsRoot(), "emitCtx" = emitCtx()}
   /** Records or verifies results after execution. */
-  post { emitCtx().recordArtifact("tests/e2e/security_generated_test." + emitCtx().testExtension(), "SECURITY_TEST", "AWSPSM2ART_SecurityTests", Sequence{awsRoot().stableKey()}, "PRESERVE_PROTECTED_REGIONS", Sequence{awsRoot().manualRegionId("security-custom-assertions")}); }
+  post { emitCtx().recordArtifact("tests/e2e/security_generated_test." + emitCtx().testExtension(), "SECURITY_TEST", "AWSPSM2ART_SecurityTests", Sequence{awsRoot()}, "PRESERVE_PROTECTED_REGIONS", Sequence{awsRoot().manualRegionId("security-custom-assertions")}); }
 }
 
 /** Transforms E elements into e Tests elements. */
@@ -626,7 +627,7 @@ rule E2eTests {
   overwrite : true
   parameters : Map {"awsRoot" = awsRoot(), "emitCtx" = emitCtx()}
   /** Records or verifies results after execution. */
-  post { emitCtx().recordArtifact("tests/e2e/generated_flows_test." + emitCtx().testExtension(), "E2E_TEST", "AWSPSM2ART_E2eTests", Sequence{awsRoot().stableKey()}, "PRESERVE_PROTECTED_REGIONS", Sequence{awsRoot().manualRegionId("e2e-business-flow-assertions")}); }
+  post { emitCtx().recordArtifact("tests/e2e/generated_flows_test." + emitCtx().testExtension(), "E2E_TEST", "AWSPSM2ART_E2eTests", Sequence{awsRoot()}, "PRESERVE_PROTECTED_REGIONS", Sequence{awsRoot().manualRegionId("e2e-business-flow-assertions")}); }
 }
 
 /** Generates artifacts or model elements for Validate Models Script. */
@@ -637,7 +638,7 @@ rule ValidateModelsScript {
   overwrite : true
   parameters : Map {"awsRoot" = awsRoot(), "emitCtx" = emitCtx()}
   /** Records or verifies results after execution. */
-  post { emitCtx().recordArtifact("scripts/validate-models.sh", "SCRIPT", "AWSPSM2ART_ValidateModelsScript", Sequence{awsRoot().stableKey()}, "PRESERVE_PROTECTED_REGIONS", Sequence{awsRoot().manualRegionId("validate-models-customizations")}); }
+  post { emitCtx().recordArtifact("scripts/validate-models.sh", "SCRIPT", "AWSPSM2ART_ValidateModelsScript", Sequence{awsRoot()}, "PRESERVE_PROTECTED_REGIONS", Sequence{awsRoot().manualRegionId("validate-models-customizations")}); }
 }
 
 /** Generates artifacts or model elements for Validate Template Script. */
@@ -648,7 +649,7 @@ rule ValidateTemplateScript {
   overwrite : true
   parameters : Map {"awsRoot" = awsRoot(), "emitCtx" = emitCtx()}
   /** Records or verifies results after execution. */
-  post { emitCtx().recordArtifact("scripts/validate-template.sh", "SCRIPT", "AWSPSM2ART_ValidateTemplateScript", Sequence{awsRoot().stableKey()}, "PRESERVE_PROTECTED_REGIONS", Sequence{awsRoot().manualRegionId("validate-template-customizations")}); }
+  post { emitCtx().recordArtifact("scripts/validate-template.sh", "SCRIPT", "AWSPSM2ART_ValidateTemplateScript", Sequence{awsRoot()}, "PRESERVE_PROTECTED_REGIONS", Sequence{awsRoot().manualRegionId("validate-template-customizations")}); }
 }
 
 /** Generates artifacts or model elements for Validate Contracts Script. */
@@ -659,7 +660,7 @@ rule ValidateContractsScript {
   overwrite : true
   parameters : Map {"awsRoot" = awsRoot(), "emitCtx" = emitCtx()}
   /** Records or verifies results after execution. */
-  post { emitCtx().recordArtifact("scripts/validate-contracts.sh", "SCRIPT", "AWSPSM2ART_ValidateContractsScript", Sequence{awsRoot().stableKey()}, "PRESERVE_PROTECTED_REGIONS", Sequence{awsRoot().manualRegionId("validate-contracts-customizations")}); }
+  post { emitCtx().recordArtifact("scripts/validate-contracts.sh", "SCRIPT", "AWSPSM2ART_ValidateContractsScript", Sequence{awsRoot()}, "PRESERVE_PROTECTED_REGIONS", Sequence{awsRoot().manualRegionId("validate-contracts-customizations")}); }
 }
 
 /** Generates artifacts or model elements for Build Script. */
@@ -670,7 +671,7 @@ rule BuildScript {
   overwrite : true
   parameters : Map {"awsRoot" = awsRoot(), "emitCtx" = emitCtx()}
   /** Records or verifies results after execution. */
-  post { emitCtx().recordArtifact("scripts/build.sh", "SCRIPT", "AWSPSM2ART_BuildScript", Sequence{awsRoot().stableKey()}, "PRESERVE_PROTECTED_REGIONS", Sequence{awsRoot().manualRegionId("build-customizations")}); }
+  post { emitCtx().recordArtifact("scripts/build.sh", "SCRIPT", "AWSPSM2ART_BuildScript", Sequence{awsRoot()}, "PRESERVE_PROTECTED_REGIONS", Sequence{awsRoot().manualRegionId("build-customizations")}); }
 }
 
 /** Generates the Windows PowerShell build equivalent. */
@@ -680,7 +681,7 @@ rule BuildPowerShellScript {
   merge : true
   overwrite : true
   parameters : Map {"awsRoot" = awsRoot(), "emitCtx" = emitCtx()}
-  post { emitCtx().recordArtifact("scripts/build.ps1", "SCRIPT", "AWSPSM2ART_BuildPowerShellScript", Sequence{awsRoot().stableKey()}, "PRESERVE_PROTECTED_REGIONS", Sequence{awsRoot().manualRegionId("build-powershell-customizations")}); }
+  post { emitCtx().recordArtifact("scripts/build.ps1", "SCRIPT", "AWSPSM2ART_BuildPowerShellScript", Sequence{awsRoot()}, "PRESERVE_PROTECTED_REGIONS", Sequence{awsRoot().manualRegionId("build-powershell-customizations")}); }
 }
 
 /** Generates artifacts or model elements for Test Script. */
@@ -691,7 +692,7 @@ rule TestScript {
   overwrite : true
   parameters : Map {"awsRoot" = awsRoot(), "emitCtx" = emitCtx()}
   /** Records or verifies results after execution. */
-  post { emitCtx().recordArtifact("scripts/test.sh", "SCRIPT", "AWSPSM2ART_TestScript", Sequence{awsRoot().stableKey()}, "PRESERVE_PROTECTED_REGIONS", Sequence{awsRoot().manualRegionId("test-customizations")}); }
+  post { emitCtx().recordArtifact("scripts/test.sh", "SCRIPT", "AWSPSM2ART_TestScript", Sequence{awsRoot()}, "PRESERVE_PROTECTED_REGIONS", Sequence{awsRoot().manualRegionId("test-customizations")}); }
 }
 
 /** Generates artifacts or model elements for Deploy Script. */
@@ -702,7 +703,7 @@ rule DeployScript {
   overwrite : true
   parameters : Map {"awsRoot" = awsRoot(), "emitCtx" = emitCtx()}
   /** Records or verifies results after execution. */
-  post { emitCtx().recordArtifact("scripts/deploy.sh", "SCRIPT", "AWSPSM2ART_DeployScript", Sequence{awsRoot().stableKey()}, "PRESERVE_PROTECTED_REGIONS", Sequence{awsRoot().manualRegionId("deploy-customizations")}); }
+  post { emitCtx().recordArtifact("scripts/deploy.sh", "SCRIPT", "AWSPSM2ART_DeployScript", Sequence{awsRoot()}, "PRESERVE_PROTECTED_REGIONS", Sequence{awsRoot().manualRegionId("deploy-customizations")}); }
 }
 
 /** Generates artifacts or model elements for Local Invoke Script. */
@@ -713,7 +714,7 @@ rule LocalInvokeScript {
   overwrite : true
   parameters : Map {"awsRoot" = awsRoot(), "emitCtx" = emitCtx()}
   /** Records or verifies results after execution. */
-  post { emitCtx().recordArtifact("scripts/local-invoke.sh", "SCRIPT", "AWSPSM2ART_LocalInvokeScript", Sequence{awsRoot().stableKey()}, "PRESERVE_PROTECTED_REGIONS", Sequence{awsRoot().manualRegionId("local-invoke-customizations")}); }
+  post { emitCtx().recordArtifact("scripts/local-invoke.sh", "SCRIPT", "AWSPSM2ART_LocalInvokeScript", Sequence{awsRoot()}, "PRESERVE_PROTECTED_REGIONS", Sequence{awsRoot().manualRegionId("local-invoke-customizations")}); }
 }
 
 /** Generates artifacts or model elements for Local Start Api Script. */
@@ -724,7 +725,7 @@ rule LocalStartApiScript {
   overwrite : true
   parameters : Map {"awsRoot" = awsRoot(), "emitCtx" = emitCtx()}
   /** Records or verifies results after execution. */
-  post { emitCtx().recordArtifact("scripts/local-start-api.sh", "SCRIPT", "AWSPSM2ART_LocalStartApiScript", Sequence{awsRoot().stableKey()}, "PRESERVE_PROTECTED_REGIONS", Sequence{awsRoot().manualRegionId("local-start-api-customizations")}); }
+  post { emitCtx().recordArtifact("scripts/local-start-api.sh", "SCRIPT", "AWSPSM2ART_LocalStartApiScript", Sequence{awsRoot()}, "PRESERVE_PROTECTED_REGIONS", Sequence{awsRoot().manualRegionId("local-start-api-customizations")}); }
 }
 
 /** Generates artifacts or model elements for Package Script. */
@@ -735,7 +736,7 @@ rule PackageScript {
   overwrite : true
   parameters : Map {"awsRoot" = awsRoot(), "emitCtx" = emitCtx()}
   /** Records or verifies results after execution. */
-  post { emitCtx().recordArtifact("scripts/package.sh", "SCRIPT", "AWSPSM2ART_PackageScript", Sequence{awsRoot().stableKey()}, "PRESERVE_PROTECTED_REGIONS", Sequence{awsRoot().manualRegionId("package-customizations")}); }
+  post { emitCtx().recordArtifact("scripts/package.sh", "SCRIPT", "AWSPSM2ART_PackageScript", Sequence{awsRoot()}, "PRESERVE_PROTECTED_REGIONS", Sequence{awsRoot().manualRegionId("package-customizations")}); }
 }
 
 /** Generates artifacts or model elements for the selected AWS emulator environment helper. */
@@ -745,7 +746,7 @@ rule EmulatorEnvScript {
   merge : true
   overwrite : true
   parameters : Map {"awsRoot" = awsRoot(), "emitCtx" = emitCtx()}
-  post { emitCtx().recordArtifact("scripts/emulator-env.sh", "SCRIPT", "AWSPSM2ART_EmulatorEnvScript", Sequence{awsRoot().stableKey()}, "PRESERVE_PROTECTED_REGIONS", Sequence{awsRoot().manualRegionId("emulator-env-customizations")}); }
+  post { emitCtx().recordArtifact("scripts/emulator-env.sh", "SCRIPT", "AWSPSM2ART_EmulatorEnvScript", Sequence{awsRoot()}, "PRESERVE_PROTECTED_REGIONS", Sequence{awsRoot().manualRegionId("emulator-env-customizations")}); }
 }
 
 /** Generates the Windows PowerShell emulator environment equivalent. */
@@ -755,7 +756,7 @@ rule EmulatorEnvPowerShellScript {
   merge : true
   overwrite : true
   parameters : Map {"awsRoot" = awsRoot(), "emitCtx" = emitCtx()}
-  post { emitCtx().recordArtifact("scripts/emulator-env.ps1", "SCRIPT", "AWSPSM2ART_EmulatorEnvPowerShellScript", Sequence{awsRoot().stableKey()}, "PRESERVE_PROTECTED_REGIONS", Sequence{awsRoot().manualRegionId("emulator-env-powershell-customizations")}); }
+  post { emitCtx().recordArtifact("scripts/emulator-env.ps1", "SCRIPT", "AWSPSM2ART_EmulatorEnvPowerShellScript", Sequence{awsRoot()}, "PRESERVE_PROTECTED_REGIONS", Sequence{awsRoot().manualRegionId("emulator-env-powershell-customizations")}); }
 }
 
 /** Generates an executable emulator connectivity preflight. */
@@ -765,7 +766,7 @@ rule EmulatorPreflightPowerShellScript {
   merge : true
   overwrite : true
   parameters : Map {"awsRoot" = awsRoot(), "emitCtx" = emitCtx()}
-  post { emitCtx().recordArtifact("scripts/emulator-preflight.ps1", "SCRIPT", "AWSPSM2ART_EmulatorPreflightPowerShellScript", Sequence{awsRoot().stableKey()}, "PRESERVE_PROTECTED_REGIONS", Sequence{awsRoot().manualRegionId("emulator-preflight-powershell-customizations")}); }
+  post { emitCtx().recordArtifact("scripts/emulator-preflight.ps1", "SCRIPT", "AWSPSM2ART_EmulatorPreflightPowerShellScript", Sequence{awsRoot()}, "PRESERVE_PROTECTED_REGIONS", Sequence{awsRoot().manualRegionId("emulator-preflight-powershell-customizations")}); }
 }
 
 /** Generates a native emulator Step Functions execution probe. */
@@ -776,7 +777,7 @@ rule EmulatorWorkflowPowerShellScript {
   merge : true
   overwrite : true
   parameters : Map {"awsRoot" = awsRoot(), "emitCtx" = emitCtx()}
-  post { emitCtx().recordArtifact("scripts/emulator-workflow.ps1", "SCRIPT", "AWSPSM2ART_EmulatorWorkflowPowerShellScript", Sequence{awsRoot().stableKey()}, "PRESERVE_PROTECTED_REGIONS", Sequence{awsRoot().manualRegionId("emulator-workflow-powershell-customizations")}); }
+  post { emitCtx().recordArtifact("scripts/emulator-workflow.ps1", "SCRIPT", "AWSPSM2ART_EmulatorWorkflowPowerShellScript", Sequence{awsRoot()}, "PRESERVE_PROTECTED_REGIONS", Sequence{awsRoot().manualRegionId("emulator-workflow-powershell-customizations")}); }
 }
 
 /** Generates artifacts or model elements for Ci Validate. */
@@ -788,7 +789,7 @@ rule CiValidate {
   overwrite : true
   parameters : Map {"awsRoot" = awsRoot(), "emitCtx" = emitCtx()}
   /** Records or verifies results after execution. */
-  post { emitCtx().recordArtifact(".github/workflows/validate.yml", "CI_WORKFLOW", "AWSPSM2ART_CiValidate", Sequence{awsRoot().stableKey()}, "PRESERVE_PROTECTED_REGIONS", Sequence{awsRoot().manualRegionId("ci-validate-customizations")}); }
+  post { emitCtx().recordArtifact(".github/workflows/validate.yml", "CI_WORKFLOW", "AWSPSM2ART_CiValidate", Sequence{awsRoot()}, "PRESERVE_PROTECTED_REGIONS", Sequence{awsRoot().manualRegionId("ci-validate-customizations")}); }
 }
 
 /** Generates artifacts or model elements for Ci Deploy Dev. */
@@ -800,7 +801,7 @@ rule CiDeployDev {
   overwrite : true
   parameters : Map {"awsRoot" = awsRoot(), "emitCtx" = emitCtx()}
   /** Records or verifies results after execution. */
-  post { emitCtx().recordArtifact(".github/workflows/deploy-dev.yml", "CI_WORKFLOW", "AWSPSM2ART_CiDeployDev", Sequence{awsRoot().stableKey()}, "PRESERVE_PROTECTED_REGIONS", Sequence{awsRoot().manualRegionId("ci-dev-customizations")}); }
+  post { emitCtx().recordArtifact(".github/workflows/deploy-dev.yml", "CI_WORKFLOW", "AWSPSM2ART_CiDeployDev", Sequence{awsRoot()}, "PRESERVE_PROTECTED_REGIONS", Sequence{awsRoot().manualRegionId("ci-dev-customizations")}); }
 }
 
 /** Generates artifacts or model elements for Ci Deploy Prod. */
@@ -812,7 +813,7 @@ rule CiDeployProd {
   overwrite : true
   parameters : Map {"awsRoot" = awsRoot(), "emitCtx" = emitCtx()}
   /** Records or verifies results after execution. */
-  post { emitCtx().recordArtifact(".github/workflows/deploy-prod.yml", "CI_WORKFLOW", "AWSPSM2ART_CiDeployProd", Sequence{awsRoot().stableKey()}, "PRESERVE_PROTECTED_REGIONS", Sequence{awsRoot().manualRegionId("ci-prod-customizations")}); }
+  post { emitCtx().recordArtifact(".github/workflows/deploy-prod.yml", "CI_WORKFLOW", "AWSPSM2ART_CiDeployProd", Sequence{awsRoot()}, "PRESERVE_PROTECTED_REGIONS", Sequence{awsRoot().manualRegionId("ci-prod-customizations")}); }
 }
 
 /** Generates artifacts or model elements for Readme. */
@@ -824,7 +825,7 @@ rule Readme {
   overwrite : true
   parameters : Map {"awsRoot" = awsRoot(), "emitCtx" = emitCtx()}
   /** Records or verifies results after execution. */
-  post { emitCtx().recordArtifact("README.md", "DOCUMENTATION", "AWSPSM2ART_Readme", Sequence{awsRoot().stableKey()}, "PRESERVE_PROTECTED_REGIONS", Sequence{awsRoot().manualRegionId("readme-custom-project-notes")}); }
+  post { emitCtx().recordArtifact("README.md", "DOCUMENTATION", "AWSPSM2ART_Readme", Sequence{awsRoot()}, "PRESERVE_PROTECTED_REGIONS", Sequence{awsRoot().manualRegionId("readme-custom-project-notes")}); }
 }
 
 /** Generates artifacts or model elements for Architecture Doc. */
@@ -836,7 +837,7 @@ rule ArchitectureDoc {
   overwrite : true
   parameters : Map {"awsRoot" = awsRoot(), "emitCtx" = emitCtx()}
   /** Records or verifies results after execution. */
-  post { emitCtx().recordArtifact("docs/architecture.md", "DOCUMENTATION", "AWSPSM2ART_ArchitectureDoc", Sequence{awsRoot().stableKey()}, "PRESERVE_PROTECTED_REGIONS", Sequence{awsRoot().manualRegionId("architecture-custom-diagrams")}); }
+  post { emitCtx().recordArtifact("docs/architecture.md", "DOCUMENTATION", "AWSPSM2ART_ArchitectureDoc", Sequence{awsRoot()}.includingAll(awsRoot().stacks).includingAll(awsRoot().allModeledResources()), "PRESERVE_PROTECTED_REGIONS", Sequence{awsRoot().manualRegionId("architecture-custom-diagrams")}); }
 }
 
 /** Generates artifacts or model elements for Model Summary Doc. */
@@ -848,7 +849,7 @@ rule ModelSummaryDoc {
   overwrite : true
   parameters : Map {"awsRoot" = awsRoot(), "emitCtx" = emitCtx()}
   /** Records or verifies results after execution. */
-  post { emitCtx().recordArtifact("docs/model-summary.md", "DOCUMENTATION", "AWSPSM2ART_ModelSummaryDoc", Sequence{awsRoot().stableKey()}, "OVERWRITE_GENERATED", Sequence{}); }
+  post { emitCtx().recordArtifact("docs/model-summary.md", "DOCUMENTATION", "AWSPSM2ART_ModelSummaryDoc", Sequence{awsRoot()}.includingAll(awsRoot().stages).includingAll(awsRoot().stacks).includingAll(awsRoot().allModeledResources()), "OVERWRITE_GENERATED", Sequence{}); }
 }
 
 /** Generates artifacts or model elements for Security Doc. */
@@ -860,7 +861,7 @@ rule SecurityDoc {
   overwrite : true
   parameters : Map {"awsRoot" = awsRoot(), "emitCtx" = emitCtx()}
   /** Records or verifies results after execution. */
-  post { emitCtx().recordArtifact("docs/security.md", "DOCUMENTATION", "AWSPSM2ART_SecurityDoc", Sequence{awsRoot().stableKey()}, "PRESERVE_PROTECTED_REGIONS", Sequence{awsRoot().manualRegionId("security-manual-decisions")}); }
+  post { emitCtx().recordArtifact("docs/security.md", "DOCUMENTATION", "AWSPSM2ART_SecurityDoc", Sequence{awsRoot()}, "PRESERVE_PROTECTED_REGIONS", Sequence{awsRoot().manualRegionId("security-manual-decisions")}); }
 }
 
 /** Generates artifacts or model elements for Operations Doc. */
@@ -872,7 +873,7 @@ rule OperationsDoc {
   overwrite : true
   parameters : Map {"awsRoot" = awsRoot(), "emitCtx" = emitCtx()}
   /** Records or verifies results after execution. */
-  post { emitCtx().recordArtifact("docs/operations.md", "DOCUMENTATION", "AWSPSM2ART_OperationsDoc", Sequence{awsRoot().stableKey()}, "PRESERVE_PROTECTED_REGIONS", Sequence{awsRoot().manualRegionId("operations-team-runbook-details")}); }
+  post { emitCtx().recordArtifact("docs/operations.md", "DOCUMENTATION", "AWSPSM2ART_OperationsDoc", Sequence{awsRoot()}, "PRESERVE_PROTECTED_REGIONS", Sequence{awsRoot().manualRegionId("operations-team-runbook-details")}); }
 }
 
 /** Generates artifacts or model elements for Deployment Doc. */
@@ -884,7 +885,7 @@ rule DeploymentDoc {
   overwrite : true
   parameters : Map {"awsRoot" = awsRoot(), "emitCtx" = emitCtx()}
   /** Records or verifies results after execution. */
-  post { emitCtx().recordArtifact("docs/deployment.md", "DOCUMENTATION", "AWSPSM2ART_DeploymentDoc", Sequence{awsRoot().stableKey()}, "PRESERVE_PROTECTED_REGIONS", Sequence{awsRoot().manualRegionId("deployment-account-notes")}); }
+  post { emitCtx().recordArtifact("docs/deployment.md", "DOCUMENTATION", "AWSPSM2ART_DeploymentDoc", Sequence{awsRoot()}, "PRESERVE_PROTECTED_REGIONS", Sequence{awsRoot().manualRegionId("deployment-account-notes")}); }
 }
 
 /** Generates artifacts or model elements for Incident Runbook. */
@@ -896,7 +897,7 @@ rule IncidentRunbook {
   overwrite : true
   parameters : Map {"awsRoot" = awsRoot(), "emitCtx" = emitCtx()}
   /** Records or verifies results after execution. */
-  post { emitCtx().recordArtifact("docs/runbooks/incident-response.md", "RUNBOOK", "AWSPSM2ART_IncidentRunbook", Sequence{awsRoot().stableKey()}, "PRESERVE_PROTECTED_REGIONS", Sequence{awsRoot().manualRegionId("incident-response-team-steps")}); }
+  post { emitCtx().recordArtifact("docs/runbooks/incident-response.md", "RUNBOOK", "AWSPSM2ART_IncidentRunbook", Sequence{awsRoot()}, "PRESERVE_PROTECTED_REGIONS", Sequence{awsRoot().manualRegionId("incident-response-team-steps")}); }
 }
 
 /** Generates artifacts or model elements for Rollback Runbook. */
@@ -908,7 +909,7 @@ rule RollbackRunbook {
   overwrite : true
   parameters : Map {"awsRoot" = awsRoot(), "emitCtx" = emitCtx()}
   /** Records or verifies results after execution. */
-  post { emitCtx().recordArtifact("docs/runbooks/rollback.md", "RUNBOOK", "AWSPSM2ART_RollbackRunbook", Sequence{awsRoot().stableKey()}, "PRESERVE_PROTECTED_REGIONS", Sequence{awsRoot().manualRegionId("rollback-team-steps")}); }
+  post { emitCtx().recordArtifact("docs/runbooks/rollback.md", "RUNBOOK", "AWSPSM2ART_RollbackRunbook", Sequence{awsRoot()}, "PRESERVE_PROTECTED_REGIONS", Sequence{awsRoot().manualRegionId("rollback-team-steps")}); }
 }
 
 /** Generates artifacts or model elements for Traceability Doc. */
@@ -920,14 +921,14 @@ rule TraceabilityDoc {
   overwrite : true
   parameters : Map {"awsRoot" = awsRoot(), "emitCtx" = emitCtx()}
   /** Records or verifies results after execution. */
-  post { emitCtx().recordArtifact("docs/traceability.md", "TRACEABILITY_DOC", "AWSPSM2ART_TraceabilityDoc", Sequence{awsRoot().stableKey()}, "OVERWRITE_GENERATED", Sequence{}); }
+  post { emitCtx().recordArtifact("docs/traceability.md", "TRACEABILITY_DOC", "AWSPSM2ART_TraceabilityDoc", Sequence{awsRoot()}, "OVERWRITE_GENERATED", Sequence{}); }
 }
 
 /** Generates artifacts or model elements for Protected Regions Json. */
 rule ProtectedRegionsJson {
   /** Prepares and validates shared state before execution. */
   pre {
-    emitCtx().recordArtifact("generated/trace/protected-regions.json", "TRACE_REPORT", "AWSPSM2ART_ProtectedRegionsJson", Sequence{awsRoot().stableKey()}, "OVERWRITE_GENERATED", Sequence{});
+    emitCtx().recordArtifact("generated/trace/protected-regions.json", "TRACE_REPORT", "AWSPSM2ART_ProtectedRegionsJson", Sequence{awsRoot()}, "OVERWRITE_GENERATED", Sequence{});
   }
   template : "docs/protected-regions-json.egl"
   target : "generated/trace/protected-regions.json"
@@ -940,7 +941,7 @@ rule ProtectedRegionsJson {
 rule ModelTraceJson {
   /** Prepares and validates shared state before execution. */
   pre {
-    emitCtx().recordArtifact("generated/trace/model-trace.json", "TRACE_REPORT", "AWSPSM2ART_ModelTraceJson", Sequence{awsRoot().stableKey()}, "OVERWRITE_GENERATED", Sequence{});
+    emitCtx().recordArtifact("generated/trace/model-trace.json", "TRACE_REPORT", "AWSPSM2ART_ModelTraceJson", Sequence{awsRoot()}, "OVERWRITE_GENERATED", Sequence{});
   }
   template : "docs/model-trace-json.egl"
   target : "generated/trace/model-trace.json"
@@ -953,7 +954,7 @@ rule ModelTraceJson {
 rule IamRationaleReport {
   /** Prepares and validates shared state before execution. */
   pre {
-    emitCtx().recordArtifact("generated/reports/iam-policy-rationale.md", "SECURITY_REPORT", "AWSPSM2ART_IamRationaleReport", Sequence{awsRoot().stableKey()}, "OVERWRITE_GENERATED", Sequence{});
+    emitCtx().recordArtifact("generated/reports/iam-policy-rationale.md", "SECURITY_REPORT", "AWSPSM2ART_IamRationaleReport", Sequence{awsRoot()}, "OVERWRITE_GENERATED", Sequence{});
   }
   template : "infrastructure/iam-policy-rationale.egl"
   target : "generated/reports/iam-policy-rationale.md"
@@ -966,7 +967,7 @@ rule IamRationaleReport {
 rule SecurityReviewReport {
   /** Prepares and validates shared state before execution. */
   pre {
-    emitCtx().recordArtifact("generated/reports/security-review.md", "SECURITY_REPORT", "AWSPSM2ART_SecurityReviewReport", Sequence{awsRoot().stableKey()}, "OVERWRITE_GENERATED", Sequence{});
+    emitCtx().recordArtifact("generated/reports/security-review.md", "SECURITY_REPORT", "AWSPSM2ART_SecurityReviewReport", Sequence{awsRoot()}, "OVERWRITE_GENERATED", Sequence{});
   }
   template : "docs/security-review.egl"
   target : "generated/reports/security-review.md"
@@ -979,7 +980,7 @@ rule SecurityReviewReport {
 rule ManualActionsReport {
   /** Prepares and validates shared state before execution. */
   pre {
-    emitCtx().recordArtifact("generated/reports/manual-actions.md", "MANUAL_ACTIONS_REPORT", "AWSPSM2ART_ManualActionsReport", Sequence{awsRoot().stableKey()}, "OVERWRITE_GENERATED", Sequence{});
+    emitCtx().recordArtifact("generated/reports/manual-actions.md", "MANUAL_ACTIONS_REPORT", "AWSPSM2ART_ManualActionsReport", Sequence{awsRoot()}, "OVERWRITE_GENERATED", Sequence{});
   }
   template : "docs/manual-actions.egl"
   target : "generated/reports/manual-actions.md"
@@ -992,7 +993,7 @@ rule ManualActionsReport {
 rule GenerationReport {
   /** Prepares and validates shared state before execution. */
   pre {
-    emitCtx().recordArtifact("generated/reports/generation-report.md", "GENERATION_REPORT", "AWSPSM2ART_GenerationReport", Sequence{awsRoot().stableKey()}, "OVERWRITE_GENERATED", Sequence{});
+    emitCtx().recordArtifact("generated/reports/generation-report.md", "GENERATION_REPORT", "AWSPSM2ART_GenerationReport", Sequence{awsRoot()}, "OVERWRITE_GENERATED", Sequence{});
   }
   template : "docs/generation-report.egl"
   target : "generated/reports/generation-report.md"
@@ -1005,7 +1006,7 @@ rule GenerationReport {
 rule ArtifactTraceJson {
   /** Prepares and validates shared state before execution. */
   pre {
-    emitCtx().recordArtifact("generated/trace/artifact-trace.json", "TRACE_REPORT", "AWSPSM2ART_ArtifactTraceJson", Sequence{awsRoot().stableKey()}, "OVERWRITE_GENERATED", Sequence{});
+    emitCtx().recordArtifact("generated/trace/artifact-trace.json", "TRACE_REPORT", "AWSPSM2ART_ArtifactTraceJson", Sequence{awsRoot()}, "OVERWRITE_GENERATED", Sequence{});
   }
   template : "docs/artifact-trace-json.egl"
   target : "generated/trace/artifact-trace.json"

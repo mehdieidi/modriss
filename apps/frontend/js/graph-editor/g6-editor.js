@@ -2520,21 +2520,24 @@ export function updateG6ImpactState() {
     }
   }
   if (state.impactMode && state.impactData) {
-    if (state.impactData.focalElement?.elementId) {
+    if (
+      state.impactData.focalElement?.elementId &&
+      state.impactData.focalElement.modelId === state.modelId
+    ) {
       focal.add(state.impactData.focalElement.elementId);
     }
     (state.impactData.upstream || []).forEach((item) => {
-      if (item.elementId) {
+      if (item.elementId && item.modelId === state.modelId) {
         upstream.add(item.elementId);
       }
     });
     (state.impactData.downstream || []).forEach((item) => {
-      if (item.elementId) {
+      if (item.elementId && item.modelId === state.modelId) {
         downstream.add(item.elementId);
       }
     });
     (state.impactData.connectedElements || []).forEach((item) => {
-      if (item.elementId) {
+      if (item.elementId && item.modelId === state.modelId) {
         connected.add(item.elementId);
       }
     });

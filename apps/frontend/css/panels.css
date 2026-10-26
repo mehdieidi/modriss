@@ -1103,211 +1103,255 @@
   line-height: 1.45;
 }
 
-.impact-section {
-  display: flex;
-  flex-direction: column;
+.impact-stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 6px;
+  text-align: center;
+  color: var(--muted);
+  font-size: 11px;
 }
 
-.impact-section-header {
+.impact-stats button {
+  padding: 8px 3px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.impact-stats button:disabled {
+  cursor: default;
+}
+
+.impact-stats button:not(:disabled):hover {
+  border-color: var(--accent-light);
+}
+
+.impact-stats b {
+  display: block;
+  margin-bottom: 3px;
+  color: var(--text-strong);
+  font: 700 19px/1.2 var(--font-display);
+}
+
+.impact-explanation {
+  margin: 0;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.6;
+}
+
+.impact-notice {
+  margin: 0;
+  padding: 9px 10px;
+  border-left: 2px solid var(--accent-light);
+  border-radius: 5px;
+  background: var(--surface-3);
+  color: var(--text);
+  font-size: 11px;
+  line-height: 1.6;
+}
+
+.impact-search-label {
+  display: grid;
+  gap: 5px;
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.impact-search {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  padding: 9px 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+}
+
+.impact-results,
+.impact-group-list {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+
+.impact-direction {
+  min-width: 0;
+  margin-bottom: 8px;
+}
+
+.impact-direction h3 {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 0 0 9px;
+  color: var(--text-strong);
+  font: 600 12px/1.5 var(--font-display);
+}
+
+.impact-group {
+  margin-bottom: 10px;
+  min-width: 0;
+  border-left: 2px solid color-mix(in srgb, var(--accent) 45%, var(--border));
+  padding-left: 9px;
+}
+
+.impact-group > summary {
   display: flex;
   align-items: center;
   gap: 6px;
-  border-radius: 8px;
-  padding: 4px 2px;
+  padding: 5px 0 8px;
   cursor: pointer;
-  user-select: none;
-  transition: background var(--transition);
+  list-style: none;
 }
 
-.impact-section-header:hover {
-  background: color-mix(in srgb, var(--surface-3) 80%, transparent);
-}
-
-.impact-section-icon {
-  width: 12px;
-  text-align: center;
+.impact-group > summary::before {
+  content: "›";
   color: var(--muted);
-  font-size: 10px;
-  transition: transform var(--transition);
 }
 
-.impact-section.open .impact-section-icon {
+.impact-group[open] > summary::before {
   transform: rotate(90deg);
 }
 
-.impact-section-title {
+.impact-group-name {
   flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  font-size: 10px;
   color: var(--muted);
-  font: 700 10px/1.2 var(--font-display);
-  letter-spacing: 0.09em;
-  text-transform: uppercase;
+}
+
+.impact-result-card {
+  padding: 9px 10px;
+  min-width: 0;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--surface) 85%, transparent);
+}
+
+.impact-result-card[hidden] {
+  display: none;
+}
+
+.impact-result-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 5px;
+}
+
+.impact-result-type {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  color: var(--muted);
+  font-size: 10px;
+}
+
+.impact-result-name {
+  color: var(--text-strong);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.impact-file-path {
+  font-family: var(--font-mono);
+  font-size: 11px;
+}
+
+.impact-evidence {
+  margin-top: 7px;
+  color: var(--muted);
+  font-size: 10px;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+
+.impact-evidence summary {
+  cursor: pointer;
+}
+
+.impact-evidence ul {
+  display: grid;
+  gap: 8px;
+  margin: 7px 0 0;
+  padding: 7px 0 0;
+  border-top: 1px solid var(--border);
+  list-style: none;
+}
+
+.impact-evidence code {
+  display: block;
+  margin-top: 3px;
+  font-size: 9px;
+}
+
+.impact-source-link {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  text-align: left;
+  color: var(--accent-light);
+  font: inherit;
+  cursor: pointer;
+}
+
+.impact-more,
+.impact-retry {
+  margin-top: 8px;
+  padding: 6px 9px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--accent-light);
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.impact-panel-body :is(button, summary, input):focus-visible {
+  outline: 2px solid var(--accent-light);
+  outline-offset: 3px;
 }
 
 .impact-section-count {
+  flex-shrink: 0;
   border-radius: 999px;
-  border: 1px solid color-mix(in srgb, var(--border) 75%, transparent);
-  background: color-mix(in srgb, var(--surface-3) 84%, transparent);
+  border: 1px solid var(--border);
   color: var(--muted);
   font-size: 10px;
   padding: 1px 7px;
 }
 
-.impact-section-body {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
 .impact-empty {
   color: var(--muted);
   font-size: 11px;
-  font-style: italic;
-  padding: 5px 2px;
-}
-
-.impact-tree {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.impact-tree-link {
-  height: 12px;
-  margin-left: 18px;
-  border-left: 1px dashed color-mix(in srgb, var(--border-subtle) 88%, transparent);
-}
-
-.impact-tree-node {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  padding: 7px 8px;
-  border-radius: 8px;
-  border: 1px solid color-mix(in srgb, var(--border) 74%, transparent);
-  background: color-mix(in srgb, var(--surface-3) 92%, var(--surface-high) 8%);
-}
-
-.impact-tree-node-main {
-  display: flex;
-  align-items: flex-start;
-  gap: 6px;
-  min-width: 0;
-  flex: 1;
-}
-
-.impact-tree-node-text {
-  min-width: 0;
-}
-
-.impact-tree-node-title {
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  color: var(--text);
-  font-size: 12px;
-  font-weight: 600;
-}
-
-.impact-tree-node-meta {
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  color: var(--muted);
-  font-size: 10px;
-  margin-top: 2px;
+  line-height: 1.6;
+  margin: 0 0 12px;
 }
 
 .impact-tree-action {
+  flex-shrink: 0;
+  padding: 3px 0;
   border: none;
   background: transparent;
   color: var(--accent-light);
-  font: 600 10px/1.2 var(--font-display);
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
+  font: 600 10px/1.4 var(--font-display);
   cursor: pointer;
   white-space: nowrap;
 }
 
-.impact-tree-action:hover {
+.impact-tree-action:hover,
+.impact-source-link:hover {
   text-decoration: underline;
-}
-
-.impact-tree-branching {
-  gap: 8px;
-}
-
-.impact-tree-branch-node {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.impact-tree-children {
-  margin-left: 18px;
-  padding-left: 10px;
-  border-left: 1px dashed color-mix(in srgb, var(--border-subtle) 88%, transparent);
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.impact-tree-files {
-  margin-top: -2px;
-}
-
-.impact-tree-file-row {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  min-width: 0;
-}
-
-.impact-tree-file-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--success);
-}
-
-.impact-tree-file-btn {
-  display: block;
-  width: 100%;
-  min-width: 0;
-  text-align: left;
-  border-radius: 7px;
-  border: 1px solid color-mix(in srgb, var(--border) 72%, transparent);
-  background: color-mix(in srgb, var(--surface-3) 92%, var(--surface-high) 8%);
-  color: var(--text);
-  padding: 4px 7px;
-  font: 500 11px/1.35 var(--font-mono);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  cursor: pointer;
-}
-
-.impact-tree-file-btn:hover {
-  border-color: color-mix(in srgb, var(--accent) 68%, transparent);
-  background: color-mix(in srgb, var(--surface-high) 76%, transparent);
-}
-
-.impact-tree-node-focal {
-  border-color: color-mix(in srgb, #60a5fa 72%, transparent);
-  box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.22);
-}
-
-.impact-tree-node-upstream {
-  border-left: 3px solid #f59e0b;
-}
-
-.impact-tree-node-downstream {
-  border-left: 3px solid #f97316;
-}
-
-.impact-tree-node-connected {
-  border-left: 3px dashed #a78bfa;
 }
 
 .tier-badge {

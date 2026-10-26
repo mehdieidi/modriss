@@ -187,6 +187,42 @@ final class EpsilonEgxGeneratorTest {
                         && d.reason().contains("EGX module does not exist")));
   }
 
+  @Test
+  void recordsExactSourcesWhenSeveralResourcesInheritTheSameTraceKey() throws Exception {
+    Path source = tempDir.resolve("shared-trace.xmi");
+    Path output = tempDir.resolve("shared-trace-output");
+    createRepresentativeAwsPsmModel(source);
+    String xmi =
+        Files.readString(source)
+            .replace(
+                "id=\"lambda_order_handler\"",
+                "id=\"lambda_order_handler\" traceId=\"shared-pim-trace\"")
+            .replace(
+                "id=\"role_order_handler\"",
+                "id=\"role_order_handler\" traceId=\"shared-pim-trace\"");
+    Files.writeString(source, xmi);
+    generateOrFail(AwsPsmToArtifactsDefaults.request(REPOSITORY_ROOT, source, output, false, true));
+    JsonNode trace =
+        JSON.readTree(Files.readString(output.resolve("generated/trace/artifact-trace.json")));
+    JsonNode handler =
+        java.util.stream.StreamSupport.stream(trace.path("artifacts").spliterator(), false)
+            .filter(row -> "AWSPSM2ART_Lambda_To_Handler".equals(row.path("generatedBy").asText()))
+            .findFirst()
+            .orElseThrow();
+    assertEquals(JSON.readTree("[\"lambda_order_handler\"]"), handler.path("sourceElementIds"));
+    assertEquals(JSON.readTree("[\"shared-pim-trace\"]"), handler.path("sourceStableIds"));
+    JsonNode sam =
+        java.util.stream.StreamSupport.stream(trace.path("artifacts").spliterator(), false)
+            .filter(
+                row -> "AWSPSM2ART_Stack_To_SamTemplate".equals(row.path("generatedBy").asText()))
+            .findFirst()
+            .orElseThrow();
+    assertTrue(sam.path("sourceElementIds").toString().contains("lambda_order_handler"));
+    assertTrue(sam.path("sourceElementIds").toString().contains("code_order_handler"));
+    assertTrue(sam.path("sourceElementIds").toString().contains("role_order_handler"));
+    for (JsonNode row : trace.path("artifacts")) assertTrue(row.path("sourceElementIds").isArray());
+  }
+
   /**
    * Catalog AR-01: generates the complete initial artifact set from a synthetic PSM fixture.
    * Verifies the generated tree, reports, traces, scripts, and CI configuration.

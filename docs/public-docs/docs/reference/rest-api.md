@@ -162,8 +162,25 @@ ZIP download. File paths must be relative and cannot escape the artifact root.
 ### Impact Analysis
 
 - `GET /api/impact/{level}/{modelId}/element/{elementId}` returns the selected element,
-  upstream transformation sources, downstream generated elements/artifacts, and same-model peers.
-- `GET /api/impact/artifact/{artifactId}` returns artifact metadata and upstream model ancestors.
+  unique upstream transformation sources, downstream elements and individual generated files,
+  and `traceEdges` with model-scoped endpoints and transformation rules. Ordinary model
+  relationships do not establish impact; `connectedElements` remains empty for compatibility.
+- `GET /api/impact/artifact/{artifactId}?filePath={path}` returns all recorded contributors to
+  that file and their transitive transformation sources. Omit `filePath` to inspect the whole
+  bundle. Model ancestors are metadata and do not substitute for missing element traces.
+
+The editor groups results by model and artifact bundle, counts each element/file once, and
+exposes each result's immediate trace links. Filter by element, path, type, or rule; use Locate
+to inspect an element (including elements outside the active view) or Open file to inspect a
+generated file and its sources. Empty results mean no recorded traces were found. Analysis
+uses saved models and generation provenance, so save edits and rerun transformations or code
+generation when those records need updating.
+
+New generation reports record exact PSM `sourceElementIds` alongside `sourceStableIds`, and
+artifact metadata carries `traceabilityVersion: 2` plus per-file `generationRules`. Inherited
+stable keys can be shared by several resources. Ambiguous legacy file attributions are excluded
+from impact results and explained in `notices`; regenerate the affected bundle to obtain exact
+provenance. Artifact summaries supply file paths and metadata without downloading file contents.
 
 ### Assistant
 

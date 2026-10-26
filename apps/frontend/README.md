@@ -44,6 +44,15 @@ Run unit tests with `npm run test:frontend`. The explicit browser check is
 `node apps/frontend/tests/editor-tutorial.browser.mjs` (uses the landing app's Playwright
 installation and a local editor-shell harness with model state supplied at the test boundary).
 
+The impact analysis integration check is `node apps/frontend/tests/impact.live.mjs`.
+It requires a backend built from the current source and PostgreSQL. Set `IMPACT_BACKEND_URL`
+to override `http://127.0.0.1:8080`. The check imports the Climate Relief Grants CIM into an
+isolated guest project, runs real CIM-to-PIM, PIM-to-PSM, and artifact generation, verifies the
+recorded trace edges and exact file contributors, and exercises the editor in Chromium.
+It covers filtering, trace rules, pagination, file opening, cross-level navigation, mobile
+width, request races, closing during loading, and failure/retry. Screenshots and measured
+API timing go to `apps/backend/target/impact-verification`; the temporary project is deleted.
+
 ## Docs
 
 - [Frontend architecture](../../docs/public-docs/docs/architecture/frontend.md)

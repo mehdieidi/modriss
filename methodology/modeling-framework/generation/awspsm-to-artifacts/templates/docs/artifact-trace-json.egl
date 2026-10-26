@@ -11,6 +11,7 @@
       "generatedChecksum": "[%= rowMap.get("generatedChecksum").jsonEscape() %]",
       "mergeStrategy": "[%= rowMap.get("mergeStrategy").jsonEscape() %]",
       "sourceStableIds": [[% for (sourceText in rowMap.get("sourceStableIds")) { %]"[%= sourceText.jsonEscape() %]"[% if (sourceText <> rowMap.get("sourceStableIds").last()) { %], [% } %][% } %]],
+      "sourceElementIds": [[% for (sourceId in rowMap.get("sourceElementIds")) { %]"[%= sourceId.jsonEscape() %]"[% if (sourceId <> rowMap.get("sourceElementIds").last()) { %], [% } %][% } %]],
       "sections": [
         {
           "name": "file",

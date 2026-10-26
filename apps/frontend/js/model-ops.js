@@ -894,6 +894,7 @@ async function performLoadModelById(
     preserveActiveView = false,
     preserveViewport = false,
     assistantResult = false,
+    preserveImpact = false,
   } = {},
 ) {
   if (isAssistantModelLocked() && !assistantResult) return;
@@ -904,7 +905,7 @@ async function performLoadModelById(
       ? state.views?.activeViewId || null
       : null;
   if (state.activeType !== typeKey) {
-    await switchTab(typeKey);
+    await switchTab(typeKey, { preserveImpact });
   }
   const record = await api(
     typeKey === "psm" && customPsmSelected()
@@ -1764,7 +1765,7 @@ export async function generateForCurrentContext() {
 
 // ── Tab switching ─────────────────────────────────────────────────────────────
 
-export async function switchTab(type, { skipSnapshot = false } = {}) {
+export async function switchTab(type, { skipSnapshot = false, preserveImpact = false } = {}) {
   if (isAssistantModelLocked()) return;
   if (type !== state.activeType) {
     const { closeChatWindow } = await import("./chat.js?v=chat-provenance-ui-20260718a");
@@ -1773,7 +1774,7 @@ export async function switchTab(type, { skipSnapshot = false } = {}) {
   closeAttributePanel();
   el.modelTreePanel?.classList.add("hidden");
   el.workspace?.classList.remove("views-open");
-  if (state.impactMode) {
+  if (state.impactMode && !preserveImpact) {
     closeImpactPanel();
   }
 
