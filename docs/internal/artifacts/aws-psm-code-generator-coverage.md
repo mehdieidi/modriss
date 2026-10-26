@@ -515,6 +515,7 @@ This inventory is synchronized by `AwsPsmArtifactGenerationSyntaxTest.coverageRe
 - `trace.eol:AWSPSM!AwsPsmModel.defaultStageName`
 - `trace.eol:AWSPSM!AwsPsmModel.allModeledResources`
 - `trace.eol:Map.recordArtifact`
+- `trace.eol:Any.containedArtifactSources`
 - `trace.eol:Map.recordProtectedRegion`
 - `trace.eol:Map.addManualIssue`
 - `trace.eol:Map.addArtifactPlan`

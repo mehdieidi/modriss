@@ -660,6 +660,36 @@ paths:
           $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
+  /api/{level}/{id}/editing-lock:
+    parameters:
+      - $ref: "#/components/parameters/ModelLevelPath"
+      - $ref: "#/components/parameters/ModelId"
+    get:
+      tags: [Models]
+      summary: Get a model's assistant editing lock
+      description: >-
+        Requires read access to the model. Returns whether a queued or running assistant turn
+        currently owns the model's editing lock, including after an editor reload.
+      responses:
+        "200":
+          description: Current assistant editing lock status
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [locked]
+                properties:
+                  locked:
+                    type: boolean
+                    description: True when a queued or running assistant turn exists for this model.
+              example:
+                locked: false
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
   /api/{level}/validate:
     parameters:
       - $ref: "#/components/parameters/ModelLevelPath"
