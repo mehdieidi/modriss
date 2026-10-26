@@ -98,7 +98,7 @@ function App() {
         <a href="#framework" onClick={closeMenu}>Modeling</a>
         <a href="#process" onClick={closeMenu}>Process</a>
         <a href="#publication" onClick={closeMenu}>Publications</a>
-        <a className="button primary nav-workbench" href={workbenchUrl} onClick={closeMenu}>Workbench <Icon name="arrow" size={15} /></a>
+        <a className="button primary nav-workbench" href={workbenchUrl} onClick={closeMenu}>Open Workbench</a>
         <a className="nav-icon" href={docsUrl} onClick={closeMenu} aria-label="Documentation" title="Documentation"><Icon name="book" size={18} /></a>
         <a className="nav-icon" href={githubUrl} aria-label="MODRISS source code on GitHub"><Icon name="github" size={18} /></a>
       </div>
