@@ -33,6 +33,9 @@ public interface AssistantTurnStore {
   /** Returns the current queued or running turn for a thread, if durable work is still active. */
   Optional<AssistantTurn> activeForThread(String threadId);
 
+  /** Active model ownership survives reconnects, worker restarts, and progressive checkpoints. */
+  Optional<AssistantTurn> activeForModel(String modelId);
+
   Optional<AssistantTurn> claim(String workerId, Instant now, Duration lease);
 
   boolean heartbeat(String turnId, String workerId, Instant now, Duration lease);

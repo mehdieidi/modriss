@@ -1,3 +1,4 @@
+import { isAssistantModelLocked, ASSISTANT_MODEL_LOCK_EVENT } from "../assistant-model-lock.js";
 import { state } from "../state.js";
 import { nodeTypeLabel } from "./g6-mapper.js";
 import { modelingElementDefinition } from "../modeling-config-data.js";
@@ -763,6 +764,7 @@ export function bindG6Interactions(editor, callbacks = {}) {
   };
 
   const beginNodePointerDown = (id, event) => {
+    if (isAssistantModelLocked()) return;
     hoveredNodeId = id;
     hoveredInteractive = true;
     const point = eventClientPoint(event);
@@ -890,7 +892,7 @@ export function bindG6Interactions(editor, callbacks = {}) {
     }
     const move = pendingNodeDragMove;
     pendingNodeDragMove = null;
-    if (!move) {
+    if (!move || isAssistantModelLocked()) {
       return;
     }
     if (move.deferred) {
@@ -952,7 +954,7 @@ export function bindG6Interactions(editor, callbacks = {}) {
     const dragState = nodeDrag;
     const nodeId = dragState.nodeId;
     const wasDragged = dragged;
-    if (dragState.deferred && wasDragged) {
+    if (dragState.deferred && wasDragged && !isAssistantModelLocked()) {
       moveGraphNode(editor, nodeId, dragState.lastX, dragState.lastY);
     }
     if (dragState.deferred) {
@@ -967,7 +969,8 @@ export function bindG6Interactions(editor, callbacks = {}) {
     const position = dragState.deferred
       ? { x: Math.round(dragState.lastX), y: Math.round(dragState.lastY) }
       : nodePositionFromGraph(graph, nodeId, editor);
-    callbacks.onNodeDragEnd?.(nodeId, position, { moved: wasDragged });
+    if (!isAssistantModelLocked())
+      callbacks.onNodeDragEnd?.(nodeId, position, { moved: wasDragged });
     if (wasDragged) {
       suppressFollowingNodeClick(nodeId);
     } else if (!cancelClick) {
@@ -1164,6 +1167,7 @@ export function bindG6Interactions(editor, callbacks = {}) {
     window.removeEventListener("mouseup", finishNodeDrag);
     window.removeEventListener("blur", cancelNodeDrag);
     window.removeEventListener("contextmenu", cancelNodeDrag);
+    window.removeEventListener(ASSISTANT_MODEL_LOCK_EVENT, modelLockChanged);
     if (visibilityChange) {
       document.removeEventListener("visibilitychange", visibilityChange);
     }
@@ -1217,6 +1221,7 @@ export function bindG6Interactions(editor, callbacks = {}) {
     }
     callbacks.onConnectionDragEnd?.(target);
     requestAnimationFrame(() => {
+      if (isAssistantModelLocked()) return;
       if (target) {
         callbacks.onConnectionComplete?.(sourceId, target);
       } else {
@@ -1225,7 +1230,17 @@ export function bindG6Interactions(editor, callbacks = {}) {
     });
   };
 
+  const modelLockChanged = () => {
+    if (!isAssistantModelLocked()) return;
+    cancelNodeDrag();
+    clearLinkDrag();
+    cancelPhoneEdgeHold();
+    openControlPress = null;
+  };
+  window.addEventListener(ASSISTANT_MODEL_LOCK_EVENT, modelLockChanged);
+
   graph.on("node:pointerdown", (event) => {
+    if (isAssistantModelLocked()) return;
     if (eventButton(event) !== 0 || nodeDrag || linkDrag) {
       return;
     }
@@ -1296,6 +1311,7 @@ export function bindG6Interactions(editor, callbacks = {}) {
   });
 
   graph.on("node:dragstart", (event) => {
+    if (isAssistantModelLocked()) return;
     if (nodeDrag) {
       return;
     }
@@ -1318,6 +1334,7 @@ export function bindG6Interactions(editor, callbacks = {}) {
   });
 
   graph.on("node:drag", (event) => {
+    if (isAssistantModelLocked()) return;
     if (linkDrag || nodeDrag) {
       return;
     }
@@ -1333,6 +1350,7 @@ export function bindG6Interactions(editor, callbacks = {}) {
   });
 
   graph.on("node:dragend", (event) => {
+    if (isAssistantModelLocked()) return;
     if (linkDrag || nodeDrag) {
       return;
     }

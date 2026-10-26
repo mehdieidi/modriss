@@ -1,4 +1,5 @@
 import { state } from "./state.js";
+import { isAssistantModelLocked, setAssistantModelLocked } from "./assistant-model-lock.js";
 import { el } from "./dom.js";
 import { api, apiAuthHeaders, isPlannedFeatureError } from "./api.js";
 import { formatUserError } from "./errors.js";
@@ -7,7 +8,12 @@ import { apiUrl, MODEL_TYPES } from "./config.js";
 import { toDiagram } from "./diagram.js";
 import { renderDiagram, scrollToNodeAndHighlight } from "./canvas.js";
 import { renderMarkdown } from "./markdown.js";
-import { autoLayoutCurrentDiagram, loadModelById, saveCurrentModel } from "./model-ops.js";
+import {
+  autoLayoutCurrentDiagram,
+  isModelSaveInFlight,
+  loadModelById,
+  saveCurrentModel,
+} from "./model-ops.js";
 import { syncMobileDockState } from "./mobile-ui.js";
 import { hasUnsavedModelChanges } from "./model-save-ui.js";
 import { applyTextDirection } from "./text-direction.js";
@@ -399,6 +405,7 @@ function idleStageForWorkflow(workflowState) {
 }
 
 export function resetChatActivityUi() {
+  if (activeTurnId || isAssistantModelLocked()) return;
   chatBusyDepth = 0;
   chatActivityHistory = [];
   clearThinkingStream();
@@ -424,6 +431,7 @@ export function resetChatForProjectChange() {
   state.chat.historyOpen = false;
   renderedChatScopeKey = null;
   activeTurnId = null;
+  setAssistantModelLocked(false);
   streamingAssistantEl = null;
   streamingAssistantText = "";
   resetChatActivityUi();
@@ -691,6 +699,7 @@ function streamDurableTurnEvents(turnId, typeKey, eventCursor = 0) {
         const frames = buffer.split("\n\n");
         buffer = frames.pop() || "";
         for (const frame of frames) {
+          if (controller.signal.aborted) return;
           const eventName = frame.match(/^event:\s*(.+)$/m)?.[1];
           const raw = frame.match(/^data:\s*(.+)$/m)?.[1];
           if (!eventName || !raw) continue;
@@ -789,16 +798,34 @@ function streamDurableTurnEvents(turnId, typeKey, eventCursor = 0) {
 
 async function waitForDurableTurn(turnId, typeKey, eventCursor = 0) {
   let latest = null;
+  const generation = chatGeneration;
   const events = streamDurableTurnEvents(turnId, typeKey, eventCursor);
   try {
     for (;;) {
-      latest = await api(`/chatbot/turns/${turnId}`);
+      if (generation !== chatGeneration) return null;
+      try {
+        latest = await api(`/chatbot/turns/${turnId}`);
+      } catch {
+        setStatus(
+          "Reconnecting to the assistant. The model remains locked until the request finishes.",
+        );
+        await new Promise((resolve) => window.setTimeout(resolve, 2000));
+        continue;
+      }
+      if (generation !== chatGeneration) return null;
       renderDurableRun(latest);
       const stateName = String(latest?.state || "");
       const progress = durableProgressForTurn(latest);
       updateThinkingStatus(progress.message, progress.stage, progress.progress);
       if (DURABLE_TERMINAL_STATES.has(stateName)) {
-        if (latest?.modelId) await applyAssistantModelResponse(typeKey, latest);
+        events.abort();
+        try {
+          if (latest?.modelId) await applyAssistantModelResponse(typeKey, latest);
+        } catch {
+          setStatus("The assistant finished. Retrying the canvas refresh before enabling editing.");
+          await new Promise((resolve) => window.setTimeout(resolve, 2000));
+          continue;
+        }
         return latest;
       }
       await new Promise((resolve) => window.setTimeout(resolve, 1000));
@@ -847,27 +874,31 @@ function appendDurableTurnActions(turn, typeKey) {
   const actions = document.createElement("div");
   actions.className = "chat-proposal-actions";
   const runFollowUp = async (path, body = null) => {
-    const accepted = await api(path, {
-      method: "POST",
-      ...(body ? { body: JSON.stringify(body) } : {}),
-    });
-    if (accepted?.turnId) {
-      activeTurnId = accepted.turnId;
-      beginChatActivity("Continuing assistant turn", "PLANNING");
-      const completed = await waitForDurableTurn(
-        accepted.turnId,
-        typeKey,
-        accepted.eventCursor || 0,
-      );
-      activeTurnId = null;
-      endChatActivity(null, completed?.state || null);
-      appendAssistantDeduped(
-        await durableAssistantMessage(
-          completed,
-          state.chat.sessions.get(chatScopeKey(typeKey))?.sessionId,
-        ),
-      );
-      appendDurableTurnActions(completed, typeKey);
+    if (chatBusyDepth > 0 || isAssistantModelLocked()) return;
+    beginChatActivity("Continuing assistant turn", "PLANNING");
+    try {
+      const accepted = await api(path, {
+        method: "POST",
+        ...(body ? { body: JSON.stringify(body) } : {}),
+      });
+      if (accepted?.turnId) {
+        activeTurnId = accepted.turnId;
+        const completed = await waitForDurableTurn(
+          accepted.turnId,
+          typeKey,
+          accepted.eventCursor || 0,
+        );
+        activeTurnId = null;
+        appendAssistantDeduped(
+          await durableAssistantMessage(
+            completed,
+            state.chat.sessions.get(chatScopeKey(typeKey))?.sessionId,
+          ),
+        );
+        appendDurableTurnActions(completed, typeKey);
+      }
+    } finally {
+      endChatActivity();
     }
   };
   if (stateName === "PARTIAL") {
@@ -1189,6 +1220,7 @@ function applyHttpActivity(response) {
 
 function beginChatActivity(message, workflowState = null, anchorMessage = null) {
   chatBusyDepth += 1;
+  setAssistantModelLocked(true);
   ensureThinkingStream(
     message,
     workflowState ? idleStageForWorkflow(workflowState) : "PLANNING",
@@ -1200,6 +1232,7 @@ function beginChatActivity(message, workflowState = null, anchorMessage = null) 
 function endChatActivity(message = null, workflowState = null) {
   chatBusyDepth = Math.max(0, chatBusyDepth - 1);
   if (chatBusyDepth === 0) {
+    setAssistantModelLocked(false);
     finalizeThinkingStream();
     if (workflowState && TERMINAL_WORKFLOW_STATES.has(workflowState)) {
       applyWorkflowSnapshot(workflowState, message);
@@ -1513,7 +1546,7 @@ async function hydrateChatThread(
     }
     updateChatModelBadge(hydratedModelName || cachedSession?.modelName);
     const hasMessages = Array.isArray(thread.messages) && thread.messages.length > 0;
-    if (!hasMessages) {
+    if (!hasMessages && !thread?.activeTurn?.turnId) {
       resetChatActivityUi();
       return;
     }
@@ -1922,9 +1955,9 @@ function _appendProposalCard(typeKey, sessionId, proposal) {
         response = await api(`/chatbot/sessions/${sessionId}/proposals/${proposal.id}/undo`, {
           method: "POST",
         });
-        endChatActivity(null, response?.workflowState || "UNDONE");
         appendAssistantDeduped(response.assistantMessage || "Changes undone.");
         await applyAssistantModelResponse(typeKey, response);
+        endChatActivity(null, response?.workflowState || "UNDONE");
         setProposalDecision(card, "Undone");
       } catch (error) {
         if (chatBusyDepth > 0) {
@@ -1960,21 +1993,23 @@ function setProposalDecision(card, label) {
   actions.appendChild(status);
 }
 
-async function applyAssistantModelResponse(
-  typeKey,
-  response,
-  requestedModelId = null,
-  requestDiagramFingerprint = null,
-) {
+let assistantModelApplyQueue = Promise.resolve();
+
+function applyAssistantModelResponse(...args) {
+  const apply = assistantModelApplyQueue
+    .catch(() => {})
+    .then(() => applyAssistantModelResponseNow(...args));
+  assistantModelApplyQueue = apply;
+  return apply;
+}
+
+async function applyAssistantModelResponseNow(typeKey, response, requestedModelId = null) {
   if (!response) {
     return;
   }
   const responseModelId = String(response.modelId || "").trim();
   const liveModelId = String(state.modelId || "").trim();
   const requestedModelIdValue = String(requestedModelId || "").trim();
-  const liveDiagramFingerprint = JSON.stringify(state.diagram || {});
-  const hasLocalEditsSinceRequest =
-    requestDiagramFingerprint != null && liveDiagramFingerprint !== requestDiagramFingerprint;
   if (
     responseModelId &&
     liveModelId &&
@@ -1985,21 +2020,20 @@ async function applyAssistantModelResponse(
     setStatus("Assistant response received for another model; skipped auto-apply");
     return;
   }
-  if (hasLocalEditsSinceRequest) {
-    setStatus("Assistant response received; kept your newer canvas edits");
-    return;
-  }
   if (responseModelId) {
     const responseRevision = Number(response.revision);
     const currentRevision = Number(state.modelRevision);
     const isCurrentModel = responseModelId === liveModelId;
-    // A durable turn always reports its working model ID, even for an explanation. Reloading
-    // that unchanged revision recreates the canvas and may invoke layout recovery. Only a newer
-    // revision (or a newly selected model) is a model change that belongs on the canvas.
+    const terminal = DURABLE_TERMINAL_STATES.has(String(response.state || ""));
+    const unchanged =
+      isCurrentModel && Number.isFinite(responseRevision) && responseRevision <= currentRevision;
+    // Ignore repeated checkpoint events. A terminal response always reloads the persisted
+    // model, including an unchanged revision, to discard any draft left during the request.
     if (
       isCurrentModel &&
       Number.isFinite(responseRevision) &&
-      responseRevision <= currentRevision
+      responseRevision <= currentRevision &&
+      !terminal
     ) {
       clearAssistantModelPreview({ restore: false });
       return;
@@ -2018,6 +2052,7 @@ async function applyAssistantModelResponse(
       preserveViewport: true,
       autoLayout: false,
       skipClientLayout: false,
+      assistantResult: true,
     });
     assistantModelApplyInFlight.set(updateKey, apply);
     try {
@@ -2025,7 +2060,7 @@ async function applyAssistantModelResponse(
     } finally {
       assistantModelApplyInFlight.delete(updateKey);
     }
-    await autoLayoutCompletedAssistantTurn(response);
+    if (!unchanged) await autoLayoutCompletedAssistantTurn(response);
     if (state.project) {
       state.project.activeModelIds = {
         ...(state.project.activeModelIds || {}),
@@ -2066,6 +2101,7 @@ async function autoLayoutCompletedAssistantTurn(response) {
     rethrow: true,
     force: true,
     skipClientLayout: true,
+    assistantCompletion: true,
   });
 }
 
@@ -2122,8 +2158,22 @@ function defaultAttachmentMessage() {
 
 // ── Send message ──────────────────────────────────────────────────────────────
 
+async function submitAssistantRequest(path, body) {
+  for (;;) {
+    try {
+      return await api(path, { method: "POST", body });
+    } catch (error) {
+      if (error.status >= 400 && error.status < 500) throw error;
+      // The server may have accepted the turn before the acknowledgement was lost.
+      // Reuse its idempotency key and retain ownership until we recover that acknowledgement.
+      setStatus("Reconnecting to the assistant. Editing and saving remain locked.");
+      await new Promise((resolve) => window.setTimeout(resolve, 2000));
+    }
+  }
+}
+
 export async function sendChatMessage() {
-  if (chatBusyDepth > 0) {
+  if (chatBusyDepth > 0 || isAssistantModelLocked()) {
     return;
   }
   const typedText = el.chatInput.value.trim();
@@ -2149,19 +2199,21 @@ export async function sendChatMessage() {
       return;
     }
     const requestedModelId = state.modelId;
-    const requestDiagramFingerprint = JSON.stringify(state.diagram || {});
     // A durable agent turn always works from a persisted revision. Sending an ad-hoc draft patch
     // would bypass structural validation and make checkpoint/conflict semantics ambiguous.
-    if (hasUnsavedModelChanges()) {
+    if (hasUnsavedModelChanges() || isModelSaveInFlight()) {
       updateThinkingStatus(
         "Saving your current model before starting the assistant.",
         "VALIDATING",
       );
-      await saveCurrentModel({ quiet: true, rethrow: true });
+      await saveCurrentModel({ quiet: true, rethrow: true, assistantPreparation: true });
+      if (hasUnsavedModelChanges()) {
+        throw new Error("The current model could not be saved before starting the assistant.");
+      }
     }
-    response = await api(`/chatbot/sessions/${session.sessionId}/messages`, {
-      method: "POST",
-      body: JSON.stringify({
+    response = await submitAssistantRequest(
+      `/chatbot/sessions/${session.sessionId}/messages`,
+      JSON.stringify({
         idempotencyKey:
           crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(36).slice(2)}`,
         message: text,
@@ -2179,7 +2231,7 @@ export async function sendChatMessage() {
         ],
         attachmentIds: attachments.map((attachment) => attachment.id),
       }),
-    });
+    );
 
     if (response?.turnId) {
       activeTurnId = response.turnId;
@@ -2204,14 +2256,9 @@ export async function sendChatMessage() {
         return;
       }
       applyHttpActivity(response);
-      endChatActivity(null, response?.workflowState || null);
       appendAssistantDeduped(response.assistantMessage || "Done");
-      await applyAssistantModelResponse(
-        state.activeType,
-        response,
-        requestedModelId,
-        requestDiagramFingerprint,
-      );
+      await applyAssistantModelResponse(state.activeType, response, requestedModelId);
+      endChatActivity(null, response?.workflowState || null);
     }
     if (
       !["WAITING_FOR_CHOICE", "FAILED", "PARTIAL", "CANCELLED"].includes(

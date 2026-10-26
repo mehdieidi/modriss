@@ -58,6 +58,8 @@ public final class ModelService {
   /** Per-model lock service for mutations. */
   private final ModelLockService modelLocks;
 
+  private java.util.function.Consumer<ModelRecord> mutationGuard = model -> {};
+
   /** Model import, export, and XMI sidecar operations. */
   private final ModelImportExportService importExport;
 
@@ -168,6 +170,11 @@ public final class ModelService {
     return modelLocks;
   }
 
+  /** Installs the application policy checked under the model lock before external mutations. */
+  public void setMutationGuard(java.util.function.Consumer<ModelRecord> guard) {
+    this.mutationGuard = java.util.Objects.requireNonNull(guard);
+  }
+
   /**
    * Returns the maximum model upload size.
    *
@@ -226,6 +233,17 @@ public final class ModelService {
     ModelRecord model = find(level, id);
     projectService.get(user, model.projectId());
     return clientRecord(model);
+  }
+
+  /** Checks access using the index without deserializing a large model for lock-status polling. */
+  public void requireReadAccess(UserRecord user, ModelLevel level, String id) {
+    Optional<ModelIndexRecord> index = store.read(modelIndexPath(id), ModelIndexRecord.class);
+    if (index.isEmpty()) {
+      get(user, level, id);
+      return;
+    }
+    if (index.get().level() != level) throw new PlatformException(404, "Model not found.");
+    projectService.get(user, index.get().projectId());
   }
 
   /**
@@ -519,6 +537,7 @@ public final class ModelService {
         Duration.ofSeconds(30),
         () -> {
           ModelRecord existing = get(user, level, id);
+          mutationGuard.accept(existing);
           requireExpectedRevision(existing, expectedRevision);
           ProjectRecord project = projectService.get(user, existing.projectId());
           projectService.requireEditor(project, user.id());
@@ -570,6 +589,7 @@ public final class ModelService {
         Duration.ofSeconds(30),
         () -> {
           ModelRecord existing = get(user, level, id);
+          mutationGuard.accept(existing);
           requireExpectedRevision(existing, expectedRevision);
           ProjectRecord project = projectService.get(user, existing.projectId());
           projectService.requireEditor(project, user.id());
@@ -722,6 +742,7 @@ public final class ModelService {
         Duration.ofSeconds(30),
         () -> {
           ModelRecord existing = get(user, level, id);
+          if (!requireStructuralValidity) mutationGuard.accept(existing);
           requireExpectedRevision(existing, expectedRevision);
           ProjectRecord project = projectService.get(user, existing.projectId());
           projectService.requireEditor(project, user.id());
@@ -814,6 +835,7 @@ public final class ModelService {
         Duration.ofSeconds(30),
         () -> {
           ModelRecord model = get(user, level, id);
+          mutationGuard.accept(model);
           ProjectRecord project = projectService.get(user, model.projectId());
           projectService.requireEditor(project, user.id());
           store.deleteIfExists(modelPath(model.projectId(), level, id));

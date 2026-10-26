@@ -1,4 +1,5 @@
 import { MODEL_TYPES } from "./config.js";
+import { isAssistantModelLocked, ASSISTANT_MODEL_LOCK_EVENT } from "./assistant-model-lock.js";
 import { state } from "./state.js";
 import { edgeLabel as configuredEdgeLabel } from "./relationship-label.js";
 import { el } from "./dom.js";
@@ -2740,6 +2741,7 @@ function handleG6NodeDoubleClick(nodeId, event = {}) {
   const startLabel = node.label;
   beginCanvasInlineLabelEdit(node, {
     onCommit: (rawText) => {
+      if (isAssistantModelLocked()) return;
       const resolved = commitNodeLabel(node, rawText);
       syncNodeMetaToGraph(node);
       updateCanvasNode(node.id);
@@ -2783,6 +2785,7 @@ function handleG6Escape() {
 }
 
 function startG6NodeDrag(nodeId) {
+  if (isAssistantModelLocked()) return;
   const node = state.nodesById.get(nodeId);
   if (!node) {
     return;
@@ -2802,6 +2805,7 @@ function startG6NodeDrag(nodeId) {
 }
 
 function moveG6NodeDrag(nodeId, position) {
+  if (isAssistantModelLocked()) return;
   const node = state.nodesById.get(nodeId);
   if (!node || !position) {
     return;
@@ -2816,6 +2820,10 @@ function moveG6NodeDrag(nodeId, position) {
 }
 
 function endG6NodeDrag(nodeId, position, { moved = false } = {}) {
+  if (isAssistantModelLocked()) {
+    state.dragNode = null;
+    return;
+  }
   const node = state.nodesById.get(nodeId);
   if (!node) {
     state.dragNode = null;
@@ -3062,6 +3070,7 @@ function unavailableContainmentMessage(type, focus) {
 }
 
 async function queuePaletteDrop(type, clientX, clientY) {
+  if (isAssistantModelLocked()) return;
   const containerFocus = activeContainerFocus();
   const allowedTypes = new Set(paletteTypesForActiveView());
   if (!type || !allowedTypes.has(type)) {
@@ -3105,6 +3114,7 @@ async function queuePaletteDrop(type, clientX, clientY) {
   // otherwise include the same node that the incremental drop is about to add.
   await renderDiagramTask;
   requestAnimationFrame(() => {
+    if (isAssistantModelLocked()) return;
     if (state.activeType !== typeKey || state.views.activeViewId !== viewId) return;
     const focus = activeContainerFocus();
     const owner = focus && semanticObjectById(state.graph, focus.elementId);
@@ -3654,6 +3664,7 @@ export function addConnection(
   targetId,
   { interactivePicker = false, preferredKind = null, allowContainedTargetPrompt = true } = {},
 ) {
+  if (isAssistantModelLocked()) return false;
   const source = state.nodesById.get(sourceId);
   const target = state.nodesById.get(targetId);
   if (!source || !target) {
@@ -4078,6 +4089,7 @@ export function cancelConnectionDraw({ silent = false } = {}) {
 }
 
 export function setConnectMode(enabled) {
+  if (isAssistantModelLocked()) return;
   if (!enabled) {
     cancelConnectionDraw({ silent: true });
     setStatus("Connect mode disabled");
@@ -4094,6 +4106,7 @@ export function setConnectMode(enabled) {
 }
 
 export function startConnectionFromNode(nodeId, preferredKind = null) {
+  if (isAssistantModelLocked()) return;
   const node =
     state.nodesById.get(nodeId) || state.diagram.nodes.find((candidate) => candidate.id === nodeId);
   if (!node) {
@@ -4184,3 +4197,10 @@ export function scrollToConnectionAndHighlight(connectionId) {
   updateCanvasImpactState();
   return true;
 }
+window.addEventListener(ASSISTANT_MODEL_LOCK_EVENT, () => {
+  if (isAssistantModelLocked()) {
+    cancelConnectionDraw({ silent: true });
+    closeEdgeKindPicker();
+    state.paletteDragType = "";
+  }
+});

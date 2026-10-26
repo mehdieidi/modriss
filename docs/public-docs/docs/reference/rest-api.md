@@ -100,6 +100,7 @@ Replace `{level}` with `cim`, `pim`, or `psm`.
 | ------------------------------- | --------------------------------------- | -------------------------------------- |
 | `GET`, `POST`                   | `/api/{level}`                          | List or create models                  |
 | `GET`, `PUT`, `PATCH`, `DELETE` | `/api/{level}/{id}`                     | Read, replace, patch, or delete        |
+| `GET`                           | `/api/{level}/{id}/editing-lock`        | Read the assistant editing lock        |
 | `GET`                           | `/api/{level}/{id}/views/{viewId}`      | Read a materialized model view         |
 | `POST`                          | `/api/{level}/validate`                 | Validate an unsaved model              |
 | `POST`                          | `/api/{level}/validate/structural`      | Structurally validate an unsaved model |

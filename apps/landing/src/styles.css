@@ -100,6 +100,19 @@ button {
   display: grid;
   place-items: center;
 }
+.nav-links a.nav-workbench {
+  min-height: 26px;
+  padding: 0 10px;
+  gap: 5px;
+  font-size: 11px;
+  white-space: nowrap;
+}
+.nav-links a.nav-workbench:hover {
+  color: var(--white);
+}
+.nav-workbench svg {
+  transition: transform 0.18s ease;
+}
 .menu {
   display: none;
 }
@@ -1884,7 +1897,15 @@ footer > p {
     border-bottom: 1px solid var(--line);
   }
   .nav-icon {
-    display: block;
+    display: flex;
+    justify-content: flex-start;
+  }
+  .nav-links a.nav-workbench {
+    width: fit-content;
+    min-height: 28px;
+    margin: 12px 0;
+    padding: 0 10px;
+    border: 1px solid var(--ink);
   }
   .hero {
     width: calc(100% - 36px);

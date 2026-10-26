@@ -1,4 +1,6 @@
 import { apiUrl, MODEL_TYPES } from "./config.js";
+import { isAssistantModelLocked, ASSISTANT_MODEL_LOCK_MESSAGE } from "./assistant-model-lock.js";
+import { refreshAssistantModelLock } from "./assistant-model-lock-monitor.js";
 import { saveLastModelingType, state } from "./state.js";
 import { el } from "./dom.js";
 import { api, apiAuthHeaders } from "./api.js";
@@ -90,6 +92,7 @@ import {
 
 let autoLayoutPromise = null;
 let saveInFlight = null;
+let modelLoadsInFlight = 0;
 
 export function isModelSaveInFlight() {
   return Boolean(saveInFlight);
@@ -713,7 +716,13 @@ export async function saveCurrentModel({
   quiet = false,
   force = false,
   forceFullUpdate = false,
+  assistantPreparation = false,
 } = {}) {
+  if (isAssistantModelLocked() && !assistantPreparation) {
+    if (rethrow) throw new Error(ASSISTANT_MODEL_LOCK_MESSAGE);
+    if (!quiet) setStatus(ASSISTANT_MODEL_LOCK_MESSAGE);
+    return;
+  }
   if (saveInFlight) {
     return saveInFlight;
   }
@@ -858,7 +867,20 @@ async function performSaveCurrentModel({
   }
 }
 
-export async function loadModelById(
+export function isModelLoadInFlight() {
+  return modelLoadsInFlight > 0;
+}
+
+export async function loadModelById(...args) {
+  modelLoadsInFlight += 1;
+  try {
+    return await performLoadModelById(...args);
+  } finally {
+    modelLoadsInFlight -= 1;
+  }
+}
+
+async function performLoadModelById(
   typeKey,
   id,
   {
@@ -871,8 +893,10 @@ export async function loadModelById(
     deferTabSnapshot = false,
     preserveActiveView = false,
     preserveViewport = false,
+    assistantResult = false,
   } = {},
 ) {
+  if (isAssistantModelLocked() && !assistantResult) return;
   const activeViewIdToPreserve =
     preserveActiveView &&
     state.activeType === typeKey &&
@@ -888,9 +912,11 @@ export async function loadModelById(
       : `/${MODEL_TYPES[typeKey].apiType}/${id}${includeViews === false ? "?includeViews=false" : ""}`,
   );
   await yieldToMain();
+  if (isAssistantModelLocked() && !assistantResult) return;
   state.modelId = record.id;
   state.modelRevision = Number(record.revision) || 1;
   state.baseModel = record.modelJson;
+  if (!isAssistantModelLocked()) await refreshAssistantModelLock();
   await installGraphAndViewsAsync(
     typeKey,
     record.modelJson,
@@ -922,6 +948,7 @@ export async function loadModelById(
   clearValidationIssues();
   setActiveModelName(record.name || defaultModelName(typeKey));
   if (!deferRender) {
+    if (assistantResult) closeAttributePanel();
     renderPalette();
     await renderDiagramAsync();
     renderViewWorkbench();
@@ -1726,6 +1753,7 @@ export async function generateArtifactConfiguredTransformation() {
 }
 
 export async function generateForCurrentContext() {
+  if (isAssistantModelLocked()) return;
   const transformation = transformationForLevel(state.activeType);
   if (transformation) {
     await executeConfiguredTransformation(transformation);
@@ -1737,6 +1765,7 @@ export async function generateForCurrentContext() {
 // ── Tab switching ─────────────────────────────────────────────────────────────
 
 export async function switchTab(type, { skipSnapshot = false } = {}) {
+  if (isAssistantModelLocked()) return;
   if (type !== state.activeType) {
     const { closeChatWindow } = await import("./chat.js?v=chat-provenance-ui-20260718a");
     closeChatWindow();
@@ -1917,6 +1946,7 @@ export async function validateCurrentModel() {
 }
 
 export async function autoLayoutCurrentDiagram(options = {}) {
+  if (isAssistantModelLocked() && !options.assistantCompletion) return;
   if (autoLayoutPromise) {
     if (options.status !== false) {
       setStatus("Auto layout is already running.");
@@ -2116,6 +2146,7 @@ async function runAutoLayoutCurrentDiagram({
 }
 
 export async function exportActiveModel(format = "json") {
+  if (isAssistantModelLocked()) return;
   if (!isModelingType()) {
     setStatus(`Switch to ${modelingLevelListLabel()} to export model ${format.toUpperCase()}.`);
     return;
@@ -2191,6 +2222,7 @@ export async function exportActiveModel(format = "json") {
 }
 
 export async function importActiveModel(file, format = "json", typeKey = state.activeType) {
+  if (isAssistantModelLocked()) return;
   if (!isModelingType(typeKey)) {
     setStatus(`Switch to ${modelingLevelListLabel()} to import model ${format.toUpperCase()}.`);
     return;
@@ -2213,7 +2245,7 @@ export async function importActiveModel(file, format = "json", typeKey = state.a
     confirmLabel: "Replace",
     danger: false,
   });
-  if (!confirmed) {
+  if (!confirmed || isAssistantModelLocked()) {
     return;
   }
 
@@ -2227,6 +2259,7 @@ export async function importActiveModel(file, format = "json", typeKey = state.a
             body: JSON.stringify({ xmi: text }),
           })
         : JSON.parse(text);
+    if (isAssistantModelLocked()) return;
     if (model.eClass !== state.modelingConfig.config.levels.psm.rootTemplate.eClass)
       throw new Error("Imported model root does not match this provider's configured root EClass.");
     await loadModelRecord(
@@ -2278,6 +2311,7 @@ export async function importActiveModel(file, format = "json", typeKey = state.a
       throw new Error(body?.message || `Import failed (${response.status})`);
     }
 
+    if (isAssistantModelLocked()) return;
     setGenerationProgressPhase("Materializing imported graph…", 52);
     pushModelReplacementSnapshot();
     clearDiagramUndoHistory(state.activeType);
@@ -2367,6 +2401,7 @@ export async function importActiveModel(file, format = "json", typeKey = state.a
 }
 
 export async function undoLastModelReplacement() {
+  if (isAssistantModelLocked()) return;
   if (!isModelingType()) {
     setStatus(`Switch to ${modelingLevelListLabel()} to undo model replacement.`);
     return;
@@ -2384,6 +2419,7 @@ export async function undoLastModelReplacement() {
 }
 
 export async function undoLastEdit() {
+  if (isAssistantModelLocked()) return;
   if (!isModelingType()) {
     setStatus(`Switch to ${modelingLevelListLabel()} to undo.`);
     return;

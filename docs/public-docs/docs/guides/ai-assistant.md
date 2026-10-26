@@ -76,6 +76,13 @@ Uploaded Markdown, text, and JSON files can be split into durable source units. 
 
 Messages create asynchronous, durable turns. A client can poll a turn's status or replay its events over authenticated SSE. Available controls include cancellation, continuation, destructive confirmation, rebase, turn undo, checkpoint rollback, and feedback.
 
+Submitting a request saves pending model edits and freezes the model while the assistant works.
+Canvas edits, attribute changes, deletion, import, undo, and saving are disabled. Other tabs and
+editors cannot save over an active assistant turn. Checkpoints can appear during the request, but
+editing resumes only after the final persisted result has loaded on the canvas. Draft changes made
+during the request are discarded. A disconnect keeps the model locked while the client reconnects;
+requesting Stop keeps it locked until the backend stops and the last saved result is displayed.
+
 `QUEUED` and `RUNNING` are non-terminal states. Terminal states are `SUCCEEDED`, `PARTIAL`, `NEEDS_INPUT`, `NEEDS_CONFIRMATION`, `CONFLICTED`, `CANCELLED`, `TIMED_OUT`, and `FAILED`.
 
 ## Structural validation in assistant workflows

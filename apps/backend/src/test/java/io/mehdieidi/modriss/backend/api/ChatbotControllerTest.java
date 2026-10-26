@@ -102,6 +102,11 @@ class ChatbotControllerTest {
     org.mockito.Mockito.verify(turns).saveWorkflow(workflow.capture());
     assertEquals(saved.getValue().id(), workflow.getValue().turnId());
     assertEquals(plan, workflow.getValue().plan());
+    when(turns.activeForModel("model")).thenReturn(java.util.Optional.of(saved.getValue()));
+    PlatformException busy =
+        assertThrows(PlatformException.class, () -> controller.confirmTurn("token", "previous"));
+    assertEquals(423, busy.status());
+    org.mockito.Mockito.verify(turns).create(org.mockito.ArgumentMatchers.any());
     verifyNoInteractions(assistant);
   }
 

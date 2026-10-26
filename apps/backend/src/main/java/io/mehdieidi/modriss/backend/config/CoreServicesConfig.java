@@ -4,9 +4,11 @@ import io.mehdieidi.modriss.backend.upload.LocalUploadStorage;
 import io.mehdieidi.modriss.backend.upload.UploadService;
 import io.mehdieidi.modriss.backend.upload.UploadStorage;
 import io.mehdieidi.modriss.platform.artifact.application.ArtifactService;
+import io.mehdieidi.modriss.platform.assistant.turn.AssistantTurnStore;
 import io.mehdieidi.modriss.platform.export.application.ProjectArchiveService;
 import io.mehdieidi.modriss.platform.identity.application.AuthService;
 import io.mehdieidi.modriss.platform.kernel.ModelLevel;
+import io.mehdieidi.modriss.platform.kernel.PlatformException;
 import io.mehdieidi.modriss.platform.model.application.ModelLockService;
 import io.mehdieidi.modriss.platform.model.application.ModelService;
 import io.mehdieidi.modriss.platform.model.application.StoredViewLayoutService;
@@ -149,15 +151,26 @@ public class CoreServicesConfig {
       MdeRuntimeOptions mdeRuntimeOptions,
       MdeRuntimePaths mdeRuntimePaths,
       MetamodelResolver metamodelResolver,
-      ModelLockService modelLockService) {
-    return new ModelService(
-        store,
-        projectService,
-        modelingConfigService,
-        mdeRuntimeOptions,
-        mdeRuntimePaths,
-        metamodelResolver,
-        modelLockService);
+      ModelLockService modelLockService,
+      AssistantTurnStore assistantTurns) {
+    ModelService models =
+        new ModelService(
+            store,
+            projectService,
+            modelingConfigService,
+            mdeRuntimeOptions,
+            mdeRuntimePaths,
+            metamodelResolver,
+            modelLockService);
+    models.setMutationGuard(
+        model -> {
+          if (assistantTurns.activeForModel(model.id()).isPresent()) {
+            throw new PlatformException(
+                423,
+                "The assistant is updating this model. Editing and saving are temporarily locked.");
+          }
+        });
+    return models;
   }
 
   /**

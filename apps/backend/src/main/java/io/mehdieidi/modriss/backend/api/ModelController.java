@@ -1,5 +1,6 @@
 package io.mehdieidi.modriss.backend.api;
 
+import io.mehdieidi.modriss.platform.assistant.turn.AssistantTurnStore;
 import io.mehdieidi.modriss.platform.kernel.ModelLevel;
 import io.mehdieidi.modriss.platform.model.application.ModelService;
 import io.mehdieidi.modriss.platform.model.domain.ModelRecord;
@@ -14,6 +15,7 @@ import java.util.List;
 import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ContentDisposition;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -40,6 +42,12 @@ public class ModelController {
   private final ModelService models;
   private final MdeJobService jobs;
   private final AuthSupport auth;
+  private AssistantTurnStore assistantTurns;
+
+  @Autowired
+  public void setAssistantTurns(AssistantTurnStore assistantTurns) {
+    this.assistantTurns = assistantTurns;
+  }
 
   /**
    * Creates the model controller.
@@ -126,6 +134,17 @@ public class ModelController {
       @PathVariable("id") String id,
       @PathVariable("viewId") String viewId) {
     return models.getStoredView(auth.user(token), ModelLevel.fromApiName(level), id, viewId);
+  }
+
+  /** Lets every editor, including a reloaded tab, observe durable assistant ownership. */
+  @GetMapping("/api/{level:cim|pim|psm}/{id}/editing-lock")
+  Map<String, Boolean> editingLock(
+      @RequestHeader("X-Auth-Token") String token,
+      @PathVariable("level") String level,
+      @PathVariable("id") String id) {
+    models.requireReadAccess(auth.user(token), ModelLevel.fromApiName(level), id);
+    return Map.of(
+        "locked", assistantTurns != null && assistantTurns.activeForModel(id).isPresent());
   }
 
   /**

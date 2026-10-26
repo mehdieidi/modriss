@@ -8,6 +8,7 @@ import modrissLogoWhite from './assets/modriss-logo-w.svg'
 import './styles.css'
 
 const appUrl = import.meta.env.VITE_APP_URL ?? window.location.origin
+const workbenchUrl = import.meta.env.VITE_APP_URL ?? 'https://editor.modriss.site/'
 const backendUrl = (import.meta.env.VITE_BACKEND_BASE_URL ?? window.location.origin).replace(/\/$/, '')
 const docsUrl = import.meta.env.VITE_DOCS_URL ?? 'https://docs.modriss.site'
 const processDocsUrl = `${docsUrl.replace(/\/$/, '')}/guides/full-lifecycle-method/`
@@ -94,10 +95,11 @@ function App() {
       <div className={`nav-links ${menuOpen ? 'open' : ''}`}>
         <a href="#research" onClick={closeMenu}>Research</a>
         <a href="#methodology" onClick={closeMenu}>Methodology</a>
-        <a href="#framework" onClick={closeMenu}>Framework</a>
+        <a href="#framework" onClick={closeMenu}>Modeling</a>
         <a href="#process" onClick={closeMenu}>Process</a>
         <a href="#publication" onClick={closeMenu}>Publications</a>
-        <a href={docsUrl} onClick={closeMenu}>Documentation</a>
+        <a className="button primary nav-workbench" href={workbenchUrl} onClick={closeMenu}>Workbench <Icon name="arrow" size={15} /></a>
+        <a className="nav-icon" href={docsUrl} onClick={closeMenu} aria-label="Documentation" title="Documentation"><Icon name="book" size={18} /></a>
         <a className="nav-icon" href={githubUrl} aria-label="MODRISS source code on GitHub"><Icon name="github" size={18} /></a>
       </div>
     </nav>

@@ -98,6 +98,21 @@ class JdbcAssistantTurnStorePostgresIntegrationTest {
   }
 
   @Test
+  void modelOwnershipRemainsThroughCheckpointsAndRunningCancellationUntilTerminal() {
+    AssistantTurn turn = turn("turn-lock");
+    turns.create(turn);
+    jdbc.update("UPDATE assistant_turns SET model_id = 'locked-model' WHERE id = ?", turn.id());
+    assertEquals(turn.id(), turns.activeForModel("locked-model").orElseThrow().id());
+    assertTrue(turns.activeForModel("another-model").isEmpty());
+    turns.claim("worker", Instant.now(), java.time.Duration.ofSeconds(30)).orElseThrow();
+    turns.saveCheckpoint(turn.id(), "locked-model", 2, java.util.Map.of());
+    turns.requestCancellation(turn.id());
+    assertEquals(turn.id(), turns.activeForModel("locked-model").orElseThrow().id());
+    turns.complete(turn.id(), AssistantTurn.State.CANCELLED, "stopped", 2L, null);
+    assertTrue(turns.activeForModel("locked-model").isEmpty());
+  }
+
+  @Test
   void keyedProviderCallAuditIsIdempotentAcrossIncrementalAndFinalRecording() {
     AssistantTurn turn = turn("turn-call-key");
     turns.create(turn);

@@ -158,6 +158,18 @@ public final class JdbcAssistantTurnStore implements AssistantTurnStore {
   }
 
   @Override
+  public Optional<AssistantTurn> activeForModel(String modelId) {
+    return jdbc
+        .query(
+            "SELECT * FROM assistant_turns WHERE model_id = ? AND state IN ('QUEUED', 'RUNNING') "
+                + "ORDER BY accepted_at DESC LIMIT 1",
+            this::turn,
+            modelId)
+        .stream()
+        .findFirst();
+  }
+
+  @Override
   public Optional<AssistantTurn> claim(String workerId, Instant now, Duration lease) {
     List<AssistantTurn> claimed =
         jdbc.query(

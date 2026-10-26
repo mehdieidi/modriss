@@ -34,6 +34,7 @@ export const state = {
   activeType: "",
   modelId: null,
   modelRevision: 0,
+  assistantModelLocked: false,
   baseModel: null,
   modelSave: {
     dirty: false,

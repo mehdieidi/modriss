@@ -1337,3 +1337,18 @@
     padding-left: 16px;
   }
 }
+.assistant-model-lock-notice {
+  position: absolute;
+  top: calc(var(--topbar-h) + 12px);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 20;
+  max-width: min(520px, 90%);
+  padding: 10px 14px;
+  border: 1px solid var(--accent);
+  border-radius: var(--radius-md);
+  background: var(--bg-panel, #20232a);
+  color: var(--text-primary, #fff);
+  font-size: 13px;
+  pointer-events: none;
+}

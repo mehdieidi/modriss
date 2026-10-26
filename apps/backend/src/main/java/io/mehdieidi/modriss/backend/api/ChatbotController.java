@@ -19,6 +19,7 @@ import io.mehdieidi.modriss.platform.assistant.turn.AssistantTurnStore;
 import io.mehdieidi.modriss.platform.identity.domain.UserRecord;
 import io.mehdieidi.modriss.platform.kernel.ModelLevel;
 import io.mehdieidi.modriss.platform.kernel.PlatformException;
+import io.mehdieidi.modriss.platform.model.application.ModelLockService;
 import io.mehdieidi.modriss.platform.project.application.ProjectService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
@@ -65,6 +66,14 @@ public class ChatbotController {
   private final GuestAccessService guests;
   private final ModrissMetrics metrics;
   private final AssistantSettings assistantSettings;
+  private ModelLockService modelLocks = new ModelLockService();
+
+  /** Shares the save/patch lock so acceptance cannot race an already-running model save. */
+  @Autowired
+  public void setModelLocks(ModelLockService modelLocks) {
+    this.modelLocks = modelLocks;
+  }
+
   private final java.util.concurrent.ScheduledExecutorService turnEventReplay =
       Executors.newSingleThreadScheduledExecutor(
           runnable -> {
@@ -266,52 +275,65 @@ public class ChatbotController {
       consumeGuestPrompt(user);
       Instant acceptedAt = Instant.now();
       var starter = assistant.ensureModel(user, sessionId, request.modelId());
-      Long requestedRevision =
-          request.expectedRevision() == null ? request.revision() : request.expectedRevision();
-      AssistantTurn turn =
-          new AssistantTurn(
-              java.util.UUID.randomUUID().toString(),
-              sessionId,
-              user.id(),
-              session.projectId(),
-              session.level(),
-              starter.id(),
-              requestedRevision == null ? starter.revision() : requestedRevision,
-              request.idempotencyKey().trim(),
-              request.message(),
-              attachment.content(),
-              request.selectedElementIds(),
-              AssistantTurn.State.QUEUED,
-              acceptedAt,
-              acceptedAt.plus(turnTimeout(attachment.content())),
-              null,
-              null,
-              false,
-              null,
-              0,
-              0,
-              null,
-              null,
-              null,
-              0,
-              0,
-              0);
-      turns.create(turn);
-      String workflowKind =
-          attachment.content() == null || attachment.content().isBlank()
-              ? "CREATE_OR_EDIT_MODEL"
-              : "DOCUMENT_TO_CIM";
-      turns.saveWorkflow(
-          new AssistantTurnStore.Workflow(turn.id(), workflowKind, "QUEUED", null, null));
-      turns.appendEvent(
-          turn.id(), "turn.plan.ready", java.util.Map.of("workflowKind", workflowKind));
-      // Record only the submitted request. Automatic slice prompts are worker control data, not
-      // chat messages, and never belong in the user's conversation transcript.
-      assistant.recordUserMessage(user, sessionId, request.message());
-      // A starter model is only the workspace baseline. It is not a checkpoint created by this
-      // turn: publishing it would make an explanation appear to mutate the canvas and would
-      // make rollback target a revision the assistant never saved.
-      return ResponseEntity.status(HttpStatus.ACCEPTED).body(accepted(turn));
+      return modelLocks.withModelLock(
+          starter.id(),
+          null,
+          () -> {
+            var duplicate = turns.findByIdempotency(sessionId, request.idempotencyKey().trim());
+            if (duplicate.isPresent()) {
+              return ResponseEntity.accepted().body(accepted(duplicate.get()));
+            }
+            var frozen = assistant.ensureModel(user, sessionId, starter.id());
+            requireModelAvailable(frozen.id(), null);
+            Long requestedRevision =
+                request.expectedRevision() == null
+                    ? request.revision()
+                    : request.expectedRevision();
+            if (requestedRevision != null && requestedRevision.longValue() != frozen.revision()) {
+              throw new PlatformException(409, "Reload the model before starting the assistant.");
+            }
+            AssistantTurn turn =
+                new AssistantTurn(
+                    java.util.UUID.randomUUID().toString(),
+                    sessionId,
+                    user.id(),
+                    session.projectId(),
+                    session.level(),
+                    frozen.id(),
+                    frozen.revision(),
+                    request.idempotencyKey().trim(),
+                    request.message(),
+                    attachment.content(),
+                    request.selectedElementIds(),
+                    AssistantTurn.State.QUEUED,
+                    acceptedAt,
+                    acceptedAt.plus(turnTimeout(attachment.content())),
+                    null,
+                    null,
+                    false,
+                    null,
+                    0,
+                    0,
+                    null,
+                    null,
+                    null,
+                    0,
+                    0,
+                    0);
+            turns.create(turn);
+            String workflowKind =
+                attachment.content() == null || attachment.content().isBlank()
+                    ? "CREATE_OR_EDIT_MODEL"
+                    : "DOCUMENT_TO_CIM";
+            turns.saveWorkflow(
+                new AssistantTurnStore.Workflow(turn.id(), workflowKind, "QUEUED", null, null));
+            turns.appendEvent(
+                turn.id(), "turn.plan.ready", java.util.Map.of("workflowKind", workflowKind));
+            // Automatic slice prompts are worker control data, not conversation messages.
+            assistant.recordUserMessage(user, sessionId, request.message());
+            // The starter is the workspace baseline, not a checkpoint created by this turn.
+            return ResponseEntity.status(HttpStatus.ACCEPTED).body(accepted(turn));
+          });
     }
     consumeGuestPrompt(user);
     long orchestratorStarted = System.nanoTime();
@@ -454,10 +476,18 @@ public class ChatbotController {
             .orElseThrow(() -> new PlatformException(404, "Assistant turn not found."));
     if (!previous.userId().equals(user.id()))
       throw new PlatformException(404, "Assistant turn not found.");
-    turns.resume(
-        previous.id(), previous.revision(), Instant.now().plus(turnTimeout(previous.sourceText())));
-    AssistantTurn resumed = turns.find(turnId).orElseThrow();
-    return ResponseEntity.status(HttpStatus.ACCEPTED).body(accepted(resumed));
+    return modelLocks.withModelLock(
+        previous.modelId(),
+        null,
+        () -> {
+          requireModelAvailable(previous.modelId(), previous.id());
+          turns.resume(
+              previous.id(),
+              previous.revision(),
+              Instant.now().plus(turnTimeout(previous.sourceText())));
+          AssistantTurn resumed = turns.find(turnId).orElseThrow();
+          return ResponseEntity.status(HttpStatus.ACCEPTED).body(accepted(resumed));
+        });
   }
 
   @PostMapping("/api/chatbot/turns/{turnId}/rebase")
@@ -472,9 +502,15 @@ public class ChatbotController {
             .orElseThrow(() -> new PlatformException(404, "Assistant turn not found."));
     if (!turn.userId().equals(user.id()))
       throw new PlatformException(404, "Assistant turn not found.");
-    turns.rebase(turnId, request.expectedRevision());
-    return ResponseEntity.status(HttpStatus.ACCEPTED)
-        .body(accepted(turns.find(turnId).orElseThrow()));
+    return modelLocks.withModelLock(
+        turn.modelId(),
+        null,
+        () -> {
+          requireModelAvailable(turn.modelId(), turn.id());
+          turns.rebase(turnId, request.expectedRevision());
+          return ResponseEntity.status(HttpStatus.ACCEPTED)
+              .body(accepted(turns.find(turnId).orElseThrow()));
+        });
   }
 
   /** Re-runs a deletion-requesting turn only after an explicit, authenticated confirmation. */
@@ -534,16 +570,35 @@ public class ChatbotController {
             0,
             0,
             0);
-    turns.create(next);
-    proposalWorkflow.ifPresent(
-        workflow ->
-            turns.saveWorkflow(
-                new AssistantTurnStore.Workflow(
-                    next.id(), "CONFIRMED_MODEL_BATCH", "CONFIRMED", null, workflow.plan())));
-    turns.appendEvent(next.id(), "turn.stage", java.util.Map.of("stage", "DESTRUCTION_CONFIRMED"));
-    turns.audit(
-        next.id(), "DESTRUCTION_CONFIRMED", java.util.Map.of("previousTurnId", previous.id()));
-    return ResponseEntity.status(HttpStatus.ACCEPTED).body(accepted(next));
+    return modelLocks.withModelLock(
+        next.modelId(),
+        null,
+        () -> {
+          requireModelAvailable(next.modelId(), null);
+          turns.create(next);
+          proposalWorkflow.ifPresent(
+              workflow ->
+                  turns.saveWorkflow(
+                      new AssistantTurnStore.Workflow(
+                          next.id(), "CONFIRMED_MODEL_BATCH", "CONFIRMED", null, workflow.plan())));
+          turns.appendEvent(
+              next.id(), "turn.stage", java.util.Map.of("stage", "DESTRUCTION_CONFIRMED"));
+          turns.audit(
+              next.id(),
+              "DESTRUCTION_CONFIRMED",
+              java.util.Map.of("previousTurnId", previous.id()));
+          return ResponseEntity.status(HttpStatus.ACCEPTED).body(accepted(next));
+        });
+  }
+
+  private void requireModelAvailable(String modelId, String ownTurnId) {
+    turns
+        .activeForModel(modelId)
+        .filter(active -> !active.id().equals(ownTurnId))
+        .ifPresent(
+            active -> {
+              throw new PlatformException(423, "The assistant is already updating this model.");
+            });
   }
 
   @PostMapping("/api/chatbot/turns/{turnId}/undo")

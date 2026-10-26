@@ -1,4 +1,5 @@
 import { state } from "./state.js";
+import { isAssistantModelLocked } from "./assistant-model-lock.js";
 import { el } from "./dom.js";
 import { MODEL_TYPES } from "./config.js";
 import { api } from "./api.js";
@@ -2411,6 +2412,7 @@ function buildReferenceInput(key, value, field) {
 // ── Apply / delete ────────────────────────────────────────────────────────────
 
 export function applyAttributePanel() {
+  if (isAssistantModelLocked()) return;
   if (state.selectedRootModel) {
     return applyRootModelPanel();
   }
@@ -2676,6 +2678,7 @@ function synchronizeContainmentParent(node) {
 }
 
 export async function deleteSelection() {
+  if (isAssistantModelLocked()) return;
   if (state.selectedConnectionId) {
     await deleteSelectedConnection();
     return;
@@ -2695,7 +2698,7 @@ export async function deleteSelection() {
     confirmLabel: "Delete",
     danger: true,
   });
-  if (!confirmed) {
+  if (!confirmed || isAssistantModelLocked()) {
     return;
   }
 
@@ -2713,6 +2716,7 @@ export async function deleteSelection() {
   removeNodeFromCanvas(nodeId, removedConnectionIds);
   // Let the incremental G6 removal paint before touching model-wide arrays.
   await new Promise((resolve) => window.setTimeout(resolve, 0));
+  if (isAssistantModelLocked()) return;
   state.diagram.nodes = state.diagram.nodes.filter((n) => n.id !== nodeId);
   state.diagram.connections = state.diagram.connections.filter(
     (c) => c.sourceId !== nodeId && c.targetId !== nodeId,
@@ -2726,6 +2730,7 @@ export async function deleteSelection() {
 export const deleteSelectedNode = deleteSelection;
 
 export async function deleteSelectedConnection() {
+  if (isAssistantModelLocked()) return;
   const connectionId = state.selectedConnectionId;
   if (!connectionId) {
     return;
@@ -2740,7 +2745,7 @@ export async function deleteSelectedConnection() {
     confirmLabel: "Delete",
     danger: true,
   });
-  if (!confirmed) {
+  if (!confirmed || isAssistantModelLocked()) {
     return;
   }
 
@@ -2750,6 +2755,7 @@ export async function deleteSelectedConnection() {
   removeConnectionFromCanvas(connectionId);
   // Yield so G6 can render the removal before model serialization/persistence work.
   await new Promise((resolve) => window.setTimeout(resolve, 0));
+  if (isAssistantModelLocked()) return;
   state.diagram.connections = state.diagram.connections.filter((edge) => edge.id !== connectionId);
   removeRelationshipFromGraph(connectionId);
   markModelDirty();

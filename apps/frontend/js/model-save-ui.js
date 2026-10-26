@@ -1,5 +1,12 @@
 import { state } from "./state.js";
 import { isModelingLevel } from "./modeling-config-data.js";
+import {
+  ASSISTANT_MODEL_LOCK_EVENT,
+  ASSISTANT_MODEL_LOCK_MESSAGE,
+  isAssistantModelLocked,
+} from "./assistant-model-lock.js";
+
+window.addEventListener?.(ASSISTANT_MODEL_LOCK_EVENT, updateModelSaveUi);
 
 function isModelingType(typeKey = state.activeType) {
   return isModelingLevel(typeKey);
@@ -40,18 +47,21 @@ export function updateModelSaveUi() {
     current.dirty = Boolean(tab.dirty);
   }
   const isModeling = isModelingType();
-  const label = current.saving
-    ? "Saving model"
-    : current.dirty
-      ? "Save model, unsaved changes"
-      : "Save model";
+  const locked = isAssistantModelLocked();
+  const label = locked
+    ? ASSISTANT_MODEL_LOCK_MESSAGE
+    : current.saving
+      ? "Saving model"
+      : current.dirty
+        ? "Save model, unsaved changes"
+        : "Save model";
   const saveButton = document.getElementById("saveModelBtn");
   const saveLabel = document.getElementById("saveModelBtnLabel");
   const mobileSaveButton = document.getElementById("mobileDockSaveBtn");
   const mobileSaveLabel = document.getElementById("mobileDockSaveLabel");
 
   if (saveButton) {
-    saveButton.disabled = !isModeling || current.saving;
+    saveButton.disabled = !isModeling || current.saving || locked;
     saveButton.classList.toggle("is-saving", current.saving);
     saveButton.classList.toggle("is-dirty", current.dirty && !current.saving);
     saveButton.classList.toggle("is-error", Boolean(current.error));
@@ -63,7 +73,7 @@ export function updateModelSaveUi() {
     saveLabel.textContent = "Save";
   }
   if (mobileSaveButton) {
-    mobileSaveButton.disabled = !isModeling || current.saving;
+    mobileSaveButton.disabled = !isModeling || current.saving || locked;
     mobileSaveButton.classList.toggle("is-saving", current.saving);
     mobileSaveButton.classList.toggle("is-dirty", current.dirty && !current.saving);
     mobileSaveButton.classList.toggle("is-error", Boolean(current.error));

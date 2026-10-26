@@ -1,3 +1,4 @@
+import { startAssistantModelLockMonitor } from "./assistant-model-lock-monitor.js";
 import { el } from "./dom.js";
 import { initEditorTutorial } from "./editor-tutorial.js";
 import { state } from "./state.js";
@@ -709,6 +710,7 @@ function renderMobileModelLevelTabs() {
 // ── Bind all DOM event handlers ───────────────────────────────────────────────
 
 function bindEvents() {
+  startAssistantModelLockMonitor();
   configureLandingBrandLink();
   bindCriticalActions();
 
