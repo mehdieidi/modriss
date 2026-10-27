@@ -21,7 +21,7 @@ function setImpactButtonState(active) {
   el.impactToggleBtn?.setAttribute("aria-pressed", String(active));
   if (el.impactToggleBtn) {
     el.impactToggleBtn.title = active
-      ? "Impact mode ON — select an element to follow its traces"
+      ? "Impact mode ON — select an element or file to follow its traces"
       : "Analyze transformation and generated-file traces";
   }
 }
@@ -37,8 +37,11 @@ export function toggleImpactMode() {
   openImpactPanel();
   renderImpactPanel(null);
   setStatus(
-    "Impact mode ON. Select an element to follow its transformation and generated-file traces.",
+    "Impact mode ON. Select an element or file to follow its transformation and generated-file traces.",
   );
+  if (state.activeType === "artifact" && state.artifact.activeFile) {
+    return fetchImpact(state.artifact.activeFile);
+  }
 }
 
 export function openImpactPanel() {
@@ -73,41 +76,67 @@ function expandEndpoint(template, values, fallback) {
   );
 }
 
+function artifactImpactData(chain, artifactId, filePath) {
+  return {
+    focalElement: {
+      modelId: artifactId,
+      modelType: "ARTIFACT",
+      modelName: chain.modelName,
+      elementId: filePath,
+      elementName: filePath || chain.modelName,
+      elementType: filePath ? "Generated File" : "Artifact",
+    },
+    upstream: chain.upstream || [],
+    downstream: [],
+    traceEdges: chain.traceEdges || [],
+    notices: chain.notices || [],
+  };
+}
+
 export async function fetchImpact(elementId) {
   if (!state.impactMode) return;
-  if (!state.modelId) {
-    setStatus("Save or load a model first");
+  const isArtifact = state.activeType === "artifact";
+  const modelId = isArtifact ? state.artifact.id : state.modelId;
+  if (!modelId) {
+    setStatus(isArtifact ? "Load generated artifacts first" : "Save or load a model first");
     return;
   }
   pendingRequest?.abort();
   const controller = new AbortController();
   pendingRequest = controller;
   const version = ++requestVersion;
-  const modelId = state.modelId;
   const activeType = state.activeType;
   const projectId = state.project?.id;
+  const providerId = state.cloudProvider?.id;
   const current = () =>
     version === requestVersion &&
     state.impactMode &&
-    state.modelId === modelId &&
+    (isArtifact ? state.artifact.id : state.modelId) === modelId &&
     state.activeType === activeType &&
-    state.project?.id === projectId;
+    state.project?.id === projectId &&
+    state.cloudProvider?.id === providerId;
   state.impactData = null;
   highlightImpactedNodes();
+  openImpactPanel();
   el.impactPanelBody.setAttribute("aria-busy", "true");
   el.impactPanelBody.innerHTML =
     '<div class="impact-placeholder" role="status">Following transformation and generated-file traces…</div>';
   setStatus("Analysing impact…");
   try {
-    const data = await api(
-      expandEndpoint(
-        modelingImpactConfig().elementImpactEndpoint,
-        { level: modelingLevelConfig(activeType).apiType || activeType, modelId, elementId },
-        "/impact/{level}/{modelId}/element/{elementId}",
-      ),
-      { signal: controller.signal },
-    );
+    const endpoint = isArtifact
+      ? expandEndpoint(
+          modelingImpactConfig().artifactImpactEndpoint,
+          { artifactId: modelId },
+          "/impact/artifact/{artifactId}",
+        ) + `?filePath=${encodeURIComponent(elementId)}`
+      : expandEndpoint(
+          modelingImpactConfig().elementImpactEndpoint,
+          { level: modelingLevelConfig(activeType).apiType || activeType, modelId, elementId },
+          "/impact/{level}/{modelId}/element/{elementId}",
+        );
+    const response = await api(endpoint, { signal: controller.signal });
     if (!current()) return;
+    const data = isArtifact ? artifactImpactData(response, modelId, elementId) : response;
     state.impactData = data;
     renderImpactPanel(data);
     highlightImpactedNodes();
@@ -128,7 +157,9 @@ function renderImpactPanel(data) {
   el.impactPanelBody.removeAttribute("aria-busy");
   if (!data) {
     el.impactPanelBody.innerHTML =
-      '<div class="impact-placeholder"><strong>Follow an element’s trace</strong><p>Select an element on the canvas to see what it was derived from, what it generated, and which files it contributed to.</p></div>';
+      state.activeType === "artifact"
+        ? '<div class="impact-placeholder"><strong>Follow a file’s trace</strong><p>Select a file in the explorer to see the model elements and transformation rules that contributed to it.</p></div>'
+        : '<div class="impact-placeholder"><strong>Follow an element’s trace</strong><p>Select an element on the canvas to see what it was derived from, what it generated, and which files it contributed to.</p></div>';
     return;
   }
   const focal = data.focalElement || {};
@@ -282,22 +313,9 @@ function wireActions(root, data) {
           if (!current()) return;
           await loadArtifactById(modelId);
           if (!current()) return;
-          if (elementId) await openArtifactFile(elementId);
+          if (elementId) await openArtifactFile(elementId, { preserveImpact: true });
           if (!current()) return;
-          restoreImpact({
-            focalElement: {
-              modelId,
-              modelType: "ARTIFACT",
-              modelName: chain.modelName,
-              elementId,
-              elementName: elementId || chain.modelName,
-              elementType: elementId ? "Generated File" : "Artifact",
-            },
-            upstream: chain.upstream || [],
-            downstream: [],
-            traceEdges: chain.traceEdges || [],
-            notices: chain.notices || [],
-          });
+          restoreImpact(artifactImpactData(chain, modelId, elementId));
           setStatus(`Opened ${elementId || chain.modelName} with its recorded source traces`);
         }
       } catch (error) {

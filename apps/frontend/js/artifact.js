@@ -3,6 +3,7 @@ import { el } from "./dom.js";
 import { api, apiAuthHeaders } from "./api.js";
 import { apiUrl } from "./config.js";
 import { setStatus } from "./status.js";
+import { fetchImpact } from "./impact.js";
 
 const MONACO_VS_PATH = "/vendor/monaco/vs";
 const DEFAULT_LANGUAGE = "plaintext";
@@ -663,9 +664,12 @@ export function renderFileTree(files) {
   updateTreeSelection();
 }
 
-export async function openArtifactFile(filePath) {
+export async function openArtifactFile(filePath, { preserveImpact = false } = {}) {
   if (!state.artifact.id) {
     return;
+  }
+  if (state.impactMode && state.activeType === "artifact" && !preserveImpact) {
+    void fetchImpact(filePath);
   }
   const requestId = ++artifactFileRequestId;
   setArtifactFileLoading(true);

@@ -1819,7 +1819,7 @@ export async function switchTab(type, { skipSnapshot = false, preserveImpact = f
   el.artifactPanel.classList.toggle("hidden", !isArtifact);
   el.canvasViewport.classList.toggle("hidden", isReadonlyEditor);
   el.artifactEditor.classList.toggle("hidden", !isArtifact);
-  el.impactToggleBtn.disabled = isReadonlyEditor;
+  el.impactToggleBtn.disabled = false;
   el.validateModelBtn?.classList.toggle("hidden", isArtifact);
   if (el.validateModelBtn) {
     el.validateModelBtn.disabled = isArtifact;
