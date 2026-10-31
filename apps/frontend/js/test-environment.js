@@ -4,6 +4,7 @@ import { escapeHtml as h } from "./utils.js";
 import {
   resourceGroup,
   workflowGraph,
+  layoutWorkflowGraph,
   workflowStates,
   initialInput,
 } from "./test-environment-utils.mjs";
@@ -22,7 +23,13 @@ let filter = "All",
 let expandedEvent = null,
   selectedState = "",
   deploying = false,
-  generation = 0;
+  generation = 0,
+  workflowZoom = 1,
+  eventScrollJobId = null,
+  eventScrollTop = 0,
+  followLatestEvents = true,
+  runScrollContext = "",
+  runScrollPositions = new Map();
 const requestDrafts = new Map();
 const host = () => document.getElementById("testEnvironment");
 const base = () => `/projects/${state.project.id}/test-environment`;
@@ -100,6 +107,10 @@ function resetScope() {
   generation++;
   overview = activeJob = null;
   deploying = loading = false;
+  eventScrollJobId = runScrollContext = null;
+  eventScrollTop = 0;
+  followLatestEvents = true;
+  runScrollPositions.clear();
   selected = action = error = search = "";
   requestDrafts.clear();
   view = "resources";
@@ -213,6 +224,9 @@ async function poll() {
 
 function render() {
   if (!host() || !isOpen()) return;
+  const previousScrollTop = host().scrollTop;
+  captureEventScroll(host());
+  captureRunScroll(host());
   const previous = document.getElementById("teInput");
   if (previous?.dataset.project === scope && previous.dataset.draftKey)
     requestDrafts.set(previous.dataset.draftKey, previous.value);
@@ -244,7 +258,67 @@ function render() {
     )
     .join("")}</nav>
   <div class="te-content">${loading && !overview ? '<div class="te-empty" role="status">Loading your test environment…</div>' : view === "deployment" ? deploymentView() : view === "runs" ? historyView() : resourcesView()}</div>`;
+  host().scrollTop = previousScrollTop;
   renderRun();
+}
+
+function eventListIsAtBottom(list) {
+  return list.scrollHeight - list.clientHeight - list.scrollTop <= 28;
+}
+
+function captureEventScroll(root) {
+  const list = root?.querySelector(".te-event-list");
+  if (!list || eventScrollJobId !== activeJob?.id) return;
+  eventScrollTop = list.scrollTop;
+  followLatestEvents = eventListIsAtBottom(list);
+}
+
+function runScrollKey(element) {
+  if (element.matches(".te-workflow-scroll")) return "workflow";
+  if (element.matches(".te-data-table"))
+    return `data-table:${[...element.parentElement.querySelectorAll(".te-data-table")].indexOf(element)}`;
+  const event = element.closest(".te-event[data-event]");
+  if (event) return `event-detail:${event.dataset.event}`;
+  const response = element.closest(".te-response");
+  if (response) return `response:${[...response.querySelectorAll("pre")].indexOf(element)}`;
+  return `run-output:${[...element.closest(".te-run").querySelectorAll("pre")].indexOf(element)}`;
+}
+
+function runScrollables(root) {
+  return [...(root?.querySelectorAll(".te-workflow-scroll, .te-data-table, .te-run pre") || [])];
+}
+
+function captureRunScroll(root) {
+  if (!activeJob) return;
+  const context = `${activeJob.id}:${selected}`;
+  if (runScrollContext !== context) return;
+  for (const element of runScrollables(root)) {
+    runScrollPositions.set(runScrollKey(element), {
+      top: element.scrollTop,
+      left: element.scrollLeft,
+      followsBottom: element.scrollHeight - element.clientHeight - element.scrollTop <= 28,
+      followsRight: element.scrollWidth - element.clientWidth - element.scrollLeft <= 28,
+    });
+  }
+}
+
+function restoreRunScroll(root) {
+  for (const element of runScrollables(root)) {
+    const position = runScrollPositions.get(runScrollKey(element));
+    if (!position) continue;
+    element.scrollTop = position.followsBottom
+      ? element.scrollHeight
+      : Math.min(position.top, element.scrollHeight - element.clientHeight);
+    element.scrollLeft = position.followsRight
+      ? element.scrollWidth
+      : Math.min(position.left, element.scrollWidth - element.clientWidth);
+  }
+}
+
+function scrollToLatestRun() {
+  requestAnimationFrame(() =>
+    document.getElementById("teRun")?.scrollIntoView({ behavior: "smooth", block: "start" }),
+  );
 }
 
 function resourcesView() {
@@ -347,34 +421,82 @@ function historyView() {
 }
 
 function workflowView(item) {
-  const graph = workflowGraph(item.definition);
+  const graph = layoutWorkflowGraph(workflowGraph(item.definition));
   const events = activeJob?.resourceId === item.id ? activeJob.events || [] : [];
   const states = workflowStates(events);
-  const width = Math.max(560, 340 + Math.max(0, ...graph.nodes.map((n) => n.depth)) * 32);
-  const height = graph.nodes.length * 68 + 24;
-  const positions = new Map(
-    graph.nodes.map((node) => [node.id, { x: 25 + node.depth * 24, y: node.row * 68 + 10 }]),
-  );
-  return `<div class="te-workflow-scroll"><svg viewBox="0 0 ${width} ${height}" class="te-workflow-svg" role="group" aria-label="State machine graph with observed execution status"><defs><marker id="teArrow" markerWidth="7" markerHeight="7" refX="5" refY="3" orient="auto"><path d="M0 0 L6 3 L0 6" fill="var(--muted)"/></marker></defs>${graph.edges
+  const positions = new Map(graph.nodes.map((node) => [node.id, node]));
+  const statusLabel = (status) =>
+    ({ running: "Running", succeeded: "Succeeded", failed: "Failed" })[status] || "Not run";
+  const trim = (value, length) =>
+    value.length > length ? `${value.slice(0, length - 1)}…` : value;
+  const start = positions.get(graph.startAt);
+  const startX = start ? start.x + start.width / 2 : graph.width / 2;
+  const edges = graph.edges
     .map((edge) => {
-      const a = positions.get(edge.source),
-        b = positions.get(edge.target);
-      if (!a || !b) return "";
-      return `<path d="M${a.x + 270},${a.y + 25} C${width - 25},${a.y + 25} ${width - 25},${b.y + 25} ${b.x + 270},${b.y + 25}" fill="none" stroke="var(--border)" marker-end="url(#teArrow)"/>`;
+      const source = positions.get(edge.source);
+      const target = positions.get(edge.target);
+      if (!source || !target) return "";
+      let path, labelX, labelY;
+      if (target.y > source.y) {
+        const x1 = source.x + source.width / 2;
+        const y1 = source.y + source.height;
+        const x2 = target.x + target.width / 2;
+        const y2 = target.y;
+        const middleY = y1 + (y2 - y1) / 2;
+        path = `M${x1} ${y1} C${x1} ${middleY}, ${x2} ${middleY}, ${x2} ${y2}`;
+        labelX = (x1 + x2) / 2;
+        labelY = middleY - 5;
+      } else {
+        const x1 = source.x + source.width;
+        const y1 = source.y + source.height / 2;
+        const x2 = target.x + target.width;
+        const y2 = target.y + target.height / 2;
+        const bendX = graph.width - 14;
+        path = `M${x1} ${y1} C${bendX} ${y1}, ${bendX} ${y2}, ${x2} ${y2}`;
+        labelX = bendX - 8;
+        labelY = (y1 + y2) / 2 - 5;
+      }
+      return `<path class="te-workflow-edge te-workflow-edge-${h(edge.kind || "next")}" d="${path}" marker-end="url(#teWorkflowArrow)"/>${edge.label ? `<text class="te-workflow-edge-label" x="${labelX}" y="${labelY}" text-anchor="middle">${h(trim(edge.label, 30))}<title>${h(edge.label)}</title></text>` : ""}`;
     })
-    .join("")}${graph.nodes
+    .join("");
+  const nodes = graph.nodes
     .map((node) => {
-      const p = positions.get(node.id),
-        status = states.get(node.name)?.status || "idle";
-      return `<g role="button" tabindex="0" data-state="${h(node.name)}" class="te-state te-state-${status}" transform="translate(${p.x} ${p.y})" aria-label="${h(node.name)}: ${status}"><rect width="270" height="48" rx="8"/><circle cx="18" cy="24" r="4"/><text x="32" y="21">${h(node.name.slice(0, 29))}</text><text x="32" y="37" class="te-state-type">${h(node.type)} · ${status}</text></g>`;
+      if (node.terminal) {
+        const parent = positions.get(node.sourceStateId);
+        const terminalStatus = states.get(parent?.name)?.status || "idle";
+        return `<g class="te-workflow-terminal te-terminal-status-${terminalStatus}" transform="translate(${node.x} ${node.y})"><rect width="${node.width}" height="${node.height}" rx="21"/><circle cx="19" cy="21" r="5"/><text x="33" y="25">${h(node.name)}</text></g>`;
+      }
+      const status = states.get(node.name)?.status || "idle";
+      const label = statusLabel(status);
+      const selectedClass = selectedState === node.id ? "te-state-selected" : "";
+      return `<g role="button" tabindex="0" data-state="${h(node.name)}" data-state-id="${h(node.id)}" class="te-state te-state-${status} te-state-type-${h(String(node.type || "state").toLowerCase())} ${selectedClass}" transform="translate(${node.x} ${node.y})" aria-label="${h(node.name)} · ${h(node.type)} · ${label}"><title>${h(node.name)} · ${h(node.type)} · ${label}</title><rect class="te-state-card" width="${node.width}" height="${node.height}" rx="10"/><rect class="te-state-accent" width="4" height="${node.height - 2}" x="1" y="1" rx="2"/><text class="te-state-type" x="15" y="23">${h(node.type || "State")}</text><text class="te-state-name" x="15" y="47">${h(trim(node.name, 29))}</text><circle class="te-state-dot" cx="${node.width - 13}" cy="20" r="4"/><text class="te-state-status" x="${node.width - 14}" y="61" text-anchor="end">${h(label)}</text></g>`;
     })
-    .join("")}</svg></div>`;
+    .join("");
+  const startMarker = start
+    ? `<g class="te-workflow-start"><rect x="${startX - 31}" y="20" width="62" height="28" rx="14"/><text x="${startX}" y="38" text-anchor="middle">START</text><path d="M${startX} 48 V${start.y - 8}" marker-end="url(#teWorkflowArrow)"/></g>`
+    : "";
+  const scale = workflowZoom;
+  return `<div class="te-workflow-panel"><div class="te-workflow-toolbar"><div class="te-workflow-summary"><strong>${graph.nodes.filter((node) => !node.terminal).length} states</strong><span>Click a state to inspect its observed input and output</span></div><div class="te-workflow-tools" aria-label="Workflow diagram controls"><button type="button" data-workflow-zoom="out" aria-label="Zoom out">−</button><button type="button" data-workflow-zoom="reset" aria-label="Reset zoom">${Math.round(scale * 100)}%</button><button type="button" data-workflow-zoom="in" aria-label="Zoom in">+</button></div></div><div class="te-workflow-legend"><span><i></i>Not run</span><span><i class="is-running"></i>Running</span><span><i class="is-succeeded"></i>Succeeded</span><span><i class="is-failed"></i>Failed</span><span><i class="te-legend-line is-choice"></i>Choice</span><span><i class="te-legend-line is-catch"></i>Error handler</span><span><i class="te-legend-line is-subflow"></i>Branch / map</span></div><div class="te-workflow-scroll"><svg viewBox="0 0 ${graph.width} ${graph.height}" width="${Math.ceil(graph.width * scale)}" height="${Math.ceil(graph.height * scale)}" class="te-workflow-svg" role="group" aria-label="Step Functions workflow with live execution status"><defs><pattern id="teWorkflowGrid" width="22" height="22" patternUnits="userSpaceOnUse"><circle cx="1" cy="1" r="1" class="te-workflow-grid-dot"/></pattern><marker id="teWorkflowArrow" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M1 1 L6 4 L1 7" class="te-workflow-arrowhead"/></marker></defs><rect width="100%" height="100%" fill="url(#teWorkflowGrid)"/>${edges}${startMarker}${nodes}</svg></div></div>`;
 }
 
 function renderRun() {
   const node = document.getElementById("teRun");
   if (!node || !activeJob) return;
   const job = activeJob;
+  if (eventScrollJobId !== job.id) {
+    eventScrollJobId = job.id;
+    eventScrollTop = 0;
+    followLatestEvents = true;
+  } else {
+    captureEventScroll(node);
+  }
+  const context = `${job.id}:${selected}`;
+  if (runScrollContext !== context) {
+    runScrollContext = context;
+    runScrollPositions = new Map();
+  } else {
+    captureRunScroll(node);
+  }
   const events = job.events || [];
   const deploymentProfile =
     job.result?.deploymentProfile ||
@@ -382,7 +504,6 @@ function renderRun() {
   const templateIssues = events.flatMap((event) =>
     event.type === "validation" ? event.diagnostics || [] : [],
   );
-  const oldScroll = node.querySelector(".te-event-list")?.scrollTop;
   node.innerHTML = `<section class="te-run" aria-label="Execution evidence"><div class="te-run-heading"><div><span class="te-eyebrow">${h(job.kind)} · ${h(job.id?.slice(0, 8))}</span><h2>${h(job.scenario || job.action || "Deployment")}</h2></div><div>${badge(job.status)}${button("export", "Export evidence")}</div></div>
   <div class="te-run-meta"><span>${h(job.resourceId || job.artifactName || "Project deployment")}</span><span>${h(stamp(job.startedAt || job.createdAt))}</span><span>${job.sourceHash ? `Snapshot ${h(job.sourceHash.slice(0, 10))}` : ""}</span><span>${job.finishedAt && job.startedAt ? `${((new Date(job.finishedAt) - new Date(job.startedAt)) / 1000).toFixed(1)} s` : running(job) ? "Observing execution…" : ""}</span></div>
   ${job.error ? `<div class="te-alert" role="alert">${h(job.error)}</div>` : ""}
@@ -406,7 +527,20 @@ function renderRun() {
   }</div></section><section class="te-response"><h3>Response / output</h3>${job.result ? dataView(job.result) : '<p class="te-muted">Output appears when the operation responds.</p>'}${job.input ? `<details><summary>Submitted input</summary><pre>${h(json(job.input))}</pre></details>` : ""}</section></div>
   ${job.eventsTruncated ? '<div class="te-notice">The capture limit was reached. Some observations were omitted.</div>' : ""}</section>`;
   const list = node.querySelector(".te-event-list");
-  if (list && oldScroll != null) list.scrollTop = oldScroll;
+  if (list) {
+    list.scrollTop = followLatestEvents
+      ? list.scrollHeight
+      : Math.min(eventScrollTop, list.scrollHeight - list.clientHeight);
+    list.addEventListener(
+      "scroll",
+      () => {
+        eventScrollTop = list.scrollTop;
+        followLatestEvents = eventListIsAtBottom(list);
+      },
+      { passive: true },
+    );
+  }
+  restoreRunScroll(node);
   node.querySelectorAll("details[data-event]").forEach((detail) =>
     detail.addEventListener("toggle", () => {
       if (detail.open) expandedEvent = Number(detail.dataset.event);
@@ -450,6 +584,7 @@ async function submit(payload) {
     deploying = payload.kind === "DEPLOY";
     renderTestControls();
     render();
+    scrollToLatestRun();
     schedule();
   } catch (failure) {
     error = failure.message;
@@ -460,6 +595,25 @@ async function submit(payload) {
 async function onClick(event) {
   const target = event.target.closest("button, [data-state]");
   if (!target) return;
+  if (target.dataset.workflowZoom) {
+    if (target.dataset.workflowZoom === "reset") workflowZoom = 1;
+    else
+      workflowZoom = Math.max(
+        0.6,
+        Math.min(1.8, workflowZoom + (target.dataset.workflowZoom === "in" ? 0.2 : -0.2)),
+      );
+    const svg = target.closest(".te-workflow-panel")?.querySelector(".te-workflow-svg");
+    if (svg) {
+      const { width, height } = svg.viewBox.baseVal;
+      svg.setAttribute("width", String(Math.ceil(width * workflowZoom)));
+      svg.setAttribute("height", String(Math.ceil(height * workflowZoom)));
+    }
+    const reset = target
+      .closest(".te-workflow-panel")
+      ?.querySelector('[data-workflow-zoom="reset"]');
+    if (reset) reset.textContent = `${Math.round(workflowZoom * 100)}%`;
+    return;
+  }
   if (target.dataset.sqlTable) {
     action = "query";
     const draftKey = json([scope, overview?.deployment?.id, selected, action]);
@@ -516,6 +670,12 @@ async function onClick(event) {
     return;
   }
   if (target.dataset.state) {
+    selectedState = target.dataset.stateId || target.dataset.state;
+    host()
+      .querySelectorAll(".te-state")
+      .forEach((node) =>
+        node.classList.toggle("te-state-selected", node.dataset.stateId === selectedState),
+      );
     const states = workflowStates(activeJob?.events || []);
     const detail = states.get(target.dataset.state);
     document.getElementById("teStateDetail").innerHTML =

@@ -453,8 +453,7 @@ html.light .test-environment {
 .te-invoke-footer input {
   font-size: 11px;
 }
-.te-muted,
-.te-workflow-heading span {
+.te-muted {
   color: var(--muted);
   font-size: 11px;
 }
@@ -749,56 +748,316 @@ html.light .test-environment {
   margin: 8px 0;
   font-size: 12px;
 }
-.te-workflow-scroll {
+.te-workflow-heading span {
+  color: var(--muted);
+  font-size: 10px;
+}
+.te-workflow-panel {
+  margin: 8px 0 16px;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--surface) 72%, var(--bg));
+}
+.te-workflow-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px 8px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+}
+.te-workflow-summary {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  min-width: 0;
+}
+.te-workflow-summary strong {
+  color: var(--text);
+  font-size: 11px;
+  white-space: nowrap;
+}
+.te-workflow-summary span {
+  color: var(--muted);
+  font-size: 10px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.te-workflow-tools {
+  display: flex;
+  align-items: center;
+  flex: 0 0 auto;
   border: 1px solid var(--border);
   border-radius: 6px;
-  background: var(--bg);
+  overflow: hidden;
+}
+.te-workflow-tools button {
+  min-width: 30px;
+  height: 27px;
+  padding: 0 7px;
+  border: 0;
+  border-right: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 12px;
+  line-height: 1;
+}
+.te-workflow-tools button:last-child {
+  border-right: 0;
+}
+.te-workflow-tools button:hover {
+  background: color-mix(in srgb, var(--te-accent) 12%, var(--surface));
+}
+.te-workflow-tools button:nth-child(2) {
+  min-width: 43px;
+  color: var(--muted);
+  font-size: 9px;
+  font-variant-numeric: tabular-nums;
+}
+.te-workflow-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  padding: 8px 12px;
+  color: var(--muted);
+  font-size: 9px;
+}
+.te-workflow-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.te-workflow-legend i {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--muted);
+}
+.te-workflow-legend .is-running {
+  background: var(--warning);
+}
+.te-workflow-legend .is-succeeded {
+  background: var(--success);
+}
+.te-workflow-legend .is-failed {
+  background: var(--danger);
+}
+.te-workflow-legend .te-legend-line {
+  width: 13px;
+  height: 0;
+  border-top: 2px solid var(--muted);
+  border-radius: 0;
+  background: transparent;
+}
+.te-workflow-legend .is-choice {
+  border-color: var(--warning);
+}
+.te-workflow-legend .is-catch {
+  border-color: var(--danger);
+  border-top-style: dashed;
+}
+.te-workflow-legend .is-subflow {
+  border-color: var(--te-accent);
+  border-top-style: dashed;
+}
+.te-workflow-scroll {
+  border-top: 1px solid var(--border);
+  background: color-mix(in srgb, var(--bg) 88%, var(--surface));
   overflow: auto;
-  max-height: 390px;
-  margin-bottom: 16px;
+  max-height: 470px;
+  overscroll-behavior: contain;
 }
 .te-workflow-svg {
-  width: 100%;
-  min-width: 400px;
-  max-width: 750px;
   display: block;
+  width: auto;
+  max-width: none;
+  height: auto;
+  overflow: visible;
+  user-select: none;
+}
+.te-workflow-grid-dot {
+  fill: color-mix(in srgb, var(--border) 68%, transparent);
+}
+.te-workflow-arrowhead {
+  fill: none;
+  stroke: color-mix(in srgb, var(--muted) 76%, var(--border));
+  stroke-width: 1.4;
+}
+.te-workflow-edge {
+  fill: none;
+  stroke: color-mix(in srgb, var(--muted) 54%, var(--border));
+  stroke-width: 1.5;
+  vector-effect: non-scaling-stroke;
+}
+.te-workflow-edge-choice {
+  stroke: color-mix(in srgb, var(--warning) 72%, var(--muted));
+}
+.te-workflow-edge-catch {
+  stroke: color-mix(in srgb, var(--danger) 78%, var(--muted));
+  stroke-dasharray: 5 4;
+}
+.te-workflow-edge-subflow {
+  stroke: color-mix(in srgb, var(--te-accent) 72%, var(--muted));
+  stroke-dasharray: 3 3;
+}
+.te-workflow-edge-label {
+  fill: var(--muted);
+  stroke: color-mix(in srgb, var(--bg) 96%, transparent);
+  stroke-width: 5px;
+  stroke-linejoin: round;
+  paint-order: stroke;
+  font-family: var(--font-ui);
+  font-size: 9px;
+  pointer-events: none;
+}
+.te-workflow-start rect {
+  fill: color-mix(in srgb, var(--te-accent) 14%, var(--surface));
+  stroke: color-mix(in srgb, var(--te-accent) 55%, var(--border));
+}
+.te-workflow-start text {
+  fill: var(--te-accent);
+  font-family: var(--font-ui);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.7px;
+}
+.te-workflow-start path {
+  fill: none;
+  stroke: var(--te-accent);
+  stroke-width: 1.6;
 }
 .te-state {
   cursor: pointer;
+  outline: none;
 }
-.te-state rect {
+.te-state-card {
   fill: var(--surface);
   stroke: var(--border);
+  stroke-width: 1.2;
+  filter: drop-shadow(0 2px 4px color-mix(in srgb, #000 12%, transparent));
+  transition:
+    fill 120ms ease,
+    stroke 120ms ease;
 }
-.te-state circle {
+.te-state-accent {
+  fill: color-mix(in srgb, var(--muted) 65%, var(--border));
+}
+.te-state-type {
   fill: var(--muted);
+  font-family: var(--font-ui);
+  font-size: 9px;
+  font-weight: 650;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
 }
-.te-state text {
+.te-state-name {
   fill: var(--text);
   font-family: var(--font-ui);
-  font-size: 11px;
+  font-size: 12px;
+  font-weight: 600;
 }
-.te-state .te-state-type {
+.te-state-status {
   fill: var(--muted);
+  font-family: var(--font-ui);
   font-size: 9px;
 }
-.te-state-running rect {
-  stroke: #dbac63;
+.te-state-dot {
+  fill: var(--muted);
 }
-.te-state-running circle {
-  fill: #dbac63;
-}
-.te-state-succeeded rect {
+.te-state:hover .te-state-card,
+.te-state:focus-visible .te-state-card {
+  fill: color-mix(in srgb, var(--te-accent) 7%, var(--surface));
   stroke: var(--te-accent);
+  stroke-width: 2;
 }
-.te-state-succeeded circle {
+.te-state-selected .te-state-card {
+  fill: color-mix(in srgb, var(--te-accent) 8%, var(--surface));
+  stroke: var(--te-accent);
+  stroke-width: 2;
+}
+.te-state-selected .te-state-accent {
   fill: var(--te-accent);
 }
-.te-state-failed rect {
-  stroke: #e47b78;
+.te-state-running .te-state-card {
+  stroke: var(--warning);
 }
-.te-state-failed circle {
-  fill: #e47b78;
+.te-state-running .te-state-accent,
+.te-state-running .te-state-dot {
+  fill: var(--warning);
+}
+.te-state-succeeded .te-state-card {
+  stroke: color-mix(in srgb, var(--success) 70%, var(--border));
+}
+.te-state-succeeded .te-state-accent,
+.te-state-succeeded .te-state-dot {
+  fill: var(--success);
+}
+.te-state-failed .te-state-card {
+  stroke: color-mix(in srgb, var(--danger) 75%, var(--border));
+}
+.te-state-failed .te-state-accent,
+.te-state-failed .te-state-dot {
+  fill: var(--danger);
+}
+.te-state-succeeded .te-state-status {
+  fill: var(--success);
+}
+.te-state-running .te-state-status {
+  fill: var(--warning);
+}
+.te-state-failed .te-state-status {
+  fill: var(--danger);
+}
+.te-state-type-fail .te-state-card {
+  stroke: color-mix(in srgb, var(--danger) 70%, var(--border));
+}
+.te-state-type-fail .te-state-accent,
+.te-state-type-fail .te-state-dot {
+  fill: var(--danger);
+}
+.te-state-type-succeed .te-state-card {
+  stroke: color-mix(in srgb, var(--success) 70%, var(--border));
+}
+.te-state-type-succeed .te-state-accent,
+.te-state-type-succeed .te-state-dot {
+  fill: var(--success);
+}
+.te-workflow-terminal rect {
+  fill: color-mix(in srgb, var(--surface) 90%, var(--bg));
+  stroke: var(--border);
+}
+.te-workflow-terminal circle {
+  fill: var(--muted);
+}
+.te-workflow-terminal text {
+  fill: var(--muted);
+  font-family: var(--font-ui);
+  font-size: 10px;
+  font-weight: 600;
+}
+.te-workflow-terminal.te-terminal-status-succeeded rect {
+  fill: color-mix(in srgb, var(--success) 12%, var(--surface));
+  stroke: color-mix(in srgb, var(--success) 62%, var(--border));
+}
+.te-workflow-terminal.te-terminal-status-succeeded circle {
+  fill: var(--success);
+}
+.te-workflow-terminal.te-terminal-status-succeeded text {
+  fill: color-mix(in srgb, var(--success) 78%, var(--text));
+}
+.te-workflow-terminal.te-terminal-status-failed rect {
+  fill: color-mix(in srgb, var(--danger) 10%, var(--surface));
+  stroke: color-mix(in srgb, var(--danger) 62%, var(--border));
+}
+.te-workflow-terminal.te-terminal-status-failed circle {
+  fill: var(--danger);
+}
+.te-workflow-terminal.te-terminal-status-failed text {
+  fill: var(--danger);
 }
 .te-state-detail summary {
   color: var(--te-accent);
@@ -874,6 +1133,16 @@ html.light .test-environment {
   .te-explorer {
     max-height: 240px;
     overflow: auto;
+  }
+  .te-workflow-toolbar {
+    align-items: flex-start;
+    gap: 8px;
+  }
+  .te-workflow-summary span {
+    display: none;
+  }
+  .te-workflow-legend {
+    gap: 9px;
   }
   .te-inspector,
   .te-card,
