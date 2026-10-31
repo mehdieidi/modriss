@@ -340,6 +340,7 @@ operation createAslState(w, ws) {
     // valid until the reviewer supplies explicit outcomes and a default path.
     delete st;
     st = new AWSPSMWORKFLOW!AslFailState;
+    st.summary = "MODRISS_REVIEW_REQUIRED: Define explicit decision outcomes and a default path for " + ws.name + ".";
     manualDecision("WORKFLOW_CHOICE_ROUTING_REQUIRED",
       "Define explicit outcome mappings and exactly one default path for workflow choice " + ws.name + ".",
       KERNEL!Severity#BLOCKER, true, Sequence{w, ws},

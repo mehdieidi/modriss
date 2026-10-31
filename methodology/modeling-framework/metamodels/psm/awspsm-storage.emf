@@ -5,6 +5,66 @@ import "../shared/kernel.ecore";
 import "awspsm-enums.ecore";
 import "awspsm-core.ecore";
 import "awspsm-security.ecore";
+import "awspsm-networking.ecore";
+
+// A relational store remains relational: Aurora's Data API also avoids VPC-bound Lambda connections.
+class RdsDbCluster extends awspsmcore.AwsResource {
+	attr String[1] clusterIdentifier;
+	attr String[1] engine;
+	attr String    engineVersion;
+	attr String[1] databaseName;
+	attr String[1] masterUsername;
+	attr Boolean   enableHttpEndpoint;
+	attr Boolean   storageEncrypted;
+	attr Boolean   deletionProtection;
+	attr Integer   backupRetentionPeriod;
+	attr Integer   minCapacity;
+	attr Integer   maxCapacity;
+
+	val RdsTable[*] tables;
+
+	ref awspsmsecurity.SecretsManagerSecret[1] credentialsSecret;
+	ref awspsmsecurity.KmsKey[?]               kmsKey;
+	ref RdsDbSubnetGroup[?]                    subnetGroup;
+	ref awspsmnetworking.SecurityGroup[*]      securityGroups;
+}
+
+class RdsDbInstance extends awspsmcore.AwsResource {
+	attr String[1] instanceIdentifier;
+	attr String[1] instanceClass;
+	attr String    availabilityZone;
+	attr Boolean   publiclyAccessible;
+	attr Integer   promotionTier;
+
+	ref RdsDbCluster[1] cluster;
+}
+
+class RdsDbSubnetGroup extends awspsmcore.AwsResource {
+	attr String[1] groupName;
+	attr String[1] descriptionText;
+
+	ref awspsmnetworking.Subnet[2..*] subnets;
+}
+
+class RdsTable extends kernel.TraceableElement {
+	attr String[1] tableName;
+
+	val RdsColumn[+] columns;
+	val RdsIndex[*]  indexes;
+}
+
+class RdsIndex extends kernel.TraceableElement {
+	attr String[1] indexName;
+	attr Boolean   ~unique;
+	attr String[+] columnNames;
+}
+
+class RdsColumn extends kernel.TraceableElement {
+	attr String[1] columnName;
+	attr String[1] sqlType;
+	attr Boolean   nullable;
+	attr Boolean   primaryKey;
+}
 
 class DynamoDbTable extends awspsmcore.AwsResource {
 	attr String                             tableName;

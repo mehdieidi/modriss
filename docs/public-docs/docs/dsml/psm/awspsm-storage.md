@@ -1,8 +1,59 @@
 # PSM - Storage
 
-Storage classes expose the AWS details needed for DynamoDB key design and S3 governance, lifecycle, notification, replication, and encryption.
+Storage classes expose Aurora PostgreSQL relational databases, DynamoDB key design, and S3 governance, lifecycle, notification, replication, and encryption.
 
 Source: `methodology/modeling-framework/metamodels/psm/awspsm-storage.emf`.
+
+## Relational databases
+
+A PIM `DataStore` with `storeKind=RELATIONAL` maps to a typed `RdsDbCluster`, a
+`RdsDbInstance` writer, and a generated `SecretsManagerSecret`. It keeps the PIM's SQL and
+transaction requirements. It does not reinterpret a relational requirement as DynamoDB.
+The default engine is Aurora PostgreSQL, accessed through the RDS Data API on AWS and Floci.
+
+| PSM type           | Editable attributes and relationships                                                                                                                                                                                                                                                                              |
+| ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `RdsDbCluster`     | `clusterIdentifier`, `engine`, optional `engineVersion`, `databaseName`, `masterUsername`, `enableHttpEndpoint`, `storageEncrypted`, `deletionProtection`, `backupRetentionPeriod`, `minCapacity`, `maxCapacity`; required `credentialsSecret`; optional `kmsKey`, `subnetGroup`, `securityGroups`; owned `tables` |
+| `RdsDbInstance`    | `instanceIdentifier`, `instanceClass`, optional `availabilityZone`, `publiclyAccessible`, `promotionTier`; required `cluster`                                                                                                                                                                                      |
+| `RdsDbSubnetGroup` | `groupName`, `descriptionText`; at least two `subnets`                                                                                                                                                                                                                                                             |
+| `RdsTable`         | `tableName`; owned `columns` and `indexes`                                                                                                                                                                                                                                                                         |
+| `RdsColumn`        | `columnName`, `sqlType`, `nullable`, `primaryKey`                                                                                                                                                                                                                                                                  |
+| `RdsIndex`         | `indexName`, `unique`, `columnNames`                                                                                                                                                                                                                                                                               |
+
+The Storage View offers cluster, instance, and subnet-group creation. Open a cluster's owned
+contents to edit tables; open a table to edit columns. Tables and columns are contained schema
+elements rather than independent CloudFormation resources. Generated table names include a stable
+model identifier so similarly named data models do not collide. Physical table names remain editable.
+
+PIM data fields become SQL columns. Identifiers become a primary key, required fields become
+`NOT NULL`, and structured fields become `jsonb`. Supported types are `text`, `bigint`, `integer`,
+`numeric`, `boolean`, `date`, `time`, `timestamptz`, `bytea`, `uuid`, and `jsonb`.
+Decimal/money values use exact `numeric`, not floating point. Relationships are not inferred as
+foreign keys solely from a field's name. Missing identifiers and change-stream implementations
+remain explicit refinement decisions.
+PIM index candidates become SQL indexes, including uniqueness. An index already covered by the
+same primary key is not duplicated. Index fields that do not resolve to one table require refinement.
+
+Defaults are a private `db.serverless` writer, encrypted storage, seven backup-retention days,
+and integer capacity bounds of 1–2 ACUs. Production enables deletion protection and retains its
+readiness review. Optional network resources can configure a specific VPC/subnet placement;
+otherwise AWS/Floci's default DB networking is used. Other engines and fractional/zero scaling
+are outside this typed generator's supported subset.
+When editing credentials, keep `masterUsername` equal to the `username` in the secret-generation
+template and retain its generated `password` key. Generation reports inconsistent credentials.
+
+Generation emits real CloudFormation resources, generated credentials, cross-stack value
+exports/imports, parameterized Go Data API support, `database/*.sql`, and
+`database/manifest.json`. Both the Test deployment and generated deployment script initialize
+the schema through real database transactions. Credentials are referenced by ARN and are not
+embedded in source or Lambda environment variables.
+
+Schema initialization records a checksum. Repeating deployment with the same schema preserves
+data; changed schemas require a reviewed migration instead of an automatic destructive reset.
+Application handlers still implement their business operations and transaction boundaries using
+the generated `RelationalStore.Execute` and `WithTransaction` helpers. Generated application access
+initially uses the generated database credential; production requires a review of database users
+and SQL grants, since IAM Data API permissions do not distinguish `SELECT` from writes.
 
 ## `DynamoDbTable`
 

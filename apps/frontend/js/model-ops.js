@@ -1767,6 +1767,8 @@ export async function generateForCurrentContext() {
 
 export async function switchTab(type, { skipSnapshot = false, preserveImpact = false } = {}) {
   if (isAssistantModelLocked()) return;
+  if (type === "test" && selectedCloudProvider().id !== "aws") return;
+  if (type !== "test" && !isArtifactLevel(type) && !isModelingLevel(type)) return;
   if (type !== state.activeType) {
     const { closeChatWindow } = await import("./chat.js?v=chat-provenance-ui-20260718a");
     closeChatWindow();
@@ -1797,7 +1799,7 @@ export async function switchTab(type, { skipSnapshot = false, preserveImpact = f
 
   state.activeType = type;
   window.dispatchEvent(new Event("modriss-active-modeling-level-change"));
-  if (!isArtifactLevel(type)) {
+  if (isModelingLevel(type)) {
     saveLastModelingType(state.project?.id, type);
   }
   Array.from(el.modelTabs.querySelectorAll(".tab")).forEach((t) =>
@@ -1806,9 +1808,13 @@ export async function switchTab(type, { skipSnapshot = false, preserveImpact = f
   updateGenerateButtonState();
 
   const isArtifact = isArtifactLevel(type);
-  const isReadonlyEditor = isArtifact;
+  const isTest = type === "test";
+  const isReadonlyEditor = isArtifact || isTest;
   const topbar = document.querySelector(".topbar");
+  topbar?.classList.toggle("test-mode", isTest);
   el.workspace?.classList.toggle("artifact-mode", isArtifact);
+  el.workspace?.classList.toggle("test-mode", isTest);
+  document.getElementById("testEnvironment")?.classList.toggle("hidden", !isTest);
   topbar?.classList.toggle("artifact-mode", isArtifact);
   if (isArtifact) {
     el.workspace?.classList.remove("palette-collapsed");
@@ -1820,9 +1826,21 @@ export async function switchTab(type, { skipSnapshot = false, preserveImpact = f
   el.canvasViewport.classList.toggle("hidden", isReadonlyEditor);
   el.artifactEditor.classList.toggle("hidden", !isArtifact);
   el.impactToggleBtn.disabled = false;
-  el.validateModelBtn?.classList.toggle("hidden", isArtifact);
+  el.validateModelBtn?.classList.toggle("hidden", isReadonlyEditor);
   if (el.validateModelBtn) {
-    el.validateModelBtn.disabled = isArtifact;
+    el.validateModelBtn.disabled = isReadonlyEditor;
+  }
+
+  if (isTest) {
+    state.validation.panelOpen = false;
+    el.validationFab?.classList.add("hidden");
+    el.validationDrawer?.classList.add("hidden");
+    el.modelWorkbenchPanel?.classList.add("hidden");
+    renderViewWorkbench();
+    updateModelSaveUi();
+    setStatus("AWS Test Environment · Floci");
+    await (await import("./test-environment.js")).openTestEnvironment();
+    return;
   }
 
   if (isArtifact) {

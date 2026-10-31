@@ -9,6 +9,7 @@ import "lib/contracts.eol";
 import "lib/protected-regions.eol";
 import "lib/trace.eol";
 import "lib/validation.eol";
+import "lib/relational.eol";
 
 /** Prepares and validates shared state before execution. */
 pre {
@@ -39,6 +40,42 @@ operation emitCtx() {
 }
 
 /** Generates artifacts or model elements for Project Scaffold. */
+rule DatabaseManifest {
+  guard : AWSPSMSTORAGE!RdsDbCluster.all.notEmpty()
+  template : "infrastructure/database-manifest.egl"
+  target : "database/manifest.json"
+  merge : false
+  overwrite : true
+  post { emitCtx().recordArtifact("database/manifest.json", "DATABASE_SCHEMA", "AWSPSM2ART_DatabaseManifest", AWSPSMSTORAGE!RdsDbCluster.all, "OVERWRITE_GENERATED", Sequence{}); }
+}
+
+rule DatabaseSchema transform database : AWSPSMSTORAGE!RdsDbCluster {
+  template : "infrastructure/database-schema.egl"
+  target : "database/" + database.cfnLogicalId() + ".sql"
+  merge : false
+  overwrite : true
+  parameters : Map {"database" = database}
+  post { emitCtx().recordArtifact("database/" + database.cfnLogicalId() + ".sql", "DATABASE_SCHEMA", "AWSPSM2ART_DatabaseSchema", Sequence{database}, "OVERWRITE_GENERATED", Sequence{}); }
+}
+
+rule DatabaseInitialize {
+  guard : AWSPSMSTORAGE!RdsDbCluster.all.notEmpty()
+  template : "scripts/database.egl"
+  target : "scripts/database.py"
+  merge : false
+  overwrite : true
+  post { emitCtx().recordArtifact("scripts/database.py", "DEPLOYMENT_SCRIPT", "AWSPSM2ART_DatabaseInitialize", AWSPSMSTORAGE!RdsDbCluster.all, "OVERWRITE_GENERATED", Sequence{}); }
+}
+
+rule RelationalDataAccess {
+  guard : AWSPSMSTORAGE!RdsDbCluster.all.notEmpty()
+  template : "lambda/shared-relational.egl"
+  target : "src/shared/relational.go"
+  merge : false
+  overwrite : true
+  post { emitCtx().recordArtifact("src/shared/relational.go", "SHARED_RUNTIME", "AWSPSM2ART_RelationalDataAccess", AWSPSMSTORAGE!RdsDbCluster.all, "OVERWRITE_GENERATED", Sequence{}); }
+}
+
 rule ProjectScaffold {
   template : "docs/project-scaffold.egl"
   target : "generated/reports/project-scaffold.txt"

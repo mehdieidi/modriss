@@ -2,6 +2,7 @@ import { startAssistantModelLockMonitor } from "./assistant-model-lock-monitor.j
 import { el } from "./dom.js";
 import { initEditorTutorial } from "./editor-tutorial.js";
 import { state } from "./state.js";
+import { renderTestControls } from "./test-environment.js";
 import { initFrontendTelemetry } from "./telemetry.js";
 import { initTheme, toggleTheme } from "./theme.js";
 import {
@@ -675,6 +676,7 @@ function renderConfiguredModelTabs() {
   artifactButton.textContent = "Artifacts";
   fragment.appendChild(artifactButton);
   el.modelTabs.appendChild(fragment);
+  renderTestControls();
   renderMobileModelLevelTabs();
 }
 
@@ -694,6 +696,8 @@ function renderMobileModelLevelTabs() {
     // The artifact tab is still useful with the fallback key during startup.
   }
   entries.push({ typeKey: artifactKey, label: "Artifacts" });
+  if ((state.cloudProvider?.id || "aws") === "aws" && state.activeType === artifactKey)
+    entries.push({ typeKey: "test", label: "Test" });
   tabs.innerHTML = entries
     .map(({ typeKey, label }) => {
       const active = typeKey === state.activeType;
@@ -705,6 +709,13 @@ function renderMobileModelLevelTabs() {
                       title="${escapeHtml(label)}">${escapeHtml(label)}</button>`;
     })
     .join("");
+  revealActiveMobileTab();
+}
+
+function revealActiveMobileTab() {
+  const tabs = el.mobileModelLevelTabs;
+  const active = tabs?.querySelector(".is-active");
+  if (active && tabs.clientWidth) active.scrollIntoView({ block: "nearest", inline: "nearest" });
 }
 
 // ── Bind all DOM event handlers ───────────────────────────────────────────────
@@ -740,6 +751,7 @@ function bindEvents() {
 
   window.addEventListener("modriss-active-modeling-level-change", renderMobileModelLevelTabs);
   window.addEventListener("modriss-cloud-provider-change", renderMobileModelLevelTabs);
+  window.addEventListener("resize", revealActiveMobileTab);
 
   // Theme
   if (el.paletteRailToggleBtn) {

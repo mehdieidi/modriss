@@ -15,7 +15,7 @@ sam build \
 case "$stage_text" in
 [% for (stageObj in awsRoot.stages.sortBy(stageObj | stageObj.stageName)) { %]
   [%= stageObj.stageSlug() %])
-[% for (stackObj in awsRoot.stacks.select(stackObj | stageObj.deploysStacks.includes(stackObj) or stageObj.deploysStacks.isEmpty()).sortBy(stackObj | stackObj.stackName)) { %]
+[% for (stackObj in awsRoot.stacks.select(stackObj | stageObj.deploysStacks.includes(stackObj) or stageObj.deploysStacks.isEmpty()).orderedDeploymentStacks()) { %]
     sam deploy \
       --template-file ".aws-sam/[%= stackObj.stackSlug() %]/template.yaml" \
       --stack-name "[%= stageObj.stackDeployName(stackObj) %]" \
@@ -24,6 +24,9 @@ case "$stage_text" in
       --resolve-s3 \
       --no-confirm-changeset \
       --no-fail-on-empty-changeset
+[% } %]
+[% if (AWSPSMSTORAGE!RdsDbCluster.all.notEmpty()) { %]
+    python3 scripts/database.py[% for (stackObj in awsRoot.stacks.select(stackObj | stageObj.deploysStacks.includes(stackObj) or stageObj.deploysStacks.isEmpty()).orderedDeploymentStacks()) { %] --stack "[%= stageObj.stackDeployName(stackObj) %]"[% } %]
 [% } %]
     ;;
 [% } %]

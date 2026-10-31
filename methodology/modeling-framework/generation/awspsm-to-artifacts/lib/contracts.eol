@@ -27,6 +27,9 @@ operation AWSPSMAPI!ApiGatewayRoute operationIdText() : String {
 /** Renders emit open api document. */
 operation AWSPSMAPI!ApiGatewayApi emitOpenApiDocument(routeSeq : Collection) : String {
   var outText = "openapi: 3.0.3\n";
+  if (self.eClass().getName() = "RestApi" and routeSeq.exists(routeObj | routeObj.requestModels.notEmpty())) {
+    outText = outText + "x-amazon-apigateway-request-validators:\n  modeledRequest:\n    validateRequestBody: true\n    validateRequestParameters: true\n";
+  }
   outText = outText + "info:\n";
   outText = outText + "  title: " + self.apiName.orElseText(self.cfnLogicalId()).yamlScalar() + "\n";
   outText = outText + "  version: '1.0.0'\n";
@@ -94,7 +97,54 @@ operation AWSPSMAPI!ApiGatewayApi openApiSecuritySchemesYaml(routeSeq : Collecti
   }
   for (schemeName in schemeNames) {
     outText = outText + spaces(indentCount + 2) + schemeName + ":\n";
-    if (schemeName = "aws_iam") {
+    var routeObj = routeSeq.selectOne(candidate | candidate.openApiSecuritySchemeName() = schemeName);
+    if (routeObj.authorizer.isDefined()) {
+      var authorizer = routeObj.authorizer;
+      var rest = self.eClass().getName() = "RestApi";
+      // Reuse schema checks for native JWT compatibility before emitting an imported definition.
+      authorizer.emitAuthorizerPropertiesYaml(new Map);
+      outText = outText + spaces(indentCount + 4) + "type: apiKey\n";
+      outText = outText + spaces(indentCount + 4) + "name: Authorization\n";
+      outText = outText + spaces(indentCount + 4) + "in: header\n";
+      outText = outText + spaces(indentCount + 4) + "x-amazon-apigateway-authorizer:\n";
+      var indent = indentCount + 6;
+      if (authorizer.eClass().getName() = "JwtAuthorizer") {
+        if (not authorizer.issuer.isPresent() or not authorizer.issuer.startsWith("https://") or authorizer.audience.isEmpty())
+          throw "Authorizer " + authorizer.cfnLogicalId() + ": configure a valid HTTPS JWT issuer and client audiences before generating deployable artifacts.";
+        outText = outText + spaces(indent) + "type: jwt\n";
+        outText = outText + emitYamlScalarProperty("identitySource", authorizer.identitySource.orElseText("$request.header.Authorization"), indent);
+        outText = outText + spaces(indent) + "jwtConfiguration:\n";
+        outText = outText + emitYamlScalarProperty("issuer", authorizer.issuer, indent + 2);
+        outText = outText + emitYamlStringListProperty("audience", authorizer.audience, indent + 2);
+      }
+      else if (authorizer.eClass().getName() = "CognitoAuthorizer" and rest) {
+        outText = outText + spaces(indent) + "type: cognito_user_pools\n";
+        outText = outText + spaces(indent) + "providerARNs:\n" + spaces(indent + 2) + "- " + self.cognitoPoolArn(authorizer.userPool) + "\n";
+      }
+      else if (authorizer.eClass().getName() = "CognitoAuthorizer") {
+        outText = outText + spaces(indent) + "type: jwt\n";
+        outText = outText + spaces(indent) + "identitySource: '$request.header.Authorization'\n";
+        outText = outText + spaces(indent) + "jwtConfiguration:\n";
+        outText = outText + spaces(indent + 2) + "issuer: !Sub 'https://cognito-idp.${AWS::Region}.${AWS::URLSuffix}/${" + authorizer.userPool.cfnLogicalId() + "}'\n";
+        outText = outText + spaces(indent + 2) + "audience:\n";
+        for (client in authorizer.clients) outText = outText + spaces(indent + 4) + "- !Ref " + client.cfnLogicalId() + "\n";
+      }
+      else {
+        var authorizerType = "request";
+        if (rest and authorizer.authorizationType.asString() = "CUSTOM_LAMBDA") authorizerType = "token";
+        outText = outText + emitYamlScalarProperty("type", authorizerType, indent);
+        outText = outText + spaces(indent) + "authorizerUri: " + apiGatewayLambdaIntegrationUri(authorizer.modelFeatureValue("function")) + "\n";
+        var identity = authorizer.identitySource.orElseText("$request.header.Authorization");
+        if (rest and identity.startsWith("$request.header.")) identity = "method.request.header." + identity.substring(16);
+        outText = outText + emitYamlScalarProperty("identitySource", identity, indent);
+        outText = outText + emitYamlIntegerProperty("authorizerResultTtlInSeconds", authorizer.authorizerResultTtlInSeconds, indent);
+        if (not rest) {
+          outText = outText + emitYamlScalarProperty("authorizerPayloadFormatVersion", authorizer.authorizerPayloadFormatVersion.orElseText("2.0"), indent);
+          outText = outText + emitYamlBooleanProperty("enableSimpleResponses", authorizer.enableSimpleResponses, indent);
+        }
+      }
+    }
+    else if (schemeName = "aws_iam") {
       outText = outText + spaces(indentCount + 4) + "type: apiKey\n";
       outText = outText + spaces(indentCount + 4) + "name: Authorization\n";
       outText = outText + spaces(indentCount + 4) + "in: header\n";
@@ -126,14 +176,22 @@ operation AWSPSMAPI!ApiGatewayApi openApiSecuritySchemesYaml(routeSeq : Collecti
 /** Computes open api operation. */
 operation AWSPSMAPI!ApiGatewayRoute openApiOperation(indentCount : Integer) : String {
   var outText = spaces(indentCount) + self.routeMethod() + ":\n";
+  if (self.api.eClass().getName() = "RestApi" and self.requestModels.notEmpty())
+    outText = outText + spaces(indentCount + 2) + "x-amazon-apigateway-request-validator: modeledRequest\n";
   outText = outText + spaces(indentCount + 2) + "operationId: " + self.operationIdText().yamlScalar() + "\n";
   outText = outText + spaces(indentCount + 2) + "tags:\n";
   outText = outText + spaces(indentCount + 4) + "- " + self.api.apiName.orElseText("api").yamlScalar() + "\n";
   if (self.openApiSecuritySchemeName().isPresent()) {
     outText = outText + spaces(indentCount + 2) + "security:\n";
-    outText = outText + spaces(indentCount + 4) + "- " + self.openApiSecuritySchemeName() + ": []\n";
+    outText = outText + spaces(indentCount + 4) + "- " + self.openApiSecuritySchemeName() + ": [";
+    for (scope in self.authorizationScopes) {
+      if (scope <> self.authorizationScopes.first()) outText = outText + ", ";
+      outText = outText + scope.yamlScalar();
+    }
+    outText = outText + "]\n";
   }
-  if (self.requestModels.notEmpty()) {
+  outText = outText + self.openApiParametersYaml(indentCount + 2);
+  if (self.requestModels.notEmpty() and not self.requestUsesParameters()) {
     var requestModel = self.requestModels.first();
     outText = outText + spaces(indentCount + 2) + "requestBody:\n";
     outText = outText + spaces(indentCount + 4) + "required: true\n";
@@ -184,6 +242,47 @@ operation AWSPSMAPI!ApiGatewayRoute openApiOperation(indentCount : Integer) : St
   return outText;
 }
 
+/** HTTP read/delete inputs belong in parameters rather than an unusable request body. */
+operation AWSPSMAPI!ApiGatewayRoute requestUsesParameters() : Boolean {
+  return Sequence{"get", "head", "delete"}.includes(self.routeMethod());
+}
+
+/** Emits declared path inputs and query fields from the modeled request schema. */
+operation AWSPSMAPI!ApiGatewayRoute openApiParametersYaml(indentCount : Integer) : String {
+  var pathNames = Set{};
+  for (segment in self.routePath().split("[{]")) {
+    if (segment.contains("}")) pathNames.add(segment.split("[}]").first());
+  }
+  var schema;
+  var mapper = new Native("com.fasterxml.jackson.databind.ObjectMapper");
+  if (self.requestUsesParameters() and self.requestModels.notEmpty()) {
+    schema = mapper.readTree(self.requestModels.first().schemaJson);
+    if (not schema.isObject() or (schema.path("type").asText() <> "object" and not schema.has("properties")))
+      throw "Route " + self.routePath() + ": GET/HEAD/DELETE inputs require an object schema with named query parameters.";
+  }
+  var rows = "";
+  for (name in pathNames.asSequence().sortBy(name | name)) {
+    rows = rows + spaces(indentCount + 2) + "- name: " + name.yamlScalar() + "\n";
+    rows = rows + spaces(indentCount + 4) + "in: path\n" + spaces(indentCount + 4) + "required: true\n";
+    var fieldSchema = "{\"type\":\"string\"}";
+    if (schema.isDefined() and schema.path("properties").has(name)) fieldSchema = schema.path("properties").path(name).toString();
+    rows = rows + spaces(indentCount + 4) + "schema: " + fieldSchema + "\n";
+  }
+  if (schema.isDefined() and schema.path("properties").isObject()) {
+    var properties = mapper.readValue(schema.path("properties").toString(), new Native("java.util.LinkedHashMap").getClass());
+    for (name in properties.keySet()) {
+      if (not pathNames.includes(name)) {
+        rows = rows + spaces(indentCount + 2) + "- name: " + name.yamlScalar() + "\n";
+        rows = rows + spaces(indentCount + 4) + "in: query\n";
+        rows = rows + spaces(indentCount + 4) + "required: " + schema.path("required").toString().contains(name.jsonString()).asString() + "\n";
+        rows = rows + spaces(indentCount + 4) + "schema: " + schema.path("properties").path(name).toString() + "\n";
+      }
+    }
+  }
+  if (rows.isEmpty()) return "";
+  return spaces(indentCount) + "parameters:\n" + rows;
+}
+
 /** Derives sorted open api response models. */
 operation AWSPSMAPI!ApiGatewayRoute sortedOpenApiResponseModels() : Sequence {
   var uniqueModels = new Sequence;
@@ -213,6 +312,7 @@ operation AWSPSMAPI!ApiGatewayRoute openApiResponseDescription(statusCode : Stri
 
 /** Computes open api security scheme name. */
 operation AWSPSMAPI!ApiGatewayRoute openApiSecuritySchemeName() : String {
+  if (self.authorizer.isDefined()) return self.authorizer.cfnLogicalId();
   var raw = self.authorizationType.asString().toLowerCase().replace(" ", "_");
   if (raw = "none") {
     return "";
@@ -238,13 +338,15 @@ operation AWSPSMAPI!ApiGatewayResponseModel openapiModelName() : String {
 /** Renders a complete ASL document. Keeping the document assembly here prevents EGL
  * control-block whitespace from corrupting JSON object member boundaries. */
 operation AWSPSMWORKFLOW!AslDocument emitAslDocumentJson(stateMachineObj : AWSPSMWORKFLOW!StepFunctionStateMachine) : String {
+  var stateSeq = self.deployableAslStates().sortBy(stateObj | stateObj.stateName);
   var outText = "{\n";
-  outText = outText + "  \"Comment\": " + self.comment.orElseText(stateMachineObj.stateMachineName.orElseText("Generated workflow")).jsonString() + ",\n";
+  var commentText = self.comment.orElseText(stateMachineObj.stateMachineName.orElseText("Generated workflow"));
+  if (stateSeq.size() <> self.states.size()) commentText = commentText + " Unresolved decision routing: unreachable draft branches omitted; resolve the PIM workflow decisions and regenerate to enable them.";
+  outText = outText + "  \"Comment\": " + commentText.jsonString() + ",\n";
   if (self.queryLanguage.isPresent()) {
     outText = outText + "  \"QueryLanguage\": " + self.queryLanguage.jsonString() + ",\n";
   }
   outText = outText + "  \"StartAt\": " + self.startAt.jsonString() + ",\n  \"States\": {\n";
-  var stateSeq = self.states.sortBy(stateObj | stateObj.stateName);
   for (stateObj in stateSeq) {
     outText = outText + stateObj.emitAslStateJson(4);
     if (stateObj <> stateSeq.last()) {
@@ -255,11 +357,32 @@ operation AWSPSMWORKFLOW!AslDocument emitAslDocumentJson(stateMachineObj : AWSPS
   return outText + "  }\n}\n";
 }
 
+/** Keeps a deliberate review-required Fail placeholder deployable without orphaned branches. */
+operation AWSPSMWORKFLOW!AslDocument deployableAslStates() : Sequence {
+  if (not self.states.exists(state | state.summary.orElseText("").startsWith("MODRISS_REVIEW_REQUIRED:"))) return self.states.asSequence();
+  var reachable = Set{self.startAt};
+  var previousSize = -1;
+  while (previousSize <> reachable.size()) {
+    previousSize = reachable.size();
+    for (state in self.states.select(candidate | reachable.includes(candidate.stateName))) {
+      if (state.nextState.isDefined()) reachable.add(state.nextState.stateName);
+      else if (state.nextStateName.isPresent()) reachable.add(state.nextStateName);
+      for (choice in state.choices) if (choice.nextState.isDefined()) reachable.add(choice.nextState.stateName);
+      for (handler in state.modelFeatureValue("catch")) if (handler.nextState.isDefined()) reachable.add(handler.nextState.stateName);
+    }
+  }
+  return self.states.select(state | reachable.includes(state.stateName)).asSequence();
+}
+
 /** Renders a modeled ASL state as a valid, indented JSON member. */
 operation AWSPSMWORKFLOW!AslState emitAslStateJson(indentCount : Integer) : String {
   var stateTypeText = self.aslStateTypeName();
   var outText = spaces(indentCount) + self.stateName.jsonString() + ": {\n";
   outText = outText + spaces(indentCount + 2) + "\"Type\": " + stateTypeText.toLowerCase().firstToUpperCase().jsonString();
+  if (stateTypeText = "FAIL" and self.summary.orElseText("").startsWith("MODRISS_REVIEW_REQUIRED:")) {
+    outText = outText + ",\n" + spaces(indentCount + 2) + "\"Error\": \"Modriss.WorkflowRequiresRefinement\"";
+    outText = outText + ",\n" + spaces(indentCount + 2) + "\"Cause\": " + self.summary.jsonString();
+  }
   if (self.queryLanguage.isPresent()) {
     outText = outText + ",\n" + spaces(indentCount + 2) + "\"QueryLanguage\": " + self.queryLanguage.jsonString();
   }

@@ -1,0 +1,887 @@
+.topbar-deploy-btn {
+  border-color: #a78bfa;
+  color: #fff;
+  background: #6d28d9;
+  font-weight: 750;
+  box-shadow: inset 0 1px 0 #ffffff20;
+}
+.topbar-deploy-btn:hover:not(:disabled) {
+  border-color: #c4b5fd;
+  background: #5b21b6;
+  box-shadow: 0 2px 8px #6d28d940;
+}
+.topbar-deploy-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.topbar-deploy-btn[hidden],
+#modelTabs .tab[hidden] {
+  display: none;
+}
+.topbar.test-mode .model-lifecycle {
+  display: none;
+}
+.app-shell:has(.workspace.test-mode) #chatToggle {
+  display: none;
+}
+.app-shell:has(.workspace.test-mode) #mobileDock .mobile-dock-item:not(#mobileDockMenuBtn) {
+  display: none;
+}
+.app-shell:has(.workspace.test-mode) #mobileDock {
+  grid-template-columns: 1fr;
+}
+.workspace.test-mode .left-pane,
+.workspace.test-mode .pane-resizer,
+.workspace.test-mode .canvas-tools,
+.workspace.test-mode .canvas-zoom-controls,
+.workspace.test-mode .canvas-minimap,
+.workspace.test-mode .right-pane,
+.workspace.test-mode #modelTreePanel {
+  display: none !important;
+}
+.workspace.test-mode .workspace-main {
+  grid-template-columns: minmax(0, 1fr);
+}
+.workspace.test-mode .canvas-stage {
+  padding: 0;
+}
+.workspace.test-mode .workspace-main > .canvas-pane {
+  margin: 0;
+  width: 100%;
+  height: 100%;
+}
+.workspace.test-mode .workspace-editor-column {
+  display: none;
+}
+.test-environment {
+  position: absolute;
+  inset: 0;
+  overflow: auto;
+  padding: 28px 32px 48px;
+  color: var(--text);
+  background: var(--bg);
+  font-size: 13px;
+  --te-accent: #38bdae;
+  --te-accent-ink: #082f2a;
+}
+html.light .test-environment {
+  --te-accent: #117a70;
+  --te-accent-ink: #fff;
+}
+.test-environment button,
+.test-environment select,
+.test-environment input,
+.test-environment textarea {
+  font: inherit;
+}
+.test-environment button {
+  cursor: pointer;
+}
+.test-environment button:disabled {
+  opacity: 0.5;
+  cursor: wait;
+}
+.test-environment :focus-visible,
+.topbar-deploy-btn:focus-visible {
+  outline: 2px solid var(--te-accent, var(--primary));
+  outline-offset: 3px;
+}
+.te-header,
+.te-header-actions,
+.te-context,
+.te-resource-heading,
+.te-invoke-heading,
+.te-invoke-footer,
+.te-run-heading,
+.te-run-heading > div:last-child,
+.te-run-meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.te-header {
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+.te-eyebrow {
+  color: var(--te-accent);
+  font-size: 10px;
+  letter-spacing: 1.5px;
+  font-weight: 700;
+}
+.te-status-dot {
+  display: inline-block;
+  height: 6px;
+  width: 6px;
+  border-radius: 50%;
+  background: var(--te-accent);
+  margin-right: 5px;
+}
+.test-environment h1 {
+  font-size: 27px;
+  letter-spacing: -0.7px;
+  margin: 8px 0;
+  font-weight: 650;
+}
+.test-environment h2 {
+  font-size: 18px;
+  margin: 7px 0 12px;
+  letter-spacing: -0.3px;
+}
+.test-environment h3 {
+  font-size: 12px;
+  font-weight: 600;
+}
+.test-environment p {
+  color: var(--muted);
+  line-height: 1.7;
+  margin: 5px 0 14px;
+}
+.te-context {
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  padding: 12px 0;
+  flex-wrap: wrap;
+  color: var(--muted);
+  font-size: 11px;
+}
+.te-context > span:not(:first-child)::before {
+  content: "";
+  border-left: 1px solid var(--border);
+  margin-right: 12px;
+}
+.te-context > .te-badge {
+  margin-left: auto;
+}
+.te-context > .te-badge::before {
+  display: none;
+}
+.te-button {
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  border-radius: 6px;
+  padding: 8px 12px;
+  white-space: nowrap;
+  font-size: 12px !important;
+}
+.te-button:hover:not(:disabled) {
+  background: var(--surface-high);
+}
+.te-template-issues {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 12px;
+  margin: 12px 0;
+  overflow-wrap: anywhere;
+}
+.te-template-issues summary {
+  font-weight: 650;
+  cursor: pointer;
+}
+.te-template-issues ul {
+  max-height: 340px;
+  overflow: auto;
+  padding-left: 20px;
+}
+.te-template-issues li + li {
+  margin-top: 14px;
+}
+.te-primary {
+  background: var(--te-accent);
+  color: var(--te-accent-ink);
+  border-color: var(--te-accent);
+  font-weight: 650 !important;
+}
+.te-primary:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--te-accent) 85%, white);
+}
+.te-metrics {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 12px;
+  margin: 20px 0;
+}
+.te-metric {
+  text-align: left;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  border-radius: 8px;
+  padding: 13px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.te-metric span {
+  font-size: 11px;
+  color: var(--muted);
+}
+.te-metric strong {
+  font-size: 23px;
+  font-weight: 500;
+}
+.te-metric.is-active {
+  border-color: var(--te-accent);
+}
+.te-tabs {
+  display: flex;
+  gap: 24px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 20px;
+}
+.te-tabs button {
+  background: none;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  color: var(--muted);
+  padding: 10px 0 12px;
+}
+.te-tabs button.is-active {
+  border-color: var(--te-accent);
+  color: var(--text);
+}
+.te-resource-layout {
+  display: grid;
+  grid-template-columns: 246px minmax(0, 1fr);
+  gap: 20px;
+  align-items: start;
+}
+.te-explorer {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+.te-explorer-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px;
+  font-size: 12px;
+}
+.te-explorer-heading .te-button {
+  padding: 3px 8px;
+}
+.te-explorer > input {
+  margin: 0 12px 10px;
+  width: calc(100% - 24px);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 5px;
+  padding: 8px;
+}
+.te-group {
+  padding-bottom: 6px;
+}
+.te-group h3 {
+  color: var(--muted);
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 13px;
+  border-top: 1px solid var(--border);
+  margin: 0;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.7px;
+}
+.te-resource {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  width: 100%;
+  padding: 10px 12px;
+  border: 0;
+  border-left: 2px solid transparent;
+  color: var(--text);
+  background: transparent;
+  text-align: left;
+}
+.te-resource:hover {
+  background: var(--surface-high);
+}
+.te-resource.is-active {
+  background: color-mix(in srgb, var(--te-accent) 10%, var(--surface));
+  border-left-color: var(--te-accent);
+}
+.te-resource > span:last-child {
+  min-width: 0;
+}
+.te-resource strong {
+  font-weight: 500;
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12px;
+}
+.te-resource small {
+  display: block;
+  font-size: 10px;
+  color: var(--muted);
+  margin-top: 4px;
+}
+.te-resource-icon {
+  flex: 0 0 24px;
+  color: var(--te-accent);
+  font-size: 21px;
+  text-align: center;
+}
+.te-detail {
+  min-width: 0;
+}
+.te-inspector,
+.te-card,
+.te-run {
+  border: 1px solid var(--border);
+  background: var(--surface);
+  border-radius: 8px;
+  padding: 20px;
+}
+.te-resource-heading,
+.te-invoke-heading,
+.te-invoke-footer,
+.te-run-heading {
+  justify-content: space-between;
+}
+.te-resource-heading {
+  flex-wrap: wrap;
+}
+.te-resource-heading > div {
+  min-width: 0;
+  flex: 1 1 220px;
+  overflow-wrap: anywhere;
+}
+.te-resource-address {
+  font-family: var(--font-mono, monospace);
+  font-size: 11px;
+  overflow-wrap: anywhere;
+  margin-bottom: 16px;
+}
+.te-badge {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  font-size: 9px;
+  letter-spacing: 0.5px;
+  font-weight: 700;
+  padding: 4px 7px;
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--muted) 12%, transparent);
+  color: var(--muted);
+  white-space: nowrap;
+}
+.te-succeeded,
+.te-deployed {
+  color: var(--te-accent);
+  background: color-mix(in srgb, var(--te-accent) 12%, transparent);
+}
+.te-failed,
+.te-interrupted {
+  color: #e47b78;
+  background: #c8494920;
+}
+.te-running,
+.te-queued {
+  color: #dbac63;
+  background: #c49a4d20;
+}
+.te-invoke-heading {
+  border-top: 1px solid var(--border);
+  padding-top: 16px;
+  margin: 8px 0 16px;
+  flex-wrap: wrap;
+}
+.te-invoke-heading label {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  font-size: 12px;
+}
+.test-environment select,
+.te-invoke-footer input {
+  background: var(--bg);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  padding: 7px 10px;
+}
+.te-input-label {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 11px;
+  color: var(--muted);
+  margin: 15px 0 7px;
+}
+.te-input-label span {
+  font-size: 10px;
+}
+.te-json-input {
+  display: block;
+  width: 100%;
+  resize: vertical;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text);
+  padding: 12px;
+  font-family: var(--font-mono, monospace) !important;
+  font-size: 12px !important;
+  line-height: 1.6;
+  tab-size: 2;
+}
+.te-invoke-footer {
+  margin-top: 16px;
+  align-items: end;
+  flex-wrap: wrap;
+}
+.te-invoke-footer label {
+  display: flex;
+  flex: 1;
+  min-width: 180px;
+  max-width: 380px;
+  gap: 6px;
+  flex-direction: column;
+  font-size: 10px;
+  color: var(--muted);
+}
+.te-invoke-footer input {
+  font-size: 11px;
+}
+.te-muted,
+.te-workflow-heading span {
+  color: var(--muted);
+  font-size: 11px;
+}
+.te-pad {
+  padding: 12px;
+}
+.te-alert,
+.te-notice {
+  margin: 12px 0;
+  padding: 12px 14px;
+  border-radius: 6px;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+.te-alert {
+  background: #b3444415;
+  color: #e7837e;
+  border: 1px solid #b3444455;
+}
+.te-notice {
+  background: #c0984c12;
+  color: var(--text);
+  border: 1px solid #c0984c55;
+  font-size: 12px;
+}
+.te-empty {
+  text-align: center;
+  padding: 55px 24px;
+  max-width: 780px;
+  margin: auto;
+}
+.te-empty-mark {
+  color: var(--te-accent);
+  border: 1px solid var(--border);
+  font-size: 36px;
+  border-radius: 18px;
+  margin: 0 auto 20px;
+  width: 68px;
+  height: 68px;
+  line-height: 65px;
+  background: var(--surface);
+}
+.te-empty p {
+  max-width: 530px;
+  margin: 10px auto 25px;
+}
+.te-empty-path {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 35px;
+  color: var(--muted);
+  font-size: 11px;
+}
+.te-deployment-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) minmax(240px, 1fr);
+  gap: 20px;
+  align-items: start;
+}
+.te-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 20px;
+  font-size: 12px;
+}
+.te-template-list {
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  padding: 12px;
+  margin: 18px 0;
+  font-size: 11px;
+}
+.te-template-list label {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  padding: 6px 0;
+  overflow-wrap: anywhere;
+}
+.te-template-list input {
+  accent-color: var(--te-accent);
+}
+.te-deployment-summary dl {
+  font-size: 11px;
+  display: grid;
+  grid-template-columns: 80px 1fr;
+  gap: 14px;
+}
+.te-deployment-summary dt {
+  color: var(--muted);
+}
+.te-deployment-summary dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.te-hash {
+  font-family: monospace;
+  font-size: 10px;
+}
+.te-deployment-summary ol {
+  padding-left: 17px;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 2.3;
+}
+.te-history-layout {
+  display: grid;
+  grid-template-columns: 300px minmax(0, 1fr);
+  gap: 20px;
+  align-items: start;
+}
+.te-history-list {
+  padding: 16px 0;
+}
+.te-history-list > h2,
+.te-history-list > p {
+  padding: 0 16px;
+}
+.te-history-list h2 {
+  font-size: 14px;
+}
+.te-history-list h2 span {
+  color: var(--muted);
+  margin-left: 8px;
+}
+.te-history-item {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+  padding: 14px 16px;
+  border: 0;
+  border-top: 1px solid var(--border);
+  background: none;
+  color: var(--text);
+  text-align: left;
+}
+.te-history-item.is-active {
+  background: color-mix(in srgb, var(--te-accent) 8%, var(--surface));
+}
+.te-history-item > div {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+.te-history-item small {
+  color: var(--muted);
+  font-size: 9px;
+}
+.te-history-item strong {
+  font-size: 12px;
+  font-weight: 500;
+}
+.te-history-item > span {
+  color: var(--muted);
+  font-size: 10px;
+  overflow-wrap: anywhere;
+}
+.te-run {
+  margin-top: 20px;
+  min-width: 0;
+}
+.te-history-layout > #teRun > .te-run {
+  margin-top: 0;
+}
+.te-run-heading h2 {
+  font-size: 15px;
+  margin-bottom: 0;
+}
+.te-run-meta {
+  color: var(--muted);
+  font-size: 10px;
+  flex-wrap: wrap;
+  margin: 14px 0 18px;
+}
+.te-run-meta > span {
+  min-width: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+.te-evidence-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 18px;
+}
+.te-evidence-grid > * {
+  min-width: 0;
+}
+.te-evidence-grid h3 {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 0;
+}
+.te-evidence-grid h3 span {
+  font-size: 9px;
+  font-weight: 400;
+  color: var(--muted);
+}
+.test-environment pre {
+  font-family: var(--font-mono, monospace);
+  font-size: 11px;
+  line-height: 1.6;
+  padding: 12px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  overflow: auto;
+  max-height: 440px;
+  margin: 10px 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.te-event-list {
+  max-height: 460px;
+  overflow: auto;
+}
+.te-event {
+  border-left: 1px solid var(--border);
+  margin-left: 4px;
+  padding: 0 0 12px 13px;
+}
+.te-event summary {
+  list-style: none;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  position: relative;
+  cursor: pointer;
+  font-size: 10px;
+  line-height: 1.7;
+}
+.te-event summary > span:last-child {
+  overflow-wrap: anywhere;
+  min-width: 0;
+}
+.te-event time {
+  flex-shrink: 0;
+  color: var(--muted);
+  font-size: 9px;
+}
+.te-event-dot {
+  position: absolute;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--te-accent);
+  top: 5px;
+  left: -16px;
+}
+.te-event-error .te-event-dot {
+  background: #e47b78;
+}
+.te-event pre {
+  font-size: 10px;
+}
+.te-response > pre {
+  margin-top: 0;
+}
+.te-response details > summary,
+.te-properties summary {
+  cursor: pointer;
+  color: var(--muted);
+  font-size: 11px;
+}
+.te-routes {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+.te-routes button {
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 10px;
+  padding: 6px 8px;
+}
+.te-routes b {
+  color: var(--te-accent);
+  margin-right: 6px;
+}
+.te-workflow-heading {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  margin: 8px 0;
+  font-size: 12px;
+}
+.te-workflow-scroll {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg);
+  overflow: auto;
+  max-height: 390px;
+  margin-bottom: 16px;
+}
+.te-workflow-svg {
+  width: 100%;
+  min-width: 400px;
+  max-width: 750px;
+  display: block;
+}
+.te-state {
+  cursor: pointer;
+}
+.te-state rect {
+  fill: var(--surface);
+  stroke: var(--border);
+}
+.te-state circle {
+  fill: var(--muted);
+}
+.te-state text {
+  fill: var(--text);
+  font-family: var(--font-ui);
+  font-size: 11px;
+}
+.te-state .te-state-type {
+  fill: var(--muted);
+  font-size: 9px;
+}
+.te-state-running rect {
+  stroke: #dbac63;
+}
+.te-state-running circle {
+  fill: #dbac63;
+}
+.te-state-succeeded rect {
+  stroke: var(--te-accent);
+}
+.te-state-succeeded circle {
+  fill: var(--te-accent);
+}
+.te-state-failed rect {
+  stroke: #e47b78;
+}
+.te-state-failed circle {
+  fill: #e47b78;
+}
+.te-state-detail summary {
+  color: var(--te-accent);
+  cursor: pointer;
+  font-size: 11px;
+  margin-bottom: 12px;
+}
+.te-data-table {
+  overflow: auto;
+}
+.te-data-table table {
+  border-collapse: collapse;
+  font-size: 10px;
+  width: 100%;
+}
+.te-data-table th,
+.te-data-table td {
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+  padding: 8px;
+}
+.te-object-list button {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  color: var(--text);
+  border: 0;
+  border-bottom: 1px solid var(--border);
+  width: 100%;
+  text-align: left;
+  background: none;
+  padding: 8px 0;
+  font-size: 11px;
+  overflow-wrap: anywhere;
+}
+.te-object-list small {
+  color: var(--muted);
+  flex-shrink: 0;
+}
+@media (max-width: 1100px) {
+  .test-environment {
+    padding: 22px 20px 40px;
+  }
+  .te-evidence-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .te-resource-layout {
+    grid-template-columns: 205px minmax(0, 1fr);
+    gap: 14px;
+  }
+}
+@media (max-width: 740px) {
+  .test-environment {
+    padding: 18px 12px 75px;
+  }
+  .te-header {
+    align-items: start;
+    gap: 10px;
+    flex-direction: column;
+  }
+  .te-metrics {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+  }
+  .te-metric {
+    padding: 10px 12px;
+  }
+  .te-resource-layout,
+  .te-deployment-layout,
+  .te-history-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .te-explorer {
+    max-height: 240px;
+    overflow: auto;
+  }
+  .te-inspector,
+  .te-card,
+  .te-run {
+    padding: 14px;
+  }
+  .te-run-heading {
+    align-items: start;
+    flex-wrap: wrap;
+  }
+  .te-context {
+    gap: 8px;
+  }
+}

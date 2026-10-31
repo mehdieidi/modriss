@@ -1256,6 +1256,57 @@
       "category": "Step Functions / ASL View"
     },
     {
+      "type": "RdsDbCluster",
+      "label": "Aurora PostgreSQL cluster",
+      "displayName": "Relational database cluster",
+      "icon": "database",
+      "color": { "light": "#7c3aed", "dark": "#c4b5fd" },
+      "category": "Storage View"
+    },
+    {
+      "type": "RdsDbInstance",
+      "label": "Database writer instance",
+      "displayName": "Database writer instance",
+      "icon": "database",
+      "color": { "light": "#7c3aed", "dark": "#c4b5fd" },
+      "category": "Storage View"
+    },
+    {
+      "type": "RdsDbSubnetGroup",
+      "label": "Database subnet group",
+      "displayName": "Database subnet group",
+      "icon": "database",
+      "color": { "light": "#7c3aed", "dark": "#c4b5fd" },
+      "category": "Storage View"
+    },
+    {
+      "type": "RdsTable",
+      "creatable": false,
+      "label": "SQL table",
+      "displayName": "SQL table",
+      "icon": "database",
+      "color": { "light": "#7c3aed", "dark": "#c4b5fd" },
+      "category": "Storage View"
+    },
+    {
+      "type": "RdsIndex",
+      "creatable": false,
+      "label": "SQL index",
+      "displayName": "SQL index",
+      "icon": "database",
+      "color": { "light": "#7c3aed", "dark": "#c4b5fd" },
+      "category": "Storage View"
+    },
+    {
+      "type": "RdsColumn",
+      "creatable": false,
+      "label": "SQL column",
+      "displayName": "SQL column",
+      "icon": "database",
+      "color": { "light": "#7c3aed", "dark": "#c4b5fd" },
+      "category": "Storage View"
+    },
+    {
       "type": "DynamoDbTable",
       "label": "Dynamo Db Table",
       "displayName": "Dynamo Db Table",
@@ -5550,10 +5601,27 @@
       "id": "psm-data-persistence",
       "displayName": "Data and persistence",
       "viewType": "DATA_PERSISTENCE",
-      "palette": ["DynamoDbTable", "S3Bucket", "S3BucketPolicy"],
+      "palette": [
+        "RdsDbCluster",
+        "RdsDbInstance",
+        "RdsDbSubnetGroup",
+        "DynamoDbTable",
+        "S3Bucket",
+        "S3BucketPolicy"
+      ],
       "relationshipKinds": ["READS", "WRITES", "EVENT_FLOW", "ENCRYPTED_BY", "DEPENDS_ON"],
       "layoutHint": "TABLE",
-      "canvas": ["DynamoDbTable", "S3Bucket", "S3BucketPolicy"]
+      "canvas": [
+        "RdsDbCluster",
+        "RdsDbInstance",
+        "RdsDbSubnetGroup",
+        "RdsTable",
+        "RdsColumn",
+        "RdsIndex",
+        "DynamoDbTable",
+        "S3Bucket",
+        "S3BucketPolicy"
+      ]
     },
     {
       "id": "psm-security-access",

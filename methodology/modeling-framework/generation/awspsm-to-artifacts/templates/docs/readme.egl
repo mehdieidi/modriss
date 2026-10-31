@@ -25,6 +25,25 @@ then source `scripts/emulator-env.sh` before `make test` or local SAM commands. 
 - `docs` contains generated architecture, operations, deployment, security, and runbook documentation.
 - `generated` contains traceability and generation reports.
 
+[% if (AWSPSMSTORAGE!RdsDbCluster.all.notEmpty()) { %]
+## Relational storage
+
+`database/*.sql` describes the initial PostgreSQL schema; `database/manifest.json` is its deployment
+contract. Aurora clusters, Serverless v2 writers, and generated credential secrets are modeled in
+the templates. `scripts/deploy.sh` initializes the schema after stack deployment using Python/boto3.
+MODRISS Test deployment performs the same initialization and records its real Data API calls.
+An unchanged schema keeps existing data. Changed schemas stop for a reviewed migration; no tables
+are silently dropped or altered. SQL relationships/foreign keys require explicit design rather
+than being inferred from similarly named fields.
+
+Generated functions receive `<STORE_PREFIX>_RESOURCE_ARN`, `<STORE_PREFIX>_SECRET_ARN`, and
+`<STORE_PREFIX>_DATABASE`. `shared.NewRelationalStore(ctx, "<STORE_PREFIX>")` loads these values;
+its `Execute` method accepts SDK `SqlParameter` values and an optional transaction ID. Use
+`WithTransaction` for operations that must commit together. Business handlers still need their
+business logic. Credentials are generated outside source; review application database users/grants
+before production. The helper honors `AWS_ENDPOINT_URL` for local Floci evaluation.
+[% } %]
+
 [%=out.startPreserve("<!--", "-->", awsRoot.manualRegionId("readme-custom-project-notes"), true)%]
 Add project-specific onboarding notes here.
 [%=out.stopPreserve()%]

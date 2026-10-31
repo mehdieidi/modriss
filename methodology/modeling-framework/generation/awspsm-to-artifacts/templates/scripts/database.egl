@@ -1,0 +1,97 @@
+[% /* Initial schemas use real Data API transactions. This is not a Flyway platform migration. */ %]#!/usr/bin/env python3
+"""Apply generated initial schemas without resetting data or silently changing existing schemas."""
+import argparse
+import hashlib
+import json
+import os
+from pathlib import Path
+import time
+
+import boto3
+from botocore.exceptions import ClientError
+
+
+def initialize(resources, manifest_path="database/manifest.json", call=None):
+    manifest = json.loads(Path(manifest_path).read_text(encoding="utf-8"))
+    if manifest.get("version") != 1:
+        raise ValueError("Unsupported generated database manifest version")
+    clients = {}
+    if call is None:
+        def call(service, operation, **parameters):
+            if service not in clients:
+                clients[service] = boto3.client(service, endpoint_url=os.environ.get("AWS_ENDPOINT_URL"))
+            print(f"{service}.{operation}", flush=True)
+            return getattr(clients[service], operation)(**parameters)
+
+    def resource(logical_id, resource_type):
+        matches = [item for item in resources if item.get("LogicalResourceId") == logical_id
+                   and item.get("ResourceType") == resource_type]
+        if len(matches) != 1:
+            raise ValueError(f"Expected one deployed {resource_type} for {logical_id}; found {len(matches)}")
+        return matches[0]["PhysicalResourceId"]
+
+    for database in manifest.get("databases", []):
+        if not any(item.get("LogicalResourceId") == database["resource"]
+                   and item.get("ResourceType") == "AWS::RDS::DBCluster" for item in resources):
+            continue  # A partial-stack deployment need not include this database's owning stack.
+        identifier = resource(database["resource"], "AWS::RDS::DBCluster")
+        cluster = call("rds", "describe_db_clusters", DBClusterIdentifier=identifier)["DBClusters"][0]
+        common = {"resourceArn":cluster["DBClusterArn"],
+                  "secretArn":resource(database["secret"], "AWS::SecretsManager::Secret"),
+                  "database":database["database"]}
+        fingerprint = hashlib.sha256(json.dumps(database["statements"], ensure_ascii=False,
+                                                separators=(",", ":")).encode()).hexdigest()
+        for attempt in range(60):
+            try:
+                call("rds-data", "execute_statement", **common, sql="SELECT 1")
+                break
+            except ClientError as error:
+                if error.response["Error"]["Code"] not in ("DatabaseUnavailableException", "DatabaseResumingException",
+                                                           "ServiceUnavailableError", "InternalServerErrorException") or attempt == 59:
+                    raise
+                time.sleep(2)
+        call("rds-data", "execute_statement", **common,
+             sql='CREATE TABLE IF NOT EXISTS "_modriss_initial_schema" (schema_key text PRIMARY KEY, fingerprint text NOT NULL)')
+        key = {"name":"key", "value":{"stringValue":database["resource"]}}
+        existing = call("rds-data", "execute_statement", **common,
+                        sql='SELECT fingerprint FROM "_modriss_initial_schema" WHERE schema_key = :key', parameters=[key])
+        if existing.get("records"):
+            if existing["records"][0][0].get("stringValue") != fingerprint:
+                raise RuntimeError(f"Schema changed for {database['resource']}. Apply a reviewed database migration and update "
+                                   "the schema fingerprint after verification. Existing data has been preserved.")
+            print(f"Schema unchanged: {database['resource']}", flush=True)
+            continue
+        transaction = call("rds-data", "begin_transaction", **common)["transactionId"]
+        committed = False
+        try:
+            for statement in database["statements"]:
+                call("rds-data", "execute_statement", **common, transactionId=transaction, sql=statement)
+            call("rds-data", "execute_statement", **common, transactionId=transaction,
+                 sql='INSERT INTO "_modriss_initial_schema" (schema_key, fingerprint) VALUES (:key, :fingerprint)',
+                 parameters=[key, {"name":"fingerprint", "value":{"stringValue":fingerprint}}])
+            call("rds-data", "commit_transaction", resourceArn=common["resourceArn"],
+                 secretArn=common["secretArn"], transactionId=transaction)
+            committed = True
+            print(f"Schema initialized: {database['resource']}", flush=True)
+        finally:
+            if not committed:
+                call("rds-data", "rollback_transaction", resourceArn=common["resourceArn"],
+                     secretArn=common["secretArn"], transactionId=transaction)
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--stack", action="append", default=[])
+    parser.add_argument("--resources-file")
+    args = parser.parse_args()
+    if args.resources_file:
+        deployed = json.loads(Path(args.resources_file).read_text(encoding="utf-8"))
+    else:
+        if not args.stack:
+            parser.error("Provide --stack for every deployed stack, or --resources-file")
+        cloudformation = boto3.client("cloudformation", endpoint_url=os.environ.get("AWS_ENDPOINT_URL"))
+        deployed = []
+        for stack in args.stack:
+            for page in cloudformation.get_paginator("list_stack_resources").paginate(StackName=stack):
+                deployed.extend(page["StackResourceSummaries"])
+    initialize(deployed)

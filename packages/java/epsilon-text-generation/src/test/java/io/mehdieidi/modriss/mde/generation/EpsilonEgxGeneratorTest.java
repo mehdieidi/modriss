@@ -302,8 +302,442 @@ final class EpsilonEgxGeneratorTest {
     assertGeneratedJsonArtifactsParse(outputDirectory);
     assertGeneratedYamlArtifactsParseAndHaveExpectedShape(outputDirectory);
     assertBroadSamTemplateCoversResourceSurface(outputDirectory);
+    var resources =
+        YAML.readTree(outputDirectory.resolve("template.yaml").toFile()).path("Resources");
+    assertEquals(
+        "ACTIVE",
+        resources.path("BroadUserPool").path("Properties").path("DeletionProtection").asText());
+    var jwt = resources.path("BroadJwtAuthorizer").path("Properties");
+    assertTrue(jwt.has("ApiId"));
+    assertEquals("JWT", jwt.path("AuthorizerType").asText());
+    assertTrue(jwt.path("IdentitySource").isArray());
+    assertEquals(
+        "https://issuer.example.com", jwt.path("JwtConfiguration").path("Issuer").asText());
+    assertFalse(jwt.has("Tags"));
+    assertFalse(jwt.has("AuthorizerResultTtlInSeconds"));
+    var cognito = resources.path("BroadCognitoAuthorizer").path("Properties");
+    assertTrue(cognito.has("RestApiId"));
+    assertEquals("COGNITO_USER_POOLS", cognito.path("Type").asText());
+    assertEquals("method.request.header.Authorization", cognito.path("IdentitySource").asText());
+    assertTrue(cognito.path("ProviderARNs").isArray());
+    var lambdaAuth = resources.path("BroadLambdaAuthorizer").path("Properties");
+    assertEquals("TOKEN", lambdaAuth.path("Type").asText());
+    assertTrue(lambdaAuth.has("RestApiId"));
+    assertTrue(lambdaAuth.path("AuthorizerUri").toString().contains("invocations"));
+    assertFalse(lambdaAuth.has("AuthorizerPayloadFormatVersion"));
+    assertFalse(lambdaAuth.has("EnableSimpleResponses"));
     assertBroadAslCoversStateSurface(outputDirectory);
     assertBroadStructuredDocumentsCoverFormats(outputDirectory);
+  }
+
+  @Test
+  void bindsImportedJwtAndRestLambdaAuthorizersWithoutDuplicateResources() throws Exception {
+    Path source = tempDir.resolve("bound-authorizers.xmi");
+    createBroadAwsPsmRenderingModel(source);
+    Resource resource = assertSourceModelReloads(source);
+    Map<String, EObject> named = new HashMap<>();
+    resource
+        .getAllContents()
+        .forEachRemaining(
+            object -> {
+              var feature = object.eClass().getEStructuralFeature("logicalId");
+              if (feature != null) named.put(String.valueOf(object.eGet(feature)), object);
+            });
+    EObject httpRoute = named.get("BroadHttpRoute");
+    set(httpRoute, "authorizer", named.get("BroadJwtAuthorizer"));
+    var metamodel =
+        resource.getResourceSet().getResources().stream()
+            .filter(candidate -> candidate.getURI().toString().endsWith("psm-combined.ecore"))
+            .findFirst()
+            .orElseThrow();
+    set(httpRoute, "authorizationType", enumValue(metamodel, "ApiGatewayAuthorizationType", "JWT"));
+    add(httpRoute, "authorizationScopes", "orders:read");
+    EObject restRoute =
+        awsResource(
+            metamodel, "RestApiRoute", "bound_rest_route", "Bound REST Route", "BoundRestRoute");
+    set(restRoute, "path", "/secured/{id}");
+    set(restRoute, "method", enumValue(metamodel, "ApiGatewayHttpMethod", "GET"));
+    set(
+        restRoute,
+        "authorizationType",
+        enumValue(metamodel, "ApiGatewayAuthorizationType", "CUSTOM_LAMBDA"));
+    set(restRoute, "authorizer", named.get("BroadLambdaAuthorizer"));
+    EObject query = create(metamodel, "ApiGatewayRequestModel");
+    set(query, "id", "secured_query");
+    set(query, "modelName", "SecuredQuery");
+    set(query, "contentType", "application/json");
+    set(
+        query,
+        "schemaJson",
+        "{\"type\":\"object\",\"properties\":{\"id\":{\"type\":\"string\"},\"search\":{\"type\":\"string\"},\"limit\":{\"type\":\"integer\"}},\"required\":[\"search\"]}");
+    add(restRoute, "requestModels", query);
+    set(
+        restRoute,
+        "integration",
+        httpRoute.eGet(httpRoute.eClass().getEStructuralFeature("integration")));
+    add(named.get("BroadRestApi"), "routes", restRoute);
+    resource.save(null);
+    Path output = tempDir.resolve("bound-authorizers");
+    generateOrFail(AwsPsmToArtifactsDefaults.request(REPOSITORY_ROOT, source, output, true, true));
+    var resources = YAML.readTree(output.resolve("template.yaml").toFile()).path("Resources");
+    assertFalse(resources.has("BroadJwtAuthorizer"));
+    assertFalse(resources.has("BroadLambdaAuthorizer"));
+    assertFalse(
+        resources.has("BoundRestRoute"), "OpenAPI owns actual REST path resources and methods");
+    assertTrue(resources.has("BroadLambdaAuthorizerInvokePermission"));
+    var http = resources.path("BroadHttpApi").path("Properties").path("DefinitionBody");
+    assertEquals(
+        "jwt",
+        http.path("components")
+            .path("securitySchemes")
+            .path("BroadJwtAuthorizer")
+            .path("x-amazon-apigateway-authorizer")
+            .path("type")
+            .asText());
+    var rest = resources.path("BroadRestApi").path("Properties").path("DefinitionBody");
+    var get = rest.path("paths").path("/secured/{id}").path("get");
+    assertFalse(get.has("requestBody"), "GET must not require a request body");
+    assertEquals(3, get.path("parameters").size());
+    assertEquals("path", get.path("parameters").get(0).path("in").asText());
+    assertTrue(get.path("parameters").get(0).path("required").asBoolean());
+    assertEquals("query", get.path("parameters").get(1).path("in").asText());
+    assertTrue(get.path("parameters").get(1).path("required").asBoolean());
+    assertFalse(get.path("parameters").get(2).path("required").asBoolean());
+    assertEquals(
+        "orders:read",
+        http.path("paths")
+            .path("/broad")
+            .path("post")
+            .path("security")
+            .get(0)
+            .path("BroadJwtAuthorizer")
+            .get(0)
+            .asText());
+    var authorizer =
+        rest.path("components")
+            .path("securitySchemes")
+            .path("BroadLambdaAuthorizer")
+            .path("x-amazon-apigateway-authorizer");
+    assertEquals("token", authorizer.path("type").asText());
+    assertEquals("method.request.header.Authorization", authorizer.path("identitySource").asText());
+    assertTrue(authorizer.path("authorizerUri").toString().contains("invocations"));
+  }
+
+  @Test
+  void generatesRelationalResourcesSchemasAndCrossStackConfiguration() throws Exception {
+    Path source = tempDir.resolve("relational.xmi");
+    createRepresentativeAwsPsmModel(source);
+    Resource model = assertSourceModelReloads(source);
+    Resource metamodel =
+        model.getResourceSet().getResources().stream()
+            .filter(candidate -> candidate.getURI().toString().endsWith("psm-combined.ecore"))
+            .findFirst()
+            .orElseThrow();
+    EObject root = model.getContents().get(0);
+    EObject data = create(metamodel, "SamStack");
+    set(data, "id", "relational_stack");
+    set(data, "name", "Relational infrastructure");
+    set(data, "stackName", "zzz-database");
+    set(data, "templatePath", "database.yaml");
+    add(root, "stacks", data);
+    EObject secret =
+        awsResource(
+            metamodel,
+            "SecretsManagerSecret",
+            "db_credentials",
+            "Database credentials",
+            "DatabaseCredentials");
+    set(secret, "secretName", "evaluation-database-credentials");
+    EObject generate = create(metamodel, "GenerateSecretStringConfig");
+    set(generate, "id", "db_secret_generation");
+    set(generate, "name", "Database password generation");
+    set(generate, "secretStringTemplate", "{\"username\":\"modriss\"}");
+    set(generate, "generateStringKey", "password");
+    set(generate, "passwordLength", 32);
+    set(generate, "excludePunctuation", true);
+    set(generate, "requireEachIncludedType", true);
+    set(secret, "generateSecretString", generate);
+    add(data, "resources", secret);
+    EObject cluster =
+        awsResource(
+            metamodel, "RdsDbCluster", "db_cluster", "Evaluation database", "EvaluationDatabase");
+    set(cluster, "clusterIdentifier", "modriss-relational-evaluation");
+    set(cluster, "engine", "aurora-postgresql");
+    set(cluster, "databaseName", "evaluation");
+    set(cluster, "masterUsername", "modriss");
+    set(cluster, "credentialsSecret", secret);
+    set(cluster, "enableHttpEndpoint", true);
+    set(cluster, "storageEncrypted", true);
+    set(cluster, "backupRetentionPeriod", 7);
+    set(cluster, "minCapacity", 1);
+    set(cluster, "maxCapacity", 2);
+    add(data, "resources", cluster);
+    EObject table = create(metamodel, "RdsTable");
+    set(table, "id", "sql_orders");
+    set(table, "name", "Orders");
+    set(table, "tableName", "orders");
+    for (String[] spec :
+        List.of(
+            new String[] {"id", "text"},
+            new String[] {"amount", "numeric"},
+            new String[] {"details", "jsonb"})) {
+      EObject column = create(metamodel, "RdsColumn");
+      set(column, "id", "sql_" + spec[0]);
+      set(column, "name", spec[0]);
+      set(column, "columnName", spec[0]);
+      set(column, "sqlType", spec[1]);
+      set(column, "primaryKey", "id".equals(spec[0]));
+      set(column, "nullable", "details".equals(spec[0]));
+      add(table, "columns", column);
+    }
+    add(cluster, "tables", table);
+    EObject index = create(metamodel, "RdsIndex");
+    set(index, "id", "sql_amount_index");
+    set(index, "name", "Amount index");
+    set(index, "indexName", "orders_amount_unique");
+    set(index, "unique", true);
+    add(index, "columnNames", "amount");
+    add(table, "indexes", index);
+    EObject writer =
+        awsResource(metamodel, "RdsDbInstance", "db_writer", "Database writer", "DatabaseWriter");
+    set(writer, "instanceIdentifier", "modriss-relational-evaluation-writer");
+    set(writer, "instanceClass", "db.serverless");
+    set(writer, "cluster", cluster);
+    add(data, "resources", writer);
+    List<EObject> objects = new ArrayList<>();
+    model.getAllContents().forEachRemaining(objects::add);
+    objects.stream()
+        .filter(object -> "AwsStage".equals(object.eClass().getName()))
+        .forEach(stage -> add(stage, "deploysStacks", data));
+    EObject function =
+        objects.stream()
+            .filter(object -> "AwsLambdaFunction".equals(object.eClass().getName()))
+            .findFirst()
+            .orElseThrow();
+    for (String[] spec :
+        List.of(
+            new String[] {"SQL_RESOURCE_ARN", "CLOUDFORMATION_GETATT"},
+            new String[] {"SQL_SECRET_ARN", "CLOUDFORMATION_REF"})) {
+      EObject environment = create(metamodel, "LambdaEnvironmentVariable");
+      set(environment, "id", spec[0]);
+      set(environment, "name", spec[0]);
+      set(environment, "variableName", spec[0]);
+      EObject value = create(metamodel, "ValueExpression");
+      set(value, "id", spec[0] + "_value");
+      set(value, "name", spec[0]);
+      set(value, "sourceKind", enumValue(metamodel, "ValueSourceKind", spec[1]));
+      set(value, "resource", spec[0].equals("SQL_RESOURCE_ARN") ? cluster : secret);
+      if (spec[0].equals("SQL_RESOURCE_ARN")) set(value, "attributeName", "DBClusterArn");
+      set(environment, "value", value);
+      add(function, "environment", environment);
+    }
+    model.save(null);
+    Path output = tempDir.resolve("relational-generated");
+    generateOrFail(AwsPsmToArtifactsDefaults.request(REPOSITORY_ROOT, source, output, true, true));
+    var resources = YAML.readTree(output.resolve("database.yaml").toFile()).path("Resources");
+    assertEquals("AWS::RDS::DBCluster", resources.path("EvaluationDatabase").path("Type").asText());
+    assertEquals(
+        "aurora-postgresql",
+        resources.path("EvaluationDatabase").path("Properties").path("Engine").asText());
+    assertTrue(
+        resources
+            .path("DatabaseCredentials")
+            .path("Properties")
+            .path("GenerateSecretString")
+            .path("SecretStringTemplate")
+            .isTextual());
+    String consumer = Files.readString(output.resolve("template.yaml"));
+    assertTrue(
+        consumer.contains("!ImportValue 'modriss-EvaluationDatabase-DBClusterArn'"), consumer);
+    assertTrue(consumer.contains("!ImportValue 'modriss-DatabaseCredentials-Ref'"), consumer);
+    String owner = Files.readString(output.resolve("database.yaml"));
+    assertTrue(owner.contains("EvaluationDatabaseSharedDBClusterArn:"));
+    String schema = Files.readString(output.resolve("database/EvaluationDatabase.sql"));
+    assertTrue(schema.contains("\"amount\" numeric NOT NULL"), schema);
+    assertTrue(schema.contains("PRIMARY KEY (\"id\")"), schema);
+    assertTrue(schema.contains("CREATE UNIQUE INDEX \"orders_amount_unique\""), schema);
+    var manifest = JSON.readTree(output.resolve("database/manifest.json").toFile());
+    assertEquals(
+        "orders", manifest.path("databases").get(0).path("tables").get(0).path("name").asText());
+    assertTrue(
+        Files.readString(output.resolve("scripts/database.py")).contains("rollback_transaction"));
+    assertTrue(
+        Files.readString(output.resolve("src/shared/relational.go")).contains("WithTransaction"));
+    String deployment = Files.readString(output.resolve("scripts/deploy.sh"));
+    assertTrue(
+        deployment.indexOf("--stack-name \"modriss-zzz-database")
+            < deployment.indexOf("--stack-name \"modriss-modriss-main"),
+        deployment);
+    assertTrue(deployment.contains("python3 scripts/database.py"));
+    String trace = Files.readString(output.resolve("generated/trace/artifact-trace.json"));
+    for (String rule :
+        List.of(
+            "DatabaseManifest", "DatabaseSchema", "DatabaseInitialize", "RelationalDataAccess")) {
+      assertTrue(
+          trace.contains(
+              egxArtifactRules().stream()
+                  .filter(candidate -> candidate.name().equals(rule))
+                  .findFirst()
+                  .orElseThrow()
+                  .ruleId()));
+    }
+  }
+
+  @Test
+  void exportsSharedCognitoPoolAndDeploysItsOwnerBeforeTheApi() throws Exception {
+    Path source = tempDir.resolve("shared-cognito.xmi");
+    createBroadAwsPsmRenderingModel(source);
+    Resource resource = assertSourceModelReloads(source);
+    Map<String, EObject> named = new HashMap<>();
+    resource
+        .getAllContents()
+        .forEachRemaining(
+            object -> {
+              var feature = object.eClass().getEStructuralFeature("logicalId");
+              if (feature != null) named.put(String.valueOf(object.eGet(feature)), object);
+            });
+    var metamodel =
+        resource.getResourceSet().getResources().stream()
+            .filter(candidate -> candidate.getURI().toString().endsWith("psm-combined.ecore"))
+            .findFirst()
+            .orElseThrow();
+    EObject identity = create(metamodel, "SamStack");
+    set(identity, "id", "shared_identity_stack");
+    set(identity, "name", "Shared Identity");
+    set(identity, "stackName", "zzz-identity");
+    set(identity, "templatePath", "identity.yaml");
+    EObject pool = named.get("BroadUserPool");
+    add(identity, "resources", pool);
+    add(resource.getContents().get(0), "stacks", identity);
+    EObject route =
+        awsResource(metamodel, "RestApiRoute", "cognito_route", "Cognito route", "CognitoRoute");
+    set(route, "path", "/cognito");
+    set(route, "method", enumValue(metamodel, "ApiGatewayHttpMethod", "GET"));
+    set(
+        route,
+        "authorizationType",
+        enumValue(metamodel, "ApiGatewayAuthorizationType", "COGNITO_USER_POOLS"));
+    set(route, "authorizer", named.get("BroadCognitoAuthorizer"));
+    add(named.get("BroadRestApi"), "routes", route);
+    resource.save(null);
+    Path output = tempDir.resolve("shared-cognito");
+    generateOrFail(AwsPsmToArtifactsDefaults.request(REPOSITORY_ROOT, source, output, true, true));
+    String api = Files.readString(output.resolve("template.yaml"));
+    String owner = Files.readString(output.resolve("identity.yaml"));
+    assertTrue(api.contains("!ImportValue 'modriss-BroadUserPool-Arn'"), api);
+    assertTrue(owner.contains("BroadUserPoolSharedArn:"));
+    assertTrue(owner.contains("modriss-BroadUserPool-Arn"));
+    String deploy = Files.readString(output.resolve("scripts/deploy.sh"));
+    assertTrue(
+        deploy.indexOf("--stack-name \"zzz-identity")
+            < deploy.indexOf("--stack-name \"modriss-broad"),
+        deploy);
+  }
+
+  @Test
+  void incompleteRotationScheduleRemainsModeledWithoutEmittingAnUnusableResource()
+      throws Exception {
+    Path source = tempDir.resolve("rotation-refinement.xmi");
+    createBroadAwsPsmRenderingModel(source);
+    Resource model = assertSourceModelReloads(source);
+    List<EObject> objects = new ArrayList<>();
+    model.getAllContents().forEachRemaining(objects::add);
+    EObject rotation =
+        objects.stream()
+            .filter(object -> "SecretRotationSchedule".equals(object.eClass().getName()))
+            .findFirst()
+            .orElseThrow();
+    set(rotation, "rotationLambda", null);
+    model.save(null);
+    Path output = tempDir.resolve("rotation-refinement");
+    generateOrFail(AwsPsmToArtifactsDefaults.request(REPOSITORY_ROOT, source, output, true, true));
+    assertFalse(
+        Files.readString(output.resolve("template.yaml"))
+            .contains("AWS::SecretsManager::RotationSchedule"));
+    assertTrue(objects.contains(rotation), "The PSM decision stays available for refinement");
+  }
+
+  @Test
+  void unresolvedWorkflowDraftStopsWithAnExplicitFailureWithoutOrphanedBranches() throws Exception {
+    Path source = tempDir.resolve("unresolved-workflow.xmi");
+    createBroadAwsPsmRenderingModel(source);
+    Resource resource = assertSourceModelReloads(source);
+    List<EObject> objects = new ArrayList<>();
+    resource.getAllContents().forEachRemaining(objects::add);
+    EObject document =
+        objects.stream()
+            .filter(object -> object.eClass().getName().equals("AslDocument"))
+            .findFirst()
+            .orElseThrow();
+    var metamodel =
+        resource.getResourceSet().getResources().stream()
+            .filter(candidate -> candidate.getURI().toString().endsWith("psm-combined.ecore"))
+            .findFirst()
+            .orElseThrow();
+    ((List<?>) document.eGet(document.eClass().getEStructuralFeature("states"))).clear();
+    EObject start = create(metamodel, "AslPassState");
+    set(start, "id", "review_start");
+    set(start, "stateName", "Start Review");
+    EObject fail = create(metamodel, "AslFailState");
+    set(fail, "id", "review_fail");
+    set(fail, "stateName", "Unresolved Decision");
+    set(fail, "summary", "MODRISS_REVIEW_REQUIRED: Define decision outcomes.");
+    set(start, "nextState", fail);
+    EObject orphan = create(metamodel, "AslSucceedState");
+    set(orphan, "id", "review_orphan");
+    set(orphan, "stateName", "Unreachable Draft Branch");
+    add(document, "states", start);
+    add(document, "states", fail);
+    add(document, "states", orphan);
+    set(document, "startAt", "Start Review");
+    resource.save(null);
+    Path output = tempDir.resolve("unresolved-workflow");
+    generateOrFail(AwsPsmToArtifactsDefaults.request(REPOSITORY_ROOT, source, output, true, true));
+    try (var paths = Files.walk(output.resolve("asl"))) {
+      var file =
+          paths.filter(path -> path.toString().endsWith(".asl.json")).findFirst().orElseThrow();
+      var asl = JSON.readTree(file.toFile());
+      assertEquals(2, asl.path("States").size());
+      assertFalse(asl.path("States").has("Unreachable Draft Branch"));
+      assertEquals(
+          "Modriss.WorkflowRequiresRefinement",
+          asl.path("States").path("Unresolved Decision").path("Error").asText());
+      assertTrue(asl.path("Comment").asText().contains("unreachable draft branches omitted"));
+    }
+  }
+
+  @Test
+  void refusesNativeJwtAuthorizerOnRestApiWithActionableDiagnostic() throws Exception {
+    Path source = tempDir.resolve("invalid-rest-jwt.xmi");
+    createBroadAwsPsmRenderingModel(source);
+    Resource resource = assertSourceModelReloads(source);
+    Map<String, EObject> named = new HashMap<>();
+    resource
+        .getAllContents()
+        .forEachRemaining(
+            object -> {
+              var feature = object.eClass().getEStructuralFeature("logicalId");
+              if (feature != null) named.put(String.valueOf(object.eGet(feature)), object);
+            });
+    add(named.get("BroadRestApi"), "authorizers", named.get("BroadJwtAuthorizer"));
+    resource.save(null);
+    var failure =
+        assertThrows(
+            EgxGenerationException.class,
+            () ->
+                new EpsilonEgxGenerator()
+                    .generate(
+                        AwsPsmToArtifactsDefaults.request(
+                            REPOSITORY_ROOT,
+                            source,
+                            tempDir.resolve("invalid-output"),
+                            true,
+                            true)));
+    var report = failure.getReport();
+    assertNotEquals(GenerationStatus.SUCCEEDED, report.status());
+    assertTrue(
+        report.diagnostics().toString().contains("native JWT requires an HTTP API"),
+        report.diagnostics().toString());
   }
 
   /**
@@ -727,6 +1161,10 @@ final class EpsilonEgxGeneratorTest {
         Files.readString(outputDirectory.resolve("generated/trace/artifact-trace.json"));
 
     for (EgxRule rule : egxArtifactRules()) {
+      // Conditional SQL artifacts are exercised by the separate relational fixture.
+      if (List.of(
+              "DatabaseManifest", "DatabaseSchema", "DatabaseInitialize", "RelationalDataAccess")
+          .contains(rule.name())) continue;
       assertTrue(
           artifactTrace.contains("\"generatedBy\": \"" + rule.ruleId() + "\""),
           () -> "Representative fixture did not execute " + rule.name());
@@ -3027,7 +3465,7 @@ final class EpsilonEgxGeneratorTest {
    *
    * @param sourceModel source model file
    */
-  private void assertSourceModelReloads(Path sourceModel) {
+  private Resource assertSourceModelReloads(Path sourceModel) {
     ResourceSet resourceSet = new ResourceSetImpl();
     resourceSet
         .getResourceFactoryRegistry()
@@ -3048,6 +3486,7 @@ final class EpsilonEgxGeneratorTest {
     registerPackages(metamodelResource);
     Resource resource = resourceSet.getResource(URI.createFileURI(sourceModel.toString()), true);
     assertTrue(resource.getErrors().isEmpty(), () -> resource.getErrors().toString());
+    return resource;
   }
 
   /**
@@ -4990,7 +5429,6 @@ final class EpsilonEgxGeneratorTest {
     set(webSocketApi, "routeSelectionExpression", "$request.body.action");
     add(webSocketApi, "routes", wsRoute);
     add(webSocketApi, "stages", wsStage);
-    add(webSocketApi, "authorizers", jwtAuthorizer);
 
     EObject httpIntegration = create(metamodelResource, "ApiGatewayIntegration");
     set(httpIntegration, "id", "integration_broad_http");
@@ -5023,6 +5461,7 @@ final class EpsilonEgxGeneratorTest {
         awsResource(
             metamodelResource, "HttpApi", "api_broad_http", "Broad HTTP API", "BroadHttpApi");
     set(httpApi, "apiName", "Broad HTTP API");
+    add(httpApi, "authorizers", jwtAuthorizer);
     set(httpApi, "openApiVersion", "3.0.3");
     set(httpApi, "protocolType", "HTTP");
     add(httpApi, "routes", httpRoute);
@@ -5044,6 +5483,38 @@ final class EpsilonEgxGeneratorTest {
         "endpointType",
         enumValue(metamodelResource, "ApiGatewayEndpointType", "REGIONAL"));
     add(restApi, "stages", restStage);
+
+    EObject cognitoAuthorizer =
+        awsResource(
+            metamodelResource,
+            "CognitoAuthorizer",
+            "broad_cognito_authorizer",
+            "Broad Cognito Authorizer",
+            "BroadCognitoAuthorizer");
+    set(cognitoAuthorizer, "authorizerName", "broad-cognito");
+    set(cognitoAuthorizer, "identitySource", "$request.header.Authorization");
+    set(
+        cognitoAuthorizer,
+        "authorizationType",
+        enumValue(metamodelResource, "ApiGatewayAuthorizationType", "COGNITO_USER_POOLS"));
+    set(cognitoAuthorizer, "userPool", userPool);
+    add(restApi, "authorizers", cognitoAuthorizer);
+    EObject lambdaAuthorizer =
+        awsResource(
+            metamodelResource,
+            "LambdaAuthorizer",
+            "broad_lambda_authorizer",
+            "Broad Lambda Authorizer",
+            "BroadLambdaAuthorizer");
+    set(lambdaAuthorizer, "authorizerName", "broad-lambda");
+    set(lambdaAuthorizer, "identitySource", "$request.header.Authorization");
+    set(
+        lambdaAuthorizer,
+        "authorizationType",
+        enumValue(metamodelResource, "ApiGatewayAuthorizationType", "CUSTOM_LAMBDA"));
+    set(lambdaAuthorizer, "function", lambdaFunction);
+    set(lambdaAuthorizer, "authorizerResultTtlInSeconds", 0);
+    add(restApi, "authorizers", lambdaAuthorizer);
 
     EObject deployment =
         awsResource(

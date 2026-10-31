@@ -46,12 +46,139 @@ rule DataStore2DynamoDbTable
   createTrace(ds, t, "DataStore2DynamoDbTable", "MEDIUM", KERNEL!TraceLinkType#REALIZES);
 }
 
-/** Transforms Data S elements into re2 Native Unsupported Store elements. */
+/** Retains SQL/transaction semantics instead of silently changing RELATIONAL to NoSQL. */
+rule DataStore2RdsDbCluster
+  transform ds : DATA!DataStore
+  to cluster : AWSPSMSTORAGE!RdsDbCluster {
+
+  guard : ds.storeKind = PIMTYPES!StoreKind#RELATIONAL
+
+  copyAwsResource(ds, cluster, "Database", "AWS::RDS::DBCluster");
+  cluster.id = idFor("rds_cluster", ds);
+  var namePart = kebab(ds.name);
+  cluster.clusterIdentifier = "db-" + namePart.substring(0, namePart.length().min(35)).replaceAll("-+$", "") + "-" + cluster.id.substring(0, 12);
+  cluster.physicalName = cluster.clusterIdentifier;
+  cluster.engine = "aurora-postgresql";
+  cluster.databaseName = "app" + ds.id.replaceAll("[^a-zA-Z0-9]", "").substring(0, ds.id.replaceAll("[^a-zA-Z0-9]", "").length().min(24)).toLowerCase();
+  cluster.masterUsername = "modriss";
+  cluster.enableHttpEndpoint = true;
+  cluster.storageEncrypted = true;
+  cluster.deletionProtection = isProductionRoot();
+  cluster.backupRetentionPeriod = 7;
+  cluster.minCapacity = 1;
+  cluster.maxCapacity = 2;
+
+  var secret = new AWSPSMSECURITY!SecretsManagerSecret;
+  copyAwsResource(ds, secret, "DatabaseCredentials", "AWS::SecretsManager::Secret");
+  secret.id = generatedId("rds_credentials", ds, "master");
+  secret.secretName = secret.physicalName;
+  secret.descriptionText = "Generated credentials for " + ds.name + "; never stored in source or Lambda environment.";
+  var generated = new AWSPSMSECURITY!GenerateSecretStringConfig;
+  generated.id = generatedId("rds_secret_config", ds, "password");
+  generated.name = ds.name + " credential generation";
+  generated.secretStringTemplate = "{\"username\":\"modriss\"}";
+  generated.generateStringKey = "password";
+  generated.passwordLength = 32;
+  generated.excludePunctuation = true;
+  generated.requireEachIncludedType = true;
+  secret.generateSecretString = generated;
+  cluster.credentialsSecret = secret;
+  cluster.dependsOn.add(secret);
+
+  var writer = new AWSPSMSTORAGE!RdsDbInstance;
+  copyAwsResource(ds, writer, "DatabaseWriter", "AWS::RDS::DBInstance");
+  writer.id = generatedId("rds_instance", ds, "writer");
+  writer.instanceIdentifier = cluster.clusterIdentifier + "-writer";
+  writer.physicalName = writer.instanceIdentifier;
+  writer.instanceClass = "db.serverless";
+  writer.publiclyAccessible = false;
+  writer.promotionTier = 0;
+  writer.cluster = cluster;
+  writer.dependsOn.add(cluster);
+
+  for (dm in ds.ownedDataModels.select(dataModel | dataModel.storageFields.notEmpty())) {
+    var table = new AWSPSMSTORAGE!RdsTable;
+    table.id = generatedId("rds_table", dm, "table");
+    table.name = dm.name;
+    var tablePart = kebab(dm.name).replaceAll("-", "_");
+    table.tableName = "t_" + tablePart.substring(0, tablePart.length().min(44)) + "_" + table.id.substring(0, 8);
+    for (field in dm.storageFields) {
+      var column = new AWSPSMSTORAGE!RdsColumn;
+      column.id = generatedId("rds_column", field, "column");
+      column.name = field.name;
+      column.columnName = firstText(field.storageName, field.name);
+      column.sqlType = relationalSqlType(field.fieldType);
+      column.primaryKey = isTrue(field.identifier);
+      column.nullable = not isTrue(field.required) and not column.primaryKey;
+      table.columns.add(column);
+      createTrace(field, column, "DataStore2RdsDbCluster", "HIGH", KERNEL!TraceLinkType#REALIZES);
+    }
+    cluster.tables.add(table);
+    createTrace(dm, table, "DataStore2RdsDbCluster", "HIGH", KERNEL!TraceLinkType#REALIZES);
+    if (table.columns.none(column | column.primaryKey)) {
+      manualDecision("RELATIONAL_PRIMARY_KEY_REQUIRED", "Choose a primary key for " + dm.name + ".",
+        KERNEL!Severity#ERROR, true, Sequence{ds, dm, table}, "Mark the identifying PIM DataField(s) or configure RdsColumn.primaryKey in the PSM.");
+    }
+  }
+  for (candidate in ds.indexCandidates) {
+    var keys = Sequence{};
+    if (hasText(candidate.partitionKeyField)) keys.add(candidate.partitionKeyField);
+    if (hasText(candidate.sortKeyField)) keys.add(candidate.sortKeyField);
+    var mapped = false;
+    for (table in cluster.tables.select(table | keys.notEmpty() and keys.forAll(key | table.columns.exists(column | column.name = key or column.columnName = key)))) {
+      var names = keys.collect(key | table.columns.selectOne(column | column.name = key or column.columnName = key).columnName);
+      var primary = table.columns.select(column | column.primaryKey).collect(column | column.columnName);
+      if (names <> primary) {
+        var index = new AWSPSMSTORAGE!RdsIndex;
+        index.id = generatedId("rds_index", candidate, table.id);
+        index.name = candidate.name;
+        index.indexName = "idx_" + index.id.replaceAll("-", "");
+        index.`unique` = isTrue(candidate.`unique`);
+        index.columnNames.addAll(names);
+        table.indexes.add(index);
+        createTrace(candidate, index, "DataStore2RdsDbCluster", "HIGH", KERNEL!TraceLinkType#REALIZES);
+      }
+      mapped = true;
+    }
+    if (not mapped) manualDecision("RELATIONAL_INDEX_FIELDS_REQUIRED", "Resolve relational index " + candidate.name + ".",
+      KERNEL!Severity#ERROR, true, Sequence{ds, candidate, cluster}, "Choose index fields that exist together in one SQL table.");
+  }
+  if (cluster.tables.isEmpty()) {
+    manualDecision("RELATIONAL_DATA_MODEL_REQUIRED", "Define the relational schema for " + ds.name + ".",
+      KERNEL!Severity#ERROR, true, Sequence{ds, cluster}, "Add DataStore.ownedDataModels/storageFields, or model RdsTable/RdsColumn in the AWS PSM.");
+  }
+  if (isTrue(ds.changeStreamRequired)) {
+    manualDecision("RELATIONAL_CHANGE_STREAM_IMPLEMENTATION_REQUIRED", "Implement change-event publication for " + ds.name + ".",
+      KERNEL!Severity#ERROR, true, Sequence{ds, cluster}, "Use a transactional outbox and publisher or a reviewed CDC integration. Aurora does not provide a DynamoDB stream.");
+  }
+  applyDataProtectionPolicies(ds, cluster);
+  manualDecision("RELATIONAL_DATABASE_PRIVILEGES_REVIEW", "Review SQL privileges for " + ds.name + ".",
+    KERNEL!Severity#WARNING, isProductionRoot(), Sequence{ds, cluster},
+    "Generated application access uses the database credential secret. Use application-specific database users/grants before production; IAM ExecuteStatement does not distinguish SELECT from writes.");
+  createTrace(ds, cluster, "DataStore2RdsDbCluster", "HIGH", KERNEL!TraceLinkType#REALIZES);
+}
+
+/** PostgreSQL types preserve numbers, instants, binary values and structured data. */
+operation relationalSqlType(fieldType) : String {
+  var kind = fieldType.asString();
+  if (kind = "INTEGER") return "bigint";
+  if (kind = "NUMBER" or kind = "MONEY") return "numeric";
+  if (kind = "BOOLEAN") return "boolean";
+  if (kind = "DATE") return "date";
+  if (kind = "TIME") return "time";
+  if (kind = "DATETIME") return "timestamptz";
+  if (kind = "BINARY") return "bytea";
+  if (kind = "UUID") return "uuid";
+  if (kind = "OBJECT" or kind = "ARRAY" or kind = "MAP" or kind = "UNION") return "jsonb";
+  return "text";
+}
+
+/** Unsupported store families remain explicit architecture decisions. */
 rule DataStore2NativeUnsupportedStore
   transform ds : DATA!DataStore
   to n : AWSPSMCORE!AwsNativeResource {
 
-  guard : not (ds.storeKind = PIMTYPES!StoreKind#KEY_VALUE or ds.storeKind = PIMTYPES!StoreKind#DOCUMENT or ds.storeKind = PIMTYPES!StoreKind#CACHE)
+  guard : not (ds.storeKind = PIMTYPES!StoreKind#KEY_VALUE or ds.storeKind = PIMTYPES!StoreKind#DOCUMENT or ds.storeKind = PIMTYPES!StoreKind#CACHE or ds.storeKind = PIMTYPES!StoreKind#RELATIONAL)
 
   copyAwsResource(ds, n, "NativeStore", "AWS::CloudFormation::CustomResource");
   n.id = idFor("native_store", ds);
@@ -218,7 +345,16 @@ rule Subscription2SnsSubscription
   sub.topic = awsEquivalent(s.ownerTopic);
   sub.protocol = subscriptionProtocol(s.target);
   sub.endpointResource = endpointResource(s.target);
-  if (sub.endpointResource.isDefined()) {
+  if (sub.protocol = AWSPSMENUMS!SnsProtocol#HTTP or sub.protocol = AWSPSMENUMS!SnsProtocol#HTTPS) {
+    sub.endpointResource = null;
+    sub.endpoint = externalEndpointForSubscription(s.target);
+    if (not sub.endpoint.startsWith("http://") and not sub.endpoint.startsWith("https://")) {
+      manualDecision("SNS_HTTP_ENDPOINT_REQUIRED", "Supply an HTTP endpoint URL for subscription " + s.name + ".",
+        KERNEL!Severity#ERROR, true, Sequence{s, sub},
+        "Set ExternalEndpoint.endpointUri to the actual sandbox URL; descriptive text and resource ARNs are not HTTP endpoints.");
+    }
+  }
+  else if (sub.endpointResource.isDefined()) {
     sub.endpoint = cfnArnExpression(sub.endpointResource);
     cachedSnsSubscriptionByKey.put(sub.topic.logicalId + "::" + sub.protocol.asString().toLowerCase() + "::" + sub.endpointResource.logicalId, sub);
     if (sub.protocol = AWSPSMENUMS!SnsProtocol#LAMBDA) {
@@ -696,7 +832,7 @@ operation endpointResource(endpoint) {
 /** Computes external endpoint for subscription. */
 operation externalEndpointForSubscription(endpoint) : String {
   if (endpoint.isDefined() and endpoint.eClass().getName() = "ExternalAdapter" and endpoint.endpoint.isDefined()) {
-    return firstText(endpoint.endpoint.endpointUri, endpoint.endpoint.endpointDescription);
+    return firstText(endpoint.endpoint.endpointUri, "REVIEW_REQUIRED_SUBSCRIPTION_ENDPOINT");
   }
   return "REVIEW_REQUIRED_SUBSCRIPTION_ENDPOINT";
 }
@@ -708,6 +844,7 @@ operation unresolvedTargetArn(endpoint) : String {
 
 /** Computes subscription protocol. */
 operation subscriptionProtocol(endpoint) {
+  if (externalEndpointForSubscription(endpoint).startsWith("https://")) return AWSPSMENUMS!SnsProtocol#HTTPS;
   var res = endpointResource(endpoint);
   if (res.isUndefined()) {
     return AWSPSMENUMS!SnsProtocol#HTTP;

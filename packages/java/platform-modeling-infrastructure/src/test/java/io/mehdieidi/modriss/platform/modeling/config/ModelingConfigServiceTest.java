@@ -17,6 +17,26 @@ class ModelingConfigServiceTest {
   private final ModelingConfigService service = new ModelingConfigService();
 
   @Test
+  void relationalResourcesAndOwnedSqlSchemaAreEditableInTheStorageView() {
+    Map<String, Object> configured = level("psm");
+    var elements = listOfMaps(configured.get("elements"));
+    assertNotNull(element(elements, "RdsDbCluster"));
+    assertNotNull(element(elements, "RdsDbInstance"));
+    Map<String, Object> cluster =
+        map(map(configured.get("containmentPalettes")).get("RdsDbCluster"));
+    assertTrue(stringList(cluster.get("types")).contains("RdsTable"));
+    Map<String, Object> table = map(map(configured.get("containmentPalettes")).get("RdsTable"));
+    assertTrue(stringList(table.get("types")).contains("RdsColumn"));
+    assertFalse(Boolean.TRUE.equals(element(elements, "RdsColumn").get("creatable")));
+    var view =
+        listOfMaps(configured.get("views")).stream()
+            .filter(item -> "psm-data-persistence".equals(item.get("id")))
+            .findFirst()
+            .orElseThrow();
+    assertTrue(stringList(view.get("palette")).contains("RdsDbCluster"));
+  }
+
+  @Test
   void relationshipContentsExposeEcoreSlotsAndConfiguredCanvases() {
     for (String[] example :
         List.of(

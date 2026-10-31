@@ -518,6 +518,9 @@ operation cfnArnExpression(resource) : String {
   if (resource.isUndefined() or resource.eClass().getEStructuralFeature("logicalId").isUndefined() or not hasText(resource.logicalId)) {
     return "";
   }
+  if (resource.isKindOf(AWSPSMSTORAGE!RdsDbCluster)) {
+    return "!Sub 'arn:${AWS::Partition}:rds:${AWS::Region}:${AWS::AccountId}:cluster:" + resource.clusterIdentifier + "'";
+  }
   return "!GetAtt " + resource.logicalId + ".Arn";
 }
 
@@ -637,6 +640,13 @@ operation placeUncontainedAwsResources() {
     if (st.isDefined()) {
       st.resources.add(r);
     }
+  }
+
+  // A subscription belongs to its topic's stack. Target-service ownership can
+  // otherwise emit a foreign !Ref and subscribe before the source topic exists.
+  for (subscription in AWSPSMMESSAGING!SnsSubscription.all) {
+    if (subscription.topic.isDefined() and subscription.topic.stack.isDefined()
+        and subscription.stack <> subscription.topic.stack) subscription.topic.stack.resources.add(subscription);
   }
 
   if (st.isDefined()) {
@@ -1250,6 +1260,17 @@ operation createEventInvokeRole(origin, targetResource, action : String) {
 operation addResourceStatement(doc, storage, read : Boolean, write : Boolean) {
   var res = awsEquivalent(storage);
   if (res.isUndefined()) {
+    return;
+  }
+  if (res.isKindOf(AWSPSMSTORAGE!RdsDbCluster) and (read or write)) {
+    var sql = allowStatement("Access" + res.logicalId);
+    sql.actions.addAll(Sequence{"rds-data:ExecuteStatement", "rds-data:BatchExecuteStatement", "rds-data:BeginTransaction", "rds-data:CommitTransaction", "rds-data:RollbackTransaction"});
+    sql.resources.add(cfnArnExpression(res));
+    addIamStatementMergedBySid(doc, sql);
+    var credential = allowStatement("Read" + res.credentialsSecret.logicalId);
+    credential.actions.add("secretsmanager:GetSecretValue");
+    credential.resources.add("!Sub 'arn:${AWS::Partition}:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:" + res.credentialsSecret.secretName + "-*'");
+    addIamStatementMergedBySid(doc, credential);
     return;
   }
   if (res.eClass().getName() = "DynamoDbTable") {

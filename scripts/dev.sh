@@ -13,6 +13,7 @@ command -v docker >/dev/null 2>&1 || {
 echo "Validating the development Compose configuration..."
 docker compose config -q
 echo "Starting the MODRISS development stack..."
+docker compose --profile test-tools build test-runner
 docker compose up -d --build --remove-orphans
 
 cat <<'EOF'

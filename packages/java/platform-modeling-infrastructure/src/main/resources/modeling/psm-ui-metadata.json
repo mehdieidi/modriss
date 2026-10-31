@@ -1294,6 +1294,12 @@
       "viewType": "DATA_PERSISTENCE",
       "viewpoint": "data",
       "elementTypes": [
+        "RdsDbCluster",
+        "RdsDbInstance",
+        "RdsDbSubnetGroup",
+        "RdsTable",
+        "RdsColumn",
+        "RdsIndex",
         "DynamoDbTable",
         "DynamoDbAttributeDefinition",
         "DynamoDbKeySchemaElement",
@@ -1317,6 +1323,9 @@
         "AwsLambdaFunction"
       ],
       "palette": [
+        "RdsDbCluster",
+        "RdsDbInstance",
+        "RdsDbSubnetGroup",
         "DynamoDbTable",
         "DynamoDbGlobalSecondaryIndex",
         "DynamoDbLocalSecondaryIndex",
@@ -1858,6 +1867,79 @@
       "processPhaseId": "psm.ph5",
       "processTaskIds": ["psm.ph5.st2.ss1.t1"],
       "processStageId": "psm.ph5.st2.ss1"
+    },
+    {
+      "type": "RdsDbCluster",
+      "label": "Aurora PostgreSQL cluster",
+      "icon": "database",
+      "color": "#7C3AED",
+      "category": "Storage View",
+      "displayName": "Relational database cluster",
+      "notation": {
+        "tag": "SQL",
+        "shape": "resource-card",
+        "lineFields": ["clusterIdentifier", "engine", "databaseName"]
+      },
+      "processPhaseId": "psm.ph3",
+      "processTaskIds": ["psm.ph3.st1.t1"],
+      "processStageId": "psm.ph3.st1"
+    },
+    {
+      "type": "RdsDbInstance",
+      "label": "Database writer instance",
+      "icon": "database",
+      "color": "#7C3AED",
+      "category": "Storage View",
+      "notation": {
+        "tag": "RDS",
+        "shape": "resource-card",
+        "lineFields": ["instanceIdentifier", "instanceClass"]
+      }
+    },
+    {
+      "type": "RdsDbSubnetGroup",
+      "label": "Database subnet group",
+      "icon": "database",
+      "color": "#7C3AED",
+      "category": "Storage View"
+    },
+    {
+      "type": "RdsTable",
+      "containedOnly": true,
+      "creatable": false,
+      "label": "SQL table",
+      "icon": "database",
+      "color": "#7C3AED",
+      "category": "Storage View",
+      "notation": { "tag": "TABLE", "shape": "resource-card", "lineFields": ["tableName"] }
+    },
+    {
+      "type": "RdsIndex",
+      "containedOnly": true,
+      "creatable": false,
+      "label": "SQL index",
+      "icon": "database",
+      "color": "#7C3AED",
+      "category": "Storage View",
+      "notation": {
+        "tag": "INDEX",
+        "shape": "resource-card",
+        "lineFields": ["indexName", "unique", "columnNames"]
+      }
+    },
+    {
+      "type": "RdsColumn",
+      "containedOnly": true,
+      "creatable": false,
+      "label": "SQL column",
+      "icon": "database",
+      "color": "#7C3AED",
+      "category": "Storage View",
+      "notation": {
+        "tag": "COLUMN",
+        "shape": "resource-card",
+        "lineFields": ["columnName", "sqlType", "nullable", "primaryKey"]
+      }
     },
     {
       "type": "DynamoDbTable",

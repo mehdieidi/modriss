@@ -12,12 +12,14 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 /** Provides authenticated access to generated artifacts and their files. */
 @RestController
@@ -95,6 +97,26 @@ public class ArtifactController {
       @PathVariable("id") String id,
       @Valid @RequestBody SaveFileRequest request) {
     return artifacts.updateFile(auth.user(token), id, request.path(), request.content());
+  }
+
+  /**
+   * Imports developer-refined UTF-8 project sources from a ZIP, excluding compiled build output.
+   */
+  @PostMapping(value = "/{id}/source-archive", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+  ArtifactRecord importSources(
+      @RequestHeader("X-Auth-Token") String token,
+      @PathVariable("id") String id,
+      @RequestParam("file") MultipartFile file)
+      throws java.io.IOException {
+    var user = auth.user(token);
+    artifacts.get(user, id);
+    if (file.getSize() > 30_000_000)
+      throw new io.mehdieidi.modriss.platform.kernel.PlatformException(
+          413, "Source ZIP exceeds 30 MB.");
+    return artifacts.replaceFiles(
+        user,
+        id,
+        io.mehdieidi.modriss.backend.testing.RefinedProjectArchive.read(file.getInputStream()));
   }
 
   /**

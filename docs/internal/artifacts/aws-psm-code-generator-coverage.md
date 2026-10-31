@@ -339,6 +339,14 @@ This inventory is synchronized by `AwsPsmArtifactGenerationSyntaxTest.coverageRe
 - `cfn.eol:AWSPSMAPI!CognitoAuthorizer.cfnTypeText`
 - `cfn.eol:AWSPSMAPI!LambdaAuthorizer.cfnTypeText`
 - `cfn.eol:AWSPSMAPI!ApiGatewayAuthorizer.emitCfnPropertiesYaml`
+- `cfn.eol:AWSPSMAPI!ApiGatewayAuthorizer.emitAuthorizerPropertiesYaml`
+- `cfn.eol:AWSPSMAPI!ApiGatewayAuthorizer.ownedByOpenApi`
+- `cfn.eol:AWSPSMAPI!JwtAuthorizer.emitCfnPropertiesYaml`
+- `cfn.eol:AWSPSMAPI!CognitoAuthorizer.emitCfnPropertiesYaml`
+- `cfn.eol:AWSPSMAPI!LambdaAuthorizer.emitCfnPropertiesYaml`
+- `cfn.eol:AWSPSMAPI!JwtAuthorizer.omitFromCfnTemplate`
+- `cfn.eol:AWSPSMAPI!CognitoAuthorizer.omitFromCfnTemplate`
+- `cfn.eol:AWSPSMAPI!LambdaAuthorizer.omitFromCfnTemplate`
 - `cfn.eol:AWSPSMAPI!ApiGatewayDomainName.cfnTypeText`
 - `cfn.eol:AWSPSMAPI!ApiGatewayDomainName.emitCfnPropertiesYaml`
 - `cfn.eol:AWSPSMAPI!ApiGatewayBasePathMapping.cfnTypeText`
@@ -585,3 +593,44 @@ Some emulator modes can omit the generated `AWS::Serverless::StateMachine` from 
 deployment. The test verifies the SAM template still contains the generated state machine, then
 creates and executes the workflow from the generated ASL file to retain live ASL coverage. See
 `docs/internal/artifacts/aws-psm-code-generator-e2e.md`.
+
+### API authentication and draft workflow fixes
+
+- `values.eol:AWSPSMIDENTITY!CognitoUserPool.cognitoArnExportName`
+- `values.eol:AWSPSMAPI!ApiGatewayApi.cognitoPoolArn`
+- `cfn.eol:Collection.orderedDeploymentStacks`
+- `contracts.eol:AWSPSMWORKFLOW!AslDocument.deployableAslStates`
+- `contracts.eol:AWSPSMAPI!ApiGatewayRoute.requestUsesParameters`
+- `contracts.eol:AWSPSMAPI!ApiGatewayRoute.openApiParametersYaml`
+
+### Relational storage
+
+The relational generation regression checks typed PSM resources, real secret generation,
+cross-stack imports/exports, PostgreSQL schema/manifest output and the generated Go Data API client.
+The explicit live evaluation provisions these artifacts on Floci and tests SQL constraints and transactions.
+
+| EGX rule               | Rule ID                           | Template                               | Verification                                              |
+| ---------------------- | --------------------------------- | -------------------------------------- | --------------------------------------------------------- |
+| `DatabaseManifest`     | `AWSPSM2ART_DatabaseManifest`     | `infrastructure/database-manifest.egl` | Relational fixture and live initialization                |
+| `DatabaseSchema`       | `AWSPSM2ART_DatabaseSchema`       | `infrastructure/database-schema.egl`   | SQL types, nullability, primary key                       |
+| `DatabaseInitialize`   | `AWSPSM2ART_DatabaseInitialize`   | `scripts/database.egl`                 | Transactions, rollback, unchanged/changed schema handling |
+| `RelationalDataAccess` | `AWSPSM2ART_RelationalDataAccess` | `lambda/shared-relational.egl`         | Generated Go build and real Data API operations           |
+
+- `infrastructure/database-manifest.egl`
+- `infrastructure/database-schema.egl`
+- `scripts/database.egl`
+- `lambda/shared-relational.egl`
+- `cfn.eol:AWSPSMSTORAGE!RdsDbCluster.cfnTypeText`
+- `cfn.eol:AWSPSMSTORAGE!RdsDbCluster.emitCfnPropertiesYaml`
+- `cfn.eol:AWSPSMSTORAGE!RdsDbInstance.cfnTypeText`
+- `cfn.eol:AWSPSMSTORAGE!RdsDbInstance.emitCfnPropertiesYaml`
+- `cfn.eol:AWSPSMSTORAGE!RdsDbSubnetGroup.cfnTypeText`
+- `cfn.eol:AWSPSMSTORAGE!RdsDbSubnetGroup.emitCfnPropertiesYaml`
+- `cfn.eol:AWSPSMSECURITY!SecretRotationSchedule.omitFromCfnTemplate`
+- `values.eol:Any.emittingStack`
+- `values.eol:AWSPSMCORE!AwsResource.sharedExportName`
+- `values.eol:AWSPSMCORE!AwsResource.sharedValueAttributes`
+- `values.eol:AWSPSMCORE!AwsResource.valueForResource`
+- `relational.eol:Any.sqlIdentifier`
+- `relational.eol:AWSPSMSTORAGE!RdsColumn.columnDefinition`
+- `relational.eol:AWSPSMSTORAGE!RdsDbCluster.schemaStatements`

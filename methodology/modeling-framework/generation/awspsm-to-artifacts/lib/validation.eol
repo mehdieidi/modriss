@@ -225,10 +225,10 @@ operation AWSPSM!AwsPsmModel collectBlockingIssues(profileMap : Map) : Sequence 
 
 /** Returns whether the target has a deterministic physical name from which the renderer builds a stable ARN or name. */
 operation AWSPSMCORE!AwsResource supportsStableCrossStackReference() : Boolean {
-  return self.physicalName.isPresent() and Sequence{
+  return self.sharedValueAttributes().notEmpty() or (self.physicalName.isPresent() and Sequence{
     "AwsLambdaFunction", "SqsQueue", "SnsTopic", "EventBridgeBus", "EventBridgeRule",
-    "DynamoDbTable", "IamRole", "StepFunctionStateMachine"
-  }.includes(self.eClass().getName());
+    "DynamoDbTable", "RdsDbCluster", "IamRole", "StepFunctionStateMachine"
+  }.includes(self.eClass().getName()));
 }
 
 /** Returns whether text is a valid deployable IAM action expression. */

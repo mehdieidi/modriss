@@ -45,6 +45,7 @@ if docker compose "${compose_args[@]}" config | grep -Eq '(MODRISS_FRONTEND_BACK
 fi
 
 echo "Building and starting the production stack..."
+docker compose "${compose_args[@]}" --profile test-tools build test-runner
 docker compose "${compose_args[@]}" up -d --build --remove-orphans
 
 # Caddy's bind-mounted configuration needs a restart after git pull. Static sites

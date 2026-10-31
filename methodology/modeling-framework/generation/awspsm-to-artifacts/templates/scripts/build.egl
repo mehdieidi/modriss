@@ -3,7 +3,18 @@ set -euo pipefail
 
 mode_text="${1:-}"
 
-go mod tidy
+# Keep successfully downloaded modules when a registry connection fails mid-download.
+for dependency_attempt in 1 2 3; do
+  if go mod tidy; then
+    break
+  fi
+  if [[ "$dependency_attempt" == "3" ]]; then
+    echo "Dependency resolution failed after 3 attempts; inspect the registry/network error above." >&2
+    exit 1
+  fi
+  echo "Retrying dependency resolution (attempt $((dependency_attempt + 1))/3)…" >&2
+  sleep "$((dependency_attempt * 2))"
+done
 if [[ "$mode_text" == "--install-only" ]]; then
   exit 0
 fi

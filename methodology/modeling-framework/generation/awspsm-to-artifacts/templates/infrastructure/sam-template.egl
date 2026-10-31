@@ -118,6 +118,15 @@ Resources:
 [% for (resObj in self.orderedResources()) { %]
 [%= resObj.emitCfnResourceYaml(emitCtx) %]
 [% } %]
+[% for (authorizer in self.flattenedResources().select(candidate | candidate.isKindOf(AWSPSMAPI!LambdaAuthorizer) and candidate.ownedByOpenApi())) { %]
+  [%= authorizer.cfnLogicalId() %]InvokePermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !GetAtt [%= authorizer.modelFeatureValue("function").cfnLogicalId() %].Arn
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Join ['', ['arn:', !Ref AWS::Partition, ':execute-api:', !Ref AWS::Region, ':', !Ref AWS::AccountId, ':', !Ref [%= authorizer.api.cfnLogicalId() %], '/authorizers/*']]
+[% } %]
 
 [% } %]
 [% }
@@ -125,8 +134,24 @@ Resources:
 @template
 /** Computes outputs section. */
 operation AWSPSMCORE!SamStack outputsSection() { %]
-[% if (self.outputs.notEmpty()) { %]
+[% var sharedPools = self.resources.select(pool | pool.isKindOf(AWSPSMIDENTITY!CognitoUserPool) and AWSPSMAPI!CognitoAuthorizer.all.exists(auth | auth.userPool = pool and auth.api.isDefined() and auth.api.stack.isDefined() and auth.api.stack <> self)); %]
+[% var sharedResources = self.flattenedResources().select(resource | resource.sharedValueAttributes().notEmpty()); %]
+[% if (self.outputs.notEmpty() or sharedPools.notEmpty() or sharedResources.notEmpty()) { %]
 Outputs:
+[% for (resource in sharedResources.sortBy(resource | resource.cfnLogicalId())) { %]
+[% for (attribute in resource.sharedValueAttributes()) { %]
+  [%= resource.cfnLogicalId() %]Shared[%= attribute.toCfnLogicalId() %]:
+    Value: [%= resource.valueForResource(resource, attribute) %]
+    Export:
+      Name: [%= resource.sharedExportName(attribute).yamlScalar() %]
+[% } %]
+[% } %]
+[% for (pool in sharedPools.reject(pool | pool.sharedValueAttributes().includes("Arn")).sortBy(pool | pool.cfnLogicalId())) { %]
+  [%= pool.cfnLogicalId() %]SharedArn:
+    Value: !GetAtt [%= pool.cfnLogicalId() %].Arn
+    Export:
+      Name: [%= pool.cognitoArnExportName().yamlScalar() %]
+[% } %]
 [% for (outObj in self.outputs.sortBy(outObj | outObj.outputName)) { %]
   [%= outObj.outputName.toCfnLogicalId() %]:
 [%= emitYamlScalarProperty("Description", outObj.outputDescription.orElseText(outObj.outputName), 4) %]

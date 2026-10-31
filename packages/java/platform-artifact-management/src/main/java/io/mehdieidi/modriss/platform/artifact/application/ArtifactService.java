@@ -224,6 +224,34 @@ public final class ArtifactService {
     return updated;
   }
 
+  /** Replaces all source files with a developer-refined project after checking edit access. */
+  public ArtifactRecord replaceFiles(
+      UserRecord user, String artifactId, Map<String, String> files) {
+    ArtifactRecord artifact = get(user, artifactId);
+    projectService.requireEditor(projectService.get(user, artifact.projectId()), user.id());
+    Map<String, String> normalized = normalizeFiles(files);
+    if (normalized.isEmpty())
+      throw new PlatformException(400, "The refined project has no source files.");
+    ObjectNode metadata =
+        artifact.modelJson() == null
+            ? store.objectMapper().createObjectNode()
+            : ((ObjectNode) artifact.modelJson()).deepCopy();
+    metadata.put("fileCount", normalized.size());
+    metadata.put("refinedProjectImportedAt", Instant.now().toString());
+    ArtifactRecord updated =
+        new ArtifactRecord(
+            artifact.id(),
+            artifact.projectId(),
+            artifact.name(),
+            metadata,
+            normalized,
+            artifact.createdAt(),
+            Instant.now());
+    store.write(artifactPath(artifact.projectId(), artifact.id()), updated);
+    writeArtifactIndex(updated);
+    return updated;
+  }
+
   /**
    * Packages an artifact bundle as a UTF-8 zip archive.
    *

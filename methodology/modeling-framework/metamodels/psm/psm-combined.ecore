@@ -1979,6 +1979,74 @@
   </ecore:EPackage>
   <ecore:EPackage name="awspsmstorage" nsURI="https://modriss.org/awspsm/storage/1.0"
       nsPrefix="awspsmstorage">
+    <eClassifiers xsi:type="ecore:EClass" name="RdsDbCluster" eSuperTypes="#/3/AwsResource">
+      <eStructuralFeatures xsi:type="ecore:EAttribute" name="clusterIdentifier" lowerBound="1"
+          eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+      <eStructuralFeatures xsi:type="ecore:EAttribute" name="engine" lowerBound="1"
+          eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+      <eStructuralFeatures xsi:type="ecore:EAttribute" name="engineVersion" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+      <eStructuralFeatures xsi:type="ecore:EAttribute" name="databaseName" lowerBound="1"
+          eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+      <eStructuralFeatures xsi:type="ecore:EAttribute" name="masterUsername" lowerBound="1"
+          eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+      <eStructuralFeatures xsi:type="ecore:EAttribute" name="enableHttpEndpoint" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EBooleanObject"/>
+      <eStructuralFeatures xsi:type="ecore:EAttribute" name="storageEncrypted" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EBooleanObject"/>
+      <eStructuralFeatures xsi:type="ecore:EAttribute" name="deletionProtection" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EBooleanObject"/>
+      <eStructuralFeatures xsi:type="ecore:EAttribute" name="backupRetentionPeriod"
+          eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EIntegerObject"/>
+      <eStructuralFeatures xsi:type="ecore:EAttribute" name="minCapacity" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EIntegerObject"/>
+      <eStructuralFeatures xsi:type="ecore:EAttribute" name="maxCapacity" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EIntegerObject"/>
+      <eStructuralFeatures xsi:type="ecore:EReference" name="tables" upperBound="-1"
+          eType="#/12/RdsTable" containment="true"/>
+      <eStructuralFeatures xsi:type="ecore:EReference" name="credentialsSecret" lowerBound="1"
+          eType="#/11/SecretsManagerSecret"/>
+      <eStructuralFeatures xsi:type="ecore:EReference" name="kmsKey" eType="#/11/KmsKey"/>
+      <eStructuralFeatures xsi:type="ecore:EReference" name="subnetGroup" eType="#/12/RdsDbSubnetGroup"/>
+      <eStructuralFeatures xsi:type="ecore:EReference" name="securityGroups" upperBound="-1"
+          eType="#/9/SecurityGroup"/>
+    </eClassifiers>
+    <eClassifiers xsi:type="ecore:EClass" name="RdsDbInstance" eSuperTypes="#/3/AwsResource">
+      <eStructuralFeatures xsi:type="ecore:EAttribute" name="instanceIdentifier" lowerBound="1"
+          eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+      <eStructuralFeatures xsi:type="ecore:EAttribute" name="instanceClass" lowerBound="1"
+          eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+      <eStructuralFeatures xsi:type="ecore:EAttribute" name="availabilityZone" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+      <eStructuralFeatures xsi:type="ecore:EAttribute" name="publiclyAccessible" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EBooleanObject"/>
+      <eStructuralFeatures xsi:type="ecore:EAttribute" name="promotionTier" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EIntegerObject"/>
+      <eStructuralFeatures xsi:type="ecore:EReference" name="cluster" lowerBound="1"
+          eType="#/12/RdsDbCluster"/>
+    </eClassifiers>
+    <eClassifiers xsi:type="ecore:EClass" name="RdsDbSubnetGroup" eSuperTypes="#/3/AwsResource">
+      <eStructuralFeatures xsi:type="ecore:EAttribute" name="groupName" lowerBound="1"
+          eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+      <eStructuralFeatures xsi:type="ecore:EAttribute" name="descriptionText" lowerBound="1"
+          eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+      <eStructuralFeatures xsi:type="ecore:EReference" name="subnets" lowerBound="2"
+          upperBound="-1" eType="#/9/Subnet"/>
+    </eClassifiers>
+    <eClassifiers xsi:type="ecore:EClass" name="RdsTable" eSuperTypes="#/14/TraceableElement">
+      <eStructuralFeatures xsi:type="ecore:EAttribute" name="tableName" lowerBound="1"
+          eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+      <eStructuralFeatures xsi:type="ecore:EReference" name="columns" lowerBound="1"
+          upperBound="-1" eType="#/12/RdsColumn" containment="true"/>
+      <eStructuralFeatures xsi:type="ecore:EReference" name="indexes" upperBound="-1"
+          eType="#/12/RdsIndex" containment="true"/>
+    </eClassifiers>
+    <eClassifiers xsi:type="ecore:EClass" name="RdsIndex" eSuperTypes="#/14/TraceableElement">
+      <eStructuralFeatures xsi:type="ecore:EAttribute" name="indexName" lowerBound="1"
+          eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+      <eStructuralFeatures xsi:type="ecore:EAttribute" name="unique" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EBooleanObject"/>
+      <eStructuralFeatures xsi:type="ecore:EAttribute" name="columnNames" lowerBound="1"
+          upperBound="-1" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    </eClassifiers>
+    <eClassifiers xsi:type="ecore:EClass" name="RdsColumn" eSuperTypes="#/14/TraceableElement">
+      <eStructuralFeatures xsi:type="ecore:EAttribute" name="columnName" lowerBound="1"
+          eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+      <eStructuralFeatures xsi:type="ecore:EAttribute" name="sqlType" lowerBound="1"
+          eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+      <eStructuralFeatures xsi:type="ecore:EAttribute" name="nullable" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EBooleanObject"/>
+      <eStructuralFeatures xsi:type="ecore:EAttribute" name="primaryKey" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EBooleanObject"/>
+    </eClassifiers>
     <eClassifiers xsi:type="ecore:EClass" name="DynamoDbTable" eSuperTypes="#/3/AwsResource">
       <eStructuralFeatures xsi:type="ecore:EAttribute" name="tableName" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
       <eStructuralFeatures xsi:type="ecore:EAttribute" name="deletionProtectionEnabled"

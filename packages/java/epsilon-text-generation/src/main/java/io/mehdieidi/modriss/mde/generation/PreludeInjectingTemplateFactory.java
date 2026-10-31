@@ -59,6 +59,7 @@ final class PreludeInjectingTemplateFactory extends EglFileGeneratingTemplateFac
           "paths.eol",
           "iam.eol",
           "contracts.eol",
+          "relational.eol",
           "protected-regions.eol",
           "trace.eol",
           "validation.eol",

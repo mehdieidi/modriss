@@ -111,6 +111,13 @@ the PIM and PSM models. From PSM, select **Generate Artifacts** and inspect or d
 generated project. The [climate-relief sample](methodology/modeling-framework/samples/climate-relief-grants/) offers a broader
 end-to-end case study.
 
+For the built-in AWS target, **Deploy to Test Environment** builds a saved, developer-refined
+artifact snapshot on the backend and provisions it in a dedicated Floci instance for that project.
+Application bearer-token headers reach the API unchanged. The **Test** workspace exposes APIs,
+functions, workflows, events, source scripts, storage, logs, and exportable execution evidence.
+See the [Floci and Test workspace guide](docs/public-docs/docs/guides/floci-emulator.md) for setup,
+supported actions, source ZIP imports, and case-study evidence limits.
+
 For a compact scenario intended for expert and user evaluation, use
 [Community Workshops](methodology/modeling-framework/samples/community-workshops/).
 It includes a familiar booking scenario, requirements and acceptance criteria, a Mermaid use-case

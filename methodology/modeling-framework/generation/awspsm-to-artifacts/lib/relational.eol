@@ -1,0 +1,44 @@
+/** SQL identifiers are always quoted; SQL types are constrained to the supported PostgreSQL set. */
+operation Any sqlIdentifier() : String {
+  var text = self.asString();
+  if (text.isEmpty() or text.length() > 63 or text.matches(".*[\\x00-\\x1f].*")) throw "PostgreSQL identifier must contain 1-63 printable characters: " + text;
+  return "\"" + text.replace("\"", "\"\"") + "\"";
+}
+
+operation AWSPSMSTORAGE!RdsColumn columnDefinition() : String {
+  var type = self.sqlType.trim().toLowerCase();
+  if (not Sequence{"text", "bigint", "integer", "numeric", "boolean", "date", "time", "timestamptz", "bytea", "uuid", "jsonb"}.includes(type))
+    throw "Unsupported PostgreSQL column type " + type + " for " + self.name;
+  var definition = self.columnName.sqlIdentifier() + " " + type;
+  if (self.nullable <> true or self.primaryKey = true) definition = definition + " NOT NULL";
+  return definition;
+}
+
+operation AWSPSMSTORAGE!RdsDbCluster schemaStatements() : Sequence {
+  if (self.engine <> "aurora-postgresql") throw "Generated relational schemas require aurora-postgresql: " + self.name;
+  if (self.credentialsSecret.isDefined() and self.credentialsSecret.generateSecretString.isDefined()) {
+    var credentials = self.credentialsSecret.generateSecretString;
+    if (credentials.generateStringKey <> "password") throw "Relational credentials must generate the password JSON key: " + self.name;
+    var mapper = new Native("tools.jackson.databind.json.JsonMapper");
+    var template = mapper.readTree(credentials.secretStringTemplate);
+    if (template.path("username").asText() <> self.masterUsername) throw "Relational masterUsername must match credentialsSecret.generateSecretString.secretStringTemplate.username: " + self.name;
+  }
+  var statements = Sequence{};
+  for (table in self.tables.sortBy(table | table.tableName)) {
+    if (table.columns.isEmpty()) throw "Relational table requires columns: " + table.name;
+    if (table.columns.collect(column | column.columnName.toLowerCase()).asSet().size() <> table.columns.size())
+      throw "Duplicate PostgreSQL columns in " + table.name;
+    var definitions = table.columns.collect(column | column.columnDefinition());
+    var keys = table.columns.select(column | column.primaryKey = true).collect(column | column.columnName.sqlIdentifier());
+    if (keys.notEmpty()) definitions.add("PRIMARY KEY (" + keys.concat(", ") + ")");
+    statements.add("CREATE TABLE " + table.tableName.sqlIdentifier() + " (\n  " + definitions.concat(",\n  ") + "\n)");
+    for (index in table.indexes.sortBy(index | index.indexName)) {
+      if (index.columnNames.isEmpty() or not index.columnNames.forAll(name | table.columns.exists(column | column.columnName = name)))
+        throw "Relational index must reference existing columns: " + index.name;
+      var uniqueText = "";
+      if (index.`unique` = true) uniqueText = "UNIQUE ";
+      statements.add("CREATE " + uniqueText + "INDEX " + index.indexName.sqlIdentifier() + " ON " + table.tableName.sqlIdentifier() + " (" + index.columnNames.collect(name | name.sqlIdentifier()).concat(", ") + ")");
+    }
+  }
+  return statements;
+}

@@ -1,7 +1,69 @@
 /** Validates the semantic rules for storage. */
 import "../lib/psm-validation-helpers.eol";
 
-/* Storage / DynamoDB / S3 */
+/* Storage / Aurora / DynamoDB / S3. These checks belong to explicit model validation. */
+
+context AWSPSM!RdsDbCluster {
+  constraint RelationalClusterUsesSupportedEngine {
+    check : self.engine = 'aurora-postgresql'
+    message : 'Relational schema generation currently supports aurora-postgresql. Keep the relational engine or provide a reviewed native-resource implementation for another engine.'
+  }
+  constraint RelationalClusterHasCredentialsAndValidName {
+    check : self.credentialsSecret.isDefined() and self.masterUsername.hasText() and
+      self.databaseName.matches('^[A-Za-z][A-Za-z0-9]{0,62}$') and
+      self.clusterIdentifier.matches('^[a-z][a-z0-9-]{0,61}[a-z0-9]$') and not self.clusterIdentifier.matches('.*--.*')
+    message : 'Relational cluster needs a generated credential secret, master username and valid database/cluster identifiers.'
+  }
+  constraint RelationalClusterHasValidCapacity {
+    check : self.minCapacity >= 1 and self.maxCapacity >= self.minCapacity and self.maxCapacity <= 256
+    message : 'Relational cluster capacity must satisfy 1 <= minCapacity <= maxCapacity <= 256.'
+  }
+  constraint RelationalClusterHasWriter {
+    check : AWSPSM!RdsDbInstance.all.exists(instance | instance.cluster = self)
+    message : 'An Aurora cluster requires an RdsDbInstance writer. Add an instance referencing this cluster.'
+  }
+  constraint RelationalClusterHasDistinctTables {
+    check : self.tables.collect(table | table.tableName).asSet().size() = self.tables.size()
+    message : 'Relational cluster table names must be unique.'
+  }
+}
+
+context AWSPSM!RdsDbInstance {
+  constraint RelationalInstanceHasClusterAndClass {
+    check : self.cluster.isDefined() and self.instanceClass.hasText()
+    message : 'An Aurora writer requires a cluster and an instanceClass; generated defaults use db.serverless.'
+  }
+}
+
+context AWSPSM!RdsTable {
+  constraint RelationalTableHasColumnsAndPrimaryKey {
+    check : self.tableName.hasText() and self.columns.notEmpty() and self.columns.exists(column | column.primaryKey = true)
+    message : 'Relational tables require a name, columns and an explicit primary key. Mark the identifier column(s) primaryKey.'
+  }
+  constraint RelationalColumnsHaveDistinctNames {
+    check : self.columns.collect(column | column.columnName).asSet().size() = self.columns.size()
+    message : 'Column names within a relational table must be unique.'
+  }
+}
+
+context AWSPSM!RdsColumn {
+  constraint RelationalColumnUsesSupportedType {
+    check : self.columnName.hasText() and Sequence{'text','bigint','integer','numeric','boolean','date','time','timestamptz','bytea','uuid','jsonb'}.includes(self.sqlType)
+    message : 'Choose a supported PostgreSQL column type and a nonempty column name.'
+  }
+  constraint RelationalPrimaryKeyIsNotNullable {
+    check : self.primaryKey <> true or self.nullable <> true
+    message : 'A primary-key column cannot be nullable.'
+  }
+}
+
+context AWSPSM!RdsIndex {
+  constraint RelationalIndexReferencesExistingColumns {
+    check : self.indexName.hasText() and self.columnNames.notEmpty() and
+      self.columnNames.forAll(name | self.eContainer().columns.exists(column | column.columnName = name))
+    message : 'Relational index needs a name and columns present in its owning table.'
+  }
+}
 
 context AWSPSM!DynamoDbTable {
   /** Checks that dynamo table has valid primary key schema. */

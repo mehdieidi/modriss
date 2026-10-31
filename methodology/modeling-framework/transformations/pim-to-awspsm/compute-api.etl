@@ -221,6 +221,7 @@ operation createHttpApiRouteFrom(r, awsApi) {
   gr.integration = createApiIntegration(r, gr);
   gr.authorizer = findAuthorizerFor(r);
   applyAuthorizerFallback(r, gr);
+  applyRouteAuthorizationRequirements(r, gr);
   attachOpenApiModels(r, gr);
   if (routeNeedsAuth(r)
       and gr.authorizationType <> AWSPSMENUMS!ApiGatewayAuthorizationType#AWS_IAM
@@ -255,6 +256,7 @@ operation createRestApiRouteFrom(r, awsApi) {
   attachOpenApiModels(r, gr);
   gr.authorizer = findAuthorizerFor(r);
   applyAuthorizerFallback(r, gr);
+  applyRouteAuthorizationRequirements(r, gr);
   if (routeNeedsAuth(r) and gr.authorizationType <> AWSPSMENUMS!ApiGatewayAuthorizationType#AWS_IAM and gr.authorizationType <> AWSPSMENUMS!ApiGatewayAuthorizationType#API_KEY and gr.authorizer.isUndefined()) {
     manualDecision("API_ROUTE_AUTHORIZER_MISSING",
       "Provide an authorizer for protected route " + r.pathTemplate + ".",
@@ -308,7 +310,8 @@ operation inferReservedConcurrency(f) {
   if (f.concurrency.isDefined() and f.concurrency.reservedConcurrencyHint.isDefined()) {
     return f.concurrency.reservedConcurrencyHint;
   }
-  return 0;
+  // Zero is an explicit AWS pause, not the absence of a reservation.
+  return null;
 }
 
 /** Creates create lambda tracing. */
@@ -372,7 +375,32 @@ operation createLambdaEnvironment(f) {
       out.add(resourceNameEnv(f, store));
     }
   }
+  var relationalStores = f.reads.includingAll(f.writes).asSet();
+  for (access in indexedValues(cachedDataAccessesByFunctionId, cacheKeyFor(f))) {
+    if (access.store.isDefined()) {
+      relationalStores.add(access.store);
+      if (out.none(env | env.variableName = slug(access.store.name).toUpperCase() + "_NAME")) out.add(resourceNameEnv(f, access.store));
+    }
+  }
+  for (store in relationalStores) {
+    var database = awsEquivalent(store);
+    if (database.isDefined() and database.isKindOf(AWSPSMSTORAGE!RdsDbCluster)) {
+      out.add(relationalEnvironment(f, store, "RESOURCE_ARN", getAtt(database, "DBClusterArn")));
+      out.add(relationalEnvironment(f, store, "SECRET_ARN", refValue(database.credentialsSecret)));
+      out.add(relationalEnvironment(f, store, "DATABASE", literalValue(database.databaseName, false)));
+    }
+  }
   return out;
+}
+
+operation relationalEnvironment(f, store, suffix : String, value) {
+  var env = new AWSPSMCOMPUTE!LambdaEnvironmentVariable;
+  env.id = generatedId("lambda_env_rds", f, store.id + suffix);
+  env.name = store.name + " " + suffix;
+  env.variableName = slug(store.name).toUpperCase() + "_" + suffix;
+  env.value = value;
+  env.stageSpecific = false;
+  return env;
 }
 
 /** Computes resource name env. */
@@ -418,9 +446,35 @@ operation routeNeedsAuth(r) {
 }
 
 /** Derives infer authorization type. */
+operation applyRouteAuthorizationRequirements(r, gr) {
+  if (r.authorization.isDefined() and hasText(r.authorization.roleOrScopeRequired)) {
+    manualDecision("ROUTE_AUTHORIZATION_REFINEMENT_REQUIRED",
+      "Implement the route authorization requirement for " + r.pathTemplate + ": " + r.authorization.roleOrScopeRequired,
+      KERNEL!Severity#ERROR, true, Sequence{r, gr},
+      "Cognito verifies token identity. Implement the modeled role/ownership rules in the handler or a reviewed authorizer; prose is not an OAuth scope.");
+  }
+  if (r.api.isDefined() and r.api.auth.isDefined() and hasText(r.api.auth.scopesRequired)) {
+    var text = r.api.auth.scopesRequired.trim();
+    if (text.toLowerCase().contains("review-required") or text.toLowerCase().contains("review_required") or text.toLowerCase() = "tbd") {
+      manualDecision("API_OAUTH_SCOPES_REQUIRED", "Resolve the OAuth scopes for API " + r.api.name + ".",
+        KERNEL!Severity#ERROR, true, Sequence{r, gr},
+        "Replace the review placeholder with actual space/comma-separated OAuth scopes, or explicitly remove the scope requirement after review.");
+    }
+    else if (gr.authorizationType = AWSPSMENUMS!ApiGatewayAuthorizationType#JWT or gr.authorizationType = AWSPSMENUMS!ApiGatewayAuthorizationType#COGNITO_USER_POOLS) {
+      for (scope in text.replace(",", " ").split(" ")) {
+        if (hasText(scope) and not gr.authorizationScopes.includes(scope.trim())) gr.authorizationScopes.add(scope.trim());
+      }
+    }
+  }
+}
+
 operation inferAuthorizationType(r) {
   if (not routeNeedsAuth(r)) {
     return AWSPSMENUMS!ApiGatewayAuthorizationType#NONE;
+  }
+  if (r.api.isDefined() and isTrue(r.api.authRequired) and r.api.auth.isDefined()
+      and r.api.auth.identityProvider.isDefined()) {
+    return AWSPSMENUMS!ApiGatewayAuthorizationType#COGNITO_USER_POOLS;
   }
   if (r.authorization.isDefined() and hasText(r.authorization.roleOrScopeRequired)) {
     if (r.api.isDefined() and isTrue(r.api.authRequired) and r.api.auth.isDefined()) {
@@ -440,7 +494,7 @@ operation inferAuthorizationType(r) {
       return AWSPSMENUMS!ApiGatewayAuthorizationType#NONE;
     }
     var scheme = r.api.auth.authScheme.toLowerCase();
-    if (scheme.contains("jwt")) {
+    if (scheme.contains("jwt") or scheme.contains("oauth") or scheme.contains("oidc")) {
       return AWSPSMENUMS!ApiGatewayAuthorizationType#JWT;
     }
     if (scheme.contains("iam")) {
@@ -462,6 +516,19 @@ operation inferAuthorizationType(r) {
 
 /** Computes apply authorizer fallback. */
 operation applyAuthorizerFallback(r, gr) {
+  if (routeNeedsAuth(r) and r.api.isDefined() and r.api.auth.isDefined()
+      and hasText(r.api.auth.authScheme) and requiresRestApi(r.api)
+      and (r.api.auth.authScheme.toLowerCase().contains("jwt")
+        or r.api.auth.authScheme.toLowerCase().contains("oauth")
+        or r.api.auth.authScheme.toLowerCase().contains("oidc"))
+      and gr.authorizer.isUndefined()) {
+    gr.authorizationType = AWSPSMENUMS!ApiGatewayAuthorizationType#CUSTOM_LAMBDA;
+    manualDecision("REST_API_JWT_AUTHORIZER_REQUIRED",
+      "Configure Cognito or a JWT-validating Lambda authorizer for REST route " + r.pathTemplate + ".",
+      KERNEL!Severity#ERROR, true, Sequence{r, gr},
+      "REST validation/API-key requirements are retained. Supply a REST-compatible authorizer; native JWT is supported only by HTTP APIs.");
+    return;
+  }
   if (routeNeedsAuth(r)
       and gr.authorizationType <> AWSPSMENUMS!ApiGatewayAuthorizationType#AWS_IAM
       and gr.authorizationType <> AWSPSMENUMS!ApiGatewayAuthorizationType#API_KEY
@@ -546,7 +613,8 @@ operation createApiIntegration(r, gr) {
 
 /** Returns whether the receiver requires rest api. */
 operation requiresRestApi(api) {
-  return api.routes.exists(r | isTrue(r.requestValidationRequired) or isTrue(r.responseValidationRequired) or inferAuthorizationType(r) = AWSPSMENUMS!ApiGatewayAuthorizationType#API_KEY);
+  return (api.auth.isDefined() and api.auth.identityProvider.isDefined())
+    or api.routes.exists(r | isTrue(r.requestValidationRequired) or isTrue(r.responseValidationRequired) or inferAuthorizationType(r) = AWSPSMENUMS!ApiGatewayAuthorizationType#API_KEY);
 }
 
 /** Creates create api stages. */
@@ -614,7 +682,7 @@ operation createApiAuthorizer(api, g) {
       c.id = generatedId("cognito_authorizer", api, api.auth.name);
       c.authorizerName = firstText(api.auth.name, api.name + "Authorizer");
       c.authorizationType = AWSPSMENUMS!ApiGatewayAuthorizationType#COGNITO_USER_POOLS;
-      c.identitySource = "$request.header.Authorization";
+      c.identitySource = "method.request.header.Authorization";
       c.authorizerResultTtlInSeconds = 300;
       g.authorizers.add(c);
       c.userPool = pool;
@@ -631,6 +699,13 @@ operation createApiAuthorizer(api, g) {
   }
   var scheme = api.auth.authScheme.toLowerCase();
   if (scheme.contains("jwt") or scheme.contains("oauth") or scheme.contains("oidc")) {
+    if (g.eClass().getName() <> "HttpApi") {
+      manualDecision("REST_API_JWT_AUTHORIZER_REQUIRED",
+        "Choose a REST-compatible JWT validation mechanism for API " + api.name + ".",
+        KERNEL!Severity#ERROR, true, Sequence{api, g},
+        "Use Cognito or a Lambda authorizer. Native JWT authorizers cannot be attached to a REST API.");
+      return null;
+    }
     var j = new AWSPSMAPI!JwtAuthorizer;
     copyAwsResource(api.auth, j, "JwtAuthorizer", "AWS::ApiGatewayV2::Authorizer");
     j.id = generatedId("jwt_authorizer", api, api.auth.name);
@@ -639,12 +714,18 @@ operation createApiAuthorizer(api, g) {
     j.identitySource = "$request.header.Authorization";
     j.authorizerResultTtlInSeconds = 300;
     g.authorizers.add(j);
-    j.issuer = api.auth.tokenValidationRules;
-    if (not hasText(j.issuer)) {
+    var rules = asText(api.auth.tokenValidationRules).trim();
+    j.issuer = annotationValue(rules, "issuer");
+    if (rules.startsWith("https://") and not rules.contains(" ") and not rules.contains(";")) j.issuer = rules;
+    var audiences = annotationValue(rules, "audience");
+    if (hasText(audiences)) {
+      for (audience in audiences.split(",")) if (hasText(audience.trim())) j.audience.add(audience.trim());
+    }
+    if (not hasText(j.issuer) or not j.issuer.startsWith("https://") or j.audience.isEmpty()) {
       manualDecision("API_ROUTE_AUTHORIZER_MISSING",
         "Provide JWT issuer/audience for API " + api.name + ".",
-        KERNEL!Severity#ERROR, isProductionRoot(), Sequence{api, j},
-        "Set AuthPolicy.tokenValidationRules and scopes/audience details.");
+        KERNEL!Severity#ERROR, true, Sequence{api, j},
+        "Set AuthPolicy.tokenValidationRules to issuer=https://your-issuer;audience=client-id. Scopes are not client audiences.");
     }
     cachedAwsAuthorizerByApiId.put(g.id, j);
     return j;

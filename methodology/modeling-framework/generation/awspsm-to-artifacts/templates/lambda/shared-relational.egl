@@ -1,0 +1,73 @@
+package shared
+
+import (
+    "context"
+    "fmt"
+    "os"
+    "time"
+
+    "github.com/aws/aws-sdk-go-v2/aws"
+    awsconfig "github.com/aws/aws-sdk-go-v2/config"
+    "github.com/aws/aws-sdk-go-v2/service/rdsdata"
+    "github.com/aws/aws-sdk-go-v2/service/rdsdata/types"
+)
+
+// RelationalStore uses the AWS Data API on AWS and the same API on the local emulator.
+// Parameter values belong in SqlParameter, never concatenated into SQL strings.
+type RelationalStore struct {
+    Client *rdsdata.Client
+    ResourceArn string
+    SecretArn string
+    Database string
+}
+
+func NewRelationalStore(ctx context.Context, prefix string) (*RelationalStore, error) {
+    store := &RelationalStore{
+        ResourceArn: os.Getenv(prefix + "_RESOURCE_ARN"),
+        SecretArn: os.Getenv(prefix + "_SECRET_ARN"),
+        Database: os.Getenv(prefix + "_DATABASE"),
+    }
+    if store.ResourceArn == "" || store.SecretArn == "" || store.Database == "" {
+        return nil, fmt.Errorf("missing generated relational configuration for %s", prefix)
+    }
+    cfg, err := awsconfig.LoadDefaultConfig(ctx)
+    if err != nil { return nil, err }
+    store.Client = rdsdata.NewFromConfig(cfg, func(options *rdsdata.Options) {
+        endpoint := os.Getenv("AWS_ENDPOINT_URL_RDS_DATA")
+        if endpoint == "" { endpoint = os.Getenv("AWS_ENDPOINT_URL") }
+        if endpoint != "" { options.BaseEndpoint = aws.String(endpoint) }
+    })
+    return store, nil
+}
+
+func (store *RelationalStore) Execute(ctx context.Context, sql string, parameters []types.SqlParameter, transactionId *string) (*rdsdata.ExecuteStatementOutput, error) {
+    return store.Client.ExecuteStatement(ctx, &rdsdata.ExecuteStatementInput{
+        ResourceArn: aws.String(store.ResourceArn), SecretArn: aws.String(store.SecretArn),
+        Database: aws.String(store.Database), Sql: aws.String(sql), Parameters: parameters,
+        TransactionId: transactionId, IncludeResultMetadata: true,
+    })
+}
+
+// WithTransaction commits only when the callback succeeds; failed callbacks and panics roll back.
+func (store *RelationalStore) WithTransaction(ctx context.Context, callback func(string) error) error {
+    transaction, err := store.Client.BeginTransaction(ctx, &rdsdata.BeginTransactionInput{
+        ResourceArn: aws.String(store.ResourceArn), SecretArn: aws.String(store.SecretArn), Database: aws.String(store.Database),
+    })
+    if err != nil { return err }
+    committed := false
+    defer func() {
+        if !committed {
+            cleanup, cancel := context.WithTimeout(context.WithoutCancel(ctx), 10 * time.Second)
+            defer cancel()
+            _, _ = store.Client.RollbackTransaction(cleanup, &rdsdata.RollbackTransactionInput{
+                ResourceArn: aws.String(store.ResourceArn), SecretArn: aws.String(store.SecretArn), TransactionId: transaction.TransactionId,
+            })
+        }
+    }()
+    if err = callback(aws.ToString(transaction.TransactionId)); err != nil { return err }
+    _, err = store.Client.CommitTransaction(ctx, &rdsdata.CommitTransactionInput{
+        ResourceArn: aws.String(store.ResourceArn), SecretArn: aws.String(store.SecretArn), TransactionId: transaction.TransactionId,
+    })
+    committed = err == nil
+    return err
+}

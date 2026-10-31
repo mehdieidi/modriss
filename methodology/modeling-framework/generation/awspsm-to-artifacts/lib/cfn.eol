@@ -4,6 +4,30 @@ import "values.eol";
 import "iam.eol";
 import "paths.eol";
 
+/** Deploys exported database/secret values and shared identity pools before their consumers. */
+operation Collection orderedDeploymentStacks() : Sequence {
+  var pending = self.asSequence().sortBy(stack | stack.stackName);
+  var ordered = Sequence{};
+  while (pending.notEmpty()) {
+    var ready = pending.selectOne(stack | not AWSPSMAPI!CognitoAuthorizer.all.exists(auth |
+      auth.api.isDefined() and auth.api.stack = stack and auth.userPool.isDefined()
+      and auth.userPool.stack.isDefined() and auth.userPool.stack <> stack
+      and pending.includes(auth.userPool.stack)) and not AWSPSMCORE!ValueExpression.all.exists(value |
+        value.emittingStack() = stack and value.resource.isDefined() and value.resource.stack.isDefined()
+        and value.resource.stack <> stack and pending.includes(value.resource.stack))
+      and not AWSPSMSTORAGE!RdsDbCluster.all.exists(cluster | cluster.stack = stack and cluster.credentialsSecret.isDefined()
+        and cluster.credentialsSecret.stack.isDefined() and cluster.credentialsSecret.stack <> stack and pending.includes(cluster.credentialsSecret.stack))
+      and not AWSPSMSTORAGE!RdsDbInstance.all.exists(instance | instance.stack = stack and instance.cluster.isDefined()
+        and instance.cluster.stack.isDefined() and instance.cluster.stack <> stack and pending.includes(instance.cluster.stack))
+      and not stack.flattenedResources().exists(resource | resource.dependsOn.exists(dependency |
+        dependency.stack.isDefined() and dependency.stack <> stack and pending.includes(dependency.stack))));
+    if (ready.isUndefined()) throw "Cyclic database, resource-value, or Cognito dependencies between deployment stacks.";
+    ordered.add(ready);
+    pending.remove(ready);
+  }
+  return ordered;
+}
+
 /** Collects nested AwsResource children for CFN flattening. */
 operation AWSPSMCORE!AwsResource nestedAwsResources() : Sequence {
   var nested = Sequence{};
@@ -50,7 +74,7 @@ operation AWSPSMCORE!SamStack orderedResources() : Sequence {
     "IamRole", "IamManagedPolicy", "IamPolicy", "KmsKey", "KmsAlias", "SecretsManagerSecret", "SsmParameter",
     "CognitoUserPool", "CognitoUserPoolClient", "CognitoUserPoolGroup", "CognitoUserPoolDomain", "CognitoIdentityPool",
     "Vpc", "Subnet", "VpcEndpoint", "SecurityGroup",
-    "DynamoDbTable", "S3Bucket",
+    "RdsDbSubnetGroup", "RdsDbCluster", "RdsDbInstance", "DynamoDbTable", "S3Bucket",
     "SqsQueue", "SnsTopic",
     "EventBridgeBus", "EventBridgeBusPolicy", "EventBridgeRule", "EventBridgeArchive", "EventBridgeSchedule", "EventBridgePipe", "EventBridgeConnection", "EventBridgeApiDestination",
     "CloudWatchLogGroup",
@@ -126,9 +150,9 @@ operation AWSPSMAPI!HttpApiRoute omitFromCfnTemplate() : Boolean {
   return self.openApiDefinitionOwnsRoute();
 }
 
-/** REST API routes are emitted as concrete methods for SAM/CloudFormation coverage. */
+/** REST paths and methods are owned by the API's OpenAPI definition. */
 operation AWSPSMAPI!RestApiRoute omitFromCfnTemplate() : Boolean {
-  return false;
+  return self.owningApi().isDefined() and self.owningApi().routes.includes(self);
 }
 
 /** Integrations embedded in an OpenAPI-owned route must not be emitted a second time. */
@@ -138,6 +162,10 @@ operation AWSPSMAPI!ApiGatewayIntegration omitFromCfnTemplate() : Boolean {
 }
 
 /** Placeholder custom resources remain in reports until a real provider token is modeled. */
+operation AWSPSMSECURITY!SecretRotationSchedule omitFromCfnTemplate() : Boolean {
+  return self.rotationLambda.isUndefined();
+}
+
 operation AWSPSMCORE!AwsNativeResource omitFromCfnTemplate() : Boolean {
   return self.cloudFormationType.startsWith("Custom::")
     and self.properties.exists(propObj |
@@ -187,13 +215,14 @@ operation AWSPSMCORE!AwsResource emitCommonCfnAttributesYaml() : String {
   if (self.conditionName.isPresent()) {
     outText = outText + "    Condition: " + self.conditionName + "\n";
   }
-  if (self.dependsOn.notEmpty()) {
-    if (self.dependsOn.size() = 1) {
-      outText = outText + "    DependsOn: " + self.dependsOn.first().cfnLogicalId() + "\n";
+  var localDependencies = self.dependsOn.select(dependency | dependency.stack.isUndefined() or dependency.stack = self.stack);
+  if (localDependencies.notEmpty()) {
+    if (localDependencies.size() = 1) {
+      outText = outText + "    DependsOn: " + localDependencies.first().cfnLogicalId() + "\n";
     }
     else {
       outText = outText + "    DependsOn:\n";
-      for (depObj in self.dependsOn.sortBy(depObj | depObj.cfnLogicalId())) {
+      for (depObj in localDependencies.sortBy(depObj | depObj.cfnLogicalId())) {
         outText = outText + "      - " + depObj.cfnLogicalId() + "\n";
       }
     }
@@ -237,6 +266,56 @@ operation AWSPSMCORE!AwsNativeResource emitCfnPropertiesYaml(emitCtx : Map) : St
 }
 
 /** Computes cfn type text. */
+operation AWSPSMSTORAGE!RdsDbCluster cfnTypeText(emitCtx : Map) : String { return "AWS::RDS::DBCluster"; }
+
+operation AWSPSMSTORAGE!RdsDbCluster emitCfnPropertiesYaml(emitCtx : Map) : String {
+  var text = emitYamlScalarProperty("DBClusterIdentifier", self.clusterIdentifier, 6);
+  text = text + emitYamlScalarProperty("Engine", self.engine, 6);
+  text = text + emitYamlScalarProperty("EngineVersion", self.engineVersion, 6);
+  text = text + emitYamlScalarProperty("DatabaseName", self.databaseName, 6);
+  text = text + emitYamlScalarProperty("MasterUsername", self.masterUsername, 6);
+  if (self.credentialsSecret.isDefined()) {
+    text = text + "      MasterUserPassword:\n        Fn::Join:\n          - ''\n          - - '{{resolve:secretsmanager:'\n            - " + self.valueForResource(self.credentialsSecret, "Ref") + "\n            - ':SecretString:password}}'\n";
+  }
+  text = text + emitYamlBooleanProperty("EnableHttpEndpoint", self.enableHttpEndpoint, 6);
+  text = text + emitYamlBooleanProperty("StorageEncrypted", self.storageEncrypted, 6);
+  text = text + emitYamlBooleanProperty("DeletionProtection", self.deletionProtection, 6);
+  text = text + emitYamlIntegerProperty("BackupRetentionPeriod", self.backupRetentionPeriod, 6);
+  text = text + "      ServerlessV2ScalingConfiguration:\n" + emitYamlIntegerProperty("MinCapacity", self.minCapacity, 8) + emitYamlIntegerProperty("MaxCapacity", self.maxCapacity, 8);
+  if (self.kmsKey.isDefined()) text = text + "      KmsKeyId: " + self.valueForResource(self.kmsKey, "Arn") + "\n";
+  if (self.subnetGroup.isDefined()) text = text + "      DBSubnetGroupName: " + self.valueForResource(self.subnetGroup, "Ref") + "\n";
+  if (self.securityGroups.notEmpty()) {
+    text = text + "      VpcSecurityGroupIds:\n";
+    for (group in self.securityGroups) text = text + "        - " + self.valueForResource(group, "Ref") + "\n";
+  }
+  return text + self.tags.emitTagsYaml(6) + self.overrides.emitNativePropertiesYaml(6);
+}
+
+operation AWSPSMSTORAGE!RdsDbInstance cfnTypeText(emitCtx : Map) : String { return "AWS::RDS::DBInstance"; }
+
+operation AWSPSMSTORAGE!RdsDbInstance emitCfnPropertiesYaml(emitCtx : Map) : String {
+  var text = emitYamlScalarProperty("DBInstanceIdentifier", self.instanceIdentifier, 6);
+  text = text + emitYamlScalarProperty("DBInstanceClass", self.instanceClass, 6);
+  if (self.cluster.isDefined()) {
+    text = text + "      DBClusterIdentifier: " + self.valueForResource(self.cluster, "Ref") + "\n";
+    text = text + emitYamlScalarProperty("Engine", self.cluster.engine, 6);
+  }
+  text = text + emitYamlScalarProperty("AvailabilityZone", self.availabilityZone, 6);
+  text = text + emitYamlBooleanProperty("PubliclyAccessible", self.publiclyAccessible, 6);
+  text = text + emitYamlIntegerProperty("PromotionTier", self.promotionTier, 6);
+  return text + self.tags.emitTagsYaml(6) + self.overrides.emitNativePropertiesYaml(6);
+}
+
+operation AWSPSMSTORAGE!RdsDbSubnetGroup cfnTypeText(emitCtx : Map) : String { return "AWS::RDS::DBSubnetGroup"; }
+
+operation AWSPSMSTORAGE!RdsDbSubnetGroup emitCfnPropertiesYaml(emitCtx : Map) : String {
+  var text = emitYamlScalarProperty("DBSubnetGroupName", self.groupName, 6);
+  text = text + emitYamlScalarProperty("DBSubnetGroupDescription", self.descriptionText, 6);
+  text = text + "      SubnetIds:\n";
+  for (subnet in self.subnets) text = text + "        - " + self.valueForResource(subnet, "Ref") + "\n";
+  return text + self.tags.emitTagsYaml(6) + self.overrides.emitNativePropertiesYaml(6);
+}
+
 operation AWSPSMCOMPUTE!AwsLambdaFunction cfnTypeText(emitCtx : Map) : String {
   return "AWS::Serverless::Function";
 }
@@ -722,7 +801,21 @@ operation AWSPSMSECURITY!SecretsManagerSecret emitCfnPropertiesYaml(emitCtx : Ma
   if (self.kmsKey.isDefined()) {
     outText = outText + spaces(6) + "KmsKeyId: !Ref " + self.kmsKey.cfnLogicalId() + "\n";
   }
-  if (self.generateSecretStringJson.isPresent()) {
+  if (self.generateSecretString.isDefined()) {
+    var config = self.generateSecretString;
+    outText = outText + "      GenerateSecretString:\n";
+    if (config.secretStringTemplate.isPresent()) outText = outText + "        SecretStringTemplate: " + config.secretStringTemplate.jsonString() + "\n";
+    outText = outText + emitYamlScalarProperty("GenerateStringKey", config.generateStringKey, 8);
+    outText = outText + emitYamlIntegerProperty("PasswordLength", config.passwordLength, 8);
+    outText = outText + emitYamlScalarProperty("ExcludeCharacters", config.excludeCharacters, 8);
+    outText = outText + emitYamlBooleanProperty("ExcludeLowercase", config.excludeLowercase, 8);
+    outText = outText + emitYamlBooleanProperty("ExcludeUppercase", config.excludeUppercase, 8);
+    outText = outText + emitYamlBooleanProperty("ExcludeNumbers", config.excludeNumbers, 8);
+    outText = outText + emitYamlBooleanProperty("ExcludePunctuation", config.excludePunctuation, 8);
+    outText = outText + emitYamlBooleanProperty("IncludeSpace", config.includeSpace, 8);
+    outText = outText + emitYamlBooleanProperty("RequireEachIncludedType", config.requireEachIncludedType, 8);
+  }
+  else if (self.generateSecretStringJson.isPresent()) {
     outText = outText + structuredYamlProperty("GenerateSecretString", self.generateSecretStringJson, 6);
   }
   else if (self.secretValue.isDefined() and self.secretValue.sourceKind.asString() <> "PLAINTEXT") {
@@ -917,10 +1010,12 @@ operation AWSPSMMESSAGING!SnsSubscription emitCfnPropertiesYaml(emitCtx : Map) :
   var topicArnText = "''";
   if (topicObj.isDefined()) {
     topicArnText = "!Ref " + topicObj.cfnLogicalId();
+    if (self.stack.isDefined() and topicObj.stack.isDefined() and self.stack <> topicObj.stack)
+      topicArnText = arnForResource(topicObj);
   }
   var outText = spaces(6) + "TopicArn: " + topicArnText + "\n";
   outText = outText + emitYamlScalarProperty("Protocol", self.protocol.snsProtocolText(), 6);
-  if (self.endpointResource.isDefined()) {
+  if (self.endpointResource.isDefined() and self.protocol.snsProtocolText() <> "http" and self.protocol.snsProtocolText() <> "https") {
     outText = outText + spaces(6) + "Endpoint: " + arnForResource(self.endpointResource) + "\n";
   }
   else {
@@ -1823,34 +1918,94 @@ operation AWSPSMAPI!LambdaAuthorizer cfnTypeText(emitCtx : Map) : String {
 }
 
 /** Renders emit cfn properties yaml. */
-operation AWSPSMAPI!ApiGatewayAuthorizer emitCfnPropertiesYaml(emitCtx : Map) : String {
+operation AWSPSMAPI!ApiGatewayAuthorizer emitAuthorizerPropertiesYaml(emitCtx : Map) : String {
   var outText = "";
-  if (self.api.eClass().getName() = "RestApi") {
+  var rest = self.api.eClass().getName() = "RestApi";
+  var jwt = self.eClass().getName() = "JwtAuthorizer";
+  var cognito = self.eClass().getName() = "CognitoAuthorizer";
+  if (jwt and self.api.eClass().getName() <> "HttpApi") {
+    throw "Authorizer " + self.cfnLogicalId() + ": native JWT requires an HTTP API. Keep REST validation requirements and configure a Cognito or Lambda authorizer, or explicitly choose an HTTP API.";
+  }
+  if (rest) {
     outText = outText + spaces(6) + "RestApiId: !Ref " + self.api.cfnLogicalId() + "\n";
   }
   else {
     outText = outText + spaces(6) + "ApiId: !Ref " + self.api.cfnLogicalId() + "\n";
   }
   outText = outText + emitYamlScalarProperty("Name", firstText(self.authorizerName, self.physicalName), 6);
-  outText = outText + emitYamlScalarProperty("AuthorizerType", self.authorizationType.asString(), 6);
-  outText = outText + emitYamlScalarProperty("IdentitySource", self.identitySource, 6);
-  outText = outText + emitYamlIntegerProperty("AuthorizerResultTtlInSeconds", self.authorizerResultTtlInSeconds, 6);
-  if (self.eClass().getName() = "JwtAuthorizer") {
+  var kind = "REQUEST";
+  if (jwt or (cognito and not rest)) kind = "JWT";
+  else if (cognito) kind = "COGNITO_USER_POOLS";
+  else if (rest and self.authorizationType.asString() = "CUSTOM_LAMBDA") kind = "TOKEN";
+  var typeProperty = "AuthorizerType";
+  if (rest) typeProperty = "Type";
+  outText = outText + emitYamlScalarProperty(typeProperty, kind, 6);
+  if (rest) {
+    var identity = self.identitySource.orElseText("method.request.header.Authorization");
+    if (identity.startsWith("$request.header.")) identity = "method.request.header." + identity.substring(16);
+    outText = outText + emitYamlScalarProperty("IdentitySource", identity, 6);
+  }
+  else {
+    var identity = self.identitySource.orElseText("$request.header.Authorization");
+    if (identity.startsWith("method.request.header.")) identity = "$request.header." + identity.substring(22);
+    outText = outText + "      IdentitySource:\n        - " + identity.yamlScalar() + "\n";
+  }
+  if (kind = "TOKEN" or kind = "REQUEST")
+    outText = outText + emitYamlIntegerProperty("AuthorizerResultTtlInSeconds", self.authorizerResultTtlInSeconds, 6);
+  if (jwt) {
     outText = outText + spaces(6) + "JwtConfiguration:\n";
     outText = outText + emitYamlScalarProperty("Issuer", self.issuer, 8);
     outText = outText + emitYamlStringListProperty("Audience", self.audience, 8);
   }
-  else if (self.eClass().getName() = "CognitoAuthorizer") {
-    outText = outText + spaces(6) + "ProviderARNs:\n";
-    outText = outText + spaces(8) + "- " + arnForResource(self.userPool) + "\n";
+  else if (cognito) {
+    if (rest) {
+      outText = outText + spaces(6) + "ProviderARNs:\n";
+      outText = outText + spaces(8) + "- " + self.api.cognitoPoolArn(self.userPool) + "\n";
+    }
+    else {
+      outText = outText + "      JwtConfiguration:\n        Issuer: !Sub 'https://cognito-idp.${AWS::Region}.${AWS::URLSuffix}/${" + self.userPool.cfnLogicalId() + "}'\n";
+      if (self.clients.notEmpty()) {
+        outText = outText + "        Audience:\n";
+        for (client in self.clients) outText = outText + "          - !Ref " + client.cfnLogicalId() + "\n";
+      }
+    }
   }
   else if (self.eClass().getName() = "LambdaAuthorizer") {
-    outText = outText + spaces(6) + "AuthorizerUri: " + arnForResource(self.modelFeatureValue("function")) + "\n";
-    outText = outText + emitYamlScalarProperty("AuthorizerPayloadFormatVersion", self.authorizerPayloadFormatVersion, 6);
-    outText = outText + emitYamlBooleanProperty("EnableSimpleResponses", self.enableSimpleResponses, 6);
+    outText = outText + spaces(6) + "AuthorizerUri: " + apiGatewayLambdaIntegrationUri(self.modelFeatureValue("function")) + "\n";
+    if (not rest and self.api.eClass().getName() = "HttpApi") {
+      outText = outText + emitYamlScalarProperty("AuthorizerPayloadFormatVersion", self.authorizerPayloadFormatVersion.orElseText("2.0"), 6);
+      outText = outText + emitYamlBooleanProperty("EnableSimpleResponses", self.enableSimpleResponses, 6);
+    }
   }
-  return outText + self.tags.emitTagsYaml(6) + self.overrides.emitNativePropertiesYaml(6);
+  return outText + self.overrides.emitNativePropertiesYaml(6);
 }
+
+/** Concrete dispatch is required because AwsResource also defines this operation. */
+operation AWSPSMAPI!ApiGatewayAuthorizer emitCfnPropertiesYaml(emitCtx : Map) : String {
+  return self.emitAuthorizerPropertiesYaml(emitCtx);
+}
+
+operation AWSPSMAPI!JwtAuthorizer emitCfnPropertiesYaml(emitCtx : Map) : String {
+  return self.emitAuthorizerPropertiesYaml(emitCtx);
+}
+
+operation AWSPSMAPI!CognitoAuthorizer emitCfnPropertiesYaml(emitCtx : Map) : String {
+  return self.emitAuthorizerPropertiesYaml(emitCtx);
+}
+
+operation AWSPSMAPI!LambdaAuthorizer emitCfnPropertiesYaml(emitCtx : Map) : String {
+  return self.emitAuthorizerPropertiesYaml(emitCtx);
+}
+
+/** An imported OpenAPI definition owns its referenced authorizers, avoiding duplicate identities. */
+operation AWSPSMAPI!ApiGatewayAuthorizer ownedByOpenApi() : Boolean {
+  return (self.api.eClass().getName() = "HttpApi" or self.api.eClass().getName() = "RestApi")
+    and self.api.routes.exists(routeObj | routeObj.authorizer = self);
+}
+
+operation AWSPSMAPI!JwtAuthorizer omitFromCfnTemplate() : Boolean { return self.ownedByOpenApi(); }
+operation AWSPSMAPI!CognitoAuthorizer omitFromCfnTemplate() : Boolean { return self.ownedByOpenApi(); }
+operation AWSPSMAPI!LambdaAuthorizer omitFromCfnTemplate() : Boolean { return self.ownedByOpenApi(); }
 
 /** Computes cfn type text. */
 operation AWSPSMAPI!ApiGatewayDomainName cfnTypeText(emitCtx : Map) : String {
@@ -2016,7 +2171,11 @@ operation AWSPSMIDENTITY!CognitoUserPool emitCfnPropertiesYaml(emitCtx : Map) : 
   if (self.schemaJson.isPresent()) {
     outText = outText + yamlBlock("Schema", self.schemaJson, 6);
   }
-  outText = outText + emitYamlBooleanProperty("DeletionProtection", self.deletionProtection, 6);
+  if (self.deletionProtection.isDefined()) {
+    var protection = "INACTIVE";
+    if (self.deletionProtection = true) protection = "ACTIVE";
+    outText = outText + emitYamlScalarProperty("DeletionProtection", protection, 6);
+  }
   return outText + self.tags.emitTagMapYaml("UserPoolTags", 6) + self.overrides.emitNativePropertiesYaml(6);
 }
 

@@ -7,6 +7,7 @@ import { saveCurrentTabGraphState, syncActiveViewFromVisibleGraph } from "./grap
 import { enhanceSelects } from "./themed-select.js";
 import { defaultPsmNotation, inferPsmLevel } from "./psm-notation.js";
 import { setError } from "./status.js";
+import { renderTestControls } from "./test-environment.js";
 
 let nativeLevel;
 let projectId;
@@ -313,6 +314,7 @@ function selector(parent, id, openLevel) {
 }
 
 export function renderCloudProviderControls() {
+  renderTestControls();
   const tab = document.querySelector('#modelTabs .tab[data-type="psm"]');
   if (!tab) return;
   tab.textContent = selectedCloudProvider().name;

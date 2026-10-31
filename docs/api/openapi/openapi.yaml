@@ -3071,6 +3071,112 @@ paths:
           content:
             application/xml:
               schema: { type: string, format: binary }
+  /api/projects/{projectId}/test-environment:
+    parameters:
+      - $ref: "#/components/parameters/PsmProjectId"
+      - name: before
+        in: query
+        description: Load the history page before this job ID; the response supplies historyCursor when another page may exist.
+        schema: { type: string }
+    get:
+      tags: [Artifacts]
+      summary: Read AWS test deployment, resource inventory, and recent execution history
+      description: Includes the dedicated Floci instance identity and deploymentReady. Older shared-emulator deployments and restarted or missing instances require redeployment; saved evidence remains readable.
+      responses:
+        "200":
+          description: Project-scoped Floci environment and saved AWS artifacts
+          content:
+            application/json:
+              schema: { type: object }
+        "403":
+          $ref: "#/components/responses/Forbidden"
+  /api/projects/{projectId}/test-environment/jobs:
+    parameters:
+      - $ref: "#/components/parameters/PsmProjectId"
+    post:
+      tags: [Artifacts]
+      summary: Deploy or execute a saved AWS artifact on the backend Floci emulator
+      description: Requires project editor access. Only one operation may run per project. Resource operations must reference the current successful deployment in the same dedicated Floci runtime. API request input preserves application Authorization headers by default; auth can be set to aws-iam to request explicit AWS signing instead.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [kind]
+              properties:
+                kind: { type: string, enum: [DEPLOY, EXECUTE, SCRIPT, OBSERVE] }
+                artifactId: { type: string }
+                deploymentId: { type: string }
+                resourceId: { type: string }
+                action: { type: string }
+                scenario: { type: string }
+                input: { type: object }
+      responses:
+        "202":
+          description: Queued durable execution record; poll the job endpoint
+          content:
+            application/json:
+              schema: { type: object }
+        "409":
+          description: Active operation or outdated deployment
+        "403":
+          $ref: "#/components/responses/Forbidden"
+  /api/projects/{projectId}/test-environment/jobs/{id}:
+    parameters:
+      - $ref: "#/components/parameters/PsmProjectId"
+      - { name: id, in: path, required: true, schema: { type: string } }
+    get:
+      tags: [Artifacts]
+      summary: Poll execution status, observed events, response, and diagnostics
+      responses:
+        "200":
+          description: Durable test execution record
+          content:
+            application/json:
+              schema: { type: object }
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /api/projects/{projectId}/test-environment/jobs/{id}/evidence:
+    parameters:
+      - $ref: "#/components/parameters/PsmProjectId"
+      - { name: id, in: path, required: true, schema: { type: string } }
+    get:
+      tags: [Artifacts]
+      summary: Download one execution's JSON evidence
+      responses:
+        "200":
+          description: Downloadable execution input, source hash, events, and output
+          content:
+            application/json:
+              schema: { type: object }
+  /api/artifact/{id}/source-archive:
+    parameters:
+      - $ref: "#/components/parameters/ArtifactId"
+    post:
+      tags: [Artifacts]
+      summary: Replace artifact source files with a developer-refined project ZIP
+      description: Requires editor access. Accepts UTF-8 text sources; skips .git, node_modules, bin, and .aws-sam directories. Rejects unsafe paths and archives exceeding source limits. Existing deployment snapshots remain immutable.
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file: { type: string, format: binary }
+      responses:
+        "200":
+          description: Updated artifact with imported source files
+          content:
+            application/json:
+              schema: { type: object }
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
 components:
   securitySchemes:
     AuthToken:

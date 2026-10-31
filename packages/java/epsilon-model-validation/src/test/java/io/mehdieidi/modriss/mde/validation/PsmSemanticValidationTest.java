@@ -37,6 +37,64 @@ class PsmSemanticValidationTest {
   @TempDir Path tempDir;
 
   @Test
+  void relationalSchemaConstraintsAcceptTheGeneratedDesignAndRejectIncompletePsmEdits()
+      throws Exception {
+    String sample = Files.readString(PSM_SAMPLE);
+    String valid =
+        """
+  <resources xsi:type="awspsmsecurity:SecretsManagerSecret" id="relational-credentials" name="Credentials" logicalId="RelationalCredentials" secretName="relational-credentials"/>
+  <resources xsi:type="awspsmstorage:RdsDbCluster" id="relational-cluster" name="Database" logicalId="RelationalDatabase" credentialsSecret="relational-credentials" clusterIdentifier="relational-evaluation" databaseName="evaluation" masterUsername="modriss" engine="aurora-postgresql" minCapacity="1" maxCapacity="2">
+    <tables id="relational-table" name="Cases" tableName="cases">
+      <columns id="relational-column" name="ID" columnName="id" sqlType="text" primaryKey="true" nullable="false"/>
+      <indexes id="relational-index" name="ID index" indexName="cases_id" columnNames="id"/>
+    </tables>
+  </resources>
+  <resources xsi:type="awspsmstorage:RdsDbInstance" id="relational-writer" name="Writer" logicalId="RelationalWriter" cluster="relational-cluster" instanceIdentifier="relational-writer" instanceClass="db.serverless"/>
+""";
+    var accepted =
+        validate(
+            "relational-valid",
+            writeModel("relational-valid", insertBeforeFirstStackClose(sample, valid)),
+            false);
+    assertTrue(accepted.diagnostics().isEmpty(), accepted.diagnostics().toString());
+    assertTrue(
+        violationNames(accepted).stream().noneMatch(name -> name.startsWith("Relational")),
+        accepted.violations().toString());
+    String invalid =
+        """
+  <resources xsi:type="awspsmstorage:RdsDbCluster" id="relational-broken" name="Incomplete database" logicalId="IncompleteDatabase" engine="aurora-mysql" minCapacity="0" maxCapacity="0">
+    <tables id="relational-table-a" name="A" tableName="duplicate">
+      <columns id="relational-column-a" name="A" columnName="duplicate" sqlType="unsupported" primaryKey="true" nullable="true"/>
+      <columns id="relational-column-b" name="B" columnName="duplicate" sqlType="text"/>
+      <indexes id="relational-index-a" name="Bad index" indexName="bad_index" columnNames="missing"/>
+    </tables>
+    <tables id="relational-table-b" name="B" tableName="duplicate"/>
+  </resources>
+  <resources xsi:type="awspsmstorage:RdsDbInstance" id="relational-broken-writer" name="Incomplete writer" logicalId="IncompleteWriter"/>
+""";
+    var rejected =
+        validate(
+            "relational-invalid",
+            writeModel("relational-invalid", insertBeforeFirstStackClose(sample, invalid)),
+            false);
+    for (String rule :
+        List.of(
+            "RelationalClusterUsesSupportedEngine",
+            "RelationalClusterHasCredentialsAndValidName",
+            "RelationalClusterHasValidCapacity",
+            "RelationalClusterHasWriter",
+            "RelationalClusterHasDistinctTables",
+            "RelationalInstanceHasClusterAndClass",
+            "RelationalTableHasColumnsAndPrimaryKey",
+            "RelationalColumnsHaveDistinctNames",
+            "RelationalColumnUsesSupportedType",
+            "RelationalPrimaryKeyIsNotNullable",
+            "RelationalIndexReferencesExistingColumns")) {
+      assertTrue(violationNames(rejected).contains(rule), rule + ": " + rejected.diagnostics());
+    }
+  }
+
+  @Test
   void repositoryPsmSamplePassesMandatorySemanticsAndReportsOptionalReadinessGaps()
       throws Exception {
     EvlValidationReport report = validate(PSM_SAMPLE);

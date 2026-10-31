@@ -2,6 +2,7 @@ package io.mehdieidi.modriss.mde.etl;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -346,8 +347,30 @@ final class PimToAwsPsmEtlRegressionTest {
     assertTrue(reference(table, "streamSpecification") != null);
     assertTrue(reference(table, "backupPolicy") != null);
 
-    EObject unsupportedStore = first(resources, "AwsNativeResource", "Reporting Store");
-    assertEquals("Custom::UnsupportedDataStore", get(unsupportedStore, "cloudFormationType"));
+    EObject relationalStore = first(resources, "RdsDbCluster", "Reporting Store");
+    assertEquals("aurora-postgresql", get(relationalStore, "engine"));
+    assertEquals(Boolean.TRUE, get(relationalStore, "enableHttpEndpoint"));
+    EObject credentials = reference(relationalStore, "credentialsSecret");
+    assertNotNull(credentials);
+    assertNotNull(reference(credentials, "generateSecretString"));
+    assertEquals(32, get(reference(credentials, "generateSecretString"), "passwordLength"));
+    EObject writer = first(resources, "RdsDbInstance", "Reporting Store");
+    assertEquals(relationalStore, reference(writer, "cluster"));
+    assertEquals("db.serverless", get(writer, "instanceClass"));
+    assertEquals(1, values(relationalStore, "tables").size());
+    EObject sqlIndex = values(values(relationalStore, "tables").get(0), "indexes").get(0);
+    assertEquals(Boolean.TRUE, get(sqlIndex, "unique"));
+    var sqlColumns = values(values(relationalStore, "tables").get(0), "columns");
+    assertTrue(
+        sqlColumns.stream()
+            .anyMatch(
+                column ->
+                    "id".equals(get(column, "columnName"))
+                        && Boolean.TRUE.equals(get(column, "primaryKey"))));
+    assertTrue(sqlColumns.stream().anyMatch(column -> "numeric".equals(get(column, "sqlType"))));
+    assertTrue(
+        values(lambda, "environment").stream()
+            .anyMatch(env -> "REPORTING_STORE_SECRET_ARN".equals(get(env, "variableName"))));
 
     EObject bucket = first(resources, "S3Bucket", "Order Documents");
     assertEquals("ENABLED", enumLabel(get(bucket, "versioningStatus")));
@@ -583,6 +606,10 @@ final class PimToAwsPsmEtlRegressionTest {
             .anyMatch(m -> "SLO:Availability".equals(get(m, "propertyName"))));
 
     EObject noAccessLambda = first(resources, "AwsLambdaFunction", "No Access Function");
+    assertEquals(
+        null,
+        get(noAccessLambda, "reservedConcurrentExecutions"),
+        "An unspecified concurrency reservation must not disable the Lambda with zero capacity");
     EObject noAccessRole = reference(noAccessLambda, "role");
     List<EObject> noAccessStatements =
         values(noAccessRole, "inlinePolicies").stream()
@@ -600,6 +627,34 @@ final class PimToAwsPsmEtlRegressionTest {
     EObject jwtRoute = values(jwtApi, "routes").get(0);
     assertEquals("JWT", enumLabel(get(jwtRoute, "authorizationType")));
     assertTrue(reference(jwtRoute, "authorizer") != null);
+    EObject cognitoApi = first(resources, "RestApi", "Cognito Role API");
+    EObject cognitoRoute = values(cognitoApi, "routes").get(0);
+    assertEquals(
+        "COGNITO_USER_POOLS",
+        enumLabel(get(cognitoRoute, "authorizationType")),
+        "A role requirement must not override the configured identity provider with generic JWT");
+    assertEquals("CognitoAuthorizer", reference(cognitoRoute, "authorizer").eClass().getName());
+    assertEquals(
+        List.of("grants:read", "grants:write"), values(cognitoRoute, "authorizationScopes"));
+    assertDecisionRule(reference(root, "readiness"), "ROUTE_AUTHORIZATION_REFINEMENT_REQUIRED");
+    EObject restJwt = first(resources, "RestApi", "REST JWT API");
+    assertTrue(
+        values(restJwt, "authorizers").isEmpty(), "Native JWT must never be attached to REST");
+    assertEquals(
+        "CUSTOM_LAMBDA",
+        enumLabel(get(values(restJwt, "routes").get(0), "authorizationType")),
+        "Unresolved JWT requirements must not be replaced with IAM or unauthenticated access");
+    assertDecisionRule(reference(root, "readiness"), "REST_API_JWT_AUTHORIZER_REQUIRED");
+    EObject unresolvedSubscription =
+        first(resources, "SnsSubscription", "Unresolved HTTP Subscription");
+    assertTrue(
+        reference(unresolvedSubscription, "endpointResource") == null,
+        "An external adapter metadata resource ARN cannot serve as an HTTP subscription endpoint");
+    assertEquals("REVIEW_REQUIRED_SUBSCRIPTION_ENDPOINT", get(unresolvedSubscription, "endpoint"));
+    assertDecisionRule(reference(root, "readiness"), "SNS_HTTP_ENDPOINT_REQUIRED");
+    assertEquals(
+        reference(reference(unresolvedSubscription, "topic"), "stack"),
+        reference(unresolvedSubscription, "stack"));
 
     EObject ambiguousApi = first(resources, "HttpApi", "Ambiguous Auth API");
     EObject ambiguousRoute = values(ambiguousApi, "routes").get(0);
@@ -843,6 +898,32 @@ final class PimToAwsPsmEtlRegressionTest {
 
     EObject unsupportedStore =
         dataStore(metamodelResource, "ds_reporting", "Reporting Store", "RELATIONAL");
+    set(unsupportedStore, "transactional", true);
+    set(
+        unsupportedStore,
+        "consistencyNeed",
+        enumValue(metamodelResource, "ConsistencyNeed", "TRANSACTIONAL"));
+    EObject relationalModel = create(metamodelResource, "DataModel");
+    base(relationalModel, "dm_reporting", "Reporting Data");
+    set(relationalModel, "schema", requestSchema);
+    set(relationalModel, "dataModelKind", enumValue(metamodelResource, "SchemaKind", "ENTITY"));
+    EObject identifier =
+        dataField(metamodelResource, "report_id", "id", "id", "STRING", true, true, false);
+    set(identifier, "identifier", true);
+    add(relationalModel, "storageFields", identifier);
+    add(
+        relationalModel,
+        "storageFields",
+        dataField(
+            metamodelResource, "report_amount", "amount", "amount", "MONEY", false, false, false));
+    add(unsupportedStore, "ownedDataModels", relationalModel);
+    EObject relationalIndex = create(metamodelResource, "IndexCandidate");
+    base(relationalIndex, "report_amount_unique", "Reporting amount index");
+    set(relationalIndex, "partitionKeyField", "amount");
+    set(relationalIndex, "unique", true);
+    add(unsupportedStore, "indexCandidates", relationalIndex);
+    add(function, "reads", unsupportedStore);
+    add(function, "writes", unsupportedStore);
     EObject bucket = create(metamodelResource, "ObjectStore");
     base(bucket, "os_order_documents", "Order Documents");
     set(bucket, "versioningRequired", true);
@@ -1412,6 +1493,60 @@ final class PimToAwsPsmEtlRegressionTest {
     set(jwtRoute, "authRequired", true);
     add(jwtApi, "routes", jwtRoute);
 
+    EObject cognitoIdentity = create(metamodelResource, "IdentityProvider");
+    base(cognitoIdentity, "idp_cognito_roles", "Cognito Role Identity");
+    set(
+        cognitoIdentity,
+        "identityKind",
+        enumValue(metamodelResource, "IdentityKind", "USER_DIRECTORY"));
+    EObject cognitoAuth = create(metamodelResource, "AuthPolicy");
+    base(cognitoAuth, "auth_cognito_roles", "Cognito Role Auth");
+    set(cognitoAuth, "authScheme", "review-required-token");
+    set(cognitoAuth, "scopesRequired", "grants:read, grants:write");
+    set(cognitoAuth, "authenticationRequired", true);
+    set(cognitoAuth, "identityProvider", cognitoIdentity);
+    EObject cognitoApi = create(metamodelResource, "Api");
+    base(cognitoApi, "api_cognito_roles", "Cognito Role API");
+    set(cognitoApi, "apiStyle", enumValue(metamodelResource, "ApiStyle", "RESOURCE_ORIENTED_HTTP"));
+    set(cognitoApi, "authRequired", true);
+    set(cognitoApi, "auth", cognitoAuth);
+    EObject cognitoRoute =
+        apiRoute(
+            metamodelResource,
+            "route_cognito_roles",
+            "Cognito Role Route",
+            "/cognito",
+            "POST",
+            helperFunction);
+    set(cognitoRoute, "authRequired", true);
+    set(cognitoRoute, "requestValidationRequired", true);
+    EObject rolePolicy = create(metamodelResource, "AuthorizationPolicy");
+    base(rolePolicy, "authorization_cognito_roles", "Caseworker Role");
+    set(rolePolicy, "roleOrScopeRequired", "caseworker");
+    set(cognitoRoute, "authorization", rolePolicy);
+    add(cognitoApi, "routes", cognitoRoute);
+
+    EObject restJwtAuth = create(metamodelResource, "AuthPolicy");
+    base(restJwtAuth, "auth_rest_jwt", "REST JWT Auth");
+    set(restJwtAuth, "authScheme", "jwt");
+    set(restJwtAuth, "authenticationRequired", true);
+    EObject restJwtApi = create(metamodelResource, "Api");
+    base(restJwtApi, "api_rest_jwt", "REST JWT API");
+    set(restJwtApi, "apiStyle", enumValue(metamodelResource, "ApiStyle", "RESOURCE_ORIENTED_HTTP"));
+    set(restJwtApi, "authRequired", true);
+    set(restJwtApi, "auth", restJwtAuth);
+    EObject restJwtRoute =
+        apiRoute(
+            metamodelResource,
+            "route_rest_jwt",
+            "REST JWT Route",
+            "/rest-jwt",
+            "POST",
+            helperFunction);
+    set(restJwtRoute, "authRequired", true);
+    set(restJwtRoute, "requestValidationRequired", true);
+    add(restJwtApi, "routes", restJwtRoute);
+
     EObject ambiguousAuth = create(metamodelResource, "AuthPolicy");
     base(ambiguousAuth, "auth_ambiguous", "Ambiguous Auth");
     set(ambiguousAuth, "authenticationRequired", true);
@@ -1548,6 +1683,10 @@ final class PimToAwsPsmEtlRegressionTest {
 
     EObject adapter = create(metamodelResource, "ExternalAdapter");
     base(adapter, "adapter_no_endpoint", "No Endpoint Adapter");
+    EObject unresolvedSubscription = create(metamodelResource, "Subscription");
+    base(unresolvedSubscription, "sub_unresolved_http", "Unresolved HTTP Subscription");
+    set(unresolvedSubscription, "target", adapter);
+    add(topic, "subscriptions", unresolvedSubscription);
 
     EObject secretParam =
         configParameter(metamodelResource, "param_missing_secret", "Missing Secret", true, "");
@@ -1576,6 +1715,8 @@ final class PimToAwsPsmEtlRegressionTest {
     add(service, "functions", helperFunction);
     add(service, "functions", noAccessFunction);
     add(service, "apis", jwtApi);
+    add(service, "apis", cognitoApi);
+    add(service, "apis", restJwtApi);
     add(service, "apis", ambiguousApi);
     add(service, "stores", noModelStore);
     add(service, "stores", badIndexStore);
@@ -1598,6 +1739,10 @@ final class PimToAwsPsmEtlRegressionTest {
     add(root, "principals", invalidPrincipal);
     add(root, "configurations", config);
     add(root, "policies", jwtAuth);
+    add(root, "policies", cognitoAuth);
+    add(root, "policies", rolePolicy);
+    add(root, "identityProviders", cognitoIdentity);
+    add(root, "policies", restJwtAuth);
     add(root, "policies", ambiguousAuth);
     add(root, "policies", observability);
     add(root, "policies", cost);

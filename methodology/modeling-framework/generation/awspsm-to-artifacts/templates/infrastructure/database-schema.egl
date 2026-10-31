@@ -1,0 +1,6 @@
+-- Generated initial PostgreSQL schema for [%= database.name %].
+-- Deployment applies this atomically and records its checksum. Subsequent schema changes need a reviewed migration.
+[% for (statement in database.schemaStatements()) { %]
+[%= statement %];
+
+[% } %]

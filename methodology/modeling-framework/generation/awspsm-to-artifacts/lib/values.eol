@@ -200,6 +200,8 @@ operation arnForResource(resObj) : String {
   }
   var classText = resObj.eClass().getName();
   var physicalNameText = resObj.physicalName;
+  if (classText = "RdsDbCluster") return "!Sub 'arn:${AWS::Partition}:rds:${AWS::Region}:${AWS::AccountId}:cluster:" + resObj.clusterIdentifier + "'";
+  if (classText = "SecretsManagerSecret") return "!Ref " + resObj.cfnLogicalId();
   if (classText = "AwsLambdaFunction") {
     physicalNameText = firstText(resObj.functionName, physicalNameText);
     if (physicalNameText.isPresent()) return "!Sub 'arn:${AWS::Partition}:lambda:${AWS::Region}:${AWS::AccountId}:function:" + physicalNameText + "'";
@@ -243,6 +245,61 @@ operation arnForResource(resObj) : String {
   return "!GetAtt " + resObj.cfnLogicalId() + ".Arn";
 }
 
+/** Finds the stack emitting a contained value, including values inside Lambda environment lists. */
+@cached
+operation Any emittingStack() {
+  var owner = self;
+  while (owner.isDefined()) {
+    if (owner.isKindOf(AWSPSMCORE!SamStack)) return owner;
+    if (owner.isKindOf(AWSPSMCORE!AwsResource) and owner.stack.isDefined()) return owner.stack;
+    owner = owner.eContainer();
+  }
+  return null;
+}
+
+operation AWSPSMCORE!AwsResource sharedExportName(attribute : String) : String {
+  return "modriss-" + self.physicalName.orElseText(self.cfnLogicalId()) + "-" + attribute.replaceAll("[^a-zA-Z0-9]", "");
+}
+
+/** Attributes required by references from a different generated stack. */
+@cached
+operation AWSPSMCORE!AwsResource sharedValueAttributes() : Sequence {
+  var attributes = new Set;
+  for (value in AWSPSMCORE!ValueExpression.all.select(value | value.resource = self)) {
+    var consumer = value.emittingStack();
+    if (consumer.isDefined() and self.stack.isDefined() and consumer <> self.stack) {
+      var kind = value.sourceKind.asString();
+      if (kind = "CLOUDFORMATION_REF") attributes.add("Ref");
+      if (kind = "CLOUDFORMATION_GETATT" or kind = "RESOURCE_ATTRIBUTE") attributes.add(value.attributeName.orElseText("Arn"));
+    }
+  }
+  if (AWSPSMSTORAGE!RdsDbCluster.all.exists(cluster | cluster.credentialsSecret = self and cluster.stack <> self.stack)) attributes.add("Ref");
+  if (AWSPSMSTORAGE!RdsDbInstance.all.exists(instance | instance.cluster = self and instance.stack <> self.stack)) attributes.add("Ref");
+  if (AWSPSMSTORAGE!RdsDbCluster.all.exists(cluster | cluster.kmsKey = self and cluster.stack <> self.stack)) attributes.add("Arn");
+  if (AWSPSMSTORAGE!RdsDbCluster.all.exists(cluster | (cluster.subnetGroup = self or cluster.securityGroups.includes(self)) and cluster.stack <> self.stack)) attributes.add("Ref");
+  if (AWSPSMSTORAGE!RdsDbSubnetGroup.all.exists(group | group.subnets.includes(self) and group.stack <> self.stack)) attributes.add("Ref");
+  return attributes.asSequence().sortBy(attribute | attribute);
+}
+
+operation AWSPSMCORE!AwsResource valueForResource(target, attribute : String) : String {
+  if (self.stack.isDefined() and target.stack.isDefined() and self.stack <> target.stack)
+    return "!ImportValue " + target.sharedExportName(attribute).yamlScalar();
+  if (attribute = "Ref") return "!Ref " + target.cfnLogicalId();
+  return "!GetAtt " + target.cfnLogicalId() + "." + attribute;
+}
+
+/** Names the exported ARN of a shared identity pool independently of deployment stack names. */
+operation AWSPSMIDENTITY!CognitoUserPool cognitoArnExportName() : String {
+  return "modriss-" + self.physicalName.orElseText(self.cfnLogicalId()) + "-Arn";
+}
+
+/** Resolves shared Cognito pools through CloudFormation exports instead of foreign GetAtts. */
+operation AWSPSMAPI!ApiGatewayApi cognitoPoolArn(pool) : String {
+  if (pool.stack.isDefined() and self.stack.isDefined() and pool.stack <> self.stack)
+    return "!ImportValue " + pool.cognitoArnExportName().yamlScalar();
+  return arnForResource(pool);
+}
+
 /** Replaces a modeled GetAtt-Arn expression with its deployable stable ARN form. */
 operation Any normalizeCfnArnReference() : String {
   var expressionText = self.textOrEmpty();
@@ -258,6 +315,14 @@ operation Any normalizeCfnArnReference() : String {
 /** Computes cfn inline yaml. */
 operation AWSPSMCORE!ValueExpression cfnInlineYaml() : String {
   var kindText = self.sourceKind.asString();
+  if (self.resource.isDefined() and self.resource.stack.isDefined()) {
+    var owner = self.emittingStack();
+    if (owner.isDefined() and owner <> self.resource.stack) {
+      if (kindText = "CLOUDFORMATION_REF") return "!ImportValue " + self.resource.sharedExportName("Ref").yamlScalar();
+      if (kindText = "CLOUDFORMATION_GETATT" or kindText = "RESOURCE_ATTRIBUTE")
+        return "!ImportValue " + self.resource.sharedExportName(self.attributeName.orElseText("Arn")).yamlScalar();
+    }
+  }
   if (kindText = "PLAINTEXT") {
     return self.literal.yamlScalar();
   }

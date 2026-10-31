@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "databases": [
+[% var databases = AWSPSMSTORAGE!RdsDbCluster.all.sortBy(cluster | cluster.cfnLogicalId()); %]
+[% for (database in databases) { %]
+    {
+      "resource": [%= database.cfnLogicalId().jsonString() %],
+      "secret": [%= database.credentialsSecret.cfnLogicalId().jsonString() %],
+      "database": [%= database.databaseName.jsonString() %],
+      "tables": [[%= database.tables.collect(table | '{"name":' + table.tableName.jsonString() + ',"columns":[' + table.columns.collect(column | column.columnName.jsonString()).concat(", ") + ']}').concat(", ") %]],
+      "statements": [[%= database.schemaStatements().collect(statement | statement.jsonString()).concat(", ") %]]
+    }[% if (database <> databases.last()) { %],[% } %]
+[% } %]
+  ]
+}
