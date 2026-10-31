@@ -18,6 +18,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
@@ -318,6 +320,7 @@ public class TestEnvironmentService {
   private void run(ObjectNode job, ObjectNode request) {
     String id = job.path("id").asText();
     Process process = null;
+    CompletableFuture<Void> inputWriter = null;
     java.util.concurrent.ScheduledFuture<?> timeout = null;
     java.util.concurrent.ScheduledFuture<?> logCapture = null;
     var observedLogs = new java.util.concurrent.ConcurrentLinkedQueue<ObjectNode>();
@@ -349,14 +352,22 @@ public class TestEnvironmentService {
         };
     boolean completed = false;
     String completionStatus = "FAILED";
+    StringBuilder runnerOutput = new StringBuilder();
     try {
       job.put("status", "RUNNING");
       job.put("startedAt", Instant.now().toString());
       persist(job);
       String projectId = job.path("projectId").asText();
+      recordStage(job, "Checking the Floci test runner image");
+      String runnerSetup =
+          image.equals("modriss-test-runner:local")
+              ? "Run `docker compose --profile test-tools build test-runner`, then retry."
+              : "Build or pull this image into Docker, then retry.";
+      environments.requireImage(image, "The Floci test runner", runnerSetup);
+      recordStage(job, "Checking Docker and preparing this project's Floci instance");
       ObjectNode environment =
           request.path("kind").asText().equals("DEPLOY")
-              ? environments.ensure(projectId)
+              ? environments.ensure(projectId, title -> recordStage(job, title))
               : environments.inspect(projectId);
       if (!request.path("kind").asText().equals("DEPLOY")
           && !environments.matches(request, environment))
@@ -415,9 +426,17 @@ public class TestEnvironmentService {
               },
               900,
               TimeUnit.SECONDS);
-      try (var output = process.getOutputStream()) {
-        output.write(mapper.writeValueAsBytes(request));
-      }
+      byte[] requestBytes = mapper.writeValueAsBytes(request);
+      Process runner = process;
+      inputWriter =
+          CompletableFuture.runAsync(
+              () -> {
+                try (var output = runner.getOutputStream()) {
+                  output.write(requestBytes);
+                } catch (java.io.IOException ex) {
+                  throw new CompletionException(ex);
+                }
+              });
       long lastSave = 0;
       int captured = 0;
       try (BufferedReader reader =
@@ -434,6 +453,9 @@ public class TestEnvironmentService {
             event = mapper.createObjectNode().put("type", "log").put("message", line);
           }
           String type = event.path("type").asText();
+          if (type.equals("log") && runnerOutput.length() < 4_000) {
+            runnerOutput.append(event.path("message").asText()).append('\n');
+          }
           if (type.equals("result")) job.set("result", event.path("result"));
           else if (type.equals("error")) job.put("error", event.path("message").asText());
           else if (type.equals("complete")) {
@@ -449,16 +471,32 @@ public class TestEnvironmentService {
         }
       }
       int exit = process.waitFor();
+      String inputError = null;
+      if (inputWriter != null) {
+        try {
+          inputWriter.join();
+        } catch (CompletionException ex) {
+          Throwable cause = ex.getCause();
+          inputError = cause == null ? ex.getMessage() : cause.getMessage();
+        }
+      }
       job.put("status", completionStatus);
-      if (exit != 0 || !completed) {
+      if (exit != 0 || !completed || inputError != null) {
         job.put("status", "FAILED");
-        if (!job.has("error"))
-          job.put(
-              "error",
-              "Runner stopped before completion (exit "
-                  + exit
-                  + "). Check the runner image, Docker network, Floci health, and the 15 minute"
-                  + " execution limit.");
+        if (!job.has("error")) {
+          StringBuilder error =
+              new StringBuilder("Test runner stopped before completion (exit ")
+                  .append(exit)
+                  .append(").");
+          if (inputError != null)
+            error.append(" Request delivery failed: ").append(inputError).append('.');
+          if (!runnerOutput.isEmpty())
+            error.append(" Docker output: ").append(runnerOutput.toString().strip());
+          error.append(
+              " Check the runner image, Docker network, Floci health, and the 15 minute execution"
+                  + " limit.");
+          job.put("error", error.toString());
+        }
       }
       if (captured > 8_000_000) job.put("eventsTruncated", true);
     } catch (Exception ex) {
@@ -502,6 +540,17 @@ public class TestEnvironmentService {
         ((ObjectNode) job.path("result")).withArray("runtimeEvents").add(event);
       }
     }
+  }
+
+  private void recordStage(ObjectNode job, String title) {
+    job.withArray("events")
+        .add(
+            mapper
+                .createObjectNode()
+                .put("type", "stage")
+                .put("at", System.currentTimeMillis() / 1000.0)
+                .put("title", title));
+    persist(job);
   }
 
   private void removeContainer(String id) {

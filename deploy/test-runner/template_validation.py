@@ -7,6 +7,40 @@ from urllib.parse import urlparse
 import re
 
 
+def apply_floci_test_profile(documents, version):
+    """Prepare an in-memory Floci test deployment without changing saved artifacts."""
+    adjustments = []
+    for path, template in documents.items():
+        for logical, resource in template.get("Resources", {}).items():
+            if resource.get("Type") != "AWS::Serverless::StateMachine":
+                continue
+            props = resource.get("Properties", {})
+            if not isinstance(props, dict):
+                continue
+            alias = props.pop("AutoPublishAlias", None)
+            removed_fields = ["AutoPublishAlias"] if alias not in (None, "", False) else []
+            for field in ("UseAliasAsEventTarget", "DeploymentPreference"):
+                if field in props:
+                    props.pop(field)
+                    removed_fields.append(field)
+            if not removed_fields:
+                continue
+            adjustments.append({
+                "template": path,
+                "resourceId": logical,
+                "aliasName": str(alias) if alias not in (None, "", False) else "",
+                "removedFields": removed_fields,
+                "effect": "Deploy the definition directly without alias publication, alias event targets, or alias deployment preferences.",
+            })
+    return {
+        "id": "floci-test",
+        "name": "Floci Test",
+        "emulatorVersion": version,
+        "workflowVersionAndAliasPublication": "disabled",
+        "adjustments": adjustments,
+    }
+
+
 def validate_emulator_compatibility(documents, version):
     """Fail before build when the pinned emulator cannot provision known generated resources."""
     parsed = re.match(r"^(\d+)\.(\d+)\.(\d+)", version or "")
@@ -21,8 +55,8 @@ def validate_emulator_compatibility(documents, version):
                 diagnostics.append({"template":path, "resourceId":logical,
                     "field":"Properties.AutoPublishAlias" if published else "Type",
                     "message":f"Floci {version} does not provision published Step Functions versions/aliases.",
-                    "remedy":"For an explicitly separate evaluation PSM, disable StepFunctionStateMachine.publishAlias and regenerate. "
-                             "Evaluate version/alias behavior on a provider that supports it. The adapter does not silently remove it."})
+                    "remedy":"The Floci Test profile removes SAM AutoPublishAlias while retaining the state machine definition. "
+                             "Explicit version/alias resources must be replaced with state-machine references; their routing cannot be safely rewritten."})
             if kind == "AWS::SecretsManager::RotationSchedule":
                 diagnostics.append({"template":path, "resourceId":logical, "field":"Type",
                     "message":f"Floci {version} does not provision Secrets Manager rotation schedules through CloudFormation.",

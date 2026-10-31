@@ -26,13 +26,22 @@ producing 355 artifact files with no unresolved native-datastore references. No 
 was needed. Existing PSMs and artifact snapshots require **PIM → AWS PSM → artifacts** regeneration
 to receive this mapping. The original user project and failed environment were not edited/reset.
 
-The complete climate deployment then exposed a separate Floci 2.2 CloudFormation limitation:
-published Step Functions versions/aliases cannot be provisioned. Real rotation schedules are also
-unsupported there. Incomplete rotation schedules without a rotation Lambda are now omitted while
-the existing `SECRET_ROTATION_LAMBDA_REQUIRED` decision remains visible. Configured unsupported
-resources are rejected by emulator preflight before the build; they are not silently removed.
-A repeat of the full climate deployment reported three compatibility issues and skipped building.
-This is **not** evidence of a successful full climate deployment or business acceptance.
+The initial full climate deployment exposed a Floci 2.2 CloudFormation limitation: published Step
+Functions versions/aliases cannot be provisioned. The Test worker now applies an explicit Floci
+Test profile to its in-memory copy of selected SAM templates. It removes `AutoPublishAlias`, alias
+event-target settings, and alias deployment preferences, preserves each workflow definition, and
+records affected resources in the deployment result and timeline. The saved artifacts and modeled
+publication settings remain unchanged.
+
+The latest relational climate artifact passed profile preflight with no template or emulator
+compatibility diagnostics. Its generated build passed, both stacks reached `CREATE_COMPLETE` on a
+fresh Floci 2.2.0 instance, all 354 resources were discovered, and the generated relational schema
+initialized. The profile recorded three workflow aliases omitted from that deployment. This
+verifies build and infrastructure deployment; it does not verify the unfinished climate business
+handlers or workflow decision paths. Explicit Step Functions version/alias resources and configured
+Secrets Manager rotation schedules still fail preflight because their behavior cannot be safely
+adapted. Incomplete rotation schedules without a rotation Lambda remain omitted while the existing
+`SECRET_ROTATION_LAMBDA_REQUIRED` decision stays visible.
 
 To evaluate the relational path independently, a second isolated project retained the actual
 transformed climate database, its 24-column schema, credentials, one function and its supporting

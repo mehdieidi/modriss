@@ -334,7 +334,7 @@ function deploymentView() {
   <div class="te-invoke-footer"><span class="te-muted">Build logs and provisioning events are retained.</span>${button("deploy", "Build & deploy to Floci", busy() || state.artifact.dirty, "te-primary")}</div>`
       : '<div class="te-notice">Generate AWS artifacts first. Open the AWS model and choose Generate artifacts.</div>'
   }</section>
-  <aside class="te-card te-deployment-summary"><h3>Current deployment</h3>${overview?.deployment ? `<dl><dt>Artifact</dt><dd>${h(overview.deployment.artifactName)}</dd><dt>Deployed</dt><dd>${h(stamp(overview.deployment.finishedAt))}</dd><dt>Source SHA-256</dt><dd class="te-hash">${h(overview.deployment.sourceHash)}</dd><dt>Resources</dt><dd>${overview.deployment.result?.resources?.length || 0}</dd></dl>${button("show-deployment", "View deployment evidence")}` : "<p>No successful deployment yet.</p>"}<h3>How this runs</h3><ol><li>Capture the saved artifact files</li><li>Run the project’s build script</li><li>Package local Lambda and workflow files</li><li>Provision the selected stacks on Floci</li><li>Discover deployed resources</li></ol></aside></div><div id="teRun"></div>`;
+  <aside class="te-card te-deployment-summary"><h3>Current deployment</h3>${overview?.deployment ? `<dl><dt>Artifact</dt><dd>${h(overview.deployment.artifactName)}</dd><dt>Deployed</dt><dd>${h(stamp(overview.deployment.finishedAt))}</dd><dt>Source SHA-256</dt><dd class="te-hash">${h(overview.deployment.sourceHash)}</dd><dt>Resources</dt><dd>${overview.deployment.result?.resources?.length || 0}</dd></dl>${activeJob?.id === overview.deployment.id ? "" : deploymentProfileNotice(overview.deployment.result?.deploymentProfile)}${button("show-deployment", "View deployment evidence")}` : "<p>No successful deployment yet.</p>"}<h3>How this runs</h3><ol><li>Capture the saved artifact files</li><li>Run the project’s build script</li><li>Package local Lambda and workflow files</li><li>Provision the selected stacks on Floci</li><li>Discover deployed resources</li></ol></aside></div><div id="teRun"></div>`;
 }
 
 function deploymentOptions(artifact) {
@@ -376,6 +376,9 @@ function renderRun() {
   if (!node || !activeJob) return;
   const job = activeJob;
   const events = job.events || [];
+  const deploymentProfile =
+    job.result?.deploymentProfile ||
+    events.find((event) => event.type === "deployment-profile")?.profile;
   const templateIssues = events.flatMap((event) =>
     event.type === "validation" ? event.diagnostics || [] : [],
   );
@@ -383,6 +386,7 @@ function renderRun() {
   node.innerHTML = `<section class="te-run" aria-label="Execution evidence"><div class="te-run-heading"><div><span class="te-eyebrow">${h(job.kind)} · ${h(job.id?.slice(0, 8))}</span><h2>${h(job.scenario || job.action || "Deployment")}</h2></div><div>${badge(job.status)}${button("export", "Export evidence")}</div></div>
   <div class="te-run-meta"><span>${h(job.resourceId || job.artifactName || "Project deployment")}</span><span>${h(stamp(job.startedAt || job.createdAt))}</span><span>${job.sourceHash ? `Snapshot ${h(job.sourceHash.slice(0, 10))}` : ""}</span><span>${job.finishedAt && job.startedAt ? `${((new Date(job.finishedAt) - new Date(job.startedAt)) / 1000).toFixed(1)} s` : running(job) ? "Observing execution…" : ""}</span></div>
   ${job.error ? `<div class="te-alert" role="alert">${h(job.error)}</div>` : ""}
+  ${deploymentProfile ? deploymentProfileNotice(deploymentProfile) : ""}
   ${templateIssues.length ? `<details class="te-template-issues" open><summary>${templateIssues.length} deployment template issues</summary><ul>${templateIssues.map((issue) => `<li><strong>${h(issue.template)} · ${h(issue.resourceId)} · ${h(issue.field)}</strong><p>${h(issue.message)}</p><p>${h(issue.remedy)}</p></li>`).join("")}</ul></details>` : ""}
   <div class="te-evidence-grid"><section><h3>Execution timeline <span>${events.length} observations</span></h3><div class="te-event-list">${
     events
@@ -410,6 +414,12 @@ function renderRun() {
   );
   const workflow = document.getElementById("teWorkflow");
   if (workflow && resource()?.definition) workflow.innerHTML = workflowView(resource());
+}
+
+function deploymentProfileNotice(profile) {
+  if (!profile) return "";
+  const adjustments = profile.adjustments || [];
+  return `<div class="te-notice" role="status"><strong>${h(profile.name || "Floci Test")} deployment profile</strong><p>This profile deploys each workflow definition directly as an executable state machine. Step Functions version and alias publication is disabled for this Floci test deployment.</p>${adjustments.length ? `<p>Publication or alias-based deployment settings were omitted for: ${adjustments.map((item) => `<strong>${h(item.resourceId)}</strong> (${h(item.template)})`).join(", ")}.</p>` : "<p>No workflow in this snapshot requested SAM alias publication.</p>"}</div>`;
 }
 
 function dataView(result) {

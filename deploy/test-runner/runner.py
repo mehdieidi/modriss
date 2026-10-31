@@ -21,9 +21,20 @@ from botocore import UNSIGNED
 from botocore.auth import SigV4Auth
 from botocore.awsrequest import AWSRequest
 from botocore.config import Config
-from botocore.exceptions import ClientError
+from botocore.exceptions import (
+    ClientError,
+    ConnectionClosedError,
+    ConnectTimeoutError,
+    EndpointConnectionError,
+    ReadTimeoutError,
+)
 import yaml
-from template_validation import validate_templates, validate_emulator_compatibility, order_templates
+from template_validation import (
+    apply_floci_test_profile,
+    validate_templates,
+    validate_emulator_compatibility,
+    order_templates,
+)
 
 
 class CfnLoader(yaml.SafeLoader):
@@ -78,11 +89,92 @@ class Worker:
 
     def client(self, service):
         if service not in self.clients:
+            # CloudFormation requests can take several minutes in Floci while it provisions
+            # resources such as RDS. Retrying a timed-out CreateStack is unsafe: the first
+            # request may have been accepted, and the retry then fails with AlreadyExists.
+            # Make one transport attempt and recover the stack's state explicitly below.
+            retries = {"total_max_attempts": 1} if service == "cloudformation" else {"max_attempts": 1}
             self.clients[service] = self.session.client(
                 service, endpoint_url=self.endpoint,
                 config=Config(connect_timeout=5, read_timeout=125,
-                              retries={"max_attempts": 1}, s3={"addressing_style": "path"}))
+                              retries=retries, s3={"addressing_style": "path"}))
         return self.clients[service]
+
+    @staticmethod
+    def _missing_stack(error):
+        return error.response.get("Error", {}).get("Code") in (
+            "ValidationError", "ResourceNotFoundException")
+
+    def _recover_accepted_stack_operation(
+        self, cfn, stack, operation, original_error, submitted_at, previous_status
+    ):
+        """Resolve a lost CloudFormation response without resubmitting a mutating request."""
+        emit("stage", title=f"Checking whether Floci accepted CloudFormation {operation}",
+             stack=stack, recovery="ambiguous-response")
+        deadline = time.monotonic() + 45
+        last_error = None
+        while time.monotonic() < deadline:
+            try:
+                response = cfn.describe_stacks(StackName=stack)
+                stacks = response.get("Stacks", [])
+                if stacks:
+                    info = stacks[0]
+                    status = info.get("StackStatus", "")
+                    accepted = operation == "create_stack" or status != previous_status
+                    if not accepted and status.endswith("_IN_PROGRESS"):
+                        accepted = True
+                    if not accepted:
+                        try:
+                            events = cfn.describe_stack_events(StackName=stack).get("StackEvents", [])
+                            accepted = any(
+                                event.get("Timestamp") and event["Timestamp"].timestamp() >= submitted_at
+                                and str(event.get("ResourceStatus", "")).startswith("UPDATE_")
+                                for event in events
+                            )
+                        except (ClientError, ConnectionClosedError, ConnectTimeoutError,
+                                EndpointConnectionError, ReadTimeoutError, OSError) as error:
+                            last_error = error
+                    if accepted:
+                        emit("stage", title="Recovered the accepted CloudFormation operation",
+                             stack=stack, status=status)
+                        return info
+            except ClientError as error:
+                if not self._missing_stack(error):
+                    last_error = error
+            except (ConnectionClosedError, ConnectTimeoutError, EndpointConnectionError,
+                    ReadTimeoutError, OSError) as error:
+                last_error = error
+            time.sleep(1)
+
+        detail = f"; last status lookup failed: {last_error}" if last_error else ""
+        raise RuntimeError(
+            f"CloudFormation {operation} for stack {stack} returned an ambiguous transport error "
+            f"({original_error}), and Floci did not expose the stack during 45 seconds of recovery{detail}. "
+            "The request was not resubmitted to avoid duplicate resources. Inspect the project's Floci "
+            "CloudFormation state before retrying deployment."
+        ) from original_error
+
+    def submit_stack_operation(self, cfn, operation, stack, arguments, previous_status=None):
+        """Submit once; if the response is lost, adopt the stack and let the normal waiter continue."""
+        submitted_at = time.time()
+        try:
+            emit("stage", title=f"Submitting CloudFormation {operation}", stack=stack)
+            return getattr(cfn, operation)(**arguments,
+                **({"OnFailure": "DO_NOTHING"} if operation == "create_stack" else {}))
+        except ClientError as error:
+            code = error.response.get("Error", {}).get("Code", "")
+            if operation == "update_stack" and "No updates are to be performed" in str(error):
+                return None
+            if operation != "create_stack" or code not in ("AlreadyExistsException", "AlreadyExists"):
+                raise
+            # A previous or delayed request created it after our existence check. Do not
+            # mistake that idempotency race for a failed deployment.
+            return self._recover_accepted_stack_operation(
+                cfn, stack, operation, error, submitted_at, previous_status)
+        except (ConnectionClosedError, ConnectTimeoutError, EndpointConnectionError,
+                ReadTimeoutError, OSError) as error:
+            return self._recover_accepted_stack_operation(
+                cfn, stack, operation, error, submitted_at, previous_status)
 
     def call(self, service, operation, **args):
         detail = {key: ({"bytes": len(value)} if isinstance(value, bytes)
@@ -185,6 +277,7 @@ class Worker:
             raise ValueError("Select at least one generated CloudFormation/SAM template")
         documents = {name: yaml.load(self.local(name).read_text(), Loader=CfnLoader) for name in selected}
         diagnostics = validate_templates(documents)
+        profile = apply_floci_test_profile(documents, getattr(self, "emulator_version", ""))
         diagnostics.extend(validate_emulator_compatibility(documents, getattr(self, "emulator_version", "")))
         emit("validation", title="Deployment template preflight", diagnostics=diagnostics)
         if diagnostics:
@@ -192,6 +285,7 @@ class Worker:
             raise ValueError(f"Template preflight found {len(diagnostics)} issue(s). "
                              f"{first['template']} · {first['resourceId']} · {first['field']}: "
                              f"{first['message']} {first['remedy']} See the preflight observation for all issues.")
+        emit("deployment-profile", title="Floci Test deployment profile", profile=profile)
         if "cognito_user_pools" in json.dumps(documents).lower() and hasattr(self, "emulator_version"):
             version = re.match(r"^(\d+)\.(\d+)\.(\d+)", self.emulator_version)
             if not version or tuple(map(int, version.groups())) < (2, 2, 0):
@@ -223,7 +317,7 @@ class Worker:
                                               if self.region != "us-east-1" else {}))
         stacks, all_resources, outputs = [], [], []
         for index, name in enumerate(selected):
-            template = yaml.load(self.local(name).read_text(), Loader=CfnLoader)
+            template = copy.deepcopy(documents[name])
             template = self.package(template, self.local(name).parent, bucket, "sources")
             stack = "modriss-" + self.request["projectId"].replace("-", "")[:20] + "-" + hashlib.sha256(name.encode()).hexdigest()[:10]
             params = self.request.get("input", {}).get("parameters", {})
@@ -283,12 +377,8 @@ class Worker:
             elif stable and same_parameters and self.update_lambda_packages(previous, template, stack):
                 emit("stage", title="Updated Lambda packages; infrastructure resources retained")
             else:
-                try:
-                    self.call("cloudformation", "update_stack" if exists else "create_stack", **arguments,
-                              **({} if exists else {"OnFailure": "DO_NOTHING"}))
-                except ClientError as error:
-                    if "No updates are to be performed" not in str(error):
-                        raise
+                self.submit_stack_operation(cfn, "update_stack" if exists else "create_stack", stack, arguments,
+                                            previous_stack.get("StackStatus") if exists else None)
             seen = set()
             deadline = time.monotonic() + 480
             while True:
@@ -322,7 +412,8 @@ class Worker:
             runpy.run_path(str(initializer))["initialize"](all_resources,
                 str(self.root / "database/manifest.json"), self.call)
         emit("result", result={"stacks": stacks, "resources": self.inventory(), "outputs": outputs,
-                               "accountId": self.account, "region": self.region})
+                               "accountId": self.account, "region": self.region,
+                               "deploymentProfile": profile})
 
     def update_lambda_packages(self, previous, current, stack):
         """Use Lambda's real update API for code-only changes; preserve emulator data and event mappings."""

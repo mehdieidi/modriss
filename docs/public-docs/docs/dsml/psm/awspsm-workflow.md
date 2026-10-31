@@ -8,6 +8,8 @@ Source: `methodology/modeling-framework/metamodels/psm/awspsm-workflow.emf`.
 
 An AWS Step Functions state-machine resource. It binds the provider-independent workflow to an ASL document, IAM role, logging, tracing, aliases, and SAM event sources.
 
+`publishAlias` remains an explicit AWS PSM decision and is emitted in generated SAM artifacts. The Test workspace applies the Floci Test deployment profile to its in-memory deployment templates, omitting alias publication and alias-based event/deployment settings while retaining the state-machine definition. This target-specific adaptation is recorded with the deployment evidence; it does not edit the PSM or saved artifacts.
+
 Direct supertypes: `AwsResource`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
 
 ### Declared attributes

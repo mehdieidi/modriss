@@ -58,7 +58,7 @@ Supporting operations also shape the transformation. They derive defaults, creat
 
 ### Why this rule exists
 
-A PIM workflow becomes a Step Functions state machine only when it has steps. The rule creates the ASL document, execution role, logging/tracing, aliases, and state placeholders; later operations complete targets, transitions, retries, catches, and JSON rendering once all PSM resources are available.
+A PIM workflow becomes a Step Functions state machine only when it has steps. The rule creates the ASL document, execution role, logging/tracing, publication settings, and state placeholders; later operations complete targets, transitions, retries, catches, and JSON rendering once all PSM resources are available. Production-oriented generated templates retain modeled alias publication. The Test workspace's Floci Test profile omits SAM alias publication from its in-memory deployment copy while preserving the workflow definition; deployment evidence records the adjustment.
 
 ### When the rule runs
 

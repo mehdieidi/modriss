@@ -2,15 +2,20 @@ package io.mehdieidi.modriss.backend.testing;
 
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
+import java.io.ByteArrayOutputStream;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.HexFormat;
 import java.util.List;
+import java.util.Locale;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+import java.util.function.Consumer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -27,6 +32,8 @@ public class ProjectTestEnvironments {
   static final String PROJECT = "io.modriss.project-id";
   static final String MODE = "dedicated-floci-v1";
   private static final Logger log = LoggerFactory.getLogger(ProjectTestEnvironments.class);
+  private static final int MAX_DOCKER_OUTPUT_BYTES = 1_000_000;
+  private static final int IMAGE_PULL_TIMEOUT_SECONDS = 600;
   private final ObjectMapper mapper;
   private final JdbcTemplate jdbc;
   private final String image;
@@ -109,14 +116,18 @@ public class ProjectTestEnvironments {
     return environment;
   }
 
-  synchronized ObjectNode ensure(String projectId) {
+  ObjectNode ensure(String projectId) {
+    return ensure(projectId, ignored -> {});
+  }
+
+  synchronized ObjectNode ensure(String projectId, Consumer<String> progress) {
     ObjectNode current = inspect(projectId);
     if (!current.path("status").asText().equals("MISSING")
         && !current.path("image").asText().isEmpty()
         && !image.equals(current.path("image").asText())) {
       // Flush persisted state, retain an independent copy, then reuse the original data volume.
       // Never reset a project's data to upgrade the emulator.
-      checked(List.of("image", "inspect", image), 15);
+      ensureImageAvailable(progress);
       checked(List.of("stop", "--time", "30", container(projectId)), 45);
       String backup = volume(projectId) + "-backup-" + System.currentTimeMillis();
       try {
@@ -152,12 +163,16 @@ public class ProjectTestEnvironments {
       current = inspect(projectId);
     }
     if (current.path("status").asText().equals("MISSING")) {
+      ensureImageAvailable(progress);
+      progress.accept("Preparing this project's private Docker network and storage");
       ownedResource("network", network(projectId), projectId);
       ownedResource("volume", volume(projectId), projectId);
+      progress.accept("Starting this project's Floci instance");
       List<String> args =
           new ArrayList<>(
               List.of(
                   "run",
+                  "--pull=never",
                   "-d",
                   "--name",
                   container(projectId),
@@ -199,6 +214,7 @@ public class ProjectTestEnvironments {
                   image));
       checked(args, 60);
     } else if (current.path("status").asText().equals("STOPPED")) {
+      progress.accept("Restarting this project's Floci instance");
       checked(List.of("start", container(projectId)), 30);
     }
     long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(90);
@@ -217,6 +233,59 @@ public class ProjectTestEnvironments {
     }
     throw new IllegalStateException(
         "The project's Floci instance did not become healthy within 90 seconds.");
+  }
+
+  private void ensureImageAvailable(Consumer<String> progress) {
+    Result imageStatus = inspectImage(image, "Floci");
+    if (imageStatus == null) return;
+    progress.accept("Downloading the Floci image " + image);
+    Result pulled = docker.run(List.of("pull", "-q", image), IMAGE_PULL_TIMEOUT_SECONDS);
+    if (pulled.exit() != 0) {
+      throw new IllegalStateException(
+          "Could not download the configured Floci image '"
+              + image
+              + "': "
+              + dockerMessage(pulled));
+    }
+    progress.accept("Floci image download complete");
+  }
+
+  void requireImage(String candidate, String purpose, String remediation) {
+    Result missing = inspectImage(candidate, purpose);
+    if (missing == null) return;
+    String message = missing.output().toLowerCase(Locale.ROOT);
+    if (message.contains("no such image") || message.contains("no such resource")) {
+      throw new IllegalStateException(
+          purpose + " image '" + candidate + "' is missing. " + remediation);
+    }
+    throw new IllegalStateException(
+        "Could not inspect "
+            + purpose.toLowerCase(Locale.ROOT)
+            + " image '"
+            + candidate
+            + "': "
+            + dockerMessage(missing));
+  }
+
+  /** Returns null when the image is available and the Docker result when it is not. */
+  private Result inspectImage(String candidate, String purpose) {
+    Result status = docker.run(List.of("image", "inspect", candidate), 15);
+    if (status.exit() == 0) return null;
+    String message = status.output().toLowerCase(Locale.ROOT);
+    if (message.contains("no such image") || message.contains("no such resource")) return status;
+    throw new IllegalStateException(
+        "Could not inspect the configured "
+            + purpose
+            + " image '"
+            + candidate
+            + "': "
+            + dockerMessage(status));
+  }
+
+  private String dockerMessage(Result result) {
+    String output = result.output().strip();
+    if (output.length() > 2_000) output = output.substring(0, 2_000) + "…";
+    return output.isEmpty() ? "Docker exited with status " + result.exit() + "." : output;
   }
 
   boolean matches(JsonNode deployment, JsonNode environment) {
@@ -394,19 +463,41 @@ public class ProjectTestEnvironments {
           CompletableFuture.supplyAsync(
               () -> {
                 try {
-                  return input.readNBytes(1_000_000);
+                  ByteArrayOutputStream captured = new ByteArrayOutputStream();
+                  byte[] buffer = new byte[8192];
+                  int count;
+                  while ((count = input.read(buffer)) != -1) {
+                    int remaining = MAX_DOCKER_OUTPUT_BYTES - captured.size();
+                    if (remaining > 0) captured.write(buffer, 0, Math.min(count, remaining));
+                  }
+                  return captured.toByteArray();
                 } catch (java.io.IOException ex) {
                   throw new IllegalStateException(ex);
                 }
               });
-      if (!process.waitFor(seconds, TimeUnit.SECONDS))
-        throw new IllegalStateException("Docker operation timed out.");
+      if (!process.waitFor(seconds, TimeUnit.SECONDS)) {
+        throw new IllegalStateException(
+            "Docker '"
+                + args.get(0)
+                + "' command timed out after "
+                + seconds
+                + " seconds. Check that the Docker daemon is responsive and retry.");
+      }
       return new Result(
-          process.exitValue(), new String(output.get(2, TimeUnit.SECONDS), StandardCharsets.UTF_8));
-    } catch (Exception ex) {
-      if (ex instanceof InterruptedException) Thread.currentThread().interrupt();
+          process.exitValue(),
+          new String(output.get(10, TimeUnit.SECONDS), StandardCharsets.UTF_8));
+    } catch (InterruptedException ex) {
+      Thread.currentThread().interrupt();
+      throw new IllegalStateException("Interrupted while waiting for Docker.", ex);
+    } catch (java.io.IOException ex) {
       throw new IllegalStateException(
-          "Could not access Docker for the project test environment.", ex);
+          "Could not start the Docker CLI. Verify that Docker is installed and available to the"
+              + " backend: "
+              + ex.getMessage(),
+          ex);
+    } catch (ExecutionException | TimeoutException ex) {
+      throw new IllegalStateException(
+          "Could not read Docker command output: " + ex.getMessage(), ex);
     } finally {
       if (process != null && process.isAlive()) process.destroyForcibly();
     }

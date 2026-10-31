@@ -1,14 +1,17 @@
 .topbar-deploy-btn {
-  border-color: #a78bfa;
-  color: #fff;
-  background: #6d28d9;
-  font-weight: 750;
-  box-shadow: inset 0 1px 0 #ffffff20;
+  border-color: color-mix(in srgb, var(--accent) 48%, var(--border) 52%);
+  color: var(--text-strong);
+  background: color-mix(in srgb, var(--surface-3) 76%, var(--accent-glow) 24%);
+  font-weight: 700;
+  box-shadow: inset 0 1px 0 color-mix(in srgb, #fff 8%, transparent);
 }
 .topbar-deploy-btn:hover:not(:disabled) {
-  border-color: #c4b5fd;
-  background: #5b21b6;
-  box-shadow: 0 2px 8px #6d28d940;
+  border-color: color-mix(in srgb, var(--accent) 64%, var(--border) 36%);
+  color: var(--text-strong);
+  background: color-mix(in srgb, var(--surface-high) 76%, var(--accent-glow) 24%);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, #fff 10%, transparent),
+    var(--shadow-sm);
 }
 .topbar-deploy-btn:disabled {
   opacity: 0.5;
@@ -83,7 +86,7 @@ html.light .test-environment {
 }
 .test-environment :focus-visible,
 .topbar-deploy-btn:focus-visible {
-  outline: 2px solid var(--te-accent, var(--primary));
+  outline: 2px solid var(--te-accent, var(--accent));
   outline-offset: 3px;
 }
 .te-header,

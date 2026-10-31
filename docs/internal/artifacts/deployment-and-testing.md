@@ -153,7 +153,8 @@ passing generated tests, passing SAM/ASL validation, all stacks at
 `CREATE_COMPLETE`, one Lambda invocation, one completed workflow, one API call,
 and observable DynamoDB/SQS/SNS effects.
 
-LocalStack currently deploys `AWS::StepFunctions::StateMachineVersion`,
-`AWS::StepFunctions::StateMachineAlias`, and `AWS::CloudWatch::Dashboard` as
-fallback resources. Treat those as simulator limitations and verify them again
-in a real AWS non-production account.
+The Test workspace's Floci Test profile deploys generated SAM state machines
+without version or alias publication while retaining their workflow definitions.
+The profile and any affected state machines are recorded in deployment evidence.
+Explicit Step Functions version/alias resources and CloudWatch dashboards remain
+unsupported by the current Floci CloudFormation implementation and fail preflight.

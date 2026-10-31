@@ -54,28 +54,32 @@ with Lambda proxy and Function URL responses.
 ## Test workspace
 
 The **Artifacts** tab shows **Test** and **Deploy to Test Environment** when the selected cloud
-provider is **AWS · Built in**. The violet deployment button sits beside Download in the
+provider is **AWS · Built in**. The accented deployment button sits beside Download in the
 **Advance** toolbar section. Other modeling tabs and uploaded cloud packages do not expose
 these entry controls.
 
-Build the disposable worker image once after pulling changes:
+The local development Compose configuration builds the disposable worker image before starting
+the backend. For a stack started with the base/production Compose files, build it before starting
+the backend:
 
 ```bash
 docker compose --profile test-tools build test-runner
 docker compose up -d --build backend frontend
 ```
 
-`scripts/dev.sh` also builds this image. The backend uses `MODRISS_TESTING_RUNNER_IMAGE`
+`scripts/dev.sh` also builds this image. The backend checks the runner image before deploying and
+uses `MODRISS_TESTING_RUNNER_IMAGE`
 (default `modriss-test-runner:local`) and `MODRISS_TESTING_EMULATOR_IMAGE`
 (default `floci/floci:2.2.0`). Docker must have the Floci image available or be able to pull it.
 REST Cognito evaluation requires Floci 2.2.0 or newer; older versions do not enforce these
 authorizers. The Test image setting is independent of the shared CLI emulator's `FLOCI_IMAGE`.
-When changing an existing project's Test image, pull it first (`docker pull floci/floci:2.2.0`).
-On the next deployment, the backend stops the old instance, copies its persistent volume to a
+When changing an existing project's Test image, the backend pulls it before replacing the old
+instance. On the next deployment, the backend stops the old instance, copies its persistent volume to a
 managed backup volume, and recreates the instance with the original volume. It never resets
 project data to upgrade the emulator. If the backup fails, the old instance is restarted.
 On first deployment, the backend creates a dedicated Floci container, Docker network, and named
-data volume for the project. The disposable runner joins that project's network and connects to
+data volume for the project. If the configured Floci image is not cached locally, the backend
+pulls it and records that setup step in the deployment timeline. The disposable runner joins that project's network and connects to
 its private `http://aws-emulator:4566` alias. No emulator ports are published to the host.
 The shared Compose Floci service remains available for command-line development; Test workspaces
 do not use it. The old `MODRISS_TESTING_NETWORK` and testing endpoint settings are no longer used.
@@ -195,12 +199,18 @@ migration message; it does not drop tables or silently pretend that new columns 
 The generated `scripts/database.py` requires Python and boto3 when deploying outside the supplied
 worker. Floci must be able to pull its PostgreSQL image and start database containers through Docker.
 See [PSM storage](../dsml/psm/awspsm-storage.md) for the editable schema and resource fields.
-Floci 2.2 cannot provision published Step Functions versions/aliases or Secrets Manager rotation
-schedules through CloudFormation. Preflight identifies these before the build. For a separate
-evaluation PSM that tests workflow execution without publication, set the state machine's
-`publishAlias=false` and regenerate; this does not establish version/alias acceptance. Incomplete
-rotation schedules without a rotation Lambda remain in the model/readiness report and are omitted
-from deployable templates. The rotation requirement still needs implementation and evaluation.
+The Test workspace applies the **Floci Test** deployment profile to an in-memory copy of each
+selected template. For a SAM state machine with `AutoPublishAlias`, the worker removes alias
+publication, alias event-target, and alias deployment-preference fields before SAM expansion, while
+preserving the workflow definition and deploying the executable state machine. The saved artifact,
+PSM, and production-oriented generated template remain unchanged. The deployment result and
+timeline identify every adjusted template and state machine. This profile does not evaluate version
+publication or alias routing. Explicit
+`AWS::StepFunctions::StateMachineVersion` and `AWS::StepFunctions::StateMachineAlias` resources
+remain preflight errors because their routing cannot be safely inferred. Floci also cannot
+provision Secrets Manager rotation schedules through CloudFormation; configured schedules are
+reported before the build and must be evaluated separately. Incomplete rotation schedules without
+a rotation Lambda remain visible in the model/readiness report.
 Generated functions omit reserved concurrency when no limit is modeled. An explicit zero
 reservation disables invocation; use it only when intentionally pausing a function.
 Unrefined business handlers can return `500` with `NOT_IMPLEMENTED` after successful
