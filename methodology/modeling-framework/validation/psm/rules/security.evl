@@ -97,8 +97,10 @@ context AWSPSM!KmsAlias {
 context AWSPSM!SecretsManagerSecret {
   /** Checks that secret has value or generator. */
   constraint SecretHasValueOrGenerator {
-    check : self.secretValue.isDefined() or self.generateSecretStringJson.hasText()
-    message : 'Secrets Manager secret ' + self.resourceLabel() + ' has no secretValue or generator configuration. Fix: provide secretValue for a referenced secret or generateSecretStringJson for generated secrets.'
+    check : self.secretValue.isDefined()
+      or self.generateSecretString.isDefined()
+      or self.generateSecretStringJson.hasText()
+    message : 'Secrets Manager secret ' + self.resourceLabel() + ' has no secretValue or generator configuration. Fix: provide secretValue for a referenced secret or generateSecretString/generateSecretStringJson for generated secrets.'
   }
 
   /** Checks that rotation required has schedule. */

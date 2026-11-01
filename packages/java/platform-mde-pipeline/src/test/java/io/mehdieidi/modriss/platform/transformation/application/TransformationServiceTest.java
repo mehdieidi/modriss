@@ -821,7 +821,14 @@ class TransformationServiceTest {
     assertEquals(
         regeneratedPim.modelJson().path("manualBacklog").size(),
         regeneratedPim.modelJson().path("graph").path("manualBacklog").size());
-    assertEquals(psmTaskIds, taskIds(regeneratedPsm.modelJson()));
+    Set<String> regeneratedPsmTaskIds = taskIds(regeneratedPsm.modelJson());
+    Set<String> missingPsmTaskIds = new HashSet<>(psmTaskIds);
+    missingPsmTaskIds.removeAll(regeneratedPsmTaskIds);
+    assertEquals(
+        psmTaskIds,
+        regeneratedPsmTaskIds,
+        "Missing PSM issue-board tasks: "
+            + issueBoardTaskDetails(psm.modelJson(), missingPsmTaskIds));
     assertEquals(
         regeneratedPsm.modelJson().path("manualBacklog").size(),
         regeneratedPsm.modelJson().path("graph").path("manualBacklog").size());
@@ -1635,6 +1642,7 @@ class TransformationServiceTest {
     Set<String> initialPsmWarnings =
         warningSignatures(
             services.models().validate(context.user(), ModelLevel.PSM, initialPsm.id()));
+    Set<String> initialPsmTaskIds = taskIds(initialPsm.modelJson());
     int initialPsmTasks = initialPsm.modelJson().path("manualBacklog").size();
 
     String addedProcessId = "journey-added-process";
@@ -1664,13 +1672,16 @@ class TransformationServiceTest {
     SynchronizationResult addedProcessPsmResult =
         TransformationService.consumeLastSynchronization();
     assertEquals(SynchronizationStatus.APPLIED, addedProcessPsmResult.status());
-    assertTrue(
+    var addedProcessPsmValidation =
         services
             .models()
             .validateGeneratedXmi(
-                ModelLevel.PSM, services.models().sourceXmi(psmAfterAddedProcess).orElseThrow())
-            .valid(),
-        "PIM→PSM after adding a CIM business process must preserve required IAM statements.");
+                ModelLevel.PSM, services.models().sourceXmi(psmAfterAddedProcess).orElseThrow());
+    assertTrue(
+        addedProcessPsmValidation.valid(),
+        addedProcessPsmValidation.issues().toString()
+            + System.lineSeparator()
+            + "PIM→PSM after adding a CIM business process must preserve required IAM statements.");
     psmAfterAddedProcess
         .modelJson()
         .path("elements")
@@ -1729,7 +1740,31 @@ class TransformationServiceTest {
         () ->
             "An untouched PSM must not conflict after the upstream keep-user merge: "
                 + psmResult.conflictDetails());
-    assertEquals(initialPsmTasks, psm.modelJson().path("manualBacklog").size());
+    Set<String> regeneratedPsmTaskIds = taskIds(psm.modelJson());
+    Set<String> additionalPsmTaskIds = new HashSet<>(regeneratedPsmTaskIds);
+    additionalPsmTaskIds.removeAll(initialPsmTaskIds);
+    String additionalPsmTaskDetails = issueBoardTaskDetails(psm.modelJson(), additionalPsmTaskIds);
+    Set<String> missingPsmTaskIds = new HashSet<>(initialPsmTaskIds);
+    missingPsmTaskIds.removeAll(regeneratedPsmTaskIds);
+    assertTrue(
+        regeneratedPsmTaskIds.containsAll(initialPsmTaskIds),
+        "Regeneration must retain existing PSM issue-board tasks: "
+            + issueBoardTaskDetails(initialPsm.modelJson(), missingPsmTaskIds));
+    assertEquals(
+        initialPsmTasks + 2,
+        psm.modelJson().path("manualBacklog").size(),
+        "The new workflow should add one implementation task and one approval callback task: "
+            + additionalPsmTaskDetails);
+    assertTrue(
+        additionalPsmTaskDetails.contains(
+            "Implement and test the generated business logic for Lambda Appeal Review Step Human"
+                + " Task Handler."),
+        additionalPsmTaskDetails);
+    assertTrue(
+        additionalPsmTaskDetails.contains(
+            "Design human approval callback/tasks for workflow Appeal and Recovery Lifecycle"
+                + " Workflow."),
+        additionalPsmTaskDetails);
     Set<String> regeneratedPsmWarnings =
         warningSignatures(services.models().validate(context.user(), ModelLevel.PSM, psm.id()));
     assertTrue(
@@ -1789,12 +1824,12 @@ class TransformationServiceTest {
     ModelRecord updatedPsm = services.transformations().pimToPsm(context.user(), updatedPim.id());
     SynchronizationResult psmResult = TransformationService.consumeLastSynchronization();
     assertEquals(SynchronizationStatus.APPLIED, psmResult.status());
-    assertTrue(
+    var updatedPsmValidation =
         services
             .models()
             .validateGeneratedXmi(
-                ModelLevel.PSM, services.models().sourceXmi(updatedPsm).orElseThrow())
-            .valid());
+                ModelLevel.PSM, services.models().sourceXmi(updatedPsm).orElseThrow());
+    assertTrue(updatedPsmValidation.valid(), updatedPsmValidation.issues().toString());
   }
 
   /** Catalog X-10: PIM and PSM refinements survive independent regeneration cycles. */
@@ -2105,6 +2140,17 @@ class TransformationServiceTest {
     Set<String> ids = new HashSet<>();
     model.path("manualBacklog").forEach(task -> ids.add(task.path("id").asText()));
     return ids;
+  }
+
+  private String issueBoardTaskDetails(JsonNode model, Set<String> taskIds) {
+    StringBuilder details = new StringBuilder();
+    for (JsonNode task : model.path("manualBacklog")) {
+      if (taskIds.contains(task.path("id").asText())) {
+        if (!details.isEmpty()) details.append(System.lineSeparator());
+        details.append(task);
+      }
+    }
+    return details.toString();
   }
 
   private boolean serviceContainmentNonEmpty(JsonNode model, String childField) {

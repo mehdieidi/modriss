@@ -3856,12 +3856,16 @@ final class EpsilonEgxGeneratorTest {
   private void assertGeneratedSamTemplatesRenderConcreteResourceProperties(Path outputDirectory)
       throws IOException {
     String templates;
+    tools.jackson.databind.JsonNode restApiDefinitionBody = null;
     try (var files = Files.walk(outputDirectory)) {
-      templates =
+      List<Path> templateFiles =
           files
               .filter(Files::isRegularFile)
               .filter(path -> path.getFileName().toString().startsWith("template"))
               .filter(path -> path.getFileName().toString().endsWith(".yaml"))
+              .toList();
+      templates =
+          templateFiles.stream()
               .map(
                   path -> {
                     try {
@@ -3871,17 +3875,48 @@ final class EpsilonEgxGeneratorTest {
                     }
                   })
               .reduce("", String::concat);
+      for (Path templateFile : templateFiles) {
+        tools.jackson.databind.JsonNode candidateDefinitionBody =
+            YAML.readTree(templateFile.toFile())
+                .path("Resources")
+                .path("Intakeandeligibilitycontextserviceapirestapi")
+                .path("Properties")
+                .path("DefinitionBody");
+        if (!candidateDefinitionBody.isMissingNode()) {
+          restApiDefinitionBody = candidateDefinitionBody;
+          break;
+        }
+      }
     }
 
     assertTrue(
         templates.contains("RuntimeManagementConfig:\n      UpdateRuntimeOn: 'Auto'"), templates);
     assertFalse(templates.contains("RuntimeManagementConfig: 'Auto'"));
+    assertNotNull(restApiDefinitionBody, "Expected the generated REST API OpenAPI definition.");
+    assertRestApiPostIntegration(
+        restApiDefinitionBody,
+        "/grantapplications/approveemergencygrant",
+        "Approveemergencygranthandlerlambda");
+    assertRestApiPostIntegration(
+        restApiDefinitionBody,
+        "/grantapplications/submitgrantapplication",
+        "Submitgrantapplicationhandlerlambda");
+  }
+
+  /**
+   * Ensures a rendered OpenAPI POST route invokes its modeled Lambda function through API Gateway.
+   */
+  private void assertRestApiPostIntegration(
+      tools.jackson.databind.JsonNode definitionBody, String path, String functionLogicalId) {
+    tools.jackson.databind.JsonNode operation =
+        definitionBody.path("paths").path(path).path("post");
+    assertFalse(operation.isMissingNode(), () -> "Missing OpenAPI POST route " + path);
+    tools.jackson.databind.JsonNode integration = operation.path("x-amazon-apigateway-integration");
+    assertEquals("aws_proxy", integration.path("type").asText());
+    assertEquals("POST", integration.path("httpMethod").asText());
     assertTrue(
-        templates.contains("HttpMethod: 'POST'")
-            && templates.contains("ResourceId: '/grantapplications/approveemergencygrant'"),
-        templates);
-    assertTrue(
-        templates.contains("FunctionName: !Ref Submitgrantapplicationhandlerlambda"), templates);
+        integration.path("uri").toString().contains(functionLogicalId + ".Arn"),
+        () -> "Expected " + path + " to invoke " + functionLogicalId);
   }
 
   /**
