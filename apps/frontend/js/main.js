@@ -29,7 +29,18 @@ import {
   undoLastEdit,
   validateCurrentModel,
 } from "./model-ops.js";
-import { saveCurrentFile, toggleArtifactTreeCollapsed } from "./artifact.js";
+import {
+  createArtifactDirectory,
+  createArtifactFile,
+  downloadCurrentArtifact,
+  closeArtifactContextMenu,
+  importArtifactArchive,
+  openArtifactContextMenu,
+  openArtifactArchivePicker,
+  renameArtifactEntry,
+  saveCurrentFile,
+  toggleArtifactTreeCollapsed,
+} from "./artifact.js";
 import {
   applyAttributePanel,
   bindConnectionDrawStateListener,
@@ -52,7 +63,6 @@ import {
 import {
   bindProjectDialogActions,
   deleteCurrentProject,
-  downloadCurrentProject,
   restoreLastProjectIfPossible,
   showProjectMembersDialog,
   showProjectDialog,
@@ -319,7 +329,7 @@ function bindCriticalActions() {
   // Generation
   el.generateContextBtn?.addEventListener("click", async () => {
     if (isArtifactLevel(state.activeType)) {
-      await downloadCurrentProject();
+      await downloadCurrentArtifact();
       return;
     }
     await generateForCurrentContext();
@@ -976,6 +986,10 @@ function bindEvents() {
     }
     event.preventDefault();
     if (key === "s") {
+      if (state.activeType === "artifact") {
+        void saveCurrentFile();
+        return;
+      }
       // The model Save button is rendered by the workbench, so resolve it at
       // shortcut time and let its click handler own all save behavior.
       document.getElementById("saveModelBtn")?.click();
@@ -1182,6 +1196,63 @@ function bindEvents() {
 
   // Artifact explorer
   el.artifactTreeToggleBtn?.addEventListener("click", toggleArtifactTreeCollapsed);
+  el.artifactImportBtn?.addEventListener("click", openArtifactArchivePicker);
+  el.artifactArchiveInput?.addEventListener("change", () => {
+    const file = el.artifactArchiveInput.files?.[0];
+    if (file) void importArtifactArchive(file);
+  });
+  el.artifactExplorerRoot?.addEventListener("click", () => {
+    state.artifact.selectedDirectory = "";
+  });
+  el.artifactPanel?.addEventListener("contextmenu", (event) => {
+    const target = getElementTarget(event);
+    if (!target?.closest("#artifactExplorerRoot, #fileTree")) {
+      closeArtifactContextMenu();
+      return;
+    }
+    if (!state.artifact.id) return;
+    event.preventDefault();
+    openArtifactContextMenu(event);
+  });
+  el.artifactContextNewFileBtn?.addEventListener("click", () => {
+    closeArtifactContextMenu();
+    void createArtifactFile();
+  });
+  el.artifactContextNewFolderBtn?.addEventListener("click", () => {
+    closeArtifactContextMenu();
+    void createArtifactDirectory();
+  });
+  el.artifactContextRenameBtn?.addEventListener("click", () => {
+    closeArtifactContextMenu();
+    void renameArtifactEntry();
+  });
+  el.artifactContextMenu?.addEventListener("keydown", (event) => {
+    const items = [...el.artifactContextMenu.querySelectorAll('[role="menuitem"]:not(:disabled)')];
+    const currentIndex = items.indexOf(document.activeElement);
+    if (event.key === "Escape") {
+      event.preventDefault();
+      closeArtifactContextMenu({ restoreFocus: true });
+      return;
+    }
+    let nextIndex = currentIndex;
+    if (event.key === "ArrowDown") nextIndex = (currentIndex + 1) % items.length;
+    else if (event.key === "ArrowUp") nextIndex = (currentIndex - 1 + items.length) % items.length;
+    else if (event.key === "Home") nextIndex = 0;
+    else if (event.key === "End") nextIndex = items.length - 1;
+    else return;
+    event.preventDefault();
+    items[nextIndex]?.focus();
+  });
+  document.addEventListener("pointerdown", (event) => {
+    if (!el.artifactContextMenu?.contains(getElementTarget(event))) {
+      closeArtifactContextMenu();
+    }
+  });
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && !el.artifactContextMenu?.classList.contains("hidden")) {
+      closeArtifactContextMenu({ restoreFocus: true });
+    }
+  });
 
   el.saveFileBtn?.addEventListener("click", saveCurrentFile);
 

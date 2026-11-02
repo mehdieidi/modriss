@@ -46,6 +46,10 @@ let applyingProgrammaticEdit = false;
 let currentLanguageLabel = FALLBACK_LANGUAGE_LABEL;
 let artifactFileRequestId = 0;
 let artifactLoadRequestId = 0;
+let artifactContextMenuReturnFocus = null;
+let artifactContextTarget = null;
+let artifactCreateDialogResolve = null;
+let artifactCreateDialogBound = false;
 const artifactScope = () => `${state.project?.id}:${state.cloudProvider?.id || "aws"}`;
 
 function setArtifactFileLoading(loading) {
@@ -258,8 +262,22 @@ function resetArtifactEditor() {
   syncArtifactEditorStatusBar();
 }
 
-function createTree(files) {
+function ensureTreeDirectory(root, directoryPath) {
+  let node = root;
+  String(directoryPath)
+    .split("/")
+    .filter(Boolean)
+    .forEach((part) => {
+      if (!node.dirs.has(part)) {
+        node.dirs.set(part, { dirs: new Map(), files: [] });
+      }
+      node = node.dirs.get(part);
+    });
+}
+
+function createTree(files, directories = []) {
   const root = { dirs: new Map(), files: [] };
+  directories.forEach((path) => ensureTreeDirectory(root, path));
   files.forEach(({ path }) => {
     const parts = String(path).split("/").filter(Boolean);
     let node = root;
@@ -324,6 +342,23 @@ function updateTreeSelection() {
   });
 }
 
+function captureArtifactTreeExpansion() {
+  return Object.fromEntries(
+    [...(el.fileTree?.querySelectorAll(".file-tree-dir") || [])].map((directory) => [
+      directory.dataset.directoryPath || "",
+      directory.classList.contains("open"),
+    ]),
+  );
+}
+
+function isGeneratedArtifactPath(path, kind) {
+  const generatedPaths = state.artifact.generatedPaths || [];
+  if (kind === "file") return generatedPaths.includes(path);
+  return generatedPaths.some((generatedPath) =>
+    generatedPath === path || generatedPath.startsWith(`${path}/`),
+  );
+}
+
 function updateTreeToggleButton() {
   if (!el.artifactTreeToggleBtn) {
     return;
@@ -336,24 +371,33 @@ function updateTreeToggleButton() {
   }
 }
 
-function buildTreeNode(node, depth = 0) {
+function updateArtifactActions() {
+  const enabled = Boolean(state.artifact.id);
+  if (el.artifactImportBtn) el.artifactImportBtn.disabled = !enabled;
+}
+
+function buildTreeNode(node, depth = 0, parentPath = "") {
   const fragment = document.createDocumentFragment();
   const initiallyOpen = !state.artifact.treeCollapsed;
 
   const directories = [...node.dirs.keys()].sort((a, b) => a.localeCompare(b));
   directories.forEach((dirName) => {
     const wrapper = document.createElement("div");
+    const directoryPath = parentPath ? `${parentPath}/${dirName}` : dirName;
+    const savedExpansion = state.artifact.expandedDirectories?.[directoryPath];
+    const isOpen = typeof savedExpansion === "boolean" ? savedExpansion : initiallyOpen;
 
     const dirHeader = document.createElement("button");
     dirHeader.type = "button";
-    dirHeader.className = initiallyOpen ? "file-tree-dir open" : "file-tree-dir";
+    dirHeader.className = isOpen ? "file-tree-dir open" : "file-tree-dir";
+    dirHeader.dataset.directoryPath = directoryPath;
     dirHeader.appendChild(createIndent(depth));
     const chevronIcon = createIcon(
-      initiallyOpen ? "chevron_down" : "chevron_right",
+      isOpen ? "chevron_down" : "chevron_right",
       "file-tree-dir-chevron",
     );
     dirHeader.appendChild(chevronIcon);
-    const folderIcon = createIcon(initiallyOpen ? "folder_open" : "folder", "file-tree-icon");
+    const folderIcon = createIcon(isOpen ? "folder_open" : "folder", "file-tree-icon");
     dirHeader.appendChild(folderIcon);
     const label = document.createElement("span");
     label.className = "file-tree-label";
@@ -362,14 +406,19 @@ function buildTreeNode(node, depth = 0) {
 
     const children = document.createElement("div");
     children.className = "file-tree-children";
-    children.style.display = initiallyOpen ? "" : "none";
-    children.appendChild(buildTreeNode(node.dirs.get(dirName), depth + 1));
+    children.dataset.directoryPath = directoryPath;
+    children.style.display = isOpen ? "" : "none";
+    children.appendChild(buildTreeNode(node.dirs.get(dirName), depth + 1, directoryPath));
 
     dirHeader.addEventListener("click", () => {
-      const isOpen = dirHeader.classList.toggle("open");
-      children.style.display = isOpen ? "" : "none";
-      setIconSource(chevronIcon, isOpen ? "chevron_down" : "chevron_right");
-      setIconSource(folderIcon, isOpen ? "folder_open" : "folder");
+      state.artifact.selectedDirectory = directoryPath;
+      const nextIsOpen = !dirHeader.classList.contains("open");
+      dirHeader.classList.toggle("open", nextIsOpen);
+      state.artifact.expandedDirectories ||= {};
+      state.artifact.expandedDirectories[directoryPath] = nextIsOpen;
+      children.style.display = nextIsOpen ? "" : "none";
+      setIconSource(chevronIcon, nextIsOpen ? "chevron_down" : "chevron_right");
+      setIconSource(folderIcon, nextIsOpen ? "folder_open" : "folder");
     });
 
     wrapper.appendChild(dirHeader);
@@ -519,6 +568,10 @@ export function clearArtifactState() {
   state.artifact.name = "";
   state.artifact.cloudProviderId = null;
   state.artifact.files = [];
+  state.artifact.directories = [];
+  state.artifact.generatedPaths = [];
+  state.artifact.selectedDirectory = "";
+  state.artifact.expandedDirectories = {};
   state.artifact.activeFile = null;
   state.artifact.openingFile = false;
   state.artifact.downloading = false;
@@ -526,7 +579,8 @@ export function clearArtifactState() {
   setArtifactFileLoading(false);
   setExplorerRootLabel("No artifact loaded");
   updateTreeToggleButton();
-  renderFileTree([]);
+  updateArtifactActions();
+  renderFileTree([], []);
   resetArtifactEditor();
 }
 
@@ -540,6 +594,7 @@ export function refreshArtifactEditorLineNumbers() {
 
 export function setArtifactTreeCollapsed(collapsed) {
   state.artifact.treeCollapsed = Boolean(collapsed);
+  state.artifact.expandedDirectories = {};
   updateTreeToggleButton();
   renderFileTree(state.artifact.files);
 }
@@ -548,9 +603,17 @@ export function toggleArtifactTreeCollapsed() {
   setArtifactTreeCollapsed(!state.artifact.treeCollapsed);
 }
 
-export async function loadArtifactRecord(record, { collapseTree = true } = {}) {
+export async function loadArtifactRecord(
+  record,
+  { collapseTree = true, expandedDirectories = null, treeCollapsed: preserveTreeCollapsed = null } = {},
+) {
   artifactLoadRequestId += 1;
   artifactFileRequestId += 1;
+  if (expandedDirectories && typeof expandedDirectories === "object") {
+    state.artifact.expandedDirectories = { ...expandedDirectories };
+  } else if (state.artifact.id !== record.id || collapseTree) {
+    state.artifact.expandedDirectories = {};
+  }
   state.artifact.id = record.id;
   state.artifact.name = record.name || "artifact";
   state.artifact.cloudProviderId =
@@ -562,12 +625,28 @@ export async function loadArtifactRecord(record, { collapseTree = true } = {}) {
     ? record.filePaths
     : Object.keys(record.files || record.modelJson?.files || {});
   state.artifact.files = filePaths.map((path) => ({ path }));
-  if (typeof collapseTree === "boolean") {
+  const generationRules = record.modelJson?.generationRules;
+  const generatedPaths =
+    generationRules && typeof generationRules === "object" && !Array.isArray(generationRules)
+      ? Object.keys(generationRules)
+      : [];
+  state.artifact.generatedPaths = generatedPaths.length ? generatedPaths : filePaths;
+  const directoryPaths = Array.isArray(record.directoryPaths)
+    ? record.directoryPaths
+    : record.modelJson?.directories;
+  state.artifact.directories = Array.isArray(directoryPaths)
+    ? [...new Set(directoryPaths.filter((path) => typeof path === "string"))]
+    : [];
+  state.artifact.selectedDirectory = "";
+  if (typeof preserveTreeCollapsed === "boolean") {
+    state.artifact.treeCollapsed = preserveTreeCollapsed;
+  } else if (typeof collapseTree === "boolean") {
     state.artifact.treeCollapsed = collapseTree;
   }
 
   setExplorerRootLabel(state.artifact.name);
   updateTreeToggleButton();
+  updateArtifactActions();
   resetArtifactEditor();
   renderFileTree(state.artifact.files);
   setStatus(`Loaded artifact: ${state.artifact.name} (${state.artifact.files.length} files)`);
@@ -651,7 +730,8 @@ export function renderFileTree(files) {
   }
   updateTreeToggleButton();
   el.fileTree.innerHTML = "";
-  if (!files.length) {
+  const directories = state.artifact.directories || [];
+  if (!files.length && !directories.length) {
     const empty = document.createElement("div");
     empty.className = "file-tree-empty";
     empty.textContent = "No files found in this artifact.";
@@ -659,7 +739,7 @@ export function renderFileTree(files) {
     return;
   }
 
-  const tree = createTree(files);
+  const tree = createTree(files, directories);
   el.fileTree.appendChild(buildTreeNode(tree, 0));
   updateTreeSelection();
 }
@@ -732,6 +812,321 @@ export async function saveCurrentFile() {
   }
 }
 
+function finishArtifactCreateDialog(value) {
+  const overlay = el.artifactCreateOverlay;
+  if (!overlay) return;
+  overlay.classList.add("hidden");
+  overlay.setAttribute("aria-hidden", "true");
+  document.body.classList.remove("modal-open");
+  const resolve = artifactCreateDialogResolve;
+  artifactCreateDialogResolve = null;
+  resolve?.(value);
+}
+
+function bindArtifactCreateDialog() {
+  if (artifactCreateDialogBound || !el.artifactCreateForm) return;
+  artifactCreateDialogBound = true;
+
+  el.artifactCreateForm.addEventListener("submit", (event) => {
+    event.preventDefault();
+    const name = el.artifactCreateNameInput?.value.trim() || "";
+    const error = !name
+      ? "Enter a name."
+      : name === "." || name === ".." || /[\\/:]/.test(name)
+        ? "Enter a single name without slashes."
+        : "";
+    if (error) {
+      if (el.artifactCreateError) {
+        el.artifactCreateError.textContent = error;
+        el.artifactCreateError.classList.remove("hidden");
+      }
+      el.artifactCreateNameInput?.focus();
+      return;
+    }
+    finishArtifactCreateDialog(name);
+  });
+
+  el.artifactCreateCancelBtn?.addEventListener("click", () => finishArtifactCreateDialog(null));
+  el.artifactCreateOverlay?.addEventListener("click", (event) => {
+    if (event.target === el.artifactCreateOverlay) finishArtifactCreateDialog(null);
+  });
+  el.artifactCreateForm.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") {
+      event.preventDefault();
+      finishArtifactCreateDialog(null);
+      return;
+    }
+    if (event.key !== "Tab") return;
+    const focusable = [
+      el.artifactCreateNameInput,
+      el.artifactCreateCancelBtn,
+      el.artifactCreateSubmitBtn,
+    ].filter(Boolean);
+    const first = focusable[0];
+    const last = focusable.at(-1);
+    if (event.shiftKey && document.activeElement === first) {
+      event.preventDefault();
+      last?.focus();
+    } else if (!event.shiftKey && document.activeElement === last) {
+      event.preventDefault();
+      first?.focus();
+    }
+  });
+}
+
+function requestArtifactEntryName(kind, directory, initialName = "") {
+  if (!el.artifactCreateOverlay || !el.artifactCreateForm || !el.artifactCreateNameInput) {
+    return Promise.resolve(null);
+  }
+  if (artifactCreateDialogResolve) finishArtifactCreateDialog(null);
+  bindArtifactCreateDialog();
+  const isRename = kind.startsWith("rename-");
+  const entryKind = kind.endsWith("file") ? "file" : "folder";
+  const label = isRename ? `Rename ${entryKind === "file" ? "File" : "Folder"}` : `New ${entryKind === "file" ? "File" : "Folder"}`;
+  if (el.artifactCreateTitle) el.artifactCreateTitle.textContent = label;
+  if (el.artifactCreateSubtitle) {
+    el.artifactCreateSubtitle.textContent = `${isRename ? "Rename in" : "Create in"} ${directory || "project root"}.`;
+  }
+  if (el.artifactCreateNameInput) {
+    el.artifactCreateNameInput.value = initialName;
+    el.artifactCreateNameInput.placeholder = entryKind === "file" ? "e.g. README.md" : "e.g. assets";
+  }
+  if (el.artifactCreateError) {
+    el.artifactCreateError.textContent = "";
+    el.artifactCreateError.classList.add("hidden");
+  }
+  if (el.artifactCreateSubmitBtn) el.artifactCreateSubmitBtn.textContent = isRename ? "Rename" : "Create";
+  el.artifactCreateOverlay.classList.remove("hidden");
+  el.artifactCreateOverlay.setAttribute("aria-hidden", "false");
+  document.body.classList.add("modal-open");
+  requestAnimationFrame(() => {
+    el.artifactCreateNameInput?.focus();
+    if (isRename) el.artifactCreateNameInput?.select();
+  });
+  return new Promise((resolve) => {
+    artifactCreateDialogResolve = resolve;
+  });
+}
+
+async function preserveEditorChangesBeforeStructureEdit() {
+  if (!state.artifact.dirty) return true;
+  await saveCurrentFile();
+  return !state.artifact.dirty;
+}
+
+export async function createArtifactFile() {
+  if (!state.artifact.id) return;
+  const directory = state.artifact.selectedDirectory || "";
+  const name = await requestArtifactEntryName("file", directory);
+  if (!name || !state.artifact.id || !(await preserveEditorChangesBeforeStructureEdit())) return;
+  const path = directory ? `${directory}/${name}` : name;
+  try {
+    const expansion = captureArtifactTreeExpansion();
+    const treeCollapsed = state.artifact.treeCollapsed;
+    if (directory) expansion[directory] = true;
+    const record = await api(`/artifact/${state.artifact.id}/files`, {
+      method: "POST",
+      body: JSON.stringify({ path, content: "" }),
+    });
+    await loadArtifactRecord(record, {
+      collapseTree: false,
+      expandedDirectories: expansion,
+      treeCollapsed,
+    });
+    state.artifact.selectedDirectory = directory;
+    await openArtifactFile(path);
+    setStatus(`Created: ${path}`);
+  } catch (error) {
+    setStatus(error, { prefix: "Could not create file.", error: true });
+  }
+}
+
+export async function createArtifactDirectory() {
+  if (!state.artifact.id) return;
+  const parent = state.artifact.selectedDirectory || "";
+  const name = await requestArtifactEntryName("folder", parent);
+  if (!name || !state.artifact.id || !(await preserveEditorChangesBeforeStructureEdit())) return;
+  const path = parent ? `${parent}/${name}` : name;
+  try {
+    const expansion = captureArtifactTreeExpansion();
+    const treeCollapsed = state.artifact.treeCollapsed;
+    if (parent) expansion[parent] = true;
+    expansion[path] = false;
+    const record = await api(`/artifact/${state.artifact.id}/directories`, {
+      method: "POST",
+      body: JSON.stringify({ path }),
+    });
+    await loadArtifactRecord(record, {
+      collapseTree: false,
+      expandedDirectories: expansion,
+      treeCollapsed,
+    });
+    state.artifact.selectedDirectory = path;
+    setStatus(`Created folder: ${path}`);
+  } catch (error) {
+    setStatus(error, { prefix: "Could not create folder.", error: true });
+  }
+}
+
+export function openArtifactContextMenu(event) {
+  const menu = el.artifactContextMenu;
+  const target = event.target instanceof Element ? event.target : null;
+  if (!menu || !target || !state.artifact.id) return;
+  if (menu.parentElement !== document.body) {
+    document.body.appendChild(menu);
+  }
+
+  const directory = target.closest(".file-tree-dir");
+  const file = target.closest(".file-tree-item");
+  const children = target.closest(".file-tree-children");
+  if (directory) {
+    artifactContextTarget = { kind: "directory", path: directory.dataset.directoryPath || "" };
+  } else if (file) {
+    artifactContextTarget = { kind: "file", path: file.dataset.path || "" };
+  } else {
+    artifactContextTarget = null;
+  }
+  if (directory) {
+    state.artifact.selectedDirectory = directory.dataset.directoryPath || "";
+  } else if (file) {
+    const filePath = file.dataset.path || "";
+    const separator = filePath.lastIndexOf("/");
+    state.artifact.selectedDirectory = separator < 0 ? "" : filePath.slice(0, separator);
+  } else if (children) {
+    state.artifact.selectedDirectory = children.dataset.directoryPath || "";
+  } else {
+    state.artifact.selectedDirectory = "";
+  }
+
+  if (el.artifactContextRenameBtn) {
+    const canRename = Boolean(
+      artifactContextTarget?.path &&
+        !isGeneratedArtifactPath(artifactContextTarget.path, artifactContextTarget.kind),
+    );
+    el.artifactContextRenameBtn.disabled = !canRename;
+    el.artifactContextRenameBtn.setAttribute("aria-disabled", String(!canRename));
+  }
+
+  artifactContextMenuReturnFocus = directory || file || target;
+  menu.style.left = `${Math.max(8, event.clientX)}px`;
+  menu.style.top = `${Math.max(8, event.clientY)}px`;
+  menu.classList.remove("hidden");
+  menu.setAttribute("aria-hidden", "false");
+
+  requestAnimationFrame(() => {
+    if (menu.classList.contains("hidden")) return;
+    const bounds = menu.getBoundingClientRect();
+    const left = Math.max(8, Math.min(event.clientX, window.innerWidth - bounds.width - 8));
+    const top = Math.max(8, Math.min(event.clientY, window.innerHeight - bounds.height - 8));
+    menu.style.left = `${left}px`;
+    menu.style.top = `${top}px`;
+  });
+  menu.querySelector('[role="menuitem"]')?.focus();
+}
+
+export function closeArtifactContextMenu({ restoreFocus = false } = {}) {
+  const menu = el.artifactContextMenu;
+  if (!menu) return;
+  menu.classList.add("hidden");
+  menu.setAttribute("aria-hidden", "true");
+  if (restoreFocus && artifactContextMenuReturnFocus?.isConnected) {
+    artifactContextMenuReturnFocus.focus();
+  }
+  artifactContextMenuReturnFocus = null;
+}
+
+export async function renameArtifactEntry() {
+  const target = artifactContextTarget;
+  artifactContextTarget = null;
+  if (!state.artifact.id || !target?.path || isGeneratedArtifactPath(target.path, target.kind)) return;
+  const sourcePath = target.path;
+  const kind = target.kind;
+  const separator = sourcePath.lastIndexOf("/");
+  const parent = separator < 0 ? "" : sourcePath.slice(0, separator);
+  const initialName = sourcePath.slice(separator + 1);
+  const name = await requestArtifactEntryName(`rename-${kind}`, parent, initialName);
+  if (!name || !state.artifact.id || !(await preserveEditorChangesBeforeStructureEdit())) return;
+  if (name === initialName) {
+    setStatus(`Name unchanged: ${sourcePath}`);
+    return;
+  }
+
+  const destination = parent ? `${parent}/${name}` : name;
+  const expansion = captureArtifactTreeExpansion();
+  const treeCollapsed = state.artifact.treeCollapsed;
+  const activeFile = state.artifact.activeFile;
+  let renamedActiveFile = activeFile;
+  if (kind === "directory") {
+    const remappedExpansion = {};
+    Object.entries(expansion).forEach(([path, isOpen]) => {
+      if (path === sourcePath || path.startsWith(`${sourcePath}/`)) {
+        remappedExpansion[`${destination}${path.slice(sourcePath.length)}`] = isOpen;
+      } else {
+        remappedExpansion[path] = isOpen;
+      }
+    });
+    Object.assign(expansion, remappedExpansion);
+    Object.keys(expansion).forEach((path) => {
+      if (path === sourcePath || path.startsWith(`${sourcePath}/`)) delete expansion[path];
+    });
+    if (activeFile === sourcePath || activeFile?.startsWith(`${sourcePath}/`)) {
+      renamedActiveFile = `${destination}${activeFile.slice(sourcePath.length)}`;
+    }
+  } else if (activeFile === sourcePath) {
+    renamedActiveFile = destination;
+  }
+
+  try {
+    const record = await api(`/artifact/${state.artifact.id}/rename`, {
+      method: "PUT",
+      body: JSON.stringify({ sourcePath, newName: name }),
+    });
+    await loadArtifactRecord(record, {
+      collapseTree: false,
+      expandedDirectories: expansion,
+      treeCollapsed,
+    });
+    state.artifact.selectedDirectory = kind === "directory" ? destination : parent;
+    if (renamedActiveFile && renamedActiveFile !== activeFile) {
+      await openArtifactFile(renamedActiveFile);
+    }
+    setStatus(`Renamed: ${sourcePath} → ${destination}`);
+  } catch (error) {
+    setStatus(error, { prefix: "Could not rename artifact entry.", error: true });
+  } finally {
+    artifactContextTarget = null;
+  }
+}
+
+export function openArtifactArchivePicker() {
+  if (state.artifact.id) el.artifactArchiveInput?.click();
+}
+
+export async function importArtifactArchive(file) {
+  if (!state.artifact.id || !file || !(await preserveEditorChangesBeforeStructureEdit())) return;
+  if (
+    !window.confirm(
+      "Import this ZIP as the current artifact project? Files missing from the ZIP will be removed, and all generated files must be present.",
+    )
+  ) {
+    return;
+  }
+  const form = new FormData();
+  form.append("file", file);
+  try {
+    const record = await api(`/artifact/${state.artifact.id}/archive`, {
+      method: "POST",
+      body: form,
+    });
+    await loadArtifactRecord(record, { collapseTree: false });
+    setStatus(`Imported ${file.name} into ${state.artifact.name}`);
+  } catch (error) {
+    setStatus(error, { prefix: "Artifact ZIP import failed.", error: true });
+  } finally {
+    if (el.artifactArchiveInput) el.artifactArchiveInput.value = "";
+  }
+}
+
 export async function downloadCurrentArtifact() {
   if (!state.artifact.id) {
     setStatus("No artifact loaded");
@@ -753,6 +1148,7 @@ export async function downloadCurrentArtifact() {
     link.download = filename;
     link.click();
     URL.revokeObjectURL(objectUrl);
+    setStatus(`Downloaded artifacts: ${filename}`);
   } catch (error) {
     setStatus(error, { prefix: "Download failed.", error: true });
   }

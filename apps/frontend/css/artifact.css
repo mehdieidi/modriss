@@ -9,6 +9,48 @@
   background: color-mix(in srgb, var(--surface-2) 94%, var(--surface-high) 6%);
 }
 
+.artifact-import-actions {
+  display: flex;
+  padding: 8px;
+  border-bottom: 1px solid color-mix(in srgb, var(--border-subtle) 78%, transparent);
+}
+
+.artifact-import-actions .btn {
+  width: 100%;
+}
+
+.artifact-create-dialog .project-input {
+  width: 100%;
+}
+
+.artifact-context-menu {
+  position: fixed;
+  z-index: 1600;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 172px;
+  max-width: min(240px, calc(100vw - 16px));
+  padding: 5px;
+  border: 1px solid color-mix(in srgb, var(--border) 86%, transparent);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--glass-pane-bg) 96%, var(--surface-2) 4%);
+  box-shadow: 0 12px 28px color-mix(in srgb, #000 40%, transparent);
+  backdrop-filter: var(--glass-pane-blur);
+  -webkit-backdrop-filter: var(--glass-pane-blur);
+}
+
+.artifact-context-menu .ide-menu-item {
+  border-radius: 5px;
+  padding: 7px 9px;
+  font-size: 11px;
+}
+
+.artifact-context-menu .ide-menu-item:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
 .workspace.artifact-mode .left-pane {
   padding: 0;
 }

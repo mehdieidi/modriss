@@ -147,8 +147,13 @@ raw generated XMI, never to merged Working.
 
 ### Artifacts
 
-`/api/artifact` supports project-scoped listing, artifact retrieval, file reads, file updates, and
-ZIP download. File paths must be relative and cannot escape the artifact root.
+`/api/artifact` supports project-scoped listing, artifact retrieval, file reads and edits, creating
+files and folders, renaming user-owned files and folders, ZIP import, and ZIP download. Empty
+folders appear in the editor and survive ZIP round trips. Imported archives must retain every
+current generator-owned file, keep the trace manifest intact, and place new files below the project
+root or a generator-approved extension directory. Unsafe paths, binary files, and unsupported
+additions are rejected. Files added outside generator-owned paths and their folders survive later
+PSM-to-artifact regeneration.
 
 ### Modeling and Layout
 

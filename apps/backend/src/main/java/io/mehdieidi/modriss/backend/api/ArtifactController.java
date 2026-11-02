@@ -5,7 +5,9 @@ import io.mehdieidi.modriss.platform.artifact.domain.ArtifactRecord;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import java.nio.charset.StandardCharsets;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 import org.springframework.http.ContentDisposition;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -99,6 +101,51 @@ public class ArtifactController {
     return artifacts.updateFile(auth.user(token), id, request.path(), request.content());
   }
 
+  /** Creates a new user-owned file in a generator-approved extension directory. */
+  @PostMapping("/{id}/files")
+  ArtifactRecord createFile(
+      @RequestHeader("X-Auth-Token") String token,
+      @PathVariable("id") String id,
+      @Valid @RequestBody SaveFileRequest request) {
+    return artifacts.createFile(auth.user(token), id, request.path(), request.content());
+  }
+
+  /** Creates an empty folder in a generator-approved extension directory. */
+  @PostMapping("/{id}/directories")
+  ArtifactRecord createDirectory(
+      @RequestHeader("X-Auth-Token") String token,
+      @PathVariable("id") String id,
+      @Valid @RequestBody CreateDirectoryRequest request) {
+    return artifacts.createDirectory(auth.user(token), id, request.path());
+  }
+
+  /** Renames a user-owned artifact file or folder without moving it to another extension point. */
+  @PutMapping("/{id}/rename")
+  ArtifactRecord renameEntry(
+      @RequestHeader("X-Auth-Token") String token,
+      @PathVariable("id") String id,
+      @Valid @RequestBody RenameArtifactEntryRequest request) {
+    return artifacts.renameEntry(auth.user(token), id, request.sourcePath(), request.newName());
+  }
+
+  /** Imports a locally refined copy of the generated artifact project. */
+  @PostMapping(value = "/{id}/archive", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+  ArtifactRecord importProjectArchive(
+      @RequestHeader("X-Auth-Token") String token,
+      @PathVariable("id") String id,
+      @RequestParam("file") MultipartFile file)
+      throws java.io.IOException {
+    var user = auth.user(token);
+    artifacts.get(user, id);
+    if (file.getSize() > 30_000_000) {
+      throw new io.mehdieidi.modriss.platform.kernel.PlatformException(
+          413, "Artifact ZIP exceeds 30 MB.");
+    }
+    ArtifactProjectArchive.Contents archive = ArtifactProjectArchive.read(file.getInputStream());
+    return artifacts.importProjectArchive(
+        user, id, archive.files(), archive.directories());
+  }
+
   /**
    * Imports developer-refined UTF-8 project sources from a ZIP, excluding compiled build output.
    */
@@ -157,6 +204,7 @@ public class ArtifactController {
       String name,
       String cloudProviderId,
       List<String> filePaths,
+      List<String> directoryPaths,
       java.time.Instant createdAt,
       java.time.Instant updatedAt) {
 
@@ -169,8 +217,26 @@ public class ArtifactController {
               ? "aws"
               : artifact.modelJson().path("psmPackageId").asText("aws"),
           artifact.files() == null ? List.of() : artifact.files().keySet().stream().toList(),
+          directoryPaths(artifact),
           artifact.createdAt(),
           artifact.updatedAt());
     }
+
+    private static List<String> directoryPaths(ArtifactRecord artifact) {
+      Set<String> paths = new LinkedHashSet<>();
+      var directories = artifact.modelJson() == null ? null : artifact.modelJson().path("directories");
+      if (directories != null && directories.isArray()) {
+        directories.forEach(path -> {
+          if (path.isTextual()) paths.add(path.asText());
+        });
+      }
+      return paths.stream().sorted().toList();
+    }
   }
+
+  /** Folder creation payload. */
+  public record CreateDirectoryRequest(@NotBlank String path) {}
+
+  /** Rename payload for an artifact-relative file or folder. */
+  public record RenameArtifactEntryRequest(@NotBlank String sourcePath, @NotBlank String newName) {}
 }

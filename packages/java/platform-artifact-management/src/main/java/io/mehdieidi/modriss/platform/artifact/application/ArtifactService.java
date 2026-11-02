@@ -14,12 +14,15 @@ import java.nio.file.Path;
 import java.time.Instant;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.node.ArrayNode;
 import tools.jackson.databind.node.ObjectNode;
 
 /** Manages generated artifact bundles and their editable file contents. */
@@ -149,6 +152,7 @@ public final class ArtifactService {
         metadata == null ? store.objectMapper().createObjectNode() : metadata.deepCopy();
     modelJson.put("name", name);
     modelJson.put("fileCount", normalizedFiles.size());
+    modelJson.set("directories", directoryNode(modelJson, normalizedFiles.keySet()));
     ArtifactRecord artifact =
         new ArtifactRecord(id, projectId, name, modelJson, normalizedFiles, now, now);
     store.write(artifactPath(projectId, id), artifact);
@@ -201,8 +205,14 @@ public final class ArtifactService {
     ArtifactRecord artifact = get(user, artifactId);
     ProjectRecord project = projectService.get(user, artifact.projectId());
     projectService.requireEditor(project, user.id());
+    String normalizedPath = normalizePath(path);
+    requireGenerationManifestUnchanged(artifact, normalizedPath, content);
     Map<String, String> files = new LinkedHashMap<>(artifact.files());
-    files.put(normalizePath(path), content == null ? "" : content);
+    if (!files.containsKey(normalizedPath)) {
+      requireExtensionFilePath(artifact, normalizedPath);
+    }
+    files.put(normalizedPath, content == null ? "" : content);
+    ensureNoPathConflicts(files.keySet(), directoryPaths(artifact.modelJson()));
     ObjectNode modelJson =
         artifact.modelJson() != null && artifact.modelJson().isObject()
             ? ((ObjectNode) artifact.modelJson()).deepCopy()
@@ -210,6 +220,7 @@ public final class ArtifactService {
     modelJson.remove("files");
     modelJson.put("name", artifact.name());
     modelJson.put("fileCount", files.size());
+    modelJson.set("directories", directoryNode(modelJson, files.keySet()));
     ArtifactRecord updated =
         new ArtifactRecord(
             artifact.id(),
@@ -222,6 +233,17 @@ public final class ArtifactService {
     store.write(artifactPath(artifact.projectId(), artifact.id()), updated);
     writeArtifactIndex(updated);
     return updated;
+  }
+
+  /** Creates a user-owned file without replacing an existing artifact file. */
+  public ArtifactRecord createFile(
+      UserRecord user, String artifactId, String path, String content) {
+    ArtifactRecord artifact = get(user, artifactId);
+    String normalizedPath = normalizePath(path);
+    if (artifact.files().containsKey(normalizedPath)) {
+      throw new PlatformException(409, "A file already exists at that path.");
+    }
+    return updateFile(user, artifactId, normalizedPath, content);
   }
 
   /** Replaces all source files with a developer-refined project after checking edit access. */
@@ -238,6 +260,7 @@ public final class ArtifactService {
             : ((ObjectNode) artifact.modelJson()).deepCopy();
     metadata.put("fileCount", normalized.size());
     metadata.put("refinedProjectImportedAt", Instant.now().toString());
+    metadata.set("directories", directoryNode(metadata, normalized.keySet()));
     ArtifactRecord updated =
         new ArtifactRecord(
             artifact.id(),
@@ -245,6 +268,203 @@ public final class ArtifactService {
             artifact.name(),
             metadata,
             normalized,
+            artifact.createdAt(),
+            Instant.now());
+    store.write(artifactPath(artifact.projectId(), artifact.id()), updated);
+    writeArtifactIndex(updated);
+    return updated;
+  }
+
+  /** Adds an empty directory at the project root or beneath an approved extension directory. */
+  public ArtifactRecord createDirectory(UserRecord user, String artifactId, String path) {
+    ArtifactRecord artifact = get(user, artifactId);
+    ProjectRecord project = projectService.get(user, artifact.projectId());
+    projectService.requireEditor(project, user.id());
+    String normalized = normalizePath(path);
+    Set<String> directories = directoryPaths(artifact.modelJson());
+    if (artifact.files().containsKey(normalized) || directories.contains(normalized)) {
+      throw new PlatformException(409, "A file or folder already exists at that path.");
+    }
+    requireExtensionDirectoryPath(artifact, normalized);
+    addDirectoryAndParents(directories, normalized);
+    ensureNoPathConflicts(artifact.files().keySet(), directories);
+    ObjectNode metadata = metadataCopy(artifact);
+    metadata.set("directories", directoryNode(directories));
+    ArtifactRecord updated =
+        new ArtifactRecord(
+            artifact.id(),
+            artifact.projectId(),
+            artifact.name(),
+            metadata,
+            artifact.files(),
+            artifact.createdAt(),
+            Instant.now());
+    store.write(artifactPath(artifact.projectId(), artifact.id()), updated);
+    writeArtifactIndex(updated);
+    return updated;
+  }
+
+  /** Renames a user-owned file or folder while keeping it at the same extension point. */
+  public ArtifactRecord renameEntry(
+      UserRecord user, String artifactId, String sourcePath, String newName) {
+    ArtifactRecord artifact = get(user, artifactId);
+    ProjectRecord project = projectService.get(user, artifact.projectId());
+    projectService.requireEditor(project, user.id());
+    String source = normalizePath(sourcePath);
+    if (newName == null || newName.isBlank() || newName.matches(".*[/\\\\:].*")) {
+      throw new PlatformException(400, "Enter a valid single file or folder name.");
+    }
+    String name = normalizePath(newName);
+    Set<String> directories = normalizeDirectories(directoryPaths(artifact.modelJson()), artifact.files().keySet());
+    boolean isFile = artifact.files().containsKey(source);
+    boolean isDirectory = directories.contains(source);
+    if (!isFile && !isDirectory) {
+      throw new PlatformException(404, "Artifact file or folder not found.");
+    }
+
+    String parent = parentPath(source);
+    String destination = parent.isEmpty() ? name : parent + "/" + name;
+    if (source.equals(destination)) return artifact;
+
+    Set<String> generatedPaths = generationRulePaths(artifact);
+    if (generatedPaths.isEmpty()) generatedPaths.addAll(artifact.files().keySet());
+    boolean ownsGeneratedOutput =
+        isFile
+            ? generatedPaths.contains(source)
+            : generatedPaths.stream()
+                .anyMatch(path -> path.equals(source) || path.startsWith(source + "/"));
+    if (ownsGeneratedOutput) {
+      throw new PlatformException(400, "Generator-owned files or folders cannot be renamed.");
+    }
+
+    Map<String, String> files = new LinkedHashMap<>(artifact.files());
+    if (isFile) {
+      if (files.containsKey(destination) || directories.contains(destination)) {
+        throw new PlatformException(409, "A file or folder already exists at that path.");
+      }
+      requireExtensionFilePath(artifact, destination);
+      String content = files.remove(source);
+      files.put(destination, content);
+    } else {
+      if (files.containsKey(destination) || directories.contains(destination)) {
+        throw new PlatformException(409, "A file or folder already exists at that path.");
+      }
+      requireExtensionDirectoryPath(artifact, destination);
+      String prefix = source + "/";
+      Map<String, String> movedFiles = new LinkedHashMap<>();
+      files.entrySet().removeIf(
+          entry -> {
+            if (!entry.getKey().startsWith(prefix)) return false;
+            movedFiles.put(destination + entry.getKey().substring(source.length()), entry.getValue());
+            return true;
+          });
+      files.putAll(movedFiles);
+      Set<String> renamedDirectories = new LinkedHashSet<>();
+      for (String directory : directories) {
+        if (directory.equals(source) || directory.startsWith(prefix)) {
+          renamedDirectories.add(destination + directory.substring(source.length()));
+        } else {
+          renamedDirectories.add(directory);
+        }
+      }
+      directories = renamedDirectories;
+    }
+
+    ensureNoPathConflicts(files.keySet(), directories);
+    ObjectNode metadata = metadataCopy(artifact);
+    metadata.put("fileCount", files.size());
+    metadata.set("directories", directoryNode(directories));
+    ArtifactRecord updated =
+        new ArtifactRecord(
+            artifact.id(),
+            artifact.projectId(),
+            artifact.name(),
+            metadata,
+            files,
+            artifact.createdAt(),
+            Instant.now());
+    store.write(artifactPath(artifact.projectId(), artifact.id()), updated);
+    writeArtifactIndex(updated);
+    return updated;
+  }
+
+  /** Replaces an artifact's files with a structurally valid local project archive. */
+  public ArtifactRecord importProjectArchive(
+      UserRecord user,
+      String artifactId,
+      Map<String, String> incomingFiles,
+      Set<String> incomingDirectories) {
+    ArtifactRecord artifact = get(user, artifactId);
+    ProjectRecord project = projectService.get(user, artifact.projectId());
+    projectService.requireEditor(project, user.id());
+
+    Map<String, String> files = normalizeFiles(incomingFiles);
+    Set<String> directories = normalizeDirectories(incomingDirectories, files.keySet());
+    Set<String> generatedPaths = generationRulePaths(artifact);
+    if (generatedPaths.isEmpty()) {
+      generatedPaths.addAll(artifact.files().keySet());
+    }
+    if (!containsAllPaths(files.keySet(), generatedPaths)) {
+      ArchiveContents unwrapped = unwrapSingleRoot(files, directories, generatedPaths);
+      if (unwrapped == null) {
+        Set<String> missing = new LinkedHashSet<>(generatedPaths);
+        missing.removeAll(files.keySet());
+        throw new PlatformException(
+            400,
+            "Artifact ZIP is missing generated file(s): "
+                + missing.stream().limit(5).collect(java.util.stream.Collectors.joining(", ")));
+      }
+      files = unwrapped.files();
+      directories = unwrapped.directories();
+    }
+
+    Set<String> generatedDirectories = directoryAncestors(generatedPaths);
+    Set<String> existingDirectories = directoryPaths(artifact.modelJson());
+    Set<String> extensionDirectories = new LinkedHashSet<>(generatedDirectories);
+    extensionDirectories.addAll(existingDirectories);
+    directories = normalizeDirectories(directories, files.keySet());
+    for (String manifestPath : generatedPaths) {
+      if (isGenerationManifest(manifestPath)
+          && !java.util.Objects.equals(artifact.files().get(manifestPath), files.get(manifestPath))) {
+        throw new PlatformException(400, "Artifact ZIP cannot modify the generator trace manifest.");
+      }
+    }
+    for (String directory : directories.stream()
+        .sorted(java.util.Comparator.comparingInt(String::length))
+        .toList()) {
+      if (existingDirectories.contains(directory) || generatedDirectories.contains(directory)) {
+        continue;
+      }
+      String parent = parentPath(directory);
+      if (!parent.isEmpty() && !isWithin(parent, extensionDirectories)) {
+        throw new PlatformException(
+            400,
+            "Added folder is outside generator-approved extension directories: " + directory);
+      }
+      extensionDirectories.add(directory);
+    }
+    for (String path : files.keySet()) {
+      if (generatedPaths.contains(path) || artifact.files().containsKey(path)) continue;
+      String parent = parentPath(path);
+      if (!parent.isEmpty() && !isWithin(parent, extensionDirectories)) {
+        throw new PlatformException(
+            400,
+            "Added file is outside generator-approved extension directories: " + path);
+      }
+    }
+    ensureNoPathConflicts(files.keySet(), directories);
+
+    ObjectNode metadata = metadataCopy(artifact);
+    metadata.put("fileCount", files.size());
+    metadata.put("projectArchiveImportedAt", Instant.now().toString());
+    metadata.set("directories", directoryNode(directories));
+    ArtifactRecord updated =
+        new ArtifactRecord(
+            artifact.id(),
+            artifact.projectId(),
+            artifact.name(),
+            metadata,
+            files,
             artifact.createdAt(),
             Instant.now());
     store.write(artifactPath(artifact.projectId(), artifact.id()), updated);
@@ -263,6 +483,10 @@ public final class ArtifactService {
     ArtifactRecord artifact = get(user, artifactId);
     try (ByteArrayOutputStream bytes = new ByteArrayOutputStream();
         ZipOutputStream zip = new ZipOutputStream(bytes, StandardCharsets.UTF_8)) {
+      for (String directory : directoryPaths(artifact.modelJson()).stream().sorted().toList()) {
+        zip.putNextEntry(new ZipEntry(normalizePath(directory) + "/"));
+        zip.closeEntry();
+      }
       if (store instanceof ArtifactStorage optimized) {
         for (ArtifactStorage.ArtifactFile entry : optimized.listFiles(artifactId)) {
           zip.putNextEntry(new ZipEntry(normalizePath(entry.path())));
@@ -424,7 +648,170 @@ public final class ArtifactService {
     Map<String, String> normalized = new LinkedHashMap<>();
     (files == null ? Map.<String, String>of() : files)
         .forEach(
-            (path, content) -> normalized.put(normalizePath(path), content == null ? "" : content));
+            (path, content) -> {
+              String normalizedPath = normalizePath(path);
+              if (normalized.putIfAbsent(normalizedPath, content == null ? "" : content) != null) {
+                throw new PlatformException(400, "Duplicate artifact file path: " + normalizedPath);
+              }
+            });
     return normalized;
   }
+
+  private ObjectNode metadataCopy(ArtifactRecord artifact) {
+    return artifact.modelJson() != null && artifact.modelJson().isObject()
+        ? ((ObjectNode) artifact.modelJson()).deepCopy()
+        : store.objectMapper().createObjectNode();
+  }
+
+  private ArrayNode directoryNode(ObjectNode metadata, Set<String> filePaths) {
+    Set<String> directories = directoryPaths(metadata);
+    directories.addAll(directoryAncestors(filePaths));
+    return directoryNode(directories);
+  }
+
+  private ArrayNode directoryNode(Set<String> directories) {
+    ArrayNode node = store.objectMapper().createArrayNode();
+    directories.stream().sorted().forEach(node::add);
+    return node;
+  }
+
+  private Set<String> directoryPaths(JsonNode metadata) {
+    Set<String> directories = new LinkedHashSet<>();
+    JsonNode paths = metadata == null ? null : metadata.path("directories");
+    if (paths != null && paths.isArray()) {
+      for (JsonNode path : paths) {
+        if (path.isTextual() && !path.asText().isBlank()) {
+          directories.add(normalizePath(path.asText()));
+        }
+      }
+    }
+    return directories;
+  }
+
+  private Set<String> normalizeDirectories(Set<String> directories, Set<String> filePaths) {
+    Set<String> normalized = new LinkedHashSet<>();
+    if (directories != null) {
+      for (String path : directories) addDirectoryAndParents(normalized, normalizePath(path));
+    }
+    normalized.addAll(directoryAncestors(filePaths));
+    return normalized;
+  }
+
+  private void addDirectoryAndParents(Set<String> directories, String path) {
+    String current = path;
+    while (!current.isEmpty()) {
+      directories.add(current);
+      current = parentPath(current);
+    }
+  }
+
+  private Set<String> generationRulePaths(ArtifactRecord artifact) {
+    Set<String> paths = new LinkedHashSet<>();
+    JsonNode rules = artifact.modelJson() == null ? null : artifact.modelJson().path("generationRules");
+    if (rules != null && rules.isObject()) {
+      rules.properties().forEach(entry -> paths.add(normalizePath(entry.getKey())));
+    }
+    return paths;
+  }
+
+  private Set<String> directoryAncestors(Iterable<String> paths) {
+    Set<String> directories = new LinkedHashSet<>();
+    for (String path : paths) {
+      String parent = parentPath(path);
+      while (!parent.isEmpty()) {
+        directories.add(parent);
+        parent = parentPath(parent);
+      }
+    }
+    return directories;
+  }
+
+  private boolean containsAllPaths(Set<String> paths, Set<String> required) {
+    return paths.containsAll(required);
+  }
+
+  private ArchiveContents unwrapSingleRoot(
+      Map<String, String> files, Set<String> directories, Set<String> requiredPaths) {
+    if (files.isEmpty()) return null;
+    String first = files.keySet().iterator().next();
+    int slash = first.indexOf('/');
+    if (slash <= 0) return null;
+    String root = first.substring(0, slash);
+    String prefix = root + "/";
+    if (!files.keySet().stream().allMatch(path -> path.startsWith(prefix))) return null;
+    if (!directories.stream().allMatch(path -> path.equals(root) || path.startsWith(prefix))) {
+      return null;
+    }
+    Map<String, String> unwrappedFiles = new LinkedHashMap<>();
+    files.forEach((path, content) -> unwrappedFiles.put(path.substring(prefix.length()), content));
+    if (!unwrappedFiles.keySet().containsAll(requiredPaths)) return null;
+    Set<String> unwrappedDirectories = new LinkedHashSet<>();
+    directories.stream()
+        .filter(path -> path.startsWith(prefix))
+        .forEach(path -> unwrappedDirectories.add(path.substring(prefix.length())));
+    return new ArchiveContents(
+        unwrappedFiles, normalizeDirectories(unwrappedDirectories, unwrappedFiles.keySet()));
+  }
+
+  private void requireExtensionFilePath(ArtifactRecord artifact, String path) {
+    String parent = parentPath(path);
+    if (parent.isEmpty()) return;
+    Set<String> allowed = directoryAncestors(generationRulePaths(artifact));
+    allowed.addAll(directoryPaths(artifact.modelJson()));
+    if (!isWithin(parent, allowed)) {
+      throw new PlatformException(
+          400, "File must be created at the project root or inside a generator-approved folder.");
+    }
+  }
+
+  private void requireGenerationManifestUnchanged(
+      ArtifactRecord artifact, String path, String content) {
+    if (isGenerationManifest(path)
+        && artifact.files().containsKey(path)
+        && !java.util.Objects.equals(artifact.files().get(path), content == null ? "" : content)) {
+      throw new PlatformException(400, "The generator trace manifest is read-only.");
+    }
+  }
+
+  private boolean isGenerationManifest(String path) {
+    return path.equals("generated/trace/artifact-trace.json");
+  }
+
+  private void requireExtensionDirectoryPath(ArtifactRecord artifact, String path) {
+    if (parentPath(path).isEmpty()) return;
+    Set<String> allowed = directoryAncestors(generationRulePaths(artifact));
+    allowed.addAll(directoryPaths(artifact.modelJson()));
+    if (!isWithin(path, allowed)) {
+      throw new PlatformException(
+          400,
+          "Folder must be created at the project root or inside a generator-approved project folder.");
+    }
+  }
+
+  private boolean isWithin(String path, Set<String> allowedDirectories) {
+    return allowedDirectories.stream()
+        .anyMatch(directory -> path.equals(directory) || path.startsWith(directory + "/"));
+  }
+
+  private void ensureNoPathConflicts(Set<String> files, Set<String> directories) {
+    for (String file : files) {
+      if (directories.contains(file)) {
+        throw new PlatformException(400, "A path cannot be both a file and a folder: " + file);
+      }
+      String parent = parentPath(file);
+      while (!parent.isEmpty()) {
+        if (files.contains(parent)) {
+          throw new PlatformException(400, "A file cannot contain another project path: " + parent);
+        }
+        parent = parentPath(parent);
+      }
+    }
+  }
+
+  private String parentPath(String path) {
+    int slash = path.lastIndexOf('/');
+    return slash < 0 ? "" : path.substring(0, slash);
+  }
+
+  private record ArchiveContents(Map<String, String> files, Set<String> directories) {}
 }

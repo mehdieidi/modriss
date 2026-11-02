@@ -1236,10 +1236,35 @@ paths:
   /api/artifact/{id}/files:
     parameters:
       - $ref: "#/components/parameters/ArtifactId"
+    post:
+      tags: [Artifacts]
+      summary: Create a new artifact file
+      description: Creates a user-owned text file at the project root or below a generator-approved extension directory.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SaveFileRequest"
+      responses:
+        "200":
+          description: Updated artifact
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ArtifactRecord"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "409":
+          $ref: "#/components/responses/Conflict"
     put:
       tags: [Artifacts]
       summary: Save or replace an artifact file
-      description: Creates or replaces one text file at the requested artifact-relative path.
+      description: Replaces a text file at the requested artifact-relative path. Generator trace manifests are read-only.
       requestBody:
         required: true
         content:
@@ -1261,6 +1286,100 @@ paths:
           $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
+  /api/artifact/{id}/directories:
+    parameters:
+      - $ref: "#/components/parameters/ArtifactId"
+    post:
+      tags: [Artifacts]
+      summary: Create an empty artifact folder
+      description: Creates a directory under a generator-approved extension directory. Empty directories are included in artifact ZIP downloads.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [path]
+              properties:
+                path: { type: string }
+      responses:
+        "200":
+          description: Updated artifact
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ArtifactRecord"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "409":
+          $ref: "#/components/responses/Conflict"
+  /api/artifact/{id}/rename:
+    parameters:
+      - $ref: "#/components/parameters/ArtifactId"
+    put:
+      tags: [Artifacts]
+      summary: Rename a user-owned artifact file or folder
+      description: Renames a file or folder in place. Generator-owned outputs cannot be renamed.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [sourcePath, newName]
+              properties:
+                sourcePath: { type: string }
+                newName: { type: string }
+      responses:
+        "200":
+          description: Updated artifact
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ArtifactRecord"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+  /api/artifact/{id}/archive:
+    parameters:
+      - $ref: "#/components/parameters/ArtifactId"
+    post:
+      tags: [Artifacts]
+      summary: Import a locally refined artifact ZIP
+      description: Replaces current files after verifying that every generator-owned output remains present, additions stay within approved project extension directories, and the generator trace manifest is unchanged. Accepts UTF-8 text and explicitly saved empty folders; rejects unsafe or binary entries.
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file: { type: string, format: binary }
+      responses:
+        "200":
+          description: Updated artifact with imported files
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ArtifactRecord"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
   /api/artifact/{id}/download:
     parameters:
       - $ref: "#/components/parameters/ArtifactId"
@@ -4818,7 +4937,7 @@ components:
           $ref: "#/components/schemas/AdminOverview"
     ArtifactSummary:
       type: object
-      required: [id, projectId, name, cloudProviderId, filePaths, createdAt, updatedAt]
+      required: [id, projectId, name, cloudProviderId, filePaths, directoryPaths, createdAt, updatedAt]
       properties:
         id: { type: string }
         projectId: { type: string }
@@ -4827,6 +4946,9 @@ components:
           type: string
           description: Custom PSM package identifier, or aws for the built-in provider.
         filePaths:
+          type: array
+          items: { type: string }
+        directoryPaths:
           type: array
           items: { type: string }
         createdAt: { type: string, format: date-time }

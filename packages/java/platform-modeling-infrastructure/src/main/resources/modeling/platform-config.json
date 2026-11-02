@@ -121,8 +121,8 @@
     }
   },
   "artifactAction": {
-    "buttonLabel": "Download Project",
-    "buttonTitle": "Download the generated project"
+    "buttonLabel": "Download Artifacts",
+    "buttonTitle": "Download the current generated artifacts"
   },
   "impactAnalysis": {
     "elementImpactEndpoint": "/impact/{level}/{modelId}/element/{elementId}",

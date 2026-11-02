@@ -17,10 +17,15 @@ import java.security.MessageDigest;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.HexFormat;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.Semaphore;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.node.ObjectNode;
 
 /**
  * Owns immutable extension packages and parallel PSM branches within the project's access scope.
@@ -455,6 +460,36 @@ public final class PsmExtensionService {
                       branch.xmi().getBytes(StandardCharsets.UTF_8),
                       null));
           requireValid(result);
+          ArtifactRecord previous =
+              artifacts.list(user, projectId).stream()
+                  .filter(
+                      artifact ->
+                          id.equals(artifact.modelJson().path("psmBranchId").asText(null)))
+                  .findFirst()
+                  .orElse(null);
+          Map<String, String> generatedFiles = new LinkedHashMap<>(result.files());
+          ObjectNode generationRules = store.objectMapper().createObjectNode();
+          result.files().keySet().forEach(path -> generationRules.put(path, "custom-egx"));
+          if (previous != null) {
+            Set<String> previousGeneratedPaths = new LinkedHashSet<>();
+            JsonNode previousRules = previous.modelJson().path("generationRules");
+            if (previousRules.isObject()) {
+              previousRules.properties().forEach(entry -> previousGeneratedPaths.add(entry.getKey()));
+            }
+            if (previousGeneratedPaths.isEmpty()) {
+              previousGeneratedPaths.addAll(previous.files().keySet());
+            }
+            for (Map.Entry<String, String> entry : previous.files().entrySet()) {
+              if (previousGeneratedPaths.contains(entry.getKey())) continue;
+              if (generatedFiles.containsKey(entry.getKey())) {
+                throw new PlatformException(
+                    409,
+                    "A manually added artifact now conflicts with a generated file: "
+                        + entry.getKey());
+              }
+              generatedFiles.put(entry.getKey(), entry.getValue());
+            }
+          }
           var metadata =
               store
                   .objectMapper()
@@ -464,8 +499,12 @@ public final class PsmExtensionService {
                   .put("sourceModelRevision", branch.revision())
                   .put("sourcePimId", branch.sourcePimId())
                   .put("sourcePimRevision", branch.sourcePimRevision());
+          metadata.set("generationRules", generationRules);
+          if (previous != null && previous.modelJson().path("directories").isArray()) {
+            metadata.set("directories", previous.modelJson().path("directories").deepCopy());
+          }
           return artifacts.create(
-              user, projectId, branch.name() + "-artifacts", metadata, result.files());
+              user, projectId, branch.name() + "-artifacts", metadata, generatedFiles);
         });
   }
 

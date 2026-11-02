@@ -302,6 +302,8 @@ public final class TransformationService {
           GeneratedArtifact generated =
               formalPsmToArtifact(
                   source, previousArtifact == null ? Map.of() : previousArtifact.files());
+          Map<String, String> generatedFiles =
+              preserveUserArtifacts(generated.files(), previousArtifact);
           ObjectNode metadata = store.objectMapper().createObjectNode();
           metadata.put("sourceModelId", source.id());
           metadata.put("sourceModelRevision", source.revision());
@@ -310,10 +312,15 @@ public final class TransformationService {
           metadata.set("traceability", generated.traceability());
           metadata.put("traceabilityVersion", 2);
           metadata.set("generationRules", generated.generationRules());
+          if (previousArtifact != null
+              && previousArtifact.modelJson().path("directories").isArray()) {
+            metadata.set(
+                "directories", previousArtifact.modelJson().path("directories").deepCopy());
+          }
           long persistStarted = System.nanoTime();
           ArtifactRecord artifact =
               artifactService.create(
-                  user, source.projectId(), artifactName, metadata, generated.files());
+                  user, source.projectId(), artifactName, metadata, generatedFiles);
           addTiming("java.artifactPersistenceMs", System.nanoTime() - persistStarted);
           return artifact;
         });
@@ -352,6 +359,30 @@ public final class TransformationService {
                         && artifactName.equals(artifact.name())))
         .findFirst()
         .orElse(null);
+  }
+
+  /** Carries user-owned files into the next generated artifact snapshot. */
+  private Map<String, String> preserveUserArtifacts(
+      Map<String, String> generatedFiles, ArtifactRecord previousArtifact) {
+    Map<String, String> result = new LinkedHashMap<>(generatedFiles);
+    if (previousArtifact == null) return result;
+    Set<String> previousGeneratedPaths = new LinkedHashSet<>();
+    JsonNode rules = previousArtifact.modelJson().path("generationRules");
+    if (rules.isObject()) rules.properties().forEach(entry -> previousGeneratedPaths.add(entry.getKey()));
+    if (previousGeneratedPaths.isEmpty()) {
+      // Older snapshots did not record generator ownership; treat their existing files as outputs.
+      previousGeneratedPaths.addAll(previousArtifact.files().keySet());
+    }
+    for (Map.Entry<String, String> entry : previousArtifact.files().entrySet()) {
+      if (previousGeneratedPaths.contains(entry.getKey())) continue;
+      if (result.containsKey(entry.getKey())) {
+        throw new PlatformException(
+            409,
+            "A manually added artifact now conflicts with a generated file: " + entry.getKey());
+      }
+      result.put(entry.getKey(), entry.getValue());
+    }
+    return result;
   }
 
   /**

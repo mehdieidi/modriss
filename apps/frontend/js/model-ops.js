@@ -1513,8 +1513,8 @@ export function updateGenerateButtonState() {
   const artifactAction = state.modelingConfig.config?.artifactAction || {};
   const buttonConfig = isArtifactLevel(state.activeType)
     ? {
-        label: artifactAction.buttonLabel || "Download Project",
-        title: artifactAction.buttonTitle || "Download the generated project",
+        label: artifactAction.buttonLabel || "Download Artifacts",
+        title: artifactAction.buttonTitle || "Download the current generated artifacts",
       }
     : transformation
       ? {

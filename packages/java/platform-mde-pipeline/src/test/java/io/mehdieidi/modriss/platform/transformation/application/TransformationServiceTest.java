@@ -652,6 +652,11 @@ class TransformationServiceTest {
                     "\t// TODO: add developer-owned validation that cannot be derived from JSON"
                         + " Schema.",
                     customLogic));
+    services.artifacts().createDirectory(context.user(), artifact.id(), "src/custom");
+    services
+        .artifacts()
+        .createFile(
+            context.user(), artifact.id(), "src/custom/notes.md", "User-maintained project notes.");
 
     ArtifactRecord regenerated = services.transformations().psmToArtifact(context.user(), psm.id());
 
@@ -659,6 +664,13 @@ class TransformationServiceTest {
     assertTrue(
         regenerated.files().get(handlerPath).contains(customLogic),
         "Regeneration must preserve content edited inside protected regions.");
+    assertEquals(
+        "User-maintained project notes.",
+        regenerated.files().get("src/custom/notes.md"),
+        "Regeneration must preserve files outside generator-owned paths.");
+    assertTrue(
+        regenerated.modelJson().path("directories").toString().contains("src/custom"),
+        "Regeneration must preserve user-created folders.");
   }
 
   @Test

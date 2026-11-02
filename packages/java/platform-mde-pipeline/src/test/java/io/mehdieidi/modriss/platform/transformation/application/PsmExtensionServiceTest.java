@@ -156,6 +156,19 @@ class PsmExtensionServiceTest {
     assertTrue(artifact.files().containsKey("functions/Hello.txt"));
     assertEquals(first.id(), artifact.modelJson().path("psmBranchId").asText());
     assertEquals(1, services.artifacts().list(owner.user(), owner.project().id()).size());
+    services.artifacts().createDirectory(owner.user(), artifact.id(), "functions/custom");
+    services
+        .artifacts()
+        .createFile(
+            owner.user(), artifact.id(), "functions/custom/notes.txt", "Maintained outside EGX.");
+    var regeneratedArtifact =
+        extensions.generate(owner.user(), owner.project().id(), first.id(), 1);
+    assertEquals(
+        "Maintained outside EGX.",
+        regeneratedArtifact.files().get("functions/custom/notes.txt"),
+        "Custom-provider regeneration must preserve manually added files.");
+    assertTrue(
+        regeneratedArtifact.modelJson().path("directories").toString().contains("functions/custom"));
 
     // Runtime value conforms to Ecore but violates EVL; ordinary saves must still succeed.
     var changed =

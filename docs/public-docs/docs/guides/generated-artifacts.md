@@ -4,6 +4,14 @@ The built-in AWS PSM generator produces a reviewable project containing infrastr
 application files, and supporting artifacts. The exact files depend on modeled resources
 and contracts.
 
+In the Artifacts tab, right-click the project root or a folder to create a file or folder there.
+Right-click a user-added file or folder to rename it; generator-owned outputs keep their required
+paths for later regeneration. Use **Import ZIP** to replace the saved artifact with a locally
+refined project. The archive must retain every current generator-owned output and the generation
+trace; added files and folders are accepted at the project root or beneath an existing generated
+or user-owned folder. Those user-owned files and folders remain in the saved artifact and are
+carried into later generations. Build output and binary assets should stay out of the archive.
+
 This guide describes the native AWS output. [Custom cloud platforms](custom-cloud-platforms.md)
 use their own EGX/EGL scripts and templates to define the generated project. Their files and
 deployment requirements depend on the uploaded package. The Artifacts tab lets users switch
