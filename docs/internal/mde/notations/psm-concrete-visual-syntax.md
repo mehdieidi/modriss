@@ -232,14 +232,31 @@ navigation, semantic zoom, and delayed edge labels for dense diagrams. Far zoom 
 therefore useful for architecture, normal zoom for service topology, and near zoom
 for configuration inspection.
 
+## AWS service ownership view
+
+`AwsService` is a business ownership boundary, not an AWS deployable resource or a
+containment parent. `AwsPsmModel.services` contains service definitions, while
+deployable resources remain contained by `SamStack.resources` and point to their
+owner through `AwsResource.service`. The editor must preserve these independent
+relationships rather than nest resources under a service.
+
+The PSM provides two complementary service views. **Service Landscape** shows
+the violet `SVC` application-service cards and their responsibility/team fields
+as a compact business-boundary overview. **Service Ownership** adds only the
+concrete resource endpoints reached through each resource's `service` reference
+and draws a violet `owned by` edge. Unassigned AWS resources do not clutter that
+view. Both palettes are limited to creating `AwsService` entries at the model
+root; AWS resources continue to be created in their stack context and assigned
+through the resource's service reference. The existing stage/stack view remains
+responsible for deployment containment.
+
 ## Why this balances usability and complexity
 
 The resulting syntax follows one interaction rule throughout the PSM:
 
-> Create a deployable thing in a service view; open it to configure the things it
-> owns; connect it to other deployable things only when the connection communicates
-> runtime, deployment, security, data, network, operations, workflow, or trace
-> semantics.
+> Define business ownership in the service view; define deployment containment in
+> the stack view; connect deployable resources when the connection communicates
+> runtime, security, data, network, operations, workflow, or trace semantics.
 
 This gives users a small vocabulary at each level without hiding any metamodel
 capability. Every contained Ecore feature still has a derived containment palette,

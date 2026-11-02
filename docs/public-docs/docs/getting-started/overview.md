@@ -7,7 +7,7 @@ MODRISS serves several related roles:
 - **Domain experts** describe goals, actors, concepts, policies, processes, and constraints at CIM.
 - **Architects** refine the design into provider-independent serverless responsibilities at PIM.
 - **Cloud engineers** review provider-specific resources and generated projects at PSM.
-- **Developers** implement protected business-logic regions and test generated code.
+- **Developers** implement the service-owned application use-case stubs and test generated code.
 - **Researchers and language engineers** evolve metamodels, constraints, transformations, and
   generation rules, including uploaded packages for additional PSM targets.
 

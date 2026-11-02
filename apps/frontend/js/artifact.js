@@ -354,8 +354,8 @@ function captureArtifactTreeExpansion() {
 function isGeneratedArtifactPath(path, kind) {
   const generatedPaths = state.artifact.generatedPaths || [];
   if (kind === "file") return generatedPaths.includes(path);
-  return generatedPaths.some((generatedPath) =>
-    generatedPath === path || generatedPath.startsWith(`${path}/`),
+  return generatedPaths.some(
+    (generatedPath) => generatedPath === path || generatedPath.startsWith(`${path}/`),
   );
 }
 
@@ -605,7 +605,11 @@ export function toggleArtifactTreeCollapsed() {
 
 export async function loadArtifactRecord(
   record,
-  { collapseTree = true, expandedDirectories = null, treeCollapsed: preserveTreeCollapsed = null } = {},
+  {
+    collapseTree = true,
+    expandedDirectories = null,
+    treeCollapsed: preserveTreeCollapsed = null,
+  } = {},
 ) {
   artifactLoadRequestId += 1;
   artifactFileRequestId += 1;
@@ -882,20 +886,24 @@ function requestArtifactEntryName(kind, directory, initialName = "") {
   bindArtifactCreateDialog();
   const isRename = kind.startsWith("rename-");
   const entryKind = kind.endsWith("file") ? "file" : "folder";
-  const label = isRename ? `Rename ${entryKind === "file" ? "File" : "Folder"}` : `New ${entryKind === "file" ? "File" : "Folder"}`;
+  const label = isRename
+    ? `Rename ${entryKind === "file" ? "File" : "Folder"}`
+    : `New ${entryKind === "file" ? "File" : "Folder"}`;
   if (el.artifactCreateTitle) el.artifactCreateTitle.textContent = label;
   if (el.artifactCreateSubtitle) {
     el.artifactCreateSubtitle.textContent = `${isRename ? "Rename in" : "Create in"} ${directory || "project root"}.`;
   }
   if (el.artifactCreateNameInput) {
     el.artifactCreateNameInput.value = initialName;
-    el.artifactCreateNameInput.placeholder = entryKind === "file" ? "e.g. README.md" : "e.g. assets";
+    el.artifactCreateNameInput.placeholder =
+      entryKind === "file" ? "e.g. README.md" : "e.g. assets";
   }
   if (el.artifactCreateError) {
     el.artifactCreateError.textContent = "";
     el.artifactCreateError.classList.add("hidden");
   }
-  if (el.artifactCreateSubmitBtn) el.artifactCreateSubmitBtn.textContent = isRename ? "Rename" : "Create";
+  if (el.artifactCreateSubmitBtn)
+    el.artifactCreateSubmitBtn.textContent = isRename ? "Rename" : "Create";
   el.artifactCreateOverlay.classList.remove("hidden");
   el.artifactCreateOverlay.setAttribute("aria-hidden", "false");
   document.body.classList.add("modal-open");
@@ -1038,7 +1046,8 @@ export function closeArtifactContextMenu({ restoreFocus = false } = {}) {
 export async function renameArtifactEntry() {
   const target = artifactContextTarget;
   artifactContextTarget = null;
-  if (!state.artifact.id || !target?.path || isGeneratedArtifactPath(target.path, target.kind)) return;
+  if (!state.artifact.id || !target?.path || isGeneratedArtifactPath(target.path, target.kind))
+    return;
   const sourcePath = target.path;
   const kind = target.kind;
   const separator = sourcePath.lastIndexOf("/");

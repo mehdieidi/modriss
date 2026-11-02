@@ -142,8 +142,7 @@ public class ArtifactController {
           413, "Artifact ZIP exceeds 30 MB.");
     }
     ArtifactProjectArchive.Contents archive = ArtifactProjectArchive.read(file.getInputStream());
-    return artifacts.importProjectArchive(
-        user, id, archive.files(), archive.directories());
+    return artifacts.importProjectArchive(user, id, archive.files(), archive.directories());
   }
 
   /**
@@ -224,11 +223,13 @@ public class ArtifactController {
 
     private static List<String> directoryPaths(ArtifactRecord artifact) {
       Set<String> paths = new LinkedHashSet<>();
-      var directories = artifact.modelJson() == null ? null : artifact.modelJson().path("directories");
+      var directories =
+          artifact.modelJson() == null ? null : artifact.modelJson().path("directories");
       if (directories != null && directories.isArray()) {
-        directories.forEach(path -> {
-          if (path.isTextual()) paths.add(path.asText());
-        });
+        directories.forEach(
+            path -> {
+              if (path.isTextual()) paths.add(path.asText());
+            });
       }
       return paths.stream().sorted().toList();
     }

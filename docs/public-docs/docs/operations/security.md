@@ -54,7 +54,7 @@ Before deployment:
 
 1. Replace secret and owner placeholders.
 2. Review IAM permissions for least privilege.
-3. Implement protected business logic.
+3. Implement the service-owned application use cases generated under `services/<service>/internal/application`.
 4. Run generated security, contract, and integration tests.
 5. Inspect infrastructure templates, API contracts, event schemas, and workflow definitions.
 6. Deploy first to a dedicated non-production account.

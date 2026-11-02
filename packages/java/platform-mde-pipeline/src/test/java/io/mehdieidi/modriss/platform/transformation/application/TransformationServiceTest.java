@@ -456,6 +456,19 @@ class TransformationServiceTest {
     assertEquals("AwsPsmModel", psm.modelJson().path("eClass").asText());
     assertEquals("GENERATED_BY_ETL", psm.modelJson().path("transformationStatus").asText());
     assertTrue(
+        psm.modelJson().path("services").isArray() && !psm.modelJson().path("services").isEmpty(),
+        "Generated PSM should retain first-class AWS service boundaries.");
+    for (var service : psm.modelJson().path("services")) {
+      assertEquals(
+          "AwsService",
+          service.path("eClass").asText(),
+          "Only AwsService targets belong in the root service containment.");
+    }
+    assertTrue(
+        psm.modelJson().path("documents").findValuesAsString("name").stream()
+            .anyMatch(name -> name.endsWith("ServiceMetadata")),
+        "Structured service metadata documents should remain at the PSM root.");
+    assertTrue(
         psm.modelJson().path("validationIssues").isMissingNode()
             || psm.modelJson().path("validationIssues").isEmpty());
     assertTrue(
@@ -614,16 +627,23 @@ class TransformationServiceTest {
     assertFalse(services.artifacts().list(context.user(), context.project().id()).isEmpty());
     assertTrue(artifact.files().containsKey("generated/reports/generation-report.md"));
     assertTrue(
-        artifact.files().keySet().stream().anyMatch(path -> path.startsWith("src/")),
-        "Formal generation should produce source files alongside the project scaffold.");
+        artifact.files().keySet().stream().anyMatch(path -> path.startsWith("services/")),
+        "Formal generation should produce service-owned source files alongside the project"
+            + " scaffold.");
     assertTrue(
         artifact.files().keySet().stream()
-            .anyMatch(path -> path.startsWith("src/functions/") && path.endsWith("/handler.go")),
+            .anyMatch(
+                path ->
+                    path.startsWith("services/")
+                        && path.contains("/cmd/")
+                        && path.endsWith("/main.go")),
         "Formal generation should preserve generated PSM XMI and emit Lambda handlers.");
     String samTemplate =
         artifact.files().entrySet().stream()
             .filter(
-                entry -> entry.getKey().startsWith("template-") && entry.getKey().endsWith(".yaml"))
+                entry ->
+                    entry.getKey().startsWith("infrastructure/units/")
+                        && entry.getKey().endsWith("/template.yaml"))
             .map(Map.Entry::getValue)
             .findFirst()
             .orElseThrow();
@@ -635,7 +655,11 @@ class TransformationServiceTest {
 
     String handlerPath =
         artifact.files().keySet().stream()
-            .filter(path -> path.startsWith("src/functions/") && path.endsWith("/handler.go"))
+            .filter(
+                path ->
+                    path.startsWith("services/")
+                        && path.contains("/cmd/")
+                        && path.endsWith("/main.go"))
             .findFirst()
             .orElseThrow();
     String customLogic = "\t// Developer-owned validation.";
@@ -652,11 +676,14 @@ class TransformationServiceTest {
                     "\t// TODO: add developer-owned validation that cannot be derived from JSON"
                         + " Schema.",
                     customLogic));
-    services.artifacts().createDirectory(context.user(), artifact.id(), "src/custom");
+    String serviceInternalDirectory =
+        handlerPath.substring(0, handlerPath.indexOf("/cmd/")) + "/internal/application/custom";
+    String customNotesPath = serviceInternalDirectory + "/notes.md";
+    services.artifacts().createDirectory(context.user(), artifact.id(), serviceInternalDirectory);
     services
         .artifacts()
         .createFile(
-            context.user(), artifact.id(), "src/custom/notes.md", "User-maintained project notes.");
+            context.user(), artifact.id(), customNotesPath, "User-maintained project notes.");
 
     ArtifactRecord regenerated = services.transformations().psmToArtifact(context.user(), psm.id());
 
@@ -666,10 +693,10 @@ class TransformationServiceTest {
         "Regeneration must preserve content edited inside protected regions.");
     assertEquals(
         "User-maintained project notes.",
-        regenerated.files().get("src/custom/notes.md"),
+        regenerated.files().get(customNotesPath),
         "Regeneration must preserve files outside generator-owned paths.");
     assertTrue(
-        regenerated.modelJson().path("directories").toString().contains("src/custom"),
+        regenerated.modelJson().path("directories").toString().contains(serviceInternalDirectory),
         "Regeneration must preserve user-created folders.");
   }
 

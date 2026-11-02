@@ -28,9 +28,9 @@ project from the checked-in fixture, parses generated JSON/YAML, builds the gene
 bootstrap, uploads generated package artifacts, deploys the generated SAM/CloudFormation template to
 selected AWS emulator (Floci by default), and executes live service assertions.
 
-Protected-region business logic remains explicit: the generated Lambda is invoked as a generated
-bootstrap and returns the generated error response shape unless developer-owned business logic is
-merged into the protected region.
+Business logic remains explicit: the generated Lambda entry point delegates to a service-owned
+application function, whose create-once stub returns `NOT_IMPLEMENTED` until a developer implements
+the use case.
 
 ## Live Evidence
 
@@ -42,8 +42,8 @@ The test verifies these generated artifacts against Floci or LocalStack:
   over HTTP, and verified to return the generated handler response.
 - The generated API Gateway HTTP API is looked up through `apigatewayv2 get-apis`, invoked over
   HTTP at `/runtime`, and verified to return the generated handler response.
-- `asl/modriss-localstack-workflow.asl.json` parses and is executed through Step Functions.
-- `src/functions/modriss-localstack-handler/handler.go` compiles to the Lambda `bootstrap`, is
+- `services/application/workflows/modriss-localstack-workflow.asl.json` parses and is executed through Step Functions.
+- `services/application/cmd/modriss-localstack-handler/main.go` compiles to the Lambda `bootstrap`, is
   accepted by LocalStack Lambda, reaches `function-active-v2`, and responds to invocation.
 - Generated Go tests run with `GENERATED_LAMBDA_FUNCTION_NAME` pointed at the deployed function.
 

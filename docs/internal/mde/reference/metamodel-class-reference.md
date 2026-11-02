@@ -292,7 +292,7 @@ reference it (`ref`), which concepts contain it (`val`), and its direct supertyp
 - **Abstract:** No (concrete)
 - **Incoming `ref`:** _none_
 - **Incoming `val`:** _none_
-- **Inherits:** `ProcessStep`
+- **Inherits:** `ProcessStep {}`
 
 #### `EventStep`
 
@@ -362,7 +362,7 @@ reference it (`ref`), which concepts contain it (`val`), and its direct supertyp
 - **Abstract:** No (concrete)
 - **Incoming `ref`:** _none_
 - **Incoming `val`:** _none_
-- **Inherits:** `ProcessStep`
+- **Inherits:** `ProcessStep {}`
 
 #### `TemporalConstraint`
 
@@ -970,7 +970,7 @@ reference it (`ref`), which concepts contain it (`val`), and its direct supertyp
 - **Abstract:** Yes (abstract)
 - **Incoming `ref`:** _none_
 - **Incoming `val`:** _none_
-- **Inherits:** `kernel.TraceableElement`
+- **Inherits:** `kernel.TraceableElement {}`
 
 #### `RateLimitPolicy`
 
@@ -1123,7 +1123,7 @@ reference it (`ref`), which concepts contain it (`val`), and its direct supertyp
 - **Abstract:** No (concrete)
 - **Incoming `ref`:** _none_
 - **Incoming `val`:** _none_
-- **Inherits:** `WorkflowStep`
+- **Inherits:** `WorkflowStep {}`
 
 #### `HumanTask`
 
@@ -1165,7 +1165,7 @@ reference it (`ref`), which concepts contain it (`val`), and its direct supertyp
 - **Abstract:** No (concrete)
 - **Incoming `ref`:** _none_
 - **Incoming `val`:** _none_
-- **Inherits:** `WorkflowStep`
+- **Inherits:** `WorkflowStep {}`
 
 #### `StartStep`
 
@@ -1179,7 +1179,7 @@ reference it (`ref`), which concepts contain it (`val`), and its direct supertyp
 - **Abstract:** No (concrete)
 - **Incoming `ref`:** _none_
 - **Incoming `val`:** _none_
-- **Inherits:** `WorkflowStep`
+- **Inherits:** `WorkflowStep {}`
 
 #### `TaskStep`
 
@@ -1216,10 +1216,10 @@ reference it (`ref`), which concepts contain it (`val`), and its direct supertyp
 - **Incoming `val`:** `ParallelBranch.transitions`, `Workflow.transitions`
 - **Inherits:** `kernel.TraceableElement`
 
-## PSM (Platform-Specific Model, AWS)
+## PSM (Platform-Specific Model)
 
 **Modules:** `awspsm-api.emf`, `awspsm-compute.emf`, `awspsm-core.emf`, `awspsm-events.emf`, `awspsm-identity.emf`, `awspsm-integrations.emf`, `awspsm-messaging.emf`, `awspsm-networking.emf`, `awspsm-observability.emf`, `awspsm-root.emf`, `awspsm-security.emf`, `awspsm-storage.emf`, `awspsm-workflow.emf`  
-**Classes:** 214
+**Classes:** 221
 
 ### `awspsm-api.emf`
 
@@ -1340,7 +1340,7 @@ reference it (`ref`), which concepts contain it (`val`), and its direct supertyp
 - **Abstract:** No (concrete)
 - **Incoming `ref`:** _none_
 - **Incoming `val`:** `ApiGatewayApi.tracingConfig`
-- **Inherits:** `awspsmcore.TracingConfig`
+- **Inherits:** `awspsmcore.TracingConfig {}`
 
 #### `ApiGatewayUsagePlan`
 
@@ -1382,7 +1382,7 @@ reference it (`ref`), which concepts contain it (`val`), and its direct supertyp
 - **Abstract:** No (concrete)
 - **Incoming `ref`:** _none_
 - **Incoming `val`:** _none_
-- **Inherits:** `ApiGatewayStage`
+- **Inherits:** `ApiGatewayStage {}`
 
 #### `JwtAuthorizer`
 
@@ -1459,7 +1459,7 @@ reference it (`ref`), which concepts contain it (`val`), and its direct supertyp
 - **Abstract:** No (concrete)
 - **Incoming `ref`:** _none_
 - **Incoming `val`:** _none_
-- **Inherits:** `ApiGatewayStage`
+- **Inherits:** `ApiGatewayStage {}`
 
 ### `awspsm-compute.emf`
 
@@ -1503,7 +1503,7 @@ reference it (`ref`), which concepts contain it (`val`), and its direct supertyp
 - **Abstract:** Yes (abstract)
 - **Incoming `ref`:** _none_
 - **Incoming `val`:** `AwsLambdaFunction.code`
-- **Inherits:** `kernel.TraceableElement`
+- **Inherits:** `kernel.TraceableElement {}`
 
 #### `LambdaDeadLetterConfig`
 
@@ -1622,7 +1622,7 @@ reference it (`ref`), which concepts contain it (`val`), and its direct supertyp
 - **Abstract:** No (concrete)
 - **Incoming `ref`:** _none_
 - **Incoming `val`:** `LambdaFunctionUrl.cors`
-- **Inherits:** `awspsmcore.CorsConfiguration`
+- **Inherits:** `awspsmcore.CorsConfiguration {}`
 
 #### `LambdaVersion`
 
@@ -1671,7 +1671,7 @@ reference it (`ref`), which concepts contain it (`val`), and its direct supertyp
 #### `AwsResource`
 
 - **Abstract:** Yes (abstract)
-- **Incoming `ref`:** `ApiGatewayRequestModel.schemaResource`, `ApiGatewayResponseModel.schemaResource`, `AslState.invokedResource`, `AwsPsmModel.allResources`, `AwsRelationshipView.source`, `AwsRelationshipView.target`, `AwsResource.dependsOn`, `CfnOutput.resource`, `CloudWatchAlarm.alarmActionResources`, `CloudWatchAlarm.insufficientDataActionResources`, `CloudWatchAlarm.monitoredResource`, `CloudWatchAlarm.okActionResources`, `CloudWatchCompositeAlarm.alarmActionResources`, `CloudWatchCompositeAlarm.okActionResources`, `CloudWatchLogSubscriptionFilter.destinationResource`, `CognitoLambdaConfig.createAuthChallenge`, `CognitoLambdaConfig.customMessage`, `CognitoLambdaConfig.defineAuthChallenge`, `CognitoLambdaConfig.postAuthentication`, `CognitoLambdaConfig.postConfirmation`, `CognitoLambdaConfig.preAuthentication`, `CognitoLambdaConfig.preSignUp`, `CognitoLambdaConfig.preTokenGeneration`, `CognitoLambdaConfig.userMigration`, `CognitoLambdaConfig.verifyAuthChallengeResponse`, `EventBridgePipe.sourceResource`, `EventBridgePipe.targetResource`, `EventBridgeTarget.targetResource`, `GenericLambdaEventSourceMapping.eventSourceResource`, `LambdaDestinationConfig.onFailure`, `LambdaDestinationConfig.onSuccess`, `SecretRotationSchedule.rotationLambda`, `SnsSubscription.endpointResource`, `ValueExpression.resource`
+- **Incoming `ref`:** `ApiGatewayRequestModel.schemaResource`, `ApiGatewayResponseModel.schemaResource`, `AslState.invokedResource`, `AwsPsmModel.allResources`, `AwsRelationshipView.source`, `AwsRelationshipView.target`, `AwsResource.dependsOn`, `AwsService.resources`, `CfnOutput.resource`, `CloudWatchAlarm.alarmActionResources`, `CloudWatchAlarm.insufficientDataActionResources`, `CloudWatchAlarm.monitoredResource`, `CloudWatchAlarm.okActionResources`, `CloudWatchCompositeAlarm.alarmActionResources`, `CloudWatchCompositeAlarm.okActionResources`, `CloudWatchLogSubscriptionFilter.destinationResource`, `CognitoLambdaConfig.createAuthChallenge`, `CognitoLambdaConfig.customMessage`, `CognitoLambdaConfig.defineAuthChallenge`, `CognitoLambdaConfig.postAuthentication`, `CognitoLambdaConfig.postConfirmation`, `CognitoLambdaConfig.preAuthentication`, `CognitoLambdaConfig.preSignUp`, `CognitoLambdaConfig.preTokenGeneration`, `CognitoLambdaConfig.userMigration`, `CognitoLambdaConfig.verifyAuthChallengeResponse`, `EventBridgePipe.sourceResource`, `EventBridgePipe.targetResource`, `EventBridgeTarget.targetResource`, `GenericLambdaEventSourceMapping.eventSourceResource`, `LambdaDestinationConfig.onFailure`, `LambdaDestinationConfig.onSuccess`, `SecretRotationSchedule.rotationLambda`, `SnsSubscription.endpointResource`, `ValueExpression.resource`
 - **Incoming `val`:** `SamStack.resources`
 - **Inherits:** `kernel.TraceableElement`
 
@@ -1680,6 +1680,13 @@ reference it (`ref`), which concepts contain it (`val`), and its direct supertyp
 - **Abstract:** No (concrete)
 - **Incoming `ref`:** _none_
 - **Incoming `val`:** `AwsPsmModel.securityBaseline`
+- **Inherits:** `kernel.TraceableElement`
+
+#### `AwsService`
+
+- **Abstract:** No (concrete)
+- **Incoming `ref`:** `AwsResource.service`
+- **Incoming `val`:** `AwsPsmModel.services`
 - **Inherits:** `kernel.TraceableElement`
 
 #### `AwsStage`
@@ -1822,7 +1829,7 @@ reference it (`ref`), which concepts contain it (`val`), and its direct supertyp
 - **Abstract:** Yes (abstract)
 - **Incoming `ref`:** _none_
 - **Incoming `val`:** `EventBridgeConnection.authParameters`
-- **Inherits:** `kernel.TraceableElement`
+- **Inherits:** `kernel.TraceableElement {}`
 
 #### `EventBridgeBasicAuthParameters`
 
@@ -1934,7 +1941,7 @@ reference it (`ref`), which concepts contain it (`val`), and its direct supertyp
 - **Abstract:** Yes (abstract)
 - **Incoming `ref`:** _none_
 - **Incoming `val`:** `EventBridgeTarget.parameters`
-- **Inherits:** `kernel.TraceableElement`
+- **Inherits:** `kernel.TraceableElement {}`
 
 #### `EventPattern`
 
@@ -2164,7 +2171,7 @@ reference it (`ref`), which concepts contain it (`val`), and its direct supertyp
 #### `SecurityGroup`
 
 - **Abstract:** No (concrete)
-- **Incoming `ref`:** `SecurityGroupRule.sourceSecurityGroup`, `VpcAttachmentConfig.securityGroups`, `VpcEndpoint.securityGroups`
+- **Incoming `ref`:** `RdsDbCluster.securityGroups`, `SecurityGroupRule.sourceSecurityGroup`, `VpcAttachmentConfig.securityGroups`, `VpcEndpoint.securityGroups`
 - **Incoming `val`:** _none_
 - **Inherits:** `awspsmcore.AwsResource`
 
@@ -2352,7 +2359,7 @@ reference it (`ref`), which concepts contain it (`val`), and its direct supertyp
 #### `KmsKey`
 
 - **Abstract:** No (concrete)
-- **Incoming `ref`:** `AwsLambdaFunction.kmsKey`, `CloudWatchLogGroup.kmsKey`, `DynamoDbReplicaSpecification.kmsKey`, `DynamoDbSseSpecification.kmsKey`, `DynamoDbTable.kmsKey`, `KmsAlias.targetKey`, `S3BucketEncryption.kmsKey`, `S3ReplicationDestination.replicaKmsKey`, `SecretsManagerSecret.kmsKey`, `SnsTopic.kmsKey`, `SqsQueue.kmsKey`, `SsmParameter.kmsKey`
+- **Incoming `ref`:** `AwsLambdaFunction.kmsKey`, `CloudWatchLogGroup.kmsKey`, `DynamoDbReplicaSpecification.kmsKey`, `DynamoDbSseSpecification.kmsKey`, `DynamoDbTable.kmsKey`, `KmsAlias.targetKey`, `RdsDbCluster.kmsKey`, `S3BucketEncryption.kmsKey`, `S3ReplicationDestination.replicaKmsKey`, `SecretsManagerSecret.kmsKey`, `SnsTopic.kmsKey`, `SqsQueue.kmsKey`, `SsmParameter.kmsKey`
 - **Incoming `val`:** _none_
 - **Inherits:** `awspsmcore.AwsResource`
 
@@ -2387,7 +2394,7 @@ reference it (`ref`), which concepts contain it (`val`), and its direct supertyp
 #### `SecretsManagerSecret`
 
 - **Abstract:** No (concrete)
-- **Incoming `ref`:** `SecretRotationSchedule.secret`, `SecretValueExpression.secretRef`, `SecretsManagerResourcePolicy.secret`
+- **Incoming `ref`:** `RdsDbCluster.credentialsSecret`, `SecretRotationSchedule.secret`, `SecretValueExpression.secretRef`, `SecretsManagerResourcePolicy.secret`
 - **Incoming `val`:** _none_
 - **Inherits:** `awspsmcore.AwsResource`
 
@@ -2496,6 +2503,48 @@ reference it (`ref`), which concepts contain it (`val`), and its direct supertyp
 - **Abstract:** No (concrete)
 - **Incoming `ref`:** _none_
 - **Incoming `val`:** `DynamoDbTable.timeToLiveSpecification`
+- **Inherits:** `kernel.TraceableElement`
+
+#### `RdsColumn`
+
+- **Abstract:** No (concrete)
+- **Incoming `ref`:** _none_
+- **Incoming `val`:** `RdsTable.columns`
+- **Inherits:** `kernel.TraceableElement`
+
+#### `RdsDbCluster`
+
+- **Abstract:** No (concrete)
+- **Incoming `ref`:** `RdsDbInstance.cluster`
+- **Incoming `val`:** _none_
+- **Inherits:** `awspsmcore.AwsResource`
+
+#### `RdsDbInstance`
+
+- **Abstract:** No (concrete)
+- **Incoming `ref`:** _none_
+- **Incoming `val`:** _none_
+- **Inherits:** `awspsmcore.AwsResource`
+
+#### `RdsDbSubnetGroup`
+
+- **Abstract:** No (concrete)
+- **Incoming `ref`:** `RdsDbCluster.subnetGroup`
+- **Incoming `val`:** _none_
+- **Inherits:** `awspsmcore.AwsResource`
+
+#### `RdsIndex`
+
+- **Abstract:** No (concrete)
+- **Incoming `ref`:** _none_
+- **Incoming `val`:** `RdsTable.indexes`
+- **Inherits:** `kernel.TraceableElement`
+
+#### `RdsTable`
+
+- **Abstract:** No (concrete)
+- **Incoming `ref`:** _none_
+- **Incoming `val`:** `RdsDbCluster.tables`
 - **Inherits:** `kernel.TraceableElement`
 
 #### `S3Bucket`
@@ -2638,7 +2687,7 @@ reference it (`ref`), which concepts contain it (`val`), and its direct supertyp
 - **Abstract:** No (concrete)
 - **Incoming `ref`:** _none_
 - **Incoming `val`:** _none_
-- **Inherits:** `AslState`
+- **Inherits:** `AslState {}`
 
 #### `AslDocument`
 
@@ -2652,7 +2701,7 @@ reference it (`ref`), which concepts contain it (`val`), and its direct supertyp
 - **Abstract:** No (concrete)
 - **Incoming `ref`:** _none_
 - **Incoming `val`:** _none_
-- **Inherits:** `AslState`
+- **Inherits:** `AslState {}`
 
 #### `AslMapConfig`
 
@@ -2666,21 +2715,21 @@ reference it (`ref`), which concepts contain it (`val`), and its direct supertyp
 - **Abstract:** No (concrete)
 - **Incoming `ref`:** _none_
 - **Incoming `val`:** _none_
-- **Inherits:** `AslState`
+- **Inherits:** `AslState {}`
 
 #### `AslParallelState`
 
 - **Abstract:** No (concrete)
 - **Incoming `ref`:** _none_
 - **Incoming `val`:** _none_
-- **Inherits:** `AslState`
+- **Inherits:** `AslState {}`
 
 #### `AslPassState`
 
 - **Abstract:** No (concrete)
 - **Incoming `ref`:** _none_
 - **Incoming `val`:** _none_
-- **Inherits:** `AslState`
+- **Inherits:** `AslState {}`
 
 #### `AslRetryRule`
 
@@ -2701,21 +2750,21 @@ reference it (`ref`), which concepts contain it (`val`), and its direct supertyp
 - **Abstract:** No (concrete)
 - **Incoming `ref`:** _none_
 - **Incoming `val`:** _none_
-- **Inherits:** `AslState`
+- **Inherits:** `AslState {}`
 
 #### `AslTaskState`
 
 - **Abstract:** No (concrete)
 - **Incoming `ref`:** _none_
 - **Incoming `val`:** _none_
-- **Inherits:** `AslState`
+- **Inherits:** `AslState {}`
 
 #### `AslWaitState`
 
 - **Abstract:** No (concrete)
 - **Incoming `ref`:** _none_
 - **Incoming `val`:** _none_
-- **Inherits:** `AslState`
+- **Inherits:** `AslState {}`
 
 #### `SamStateMachineEvent`
 
@@ -2743,4 +2792,4 @@ reference it (`ref`), which concepts contain it (`val`), and its direct supertyp
 - **Abstract:** No (concrete)
 - **Incoming `ref`:** _none_
 - **Incoming `val`:** `StepFunctionStateMachine.tracing`
-- **Inherits:** `awspsmcore.TracingConfig`
+- **Inherits:** `awspsmcore.TracingConfig {}`

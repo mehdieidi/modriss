@@ -1,4 +1,4 @@
-[% /* Generates the shared data access artifact. */ %]package shared
+[% /* Generates the shared data access artifact. */ %]package runtime
 
 type DataAccess struct {
 	Config GeneratedConfig

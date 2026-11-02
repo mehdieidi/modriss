@@ -2,8 +2,8 @@
 
 ## Generated Checklist
 
-1. Identify impacted stack and stage from `samconfig.toml`.
-2. Check CloudWatch logs, metrics, alarms, and dashboards modeled in `template.yaml`.
+1. Identify the impacted deployment unit and stage from `infrastructure/samconfig.toml`.
+2. Check CloudWatch logs, metrics, alarms, and dashboards modeled in `infrastructure/units/<deployment-unit>/template.yaml`.
 3. Confirm whether any manual actions in `generated/reports/manual-actions.md` were unresolved.
 4. If deployment-related, follow `docs/runbooks/rollback.md`.
 

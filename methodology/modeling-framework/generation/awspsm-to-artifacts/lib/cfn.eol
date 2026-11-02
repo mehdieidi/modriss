@@ -2485,7 +2485,7 @@ operation AWSPSMWORKFLOW!StepFunctionStateMachine emitCfnPropertiesYaml(emitCtx 
     outText = outText + emitYamlScalarProperty("DefinitionUri", self.definitionUri, 6);
   }
   else if (self.aslDocument.isDefined()) {
-    outText = outText + emitYamlScalarProperty("DefinitionUri", self.aslPath(), 6);
+    outText = outText + emitYamlScalarProperty("DefinitionUri", self.aslTemplateUri(), 6);
   }
   else if (self.definitionString.isPresent()) {
     outText = outText + yamlBlock("Definition", self.definitionString, 6);

@@ -11,7 +11,7 @@ import (
 )
 
 func TestGeneratedJSONContractsParse(t *testing.T) {
-	for _, rootText := range []string{"../../schemas", "../../src/functions", "../../events/samples", "../../asl"} {
+	for _, rootText := range []string{"../../contracts", "../../services"} {
 		if _, err := os.Stat(rootText); err != nil {
 			continue
 		}

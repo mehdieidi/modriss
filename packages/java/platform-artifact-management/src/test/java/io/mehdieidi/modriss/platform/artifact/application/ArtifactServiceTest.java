@@ -2,8 +2,8 @@ package io.mehdieidi.modriss.platform.artifact.application;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.mehdieidi.modriss.platform.identity.application.AuthService;
 import io.mehdieidi.modriss.platform.kernel.PlatformException;
@@ -71,7 +71,8 @@ class ArtifactServiceTest {
     var metadata = store.objectMapper().createObjectNode();
     metadata.putObject("generationRules").put("src/generated.go", "ExampleGenerator");
     var artifact =
-        artifacts.create(user, project.id(), "artifact", metadata, Map.of("src/generated.go", "generated"));
+        artifacts.create(
+            user, project.id(), "artifact", metadata, Map.of("src/generated.go", "generated"));
 
     var withDirectory = artifacts.createDirectory(user, artifact.id(), "src/manual");
     var withFile = artifacts.createFile(user, artifact.id(), "src/manual/notes.md", "local notes");
@@ -122,7 +123,8 @@ class ArtifactServiceTest {
     var metadata = store.objectMapper().createObjectNode();
     metadata.putObject("generationRules").put("src/generated.go", "ExampleGenerator");
     var artifact =
-        artifacts.create(user, project.id(), "artifact", metadata, Map.of("src/generated.go", "generated"));
+        artifacts.create(
+            user, project.id(), "artifact", metadata, Map.of("src/generated.go", "generated"));
 
     artifacts.createDirectory(user, artifact.id(), "src/manual");
     artifacts.createDirectory(user, artifact.id(), "src/manual/empty");
@@ -130,7 +132,8 @@ class ArtifactServiceTest {
     var renamedFolder = artifacts.renameEntry(user, artifact.id(), "src/manual", "refined");
 
     assertEquals("user notes", renamedFolder.files().get("src/refined/notes.md"));
-    assertTrue(renamedFolder.modelJson().path("directories").toString().contains("src/refined/empty"));
+    assertTrue(
+        renamedFolder.modelJson().path("directories").toString().contains("src/refined/empty"));
     assertFalse(renamedFolder.modelJson().path("directories").toString().contains("src/manual"));
 
     var renamedFile =
@@ -213,10 +216,7 @@ class ArtifactServiceTest {
                 PlatformException.class,
                 () ->
                     artifacts.updateFile(
-                        user,
-                        artifact.id(),
-                        "generated/trace/artifact-trace.json",
-                        "tampered"))
+                        user, artifact.id(), "generated/trace/artifact-trace.json", "tampered"))
             .status());
 
     assertEquals(
@@ -225,7 +225,10 @@ class ArtifactServiceTest {
                 PlatformException.class,
                 () ->
                     artifacts.importProjectArchive(
-                        user, artifact.id(), Map.of("README.md", "missing generator output"), Set.of()))
+                        user,
+                        artifact.id(),
+                        Map.of("README.md", "missing generator output"),
+                        Set.of()))
             .status());
     var withRootExtension =
         artifacts.importProjectArchive(
@@ -237,7 +240,8 @@ class ArtifactServiceTest {
                 "manual/notes.md", "root folder extension"),
             Set.of("manual", "manual/empty", "generated/trace"));
     assertEquals("root folder extension", withRootExtension.files().get("manual/notes.md"));
-    assertTrue(withRootExtension.modelJson().path("directories").toString().contains("manual/empty"));
+    assertTrue(
+        withRootExtension.modelJson().path("directories").toString().contains("manual/empty"));
 
     assertEquals(
         400,

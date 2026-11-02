@@ -8,7 +8,7 @@ import (
     "github.com/aws/aws-lambda-go/lambda"
     "github.com/aws/aws-sdk-go-v2/aws"
     "github.com/aws/aws-sdk-go-v2/service/rdsdata/types"
-    "MODRISS_MODULE_PATH/src/shared"
+    "MODRISS_MODULE_PATH/platform/runtime"
 )
 
 // Evaluation-only handler: tests the generated Data API helper against the modeled database.
@@ -21,7 +21,7 @@ type input struct {
 }
 
 func handle(ctx context.Context, event input) (map[string]any, error) {
-    store, err := shared.NewRelationalStore(ctx, "MODRISS_STORE_PREFIX")
+    store, err := runtime.NewRelationalStore(ctx, "MODRISS_STORE_PREFIX")
     if err != nil { return nil, err }
     parameters := make([]types.SqlParameter, 0, len(event.Parameters))
     for name, value := range event.Parameters {

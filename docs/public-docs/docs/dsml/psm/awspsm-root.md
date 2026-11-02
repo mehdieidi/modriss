@@ -1,6 +1,6 @@
 # PSM - Model root
 
-The PSM root is the deployment-oriented container. It owns stages, SAM stacks, AWS policies, documents, and the derived resource index.
+The PSM root owns business service boundaries as well as deployment stages and SAM stacks. Services describe logical ownership; stacks describe deployment units.
 
 Source: `methodology/modeling-framework/metamodels/psm/awspsm-root.emf`.
 
@@ -28,6 +28,7 @@ Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilit
 | --------------------------------------------- | ---------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `stages` → `AwsStage`                         | containment, [+]                   | The deployment environments through which this model is promoted. Each stage supplies account, region, approval, parameter, and tagging choices for its stacks. |
 | `stacks` → `SamStack`                         | containment, [+]                   | The SAM/CloudFormation deployment units owned by the model. Resources acquire deployable scope by belonging to one of these stacks.                             |
+| `services` → `AwsService`                     | containment, [*]                   | Business service boundaries and ownership metadata. Each AWS resource may reference its service independently from its containing deployment stack.             |
 | `samGlobals` → `SamGlobals`                   | containment, [?]                   | Optional shared SAM properties applied across functions, APIs, HTTP APIs, and state machines.                                                                   |
 | `namingPolicy` → `AwsNamingPolicy`            | containment, [?]                   | The model-wide rules used to assess logical identifiers and provider-visible names.                                                                             |
 | `taggingPolicy` → `AwsTaggingPolicy`          | containment, [?]                   | The required and reserved tag rules applied across AWS resources.                                                                                               |

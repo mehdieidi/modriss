@@ -59,7 +59,7 @@ class ContainedPaletteAuditTest {
         "LambdaEventSourceMapping",
         "ApiGatewayStage");
     assertRootStandalone(
-        level("psm"), "SamStack", "AwsStage", "Vpc", "HttpApi", "AwsLambdaFunction");
+        level("psm"), "SamStack", "AwsStage", "AwsService", "Vpc", "HttpApi", "AwsLambdaFunction");
   }
 
   @Test

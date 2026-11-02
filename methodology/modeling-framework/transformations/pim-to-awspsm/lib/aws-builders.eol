@@ -217,7 +217,7 @@ operation createDefaultStack(source) {
   s.id = generatedId("stack", source, "default");
   s.name = "Default Application Stack";
   s.stackName = kebab(rootName()) + "-application-stack";
-  s.templatePath = "template-application.yaml";
+  s.templatePath = "infrastructure/units/application/template.yaml";
   s.templateDescription = "Generated AWS SAM stack for unassigned PIM deployables.";
   s.useSamTransform = true;
   s.packageIndividually = false;
@@ -285,12 +285,7 @@ operation createLambdaCodeConfig(f, profile) {
   var zip = new AWSPSMCOMPUTE!LambdaZipCodeConfig;
   zip.id = generatedId("lambda_code", f, "zip");
   zip.name = firstText(f.name, "Function") + " Code";
-  if (profile.isDefined()) {
-    zip.codeUri = firstText(profile.sourceLayout, "src/functions/" + kebab(f.name));
-  }
-  else {
-    zip.codeUri = "src/functions/" + kebab(f.name);
-  }
+  zip.codeUri = "services/" + kebab(owningServiceName(f)) + "/cmd/" + kebab(f.name);
   zip.runtimeIdentifier = defaultRuntime(profile);
   zip.handler = inferHandler(f);
   zip.generatedByTransformation = true;
@@ -353,6 +348,7 @@ operation createLogGroupFor(source, logicalSeed : String, logName : String) {
   g.generatedFrom = source.id;
   g.generatedByTransformation = true;
   g.manuallyMaintained = false;
+  copyAwsServiceOwnership(source, g);
   g.logicalId = uniqueLogicalId(pascalCase(logicalSeed) + "LogGroup");
   g.physicalName = logName;
   g.awsResourceType = "AWS::Logs::LogGroup";

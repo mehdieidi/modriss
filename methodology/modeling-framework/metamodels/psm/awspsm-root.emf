@@ -27,6 +27,7 @@ class AwsPsmModel extends kernel.TraceableElement {
 
 	val awspsmcore.AwsStage[+]                    stages;
 	val awspsmcore.SamStack[+]                    stacks;
+	val awspsmcore.AwsService[*]                  services;
 	val awspsmcore.SamGlobals[?]                  samGlobals;
 	val awspsmcore.AwsNamingPolicy[?]             namingPolicy;
 	val awspsmcore.AwsTaggingPolicy[?]            taggingPolicy;

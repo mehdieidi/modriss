@@ -22,9 +22,9 @@ go test ./...
 [% for (awsFn in AWSPSMCOMPUTE!AwsLambdaFunction.all.sortBy(awsFn | awsFn.cfnLogicalId())) { %]
 mkdir -p "bin/[%= awsFn.functionPathSegment(emitCtx) %]"
 [% if (awsFn.architecture.isDefined() and awsFn.architecture.asString() = "ARM64") { %]
-GOOS=linux GOARCH=arm64 go build -o "bin/[%= awsFn.functionPathSegment(emitCtx) %]/bootstrap" "./src/functions/[%= awsFn.functionPathSegment(emitCtx) %]"
+GOOS=linux GOARCH=arm64 go build -o "bin/[%= awsFn.functionPathSegment(emitCtx) %]/bootstrap" "./[%= awsFn.sourcePath() %]"
 [% } else { %]
-GOOS=linux GOARCH=amd64 go build -o "bin/[%= awsFn.functionPathSegment(emitCtx) %]/bootstrap" "./src/functions/[%= awsFn.functionPathSegment(emitCtx) %]"
+GOOS=linux GOARCH=amd64 go build -o "bin/[%= awsFn.functionPathSegment(emitCtx) %]/bootstrap" "./[%= awsFn.sourcePath() %]"
 [% } %]
 [% } %]
 

@@ -36,6 +36,10 @@ rule PIMModel2AwsPsmModel
     a.stacks.add(createDefaultStack(p));
   }
 
+  for (service in p.services) {
+    a.services.add(service.equivalent("ServerlessService2AwsService"));
+  }
+
   createTrace(p, a, "PIMModel2AwsPsmModel", "HIGH", KERNEL!TraceLinkType#TRANSFORMS_TO);
 
   if (a.productionMode and a.defaultRegion = "us-east-1" and p.environments.forAll(e | not hasText(inferRegion(e)))) {
@@ -82,7 +86,7 @@ rule DeploymentUnit2SamStack
   s.id = idFor("stack", d);
   s.name = firstText(d.name, "Application") + " Stack";
   s.stackName = kebab(firstText(pimRoot().domainName, pimRoot().name)) + "-" + kebab(d.name) + "-stack";
-  s.templatePath = "template-" + kebab(d.name) + ".yaml";
+  s.templatePath = "infrastructure/units/" + kebab(d.name) + "/template.yaml";
   s.templateDescription = "Generated AWS SAM stack for PIM deployment unit " + d.name;
   s.useSamTransform = true;
   s.packageIndividually = isTrue(d.independentlyDeployable);
@@ -93,6 +97,23 @@ rule DeploymentUnit2SamStack
 }
 
 /** Transforms Serverless Service elements into Structured Metadata elements. */
+rule ServerlessService2AwsService
+  transform svc : DEPLOYMENT!ServerlessService
+  to service : AWSPSMCORE!AwsService {
+
+  copyTraceable(svc, service);
+  service.id = idFor("service", svc);
+  service.name = firstText(svc.name, "Service");
+  service.responsibility = svc.responsibility;
+  service.ownerTeam = svc.ownerTeam;
+  service.businessCapabilityRef = svc.businessCapabilityRef;
+  service.externallyExposed = svc.externallyExposed;
+  service.ownsData = svc.ownsData;
+  service.boundaryType = svc.boundaryType.asString();
+  createTrace(svc, service, "ServerlessService2AwsService", "HIGH", KERNEL!TraceLinkType#MAPS_TO);
+}
+
+/** Retains a readable metadata view alongside the first-class AWS service element. */
 rule ServerlessService2StructuredMetadata
   transform svc : DEPLOYMENT!ServerlessService
   to doc : KERNEL!StructuredDocument {

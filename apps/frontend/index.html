@@ -488,8 +488,15 @@
                   </button>
                 </div>
                 <div class="artifact-actions artifact-import-actions">
-                  <button class="btn btn-secondary btn-sm" id="artifactImportBtn" type="button">Import ZIP</button>
-                  <input class="hidden" id="artifactArchiveInput" type="file" accept=".zip,application/zip" />
+                  <button class="btn btn-secondary btn-sm" id="artifactImportBtn" type="button">
+                    Import ZIP
+                  </button>
+                  <input
+                    class="hidden"
+                    id="artifactArchiveInput"
+                    type="file"
+                    accept=".zip,application/zip"
+                  />
                 </div>
                 <div class="artifact-explorer-root" id="artifactExplorerRoot">
                   <span
@@ -500,10 +507,38 @@
                   <span>No artifact loaded</span>
                 </div>
                 <div class="file-tree" id="fileTree"></div>
-                <div class="artifact-context-menu hidden" id="artifactContextMenu" role="menu" aria-label="Artifact actions" aria-hidden="true">
-                  <button class="ide-menu-item" id="artifactContextNewFileBtn" role="menuitem" type="button">New File</button>
-                  <button class="ide-menu-item" id="artifactContextNewFolderBtn" role="menuitem" type="button">New Folder</button>
-                  <button class="ide-menu-item" id="artifactContextRenameBtn" role="menuitem" type="button" disabled>Rename</button>
+                <div
+                  class="artifact-context-menu hidden"
+                  id="artifactContextMenu"
+                  role="menu"
+                  aria-label="Artifact actions"
+                  aria-hidden="true"
+                >
+                  <button
+                    class="ide-menu-item"
+                    id="artifactContextNewFileBtn"
+                    role="menuitem"
+                    type="button"
+                  >
+                    New File
+                  </button>
+                  <button
+                    class="ide-menu-item"
+                    id="artifactContextNewFolderBtn"
+                    role="menuitem"
+                    type="button"
+                  >
+                    New Folder
+                  </button>
+                  <button
+                    class="ide-menu-item"
+                    id="artifactContextRenameBtn"
+                    role="menuitem"
+                    type="button"
+                    disabled
+                  >
+                    Rename
+                  </button>
                 </div>
               </div>
 
@@ -1515,8 +1550,12 @@
             type="text"
           />
           <div class="modal-actions">
-            <button class="btn btn-secondary" id="artifactCreateCancelBtn" type="button">Cancel</button>
-            <button class="btn btn-primary" id="artifactCreateSubmitBtn" type="submit">Create</button>
+            <button class="btn btn-secondary" id="artifactCreateCancelBtn" type="button">
+              Cancel
+            </button>
+            <button class="btn btn-primary" id="artifactCreateSubmitBtn" type="submit">
+              Create
+            </button>
           </div>
         </form>
       </div>

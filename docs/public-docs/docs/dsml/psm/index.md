@@ -2,7 +2,7 @@
 
 The PSM is the deployment vocabulary of the current MODRISS target platform. It turns PIM architecture into explicit AWS resources, SAM and CloudFormation settings, IAM and KMS policy objects, integration wiring, and operational controls. The PSM is where provider commitments become visible and reviewable. A generated template is an output of this model, not a substitute for understanding it.
 
-The model is organized around AWS resources and the documents that configure them. Core classes provide logical IDs, physical names, tags, conditions, imports, parameters, outputs, expressions, stacks, and stages. Service modules then describe Lambda, API Gateway, EventBridge, SQS, SNS, DynamoDB, S3, Cognito, networking, IAM, KMS, Step Functions, and CloudWatch. Integration views make important cross-resource connections inspectable when the same connection would otherwise be scattered across several resource classes.
+The model keeps business service ownership separate from deployment units: `AwsService` groups logical responsibility and owner metadata, while `SamStack` groups resources deployed together. Core classes provide logical IDs, physical names, tags, conditions, imports, parameters, outputs, expressions, stacks, and stages. Service modules then describe Lambda, API Gateway, EventBridge, SQS, SNS, DynamoDB, S3, Cognito, networking, IAM, KMS, Step Functions, and CloudWatch. Integration views make important cross-resource connections inspectable when the same connection would otherwise be scattered across several resource classes.
 
 ## How to use this reference
 

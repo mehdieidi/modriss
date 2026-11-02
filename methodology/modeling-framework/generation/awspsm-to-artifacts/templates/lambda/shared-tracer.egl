@@ -1,4 +1,4 @@
-[% /* Generates the shared tracer artifact. */ %]package shared
+[% /* Generates the shared tracer artifact. */ %]package runtime
 
 type Tracer struct {
 	CorrelationID  string

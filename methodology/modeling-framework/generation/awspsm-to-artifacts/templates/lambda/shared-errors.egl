@@ -1,4 +1,4 @@
-[% /* Generates the shared errors artifact. */ %]package shared
+[% /* Generates the shared errors artifact. */ %]package runtime
 
 import "encoding/json"
 

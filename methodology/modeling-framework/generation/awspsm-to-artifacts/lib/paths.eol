@@ -31,15 +31,44 @@ operation AWSPSMCOMPUTE!AwsLambdaFunction functionPathSegment(profileMap : Map) 
   return self.functionSlug();
 }
 
+/** Computes service directory segment, with a stable application fallback for unassigned resources. */
+operation AWSPSMCORE!AwsResource servicePathSegment() : String {
+  if (self.service.isDefined()) {
+    return artifactPathNaming.name(self.service, "service", AWSPSMCORE!AwsService.all);
+  }
+  return "application";
+}
+
+/** Computes the generated source root for a modeled service. */
+operation AWSPSMCORE!AwsService serviceRoot() : String {
+  return "services/" + artifactPathNaming.name(self, "service", AWSPSMCORE!AwsService.all);
+}
+
+/** Computes the create-once service application entry for a Lambda use case. */
+operation AWSPSMCOMPUTE!AwsLambdaFunction serviceApplicationHandlerPath(profileMap : Map) : String {
+  return "services/" + self.servicePathSegment() + "/internal/application/" + self.functionPathSegment(profileMap) + ".go";
+}
+
+/** Computes a stable exported use-case entry point for a generated Lambda. */
+operation AWSPSMCOMPUTE!AwsLambdaFunction serviceApplicationHandlerName() : String {
+  return "Handle" + self.cfnLogicalId();
+}
+
+/** Computes service source directory for a Lambda function. */
+operation AWSPSMCOMPUTE!AwsLambdaFunction sourcePath() : String {
+  return "services/" + self.servicePathSegment() + "/cmd/" + self.functionSlug();
+}
+
 /** Computes handler path. */
 operation AWSPSMCOMPUTE!AwsLambdaFunction handlerPath(profileMap : Map) : String {
   var legacySlug = firstText(self.functionName, firstText(self.logicalId, self.name)).toSlug();
-  return artifactPathNaming.preservePath("src/functions/" + self.functionPathSegment(profileMap) + "/handler." + profileMap.sourceExtension(), "src/functions/" + legacySlug + "/handler." + profileMap.sourceExtension(), self.stableKey(), "LAMBDA_HANDLER");
+  return artifactPathNaming.preservePath(self.sourcePath() + "/main." + profileMap.sourceExtension(), "src/functions/" + legacySlug + "/handler." + profileMap.sourceExtension(), self.stableKey(), "LAMBDA_HANDLER");
 }
 
 /** Computes local schema path. */
 operation AWSPSMCOMPUTE!AwsLambdaFunction localSchemaPath(profileMap : Map) : String {
-  return "src/functions/" + self.functionPathSegment(profileMap) + "/schema.json";
+  var legacySlug = firstText(self.functionName, firstText(self.logicalId, self.name)).toSlug();
+  return artifactPathNaming.preservePath("services/" + self.servicePathSegment() + "/contracts/api/" + self.functionPathSegment(profileMap) + ".schema.json", "src/functions/" + legacySlug + "/schema.json", self.stableKey(), "FUNCTION_SCHEMA");
 }
 
 /** Computes local schema path. */
@@ -54,6 +83,9 @@ operation AWSPSMCOMPUTE!AwsLambdaFunction generatedHandlerName(profileMap : Map)
 
 /** Computes generated code uri. */
 operation AWSPSMCOMPUTE!AwsLambdaFunction generatedCodeUri(profileMap : Map) : String {
+  if (self.stack.isDefined() and self.stack.stackTemplatePath().startsWith("infrastructure/units/")) {
+    return "../../../bin/" + self.functionPathSegment(profileMap);
+  }
   return "bin/" + self.functionPathSegment(profileMap);
 }
 
@@ -61,35 +93,49 @@ operation AWSPSMCOMPUTE!AwsLambdaFunction generatedCodeUri(profileMap : Map) : S
 operation AWSPSMCOMPUTE!AwsLambdaFunction unitTestPath(profileMap : Map) : String {
   var extText = profileMap.testExtension();
   var legacySlug = firstText(self.functionName, firstText(self.logicalId, self.name)).toSlug();
-  return artifactPathNaming.preservePath("tests/unit/" + self.functionSlug() + "_test." + extText, "tests/unit/" + legacySlug + "_test." + extText, self.stableKey(), "UNIT_TEST");
+  return artifactPathNaming.preservePath("services/" + self.servicePathSegment() + "/tests/unit/" + self.functionSlug() + "_test." + extText, "tests/unit/" + legacySlug + "_test." + extText, self.stableKey(), "UNIT_TEST");
 }
 
 /** Computes integration test path. */
 operation AWSPSMCOMPUTE!AwsLambdaFunction integrationTestPath(profileMap : Map) : String {
   var extText = profileMap.testExtension();
   var legacySlug = firstText(self.functionName, firstText(self.logicalId, self.name)).toSlug();
-  return artifactPathNaming.preservePath("tests/integration/" + self.functionSlug() + "_integration_test." + extText, "tests/integration/" + legacySlug + "_integration_test." + extText, self.stableKey(), "INTEGRATION_TEST");
+  return artifactPathNaming.preservePath("services/" + self.servicePathSegment() + "/tests/integration/" + self.functionSlug() + "_integration_test." + extText, "tests/integration/" + legacySlug + "_integration_test." + extText, self.stableKey(), "INTEGRATION_TEST");
 }
 
 /** Computes open api path. */
 operation AWSPSMAPI!ApiGatewayApi openApiPath() : String {
   var legacySlug = firstText(self.apiName, firstText(self.logicalId, self.name)).toSlug();
-  return artifactPathNaming.preservePath("openapi/" + self.apiSlug() + ".openapi.yaml", "openapi/" + legacySlug + ".openapi.yaml", self.stableKey(), "OPENAPI");
+  return artifactPathNaming.preservePath("services/" + self.servicePathSegment() + "/contracts/api/" + self.apiSlug() + ".openapi.yaml", "openapi/" + legacySlug + ".openapi.yaml", self.stableKey(), "OPENAPI");
 }
 
 /** Renders asl path. */
 operation AWSPSMWORKFLOW!StepFunctionStateMachine aslPath() : String {
-  return "asl/" + self.workflowSlug() + ".asl.json";
+  var legacySlug = firstText(self.stateMachineName, firstText(self.logicalId, self.name)).toSlug();
+  return artifactPathNaming.preservePath("services/" + self.servicePathSegment() + "/workflows/" + self.workflowSlug() + ".asl.json", "asl/" + legacySlug + ".asl.json", self.stableKey(), "ASL_JSON");
+}
+
+/** Computes workflow DefinitionUri relative to a deployment-unit template. */
+operation AWSPSMWORKFLOW!StepFunctionStateMachine aslTemplateUri() : String {
+  if (self.stack.isDefined() and self.stack.stackTemplatePath().startsWith("infrastructure/units/")) {
+    return "../../../" + self.aslPath();
+  }
+  return self.aslPath();
+}
+
+/** Computes workflow path relative to its service-owned test package. */
+operation AWSPSMWORKFLOW!StepFunctionStateMachine workflowTestAslRelativePath() : String {
+  return "../../workflows/" + self.workflowSlug() + ".asl.json";
 }
 
 /** Computes document path. */
 operation KERNEL!StructuredDocument documentPath() : String {
   var baseName = artifactPathNaming.name(self, "document", KERNEL!StructuredDocument.all);
   if (self.id.isPresent() and self.id.startsWith("schema_doc_")) {
-    return "schemas/contracts/" + baseName + ".schema.json";
+    return "contracts/public/schemas/contracts/" + baseName + ".schema.json";
   }
   if (self.id.isPresent() and self.id.startsWith("event_contract_")) {
-    return "schemas/events/" + baseName + ".json";
+    return "contracts/public/schemas/events/" + baseName + ".json";
   }
   if (self.id.isPresent() and self.id.startsWith("service_metadata_")) {
     return "generated/documents/services/" + baseName + ".json";
@@ -110,7 +156,7 @@ operation KERNEL!StructuredDocument documentPath() : String {
 operation AWSPSMWORKFLOW!StepFunctionStateMachine workflowTestPath(profileMap : Map) : String {
   var extText = profileMap.testExtension();
   var legacySlug = firstText(self.stateMachineName, firstText(self.logicalId, self.name)).toSlug();
-  return artifactPathNaming.preservePath("tests/workflows/" + self.workflowSlug() + "_workflow_test." + extText, "tests/workflows/" + legacySlug + "_workflow_test." + extText, self.stableKey(), "WORKFLOW_TEST");
+  return artifactPathNaming.preservePath("services/" + self.servicePathSegment() + "/tests/workflows/" + self.workflowSlug() + "_workflow_test." + extText, "tests/workflows/" + legacySlug + "_workflow_test." + extText, self.stableKey(), "WORKFLOW_TEST");
 }
 
 /** Computes fixture slug. */
@@ -126,25 +172,40 @@ operation KERNEL!TraceableElement fixtureSlug(fallbackText : String) : String {
 
 /** Computes event fixture path. */
 operation AWSPSMEVENTS!EventBridgeRule eventFixturePath() : String {
-  return "events/samples/" + self.fixtureSlug(self.eventRuleSlug()) + ".json";
+  return "services/" + self.servicePathSegment() + "/contracts/events/samples/" + self.fixtureSlug(self.eventRuleSlug()) + ".json";
 }
 
 /** Computes queue fixture path. */
 operation AWSPSMMESSAGING!SqsQueue queueFixturePath() : String {
-  return "events/samples/" + self.fixtureSlug(self.queueSlug()) + "-sqs-message.json";
+  return "services/" + self.servicePathSegment() + "/contracts/events/samples/" + self.fixtureSlug(self.queueSlug()) + "-sqs-message.json";
 }
 
 /** Converts the receiver to topic fixture path. */
 operation AWSPSMMESSAGING!SnsTopic topicFixturePath() : String {
-  return "events/samples/" + self.fixtureSlug(self.topicSlug()) + "-sns-message.json";
+  return "services/" + self.servicePathSegment() + "/contracts/events/samples/" + self.fixtureSlug(self.topicSlug()) + "-sns-message.json";
 }
 
 /** Computes env path. */
 operation AWSPSMCORE!AwsStage envPath() : String {
   if (self.environmentClass.asString() = "PROD") {
-    return "env/prod.example.json";
+    return artifactPathNaming.preservePath("infrastructure/environments/prod.example.json", "env/prod.example.json", self.stableKey(), "ENVIRONMENT_CONFIG");
   }
-  return "env/" + self.stageSlug() + ".json";
+  return artifactPathNaming.preservePath("infrastructure/environments/" + self.stageSlug() + ".json", "env/" + self.stageSlug() + ".json", self.stableKey(), "ENVIRONMENT_CONFIG");
+}
+
+/** Computes a project-level generated environment path with a legacy mapping. */
+operation Map defaultEnvironmentPath(stageNameText : String) : String {
+  return artifactPathNaming.preservePath("infrastructure/environments/" + stageNameText + ".json", "env/" + stageNameText + ".json", awsRoot().stableKey() + "-environment-" + stageNameText, "ENVIRONMENT_CONFIG");
+}
+
+/** Computes the moved project SAM configuration path and preserves its protected region. */
+operation Map projectSamConfigPath() : String {
+  return artifactPathNaming.preservePath("infrastructure/samconfig.toml", "samconfig.toml", awsRoot().stableKey(), "SAM_CONFIG");
+}
+
+/** Computes a moved cross-cutting runtime artifact path. */
+operation Map platformRuntimePath(fileNameText : String) : String {
+  return artifactPathNaming.preservePath("platform/runtime/" + fileNameText, "src/shared/" + fileNameText, awsRoot().stableKey(), "SHARED_RUNTIME");
 }
 
 /** Computes path kind. */

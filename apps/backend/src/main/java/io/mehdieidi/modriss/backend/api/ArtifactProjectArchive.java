@@ -63,7 +63,9 @@ public final class ArtifactProjectArchive {
         fileCount++;
         byte[] bytes = zip.readNBytes(MAX_FILE_BYTES + 1);
         totalBytes += bytes.length;
-        if (bytes.length > MAX_FILE_BYTES || totalBytes > MAX_TOTAL_BYTES || fileCount > MAX_FILES) {
+        if (bytes.length > MAX_FILE_BYTES
+            || totalBytes > MAX_TOTAL_BYTES
+            || fileCount > MAX_FILES) {
           throw new PlatformException(
               413, "Artifact ZIP exceeds the 30 MB, 3 MB per file, or 3,000 file limit.");
         }
@@ -87,7 +89,8 @@ public final class ArtifactProjectArchive {
       throw ex;
     } catch (Exception ex) {
       throw new PlatformException(
-          400, "Upload a ZIP of UTF-8 artifact project files. Exclude binary assets and build output.");
+          400,
+          "Upload a ZIP of UTF-8 artifact project files. Exclude binary assets and build output.");
     }
     if (files.isEmpty()) {
       throw new PlatformException(400, "Artifact ZIP contains no source files.");

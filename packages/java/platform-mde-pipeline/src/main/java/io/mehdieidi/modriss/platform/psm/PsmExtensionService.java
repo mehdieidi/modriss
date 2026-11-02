@@ -463,8 +463,7 @@ public final class PsmExtensionService {
           ArtifactRecord previous =
               artifacts.list(user, projectId).stream()
                   .filter(
-                      artifact ->
-                          id.equals(artifact.modelJson().path("psmBranchId").asText(null)))
+                      artifact -> id.equals(artifact.modelJson().path("psmBranchId").asText(null)))
                   .findFirst()
                   .orElse(null);
           Map<String, String> generatedFiles = new LinkedHashMap<>(result.files());
@@ -474,7 +473,9 @@ public final class PsmExtensionService {
             Set<String> previousGeneratedPaths = new LinkedHashSet<>();
             JsonNode previousRules = previous.modelJson().path("generationRules");
             if (previousRules.isObject()) {
-              previousRules.properties().forEach(entry -> previousGeneratedPaths.add(entry.getKey()));
+              previousRules
+                  .properties()
+                  .forEach(entry -> previousGeneratedPaths.add(entry.getKey()));
             }
             if (previousGeneratedPaths.isEmpty()) {
               previousGeneratedPaths.addAll(previous.files().keySet());

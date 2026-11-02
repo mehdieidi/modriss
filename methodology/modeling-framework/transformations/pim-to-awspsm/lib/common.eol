@@ -10,6 +10,7 @@ operation initialisePimToAwsPsmCaches() {
   cachedIsProductionRoot = isProductionPim(cachedPimRoot);
   cachedAwsExistingTargetByKey = new Map;
   cachedPimServiceNameByElementId = new Map;
+  cachedPimServiceIdByElementId = new Map;
   cachedPimOwnerTeamByElementId = new Map;
   cachedPimDeploymentAssignedIds = Set{};
   cachedPimDeploymentUnitByElementId = new Map;
@@ -148,6 +149,7 @@ operation cachePimServiceOwner(element, service) {
   var key = cacheKeyFor(element);
   if (hasText(key)) {
     cachedPimServiceNameByElementId.put(key, firstText(service.name, "Application"));
+    cachedPimServiceIdByElementId.put(key, service.id);
     cachedPimOwnerTeamByElementId.put(key, firstText(service.ownerTeam, "REVIEW_REQUIRED_OWNER"));
   }
 }
@@ -403,6 +405,7 @@ operation existingTargetFor(source, className : String) {
 operation copyAwsResource(source, target, kind : String, awsType : String) {
   copyTraceable(source, target);
   registerAwsGeneratedResource(target);
+  copyAwsServiceOwnership(source, target);
   target.logicalId = logicalId(source, kind);
   target.physicalName = physicalName(source, kind.toLowerCase(), defaultStage());
   target.awsResourceType = awsType;
@@ -424,6 +427,20 @@ operation copyAwsResource(source, target, kind : String, awsType : String) {
   target.tags.add(tag("Environment", defaultStageName()));
   applyProductionDefaults(target);
   cacheAwsEquivalentMapping(source, target);
+}
+
+/** Preserves the PIM service owner on every AWS resource derived from that element. */
+operation copyAwsServiceOwnership(source, target) {
+  if (source.isUndefined() or target.isUndefined() or not target.isKindOf(AWSPSMCORE!AwsResource)) {
+    return;
+  }
+  var serviceId = cachedPimServiceIdByElementId.get(cacheKeyFor(source));
+  if (hasText(serviceId)) {
+    var serviceObj = AWSPSMCORE!AwsService.all.select(candidate | candidate.generatedFrom = serviceId).first();
+    if (serviceObj.isDefined()) {
+      target.service = serviceObj;
+    }
+  }
 }
 
 /** Records the PIM source to AWS target mapping for later rule guards. */

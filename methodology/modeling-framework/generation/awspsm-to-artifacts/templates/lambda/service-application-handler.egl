@@ -1,0 +1,19 @@
+[% /* Creates a developer-owned use-case entry point once for this Lambda. */ %]package application
+
+import (
+	"context"
+
+	"[%= emitCtx.goModulePath() %]/platform/runtime"
+)
+
+// [%= awsFn.serviceApplicationHandlerName() %] implements the application behavior invoked by
+// the [%= awsFn.functionName.orElseText(awsFn.cfnLogicalId()) %] Lambda adapter.
+// Replace the generated error with the service use case; regeneration preserves this file.
+func [%= awsFn.serviceApplicationHandlerName() %](ctx context.Context, input any) (map[string]any, error) {
+	_ = ctx
+	_ = input
+	return nil, runtime.NewGeneratedHandlerError(
+		"NOT_IMPLEMENTED",
+		"Application behavior has not been implemented yet.",
+	)
+}

@@ -44,13 +44,13 @@ Classify the failure before editing code:
 | A file is missing, duplicated, or at the wrong path              | `awspsm2artifacts.egx`, `paths.eol`, or an EGX guard                                  |
 | Correct PSM produces incorrect artifact text                     | EGL template or shared generator EOL library                                          |
 | The same incorrect value appears in many artifact types          | shared EOL library, usually `contracts.eol`, `cfn.eol`, `values.eol`, or `naming.eol` |
-| Generated artifact is valid but customized business logic fails  | developer-owned protected region                                                      |
+| Generated artifact is valid but service behavior fails           | developer-owned application use case under `services/<service>/internal/application`  |
 | Artifact works on AWS but not LocalStack                         | LocalStack compatibility or configuration                                             |
 | Artifact fails both SAM/AWS validation and LocalStack deployment | generator or source-model defect                                                      |
 
-Do not classify unimplemented protected-region logic as a generator defect.
-Check `generated/reports/manual-actions.md` and
-`generated/trace/protected-regions.json` first.
+Do not classify an unimplemented service application use case as a generator defect.
+Check `generated/reports/manual-actions.md` and the artifact trace for its
+`CREATE_IF_ABSENT` file first. Handler customizations still use protected regions.
 
 ## 3. Trace a Bad Artifact to Its Source
 
@@ -70,7 +70,7 @@ Every generated project contains machine-readable trace data:
 Run this from the extracted generated-project root:
 
 ```powershell
-$path = 'template-example-deployment-unit.yaml'
+$path = 'infrastructure/units/example-deployment-unit/template.yaml'
 $trace = Get-Content .\generated\trace\artifact-trace.json -Raw |
   ConvertFrom-Json
 $artifact = $trace.artifacts | Where-Object path -eq $path
@@ -130,9 +130,9 @@ $regions.regions |
   Format-Table artifactPath, regionId, sourceStableId, ownerHint, filled
 ```
 
-If the failing behavior belongs to an unfilled developer-owned region, implement
-that region and regenerate to verify that preservation works. Do not place the
-business logic into an EGL template.
+If the failing behavior belongs to a generated service application stub, implement
+the file under `services/<service>/internal/application` and regenerate to verify
+that `CREATE_IF_ABSENT` preserves it. Do not place business logic in an EGL template.
 
 ## 4. Diagnose by Failure Stage
 
@@ -161,9 +161,9 @@ stable ID. The Java entry point is:
 Run the narrowest validator first:
 
 ```powershell
-sam validate --lint --template-file .\template-<deployment-unit>.yaml
+sam validate --lint --template-file .\infrastructure\units\<deployment-unit>\template.yaml
 
-Get-ChildItem .\asl\*.json | ForEach-Object {
+Get-ChildItem .\services\*\workflows\*.json | ForEach-Object {
   aws --endpoint-url http://localhost:4566 stepfunctions `
     validate-state-machine-definition --definition file://$($_.FullName)
 }
@@ -225,7 +225,7 @@ aws --endpoint-url http://localhost:4566 logs tail `
 
 Generated handlers include source stable IDs in tracing/logging. Use that ID to
 locate the PSM element. Distinguish generated adapter/configuration failures
-from failures inside a developer-owned business-logic protected region.
+from failures inside the owning service's application use case.
 
 ### Step Functions Execution Fails
 
@@ -237,7 +237,7 @@ aws --endpoint-url http://localhost:4566 stepfunctions get-execution-history `
   --execution-arn <execution-arn> --reverse-order
 ```
 
-Use the failed state name to find the state in `asl/*.json`. Then trace that
+Use the failed state name to find the state in `services/*/workflows/*.asl.json`. Then trace that
 artifact to its rule and source stable ID. Typical root causes are an incorrect
 Task resource, missing CloudFormation substitution, invalid result path, or a
 Lambda output that violates the workflow contract.
@@ -270,8 +270,8 @@ Use this decision:
    or a shared EOL library and add an M2T regression test.
 3. If the artifact and AWS behavior are correct but LocalStack fails, document
    or isolate the LocalStack limitation; do not weaken valid AWS output.
-4. If required business behavior is absent from a protected region, implement
-   the region and verify it survives regeneration.
+4. If required business behavior is absent from a service application use case,
+   implement that `CREATE_IF_ABSENT` file and verify it survives regeneration.
 
 Prefer the smallest shared fix that expresses the correct rule. Avoid
 artifact-specific string replacements and special cases tied to sample names.
@@ -310,7 +310,7 @@ both pass.
 | Duplicate OpenAPI `400` response                   | OpenAPI file -> artifact rule -> source route -> generated definition | PIM -> PSM API mapping or `contracts.eol`, plus duplicate-status test |
 | CloudFormation secret resolution failure           | failed logical ID -> `model-trace.json` -> PSM secret                 | secret transformation or CloudFormation serializer                    |
 | Step Functions reports invalid `FunctionName`      | execution state -> ASL file -> source workflow state                  | ASL contract generation and CloudFormation substitutions              |
-| Manual handler returns `NOT_IMPLEMENTED`           | Lambda log -> protected-region trace                                  | developer-owned protected region                                      |
+| Manual handler returns `NOT_IMPLEMENTED`           | Lambda log -> service application file in artifact trace              | developer-owned application use case                                  |
 
 ## 8. Future Defect Report Template
 

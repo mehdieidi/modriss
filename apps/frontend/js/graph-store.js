@@ -92,6 +92,20 @@ function safeArray(value) {
   return Array.isArray(value) ? value : [];
 }
 
+function sameIdSet(left, right) {
+  const leftIds = new Set(
+    safeArray(left)
+      .map((id) => String(id || ""))
+      .filter(Boolean),
+  );
+  const rightIds = new Set(
+    safeArray(right)
+      .map((id) => String(id || ""))
+      .filter(Boolean),
+  );
+  return leftIds.size === rightIds.size && [...leftIds].every((id) => rightIds.has(id));
+}
+
 function boundedContextTypes() {
   return new Set(
     Object.values(state.modelingConfig.config?.levels || {})
@@ -1353,8 +1367,19 @@ function shouldIncludeRelationshipEndpointOnView(
   if (!filterTypes?.size) {
     return true;
   }
-  return elementMatchesFilterTypes(element, filterTypes, typeKey, {
+  const exactCanvasMatch = elementMatchesFilterTypes(element, filterTypes, typeKey, {
     exact: Array.isArray(view?.canvas),
+  });
+  if (exactCanvasMatch) {
+    return true;
+  }
+  const entryTypes = viewSurfaceEntryTypes(typeKey, view);
+  if (!entryTypes.size) {
+    return false;
+  }
+  const includeEntrySubtypes = Boolean(matchingViewDefinition(typeKey, view)?.includeSubtypes);
+  return elementMatchesFilterTypes(element, entryTypes, typeKey, {
+    exact: !includeEntrySubtypes,
   });
 }
 
@@ -1593,6 +1618,7 @@ export function selectElementIdsForView(graph, view, typeKey) {
     .map((node) => String(node?.elementId || node?.id || ""))
     .filter(Boolean);
   const rootType = rootScopeType(typeKey);
+  const includeCanvasSubtypes = Boolean(matchingViewDefinition(typeKey, view)?.includeSubtypes);
   const hasOnlyRootExplicitNodes =
     explicitNodeIds.length > 0 &&
     explicitNodeIds.every(
@@ -1664,7 +1690,9 @@ export function selectElementIdsForView(graph, view, typeKey) {
     }
     const includeByType = hasExplicitCanvas
       ? filterTypes.size > 0 &&
-        elementMatchesFilterTypes(element, filterTypes, typeKey, { exact: true })
+        elementMatchesFilterTypes(element, filterTypes, typeKey, {
+          exact: !includeCanvasSubtypes,
+        })
       : elementMatchesFilterTypes(element, filterTypes, typeKey) ||
         elementId === view?.scope?.rootElementId;
     if (includeByType) {
@@ -1701,7 +1729,7 @@ export function selectElementIdsForView(graph, view, typeKey) {
         }
         if (
           !elementMatchesFilterTypes(parent, filterTypes, typeKey, {
-            exact: hasExplicitCanvas,
+            exact: hasExplicitCanvas && !includeCanvasSubtypes,
           })
         ) {
           parentId = graph.parentByChild.get(parentId);
@@ -2541,8 +2569,33 @@ export function ensureViewContent(
   typeKey = state.activeType,
   { skipClientLayout = false } = {},
 ) {
-  if (!view || !view._lazyContent) {
+  if (!view) {
     return view;
+  }
+  if (!view._lazyContent) {
+    if (!matchingViewDefinition(typeKey, view)) {
+      return view;
+    }
+    const elementIds = selectElementIdsForView(state.graph, view, typeKey);
+    const relationshipIds = selectRelationshipIdsForView(state.graph, view, elementIds, typeKey);
+    if (
+      sameIdSet(
+        safeArray(view.nodes).map((node) => node.elementId),
+        elementIds,
+      ) &&
+      sameIdSet(
+        safeArray(view.edges).map((edge) => edge.relationshipId),
+        relationshipIds,
+      )
+    ) {
+      return view;
+    }
+    const refreshed = refreshViewContent(view, typeKey, { skipClientLayout });
+    if (refreshed) {
+      refreshed.autoLayoutApplied = false;
+      refreshed.layoutGeometryVersion = 0;
+    }
+    return refreshed;
   }
   const definition = matchingViewDefinition(typeKey, view);
   const scopeElement = view.scope?.rootElementId

@@ -37,6 +37,38 @@ class ModelingConfigServiceTest {
   }
 
   @Test
+  void serviceOwnershipViewKeepsOnlyOwnedResourcesInItsConcreteCanvas() {
+    Map<String, Object> configured = level("psm");
+    Map<String, Object> view =
+        listOfMaps(configured.get("views")).stream()
+            .filter(item -> "psm-service-ownership".equals(item.get("id")))
+            .findFirst()
+            .orElseThrow();
+
+    assertEquals(List.of("AwsService"), stringList(view.get("palette")));
+    assertEquals(List.of("AwsService"), stringList(view.get("canvas")));
+    assertTrue(Boolean.TRUE.equals(view.get("includeSubtypes")));
+    assertTrue(stringList(view.get("viewEntryTypes")).contains("AwsService"));
+    assertTrue(stringList(view.get("viewEntryTypes")).contains("AwsResource"));
+    assertTrue(stringList(view.get("relationshipKinds")).contains("SERVICE_OWNERSHIP"));
+  }
+
+  @Test
+  void serviceLandscapeViewIsLimitedToBusinessServiceRoots() {
+    Map<String, Object> configured = level("psm");
+    Map<String, Object> view =
+        listOfMaps(configured.get("views")).stream()
+            .filter(item -> "psm-service-landscape".equals(item.get("id")))
+            .findFirst()
+            .orElseThrow();
+
+    assertEquals(List.of("AwsService"), stringList(view.get("palette")));
+    assertEquals(List.of("AwsService"), stringList(view.get("canvas")));
+    assertTrue(stringList(view.get("viewEntryTypes")).contains("AwsService"));
+    assertTrue(Boolean.TRUE.equals(view.get("restrictPaletteToView")));
+  }
+
+  @Test
   void relationshipContentsExposeEcoreSlotsAndConfiguredCanvases() {
     for (String[] example :
         List.of(
@@ -480,7 +512,11 @@ class ModelingConfigServiceTest {
   void rootTemplatesComeFromJsonMetadata() {
     assertEquals("CIMModel", map(level("cim").get("rootTemplate")).get("eClass"));
     assertEquals("PIMModel", map(level("pim").get("rootTemplate")).get("eClass"));
-    assertEquals("AwsPsmModel", map(level("psm").get("rootTemplate")).get("eClass"));
+    Map<String, Object> psmRoot = map(level("psm").get("rootTemplate"));
+    assertEquals("AwsPsmModel", psmRoot.get("eClass"));
+    assertTrue(psmRoot.containsKey("services"));
+    Map<String, Object> psmStarter = map(level("psm").get("starterTemplate"));
+    assertEquals("AwsService", listOfMaps(psmStarter.get("services")).get(0).get("eClass"));
   }
 
   /** Verifies that new elements do not receive an invalid empty enum literal. */

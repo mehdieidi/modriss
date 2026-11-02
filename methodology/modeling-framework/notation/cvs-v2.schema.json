@@ -135,6 +135,19 @@
           "viewType": {
             "type": "string"
           },
+          "viewEntryTypes": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "Element types whose contained instances may appear as ownership-view entries."
+          },
+          "includeSubtypes": {
+            "type": "boolean",
+            "description": "When true, canvas types also match concrete Ecore subtypes."
+          },
+          "restrictPaletteToView": {
+            "type": "boolean",
+            "description": "When true, show only this view's creatable types from the root palette."
+          },
           "palette": {
             "type": "array",
             "items": { "type": "string" }
@@ -142,6 +155,11 @@
           "canvas": {
             "type": "array",
             "items": { "type": "string" }
+          },
+          "scopeTypes": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "Element types that provide a non-draggable scope for this view."
           },
           "relationshipKinds": {
             "type": "array",

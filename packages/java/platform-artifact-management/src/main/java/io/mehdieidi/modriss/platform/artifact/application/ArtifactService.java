@@ -315,7 +315,8 @@ public final class ArtifactService {
       throw new PlatformException(400, "Enter a valid single file or folder name.");
     }
     String name = normalizePath(newName);
-    Set<String> directories = normalizeDirectories(directoryPaths(artifact.modelJson()), artifact.files().keySet());
+    Set<String> directories =
+        normalizeDirectories(directoryPaths(artifact.modelJson()), artifact.files().keySet());
     boolean isFile = artifact.files().containsKey(source);
     boolean isDirectory = directories.contains(source);
     if (!isFile && !isDirectory) {
@@ -352,12 +353,15 @@ public final class ArtifactService {
       requireExtensionDirectoryPath(artifact, destination);
       String prefix = source + "/";
       Map<String, String> movedFiles = new LinkedHashMap<>();
-      files.entrySet().removeIf(
-          entry -> {
-            if (!entry.getKey().startsWith(prefix)) return false;
-            movedFiles.put(destination + entry.getKey().substring(source.length()), entry.getValue());
-            return true;
-          });
+      files
+          .entrySet()
+          .removeIf(
+              entry -> {
+                if (!entry.getKey().startsWith(prefix)) return false;
+                movedFiles.put(
+                    destination + entry.getKey().substring(source.length()), entry.getValue());
+                return true;
+              });
       files.putAll(movedFiles);
       Set<String> renamedDirectories = new LinkedHashSet<>();
       for (String directory : directories) {
@@ -425,21 +429,21 @@ public final class ArtifactService {
     directories = normalizeDirectories(directories, files.keySet());
     for (String manifestPath : generatedPaths) {
       if (isGenerationManifest(manifestPath)
-          && !java.util.Objects.equals(artifact.files().get(manifestPath), files.get(manifestPath))) {
-        throw new PlatformException(400, "Artifact ZIP cannot modify the generator trace manifest.");
+          && !java.util.Objects.equals(
+              artifact.files().get(manifestPath), files.get(manifestPath))) {
+        throw new PlatformException(
+            400, "Artifact ZIP cannot modify the generator trace manifest.");
       }
     }
-    for (String directory : directories.stream()
-        .sorted(java.util.Comparator.comparingInt(String::length))
-        .toList()) {
+    for (String directory :
+        directories.stream().sorted(java.util.Comparator.comparingInt(String::length)).toList()) {
       if (existingDirectories.contains(directory) || generatedDirectories.contains(directory)) {
         continue;
       }
       String parent = parentPath(directory);
       if (!parent.isEmpty() && !isWithin(parent, extensionDirectories)) {
         throw new PlatformException(
-            400,
-            "Added folder is outside generator-approved extension directories: " + directory);
+            400, "Added folder is outside generator-approved extension directories: " + directory);
       }
       extensionDirectories.add(directory);
     }
@@ -448,8 +452,7 @@ public final class ArtifactService {
       String parent = parentPath(path);
       if (!parent.isEmpty() && !isWithin(parent, extensionDirectories)) {
         throw new PlatformException(
-            400,
-            "Added file is outside generator-approved extension directories: " + path);
+            400, "Added file is outside generator-approved extension directories: " + path);
       }
     }
     ensureNoPathConflicts(files.keySet(), directories);
@@ -707,7 +710,8 @@ public final class ArtifactService {
 
   private Set<String> generationRulePaths(ArtifactRecord artifact) {
     Set<String> paths = new LinkedHashSet<>();
-    JsonNode rules = artifact.modelJson() == null ? null : artifact.modelJson().path("generationRules");
+    JsonNode rules =
+        artifact.modelJson() == null ? null : artifact.modelJson().path("generationRules");
     if (rules != null && rules.isObject()) {
       rules.properties().forEach(entry -> paths.add(normalizePath(entry.getKey())));
     }
@@ -784,7 +788,8 @@ public final class ArtifactService {
     if (!isWithin(path, allowed)) {
       throw new PlatformException(
           400,
-          "Folder must be created at the project root or inside a generator-approved project folder.");
+          "Folder must be created at the project root or inside a generator-approved project"
+              + " folder.");
     }
   }
 

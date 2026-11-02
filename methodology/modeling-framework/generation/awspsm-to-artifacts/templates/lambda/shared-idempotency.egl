@@ -1,4 +1,4 @@
-[% /* Generates the shared idempotency artifact. */ %]package shared
+[% /* Generates the shared idempotency artifact. */ %]package runtime
 
 import (
 	"crypto/sha256"

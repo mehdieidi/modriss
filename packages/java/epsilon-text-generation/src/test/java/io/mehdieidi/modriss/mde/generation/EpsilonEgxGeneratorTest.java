@@ -82,6 +82,39 @@ final class EpsilonEgxGeneratorTest {
   /** Temporary directory for generated source models and artifact projects. */
   @TempDir Path tempDir;
 
+  @Test
+  void orderPulsePsmKeepsServiceAndDeploymentOwnershipSeparate() {
+    Path sourceModel =
+        REPOSITORY_ROOT.resolve(
+            "methodology/modeling-framework/samples/orderpulse/orderpulse.awspsm.xmi");
+    Resource resource = assertSourceModelReloads(sourceModel);
+    EObject root = resource.getContents().get(0);
+    List<?> services = (List<?>) root.eGet(root.eClass().getEStructuralFeature("services"));
+    List<?> stacks = (List<?>) root.eGet(root.eClass().getEStructuralFeature("stacks"));
+
+    assertEquals(1, services.size());
+    assertEquals(1, stacks.size());
+    EObject service = (EObject) services.get(0);
+    EObject stack = (EObject) stacks.get(0);
+    List<?> resources = (List<?>) stack.eGet(stack.eClass().getEStructuralFeature("resources"));
+    assertFalse(resources.isEmpty());
+    List<String> serviceOwners =
+        resources.stream()
+            .map(EObject.class::cast)
+            .map(
+                awsResource ->
+                    awsResource.eGet(awsResource.eClass().getEStructuralFeature("id"))
+                        + " -> "
+                        + awsResource.eGet(awsResource.eClass().getEStructuralFeature("service")))
+            .toList();
+    assertTrue(
+        serviceOwners.stream().allMatch(owner -> owner.endsWith(" -> " + service)),
+        () -> "Every OrderPulse AWS resource should retain service ownership: " + serviceOwners);
+    assertEquals(
+        "infrastructure/units/orderpulse/template.yaml",
+        stack.eGet(stack.eClass().getEStructuralFeature("templatePath")));
+  }
+
   private Map<String, byte[]> generatedFileBytes(Path root) throws IOException {
     Map<String, byte[]> files = new java.util.TreeMap<>();
     try (Stream<Path> paths = Files.walk(root)) {
@@ -90,6 +123,29 @@ final class EpsilonEgxGeneratorTest {
       }
     }
     return files;
+  }
+
+  private Path generatedSamTemplate(Path projectRoot) throws IOException {
+    Path rootTemplate = projectRoot.resolve("template.yaml");
+    if (Files.isRegularFile(rootTemplate)) return rootTemplate;
+    try (Stream<Path> paths = Files.walk(projectRoot.resolve("infrastructure/units"))) {
+      return paths
+          .filter(Files::isRegularFile)
+          .filter(path -> path.getFileName().toString().equals("template.yaml"))
+          .sorted()
+          .findFirst()
+          .orElseThrow(() -> new AssertionError("No generated SAM template in " + projectRoot));
+    }
+  }
+
+  private Path generatedWorkflowAsl(Path projectRoot, String workflowSlug) throws IOException {
+    try (Stream<Path> paths = Files.walk(projectRoot.resolve("services"))) {
+      return paths
+          .filter(Files::isRegularFile)
+          .filter(path -> path.getFileName().toString().equals(workflowSlug + ".asl.json"))
+          .findFirst()
+          .orElseThrow(() -> new AssertionError("No generated ASL file for " + workflowSlug));
+    }
   }
 
   /** Disposable Docker network used by the active LocalStack test container. */
@@ -127,17 +183,22 @@ final class EpsilonEgxGeneratorTest {
             .replace("functionName=\"order-handler\"", "functionName=\"" + deploymentName + "\""));
     generateOrFail(
         AwsPsmToArtifactsDefaults.request(REPOSITORY_ROOT, sourceModel, output, true, true));
-    Path handler = output.resolve("src/functions/apply-case/handler.go");
+    Path handler = output.resolve("services/orders/cmd/apply-case/main.go");
     assertTrue(Files.exists(handler));
-    assertTrue(Files.exists(output.resolve("src/functions/apply-case/schema.json")));
-    assertTrue(Files.readString(output.resolve("template.yaml")).contains("bin/apply-case"));
-    assertTrue(Files.readString(output.resolve("template.yaml")).contains(deploymentName));
+    assertTrue(
+        Files.exists(output.resolve("services/orders/contracts/api/apply-case.schema.json")));
+    assertTrue(
+        Files.readString(output.resolve("infrastructure/units/orders/template.yaml"))
+            .contains("../../../bin/apply-case"));
+    assertTrue(
+        Files.readString(output.resolve("infrastructure/units/orders/template.yaml"))
+            .contains(deploymentName));
     assertTrue(
         Files.readString(output.resolve("scripts/build.ps1"))
-            .contains("./src/functions/apply-case"));
+            .contains("./services/orders/cmd/apply-case"));
     assertTrue(
-        Files.readString(output.resolve("tests/unit/apply-case_test.go"))
-            .contains("../../src/functions/apply-case/handler.go"));
+        Files.readString(output.resolve("services/orders/tests/unit/apply-case_test.go"))
+            .contains("../../cmd/apply-case/main.go"));
 
     // Emulate an export produced by the previous naming convention, with developer code added.
     String text = Files.readString(handler);
@@ -150,16 +211,67 @@ final class EpsilonEgxGeneratorTest {
     Files.writeString(
         handler, text.substring(0, contentStart) + custom + "\n" + text.substring(endMarkerStart));
     Path legacyDirectory = output.resolve("src/functions/" + deploymentName);
+    Files.createDirectories(legacyDirectory.getParent());
     Files.move(handler.getParent(), legacyDirectory);
+    Files.move(legacyDirectory.resolve("main.go"), legacyDirectory.resolve("handler.go"));
     Path trace = output.resolve("generated/trace/artifact-trace.json");
     Files.writeString(
         trace,
         Files.readString(trace)
-            .replace("src/functions/apply-case/", "src/functions/" + deploymentName + "/"));
+            .replace(
+                "services/orders/cmd/apply-case/main.go",
+                "src/functions/" + deploymentName + "/handler.go"));
     generateOrFail(
         AwsPsmToArtifactsDefaults.request(REPOSITORY_ROOT, sourceModel, output, false, true));
     assertTrue(Files.readString(handler).contains(custom));
     assertFalse(Files.exists(legacyDirectory.resolve("handler.go")));
+  }
+
+  @Test
+  void serviceLayerScaffoldsAreCreatedOnceAndRemainDeveloperOwned() throws Exception {
+    Path sourceModel = tempDir.resolve("service-scaffold-psm.xmi");
+    Path outputDirectory = tempDir.resolve("service-scaffold-project");
+    createRepresentativeAwsPsmModel(sourceModel);
+    var request =
+        AwsPsmToArtifactsDefaults.request(
+            REPOSITORY_ROOT, sourceModel, outputDirectory, true, true);
+
+    generateOrFail(request);
+    Path domainNotes = outputDirectory.resolve("services/orders/internal/domain/README.md");
+    assertTrue(
+        Files.readString(domainNotes).contains("# Orders")
+            && Files.readString(domainNotes).contains("domain"));
+    Path useCase = outputDirectory.resolve("services/orders/internal/application/order-handler.go");
+    assertTrue(Files.readString(useCase).contains("func HandleOrderHandler"));
+    Path handler = outputDirectory.resolve("services/orders/cmd/order-handler/main.go");
+    String generatedHandler = Files.readString(handler);
+    assertTrue(
+        generatedHandler.contains(
+            "application \"example.com/representative-psm/services/orders/internal/application\""));
+    assertTrue(generatedHandler.contains("application.HandleOrderHandler(ctx, lambdaEvt)"));
+    assertFalse(
+        generatedHandler.contains("application.HandleOrderHandler(ctx, validatedInput.Payload)"));
+    assertFalse(generatedHandler.contains("business-logic"));
+    String artifactTrace =
+        Files.readString(outputDirectory.resolve("generated/trace/artifact-trace.json"));
+    assertTrue(
+        artifactTrace.contains(
+            "\"path\": \"services/orders/internal/application/order-handler.go\""));
+    assertTrue(artifactTrace.contains("\"mergeStrategy\": \"CREATE_IF_ABSENT\""));
+
+    String developerOwnedContent = "# Orders domain\n\nDeveloper-owned implementation notes.\n";
+    String developerOwnedUseCase =
+        "package application\n\n"
+            + "import \"context\"\n\n"
+            + "func HandleOrderHandler(ctx context.Context, input any) (map[string]any, error) {\n"
+            + "\t_ = ctx\n\t_ = input\n\treturn map[string]any{\"handled\": true}, nil\n}\n";
+    Files.writeString(domainNotes, developerOwnedContent);
+    Files.writeString(useCase, developerOwnedUseCase);
+    generateOrFail(
+        AwsPsmToArtifactsDefaults.request(
+            REPOSITORY_ROOT, sourceModel, outputDirectory, false, true));
+    assertEquals(developerOwnedContent, Files.readString(domainNotes));
+    assertEquals(developerOwnedUseCase, Files.readString(useCase));
   }
 
   /** Ensures a missing EGX module is reported as a validation diagnostic. */
@@ -244,24 +356,23 @@ final class EpsilonEgxGeneratorTest {
     assertEquals(GenerationStatus.SUCCEEDED, report.status(), report.diagnostics().toString());
     assertFalse(report.generatedFiles().isEmpty(), "Expected EGX to write artifacts.");
     assertTrue(Files.isRegularFile(outputDirectory.resolve("README.md")));
-    assertTrue(Files.isRegularFile(outputDirectory.resolve("template.yaml")));
+    assertTrue(Files.isRegularFile(generatedSamTemplate(outputDirectory)));
     assertTrue(
         Files.isRegularFile(outputDirectory.resolve("generated/reports/generation-report.md")));
+    assertTrue(Files.readString(generatedSamTemplate(outputDirectory)).contains("AWS::S3::Bucket"));
     assertTrue(
-        Files.readString(outputDirectory.resolve("template.yaml")).contains("AWS::S3::Bucket"));
-    assertTrue(
-        Files.readString(outputDirectory.resolve("template.yaml"))
+        Files.readString(generatedSamTemplate(outputDirectory))
             .contains("Runtime: 'provided.al2023'"));
     assertTrue(
-        Files.readString(outputDirectory.resolve("template.yaml"))
-            .contains("Handler: 'bootstrap'"));
+        Files.readString(generatedSamTemplate(outputDirectory)).contains("Handler: 'bootstrap'"));
     assertTrue(
-        Files.readString(outputDirectory.resolve("template.yaml"))
-            .contains("CodeUri: 'bin/order-handler'"));
+        Files.readString(generatedSamTemplate(outputDirectory))
+            .contains("CodeUri: '../../../bin/order-handler'"));
     assertTrue(
         Files.readString(outputDirectory.resolve("Makefile"))
             .contains("$(ARTIFACTS_DIR)/bootstrap"));
-    Path aslFile = outputDirectory.resolve("asl/representative-workflow.asl.json");
+    Path aslFile =
+        outputDirectory.resolve("services/orders/workflows/representative-workflow.asl.json");
     assertTrue(Files.isRegularFile(aslFile), "Expected generated ASL definition.");
     String aslText = Files.readString(aslFile);
     assertTrue(aslText.contains("\"QueryLanguage\": \"JSONPath\""));
@@ -302,8 +413,7 @@ final class EpsilonEgxGeneratorTest {
     assertGeneratedJsonArtifactsParse(outputDirectory);
     assertGeneratedYamlArtifactsParseAndHaveExpectedShape(outputDirectory);
     assertBroadSamTemplateCoversResourceSurface(outputDirectory);
-    var resources =
-        YAML.readTree(outputDirectory.resolve("template.yaml").toFile()).path("Resources");
+    var resources = YAML.readTree(generatedSamTemplate(outputDirectory).toFile()).path("Resources");
     assertEquals(
         "ACTIVE",
         resources.path("BroadUserPool").path("Properties").path("DeletionProtection").asText());
@@ -379,7 +489,7 @@ final class EpsilonEgxGeneratorTest {
     resource.save(null);
     Path output = tempDir.resolve("bound-authorizers");
     generateOrFail(AwsPsmToArtifactsDefaults.request(REPOSITORY_ROOT, source, output, true, true));
-    var resources = YAML.readTree(output.resolve("template.yaml").toFile()).path("Resources");
+    var resources = YAML.readTree(generatedSamTemplate(output).toFile()).path("Resources");
     assertFalse(resources.has("BroadJwtAuthorizer"));
     assertFalse(resources.has("BroadLambdaAuthorizer"));
     assertFalse(
@@ -433,7 +543,7 @@ final class EpsilonEgxGeneratorTest {
         AwsPsmToArtifactsDefaults.request(
             REPOSITORY_ROOT, sourceModel, outputDirectory, true, true));
 
-    Path generatedClient = outputDirectory.resolve("src/shared/dynamodb.go");
+    Path generatedClient = outputDirectory.resolve("platform/runtime/dynamodb.go");
     assertTrue(Files.isRegularFile(generatedClient));
     String generatedSource = Files.readString(generatedClient);
     assertTrue(generatedSource.contains("func NewDynamoDBClient"));
@@ -585,7 +695,7 @@ final class EpsilonEgxGeneratorTest {
             .path("GenerateSecretString")
             .path("SecretStringTemplate")
             .isTextual());
-    String consumer = Files.readString(output.resolve("template.yaml"));
+    String consumer = Files.readString(generatedSamTemplate(output));
     assertTrue(
         consumer.contains("!ImportValue 'modriss-EvaluationDatabase-DBClusterArn'"), consumer);
     assertTrue(consumer.contains("!ImportValue 'modriss-DatabaseCredentials-Ref'"), consumer);
@@ -601,7 +711,8 @@ final class EpsilonEgxGeneratorTest {
     assertTrue(
         Files.readString(output.resolve("scripts/database.py")).contains("rollback_transaction"));
     assertTrue(
-        Files.readString(output.resolve("src/shared/relational.go")).contains("WithTransaction"));
+        Files.readString(output.resolve("platform/runtime/relational.go"))
+            .contains("WithTransaction"));
     String deployment = Files.readString(output.resolve("scripts/deploy.sh"));
     assertTrue(
         deployment.indexOf("--stack-name \"modriss-zzz-database")
@@ -661,7 +772,7 @@ final class EpsilonEgxGeneratorTest {
     resource.save(null);
     Path output = tempDir.resolve("shared-cognito");
     generateOrFail(AwsPsmToArtifactsDefaults.request(REPOSITORY_ROOT, source, output, true, true));
-    String api = Files.readString(output.resolve("template.yaml"));
+    String api = Files.readString(generatedSamTemplate(output));
     String owner = Files.readString(output.resolve("identity.yaml"));
     assertTrue(api.contains("!ImportValue 'modriss-BroadUserPool-Arn'"), api);
     assertTrue(owner.contains("BroadUserPoolSharedArn:"));
@@ -691,7 +802,7 @@ final class EpsilonEgxGeneratorTest {
     Path output = tempDir.resolve("rotation-refinement");
     generateOrFail(AwsPsmToArtifactsDefaults.request(REPOSITORY_ROOT, source, output, true, true));
     assertFalse(
-        Files.readString(output.resolve("template.yaml"))
+        Files.readString(generatedSamTemplate(output))
             .contains("AWS::SecretsManager::RotationSchedule"));
     assertTrue(objects.contains(rotation), "The PSM decision stays available for refinement");
   }
@@ -732,7 +843,7 @@ final class EpsilonEgxGeneratorTest {
     resource.save(null);
     Path output = tempDir.resolve("unresolved-workflow");
     generateOrFail(AwsPsmToArtifactsDefaults.request(REPOSITORY_ROOT, source, output, true, true));
-    try (var paths = Files.walk(output.resolve("asl"))) {
+    try (var paths = Files.walk(output.resolve("services"))) {
       var file =
           paths.filter(path -> path.toString().endsWith(".asl.json")).findFirst().orElseThrow();
       var asl = JSON.readTree(file.toFile());
@@ -798,10 +909,16 @@ final class EpsilonEgxGeneratorTest {
 
     assertEquals(GenerationStatus.SUCCEEDED, report.status(), report.diagnostics().toString());
     assertFalse(Files.isRegularFile(outputDirectory.resolve("template.yaml")));
-    assertFalse(Files.isDirectory(outputDirectory.resolve("openapi")));
-    assertFalse(Files.isDirectory(outputDirectory.resolve("asl")));
-    assertFalse(Files.isDirectory(outputDirectory.resolve("src/functions")));
-    assertTrue(Files.isRegularFile(outputDirectory.resolve("env/local.json")));
+    assertTrue(
+        report.generatedFiles().stream()
+            .noneMatch(path -> path.toString().endsWith(".openapi.yaml")));
+    assertTrue(
+        report.generatedFiles().stream().noneMatch(path -> path.toString().endsWith(".asl.json")));
+    assertTrue(
+        report.generatedFiles().stream()
+            .noneMatch(path -> path.toString().replace('\\', '/').contains("/cmd/")));
+    assertTrue(
+        Files.isRegularFile(outputDirectory.resolve("infrastructure/environments/local.json")));
     String trace = Files.readString(outputDirectory.resolve("generated/trace/artifact-trace.json"));
     assertTrue(trace.contains("\"generatedBy\": \"AWSPSM2ART_Stage_Environment\""));
     assertFalse(trace.contains("AWSPSM2ART_Default_Local_Environment"));
@@ -947,7 +1064,7 @@ final class EpsilonEgxGeneratorTest {
     generateOrFail(
         AwsPsmToArtifactsDefaults.request(
             REPOSITORY_ROOT, sourceModel, outputDirectory, true, true));
-    Path protectedFile = outputDirectory.resolve("src/functions/order-handler/handler.go");
+    Path protectedFile = outputDirectory.resolve("services/orders/cmd/order-handler/main.go");
     String original = Files.readString(protectedFile);
     int begin = original.indexOf("protected region ");
     int contentStart = original.indexOf('\n', begin) + 1;
@@ -981,7 +1098,7 @@ final class EpsilonEgxGeneratorTest {
     generateOrFail(
         AwsPsmToArtifactsDefaults.request(
             REPOSITORY_ROOT, sourceModel, outputDirectory, true, true));
-    Path protectedFile = outputDirectory.resolve("src/functions/order-handler/handler.go");
+    Path protectedFile = outputDirectory.resolve("services/orders/cmd/order-handler/main.go");
     String original = Files.readString(protectedFile);
     String marker = "// user edit outside protected region";
     int firstLineEnd = original.indexOf('\n');
@@ -1011,7 +1128,7 @@ final class EpsilonEgxGeneratorTest {
     generateOrFail(
         AwsPsmToArtifactsDefaults.request(
             REPOSITORY_ROOT, sourceModel, outputDirectory, true, true));
-    Path handler = outputDirectory.resolve("src/functions/order-handler/handler.go");
+    Path handler = outputDirectory.resolve("services/orders/cmd/order-handler/main.go");
     String content = Files.readString(handler);
     String marker =
         content
@@ -1081,7 +1198,7 @@ final class EpsilonEgxGeneratorTest {
     Map<String, byte[]> expanded = generatedFileBytes(outputDirectory);
     assertTrue(
         expanded.size() > minimal.size(), "Adding generated PSM resources must add artifacts.");
-    Path handler = outputDirectory.resolve("src/functions/order-handler/handler.go");
+    Path handler = outputDirectory.resolve("services/orders/cmd/order-handler/main.go");
     assertTrue(Files.exists(handler));
     String originalHandler = Files.readString(handler);
 
@@ -1202,7 +1319,11 @@ final class EpsilonEgxGeneratorTest {
     for (EgxRule rule : egxArtifactRules()) {
       // Conditional SQL artifacts are exercised by the separate relational fixture.
       if (List.of(
-              "DatabaseManifest", "DatabaseSchema", "DatabaseInitialize", "RelationalDataAccess")
+              "DatabaseManifest",
+              "DatabaseSchema",
+              "DatabaseInitialize",
+              "RelationalDataAccess",
+              "DynamoDbDataAccess")
           .contains(rule.name())) continue;
       assertTrue(
           artifactTrace.contains("\"generatedBy\": \"" + rule.ruleId() + "\""),
@@ -1264,7 +1385,7 @@ final class EpsilonEgxGeneratorTest {
               Files.readString(file).contains("Runtime: 'nodejs"),
               () -> "SAM template contains stale Node runtime hint: " + normalizedPath);
         }
-        if (normalizedPath.startsWith("openapi/")) {
+        if (normalizedPath.startsWith("services/") && normalizedPath.contains("/contracts/api/")) {
           assertEquals(
               "3.0.3",
               yaml.get("openapi"),
@@ -1319,7 +1440,7 @@ final class EpsilonEgxGeneratorTest {
    */
   private void assertGeneratedApiMessagingEventAndDocumentArtifactsCoverSourceModel(
       Path outputDirectory) throws IOException {
-    Path openApi = outputDirectory.resolve("openapi/orders-api.openapi.yaml");
+    Path openApi = outputDirectory.resolve("services/orders/contracts/api/orders-api.openapi.yaml");
     assertTrue(Files.isRegularFile(openApi), "Expected modeled API OpenAPI artifact.");
     String openApiText = Files.readString(openApi);
     assertTrue(openApiText.contains("openapi: 3.0.3"));
@@ -1334,17 +1455,19 @@ final class EpsilonEgxGeneratorTest {
     assertTrue(openApiText.contains("/invocations"));
 
     assertJsonArtifactContains(
-        outputDirectory.resolve("events/samples/rule-order-created.json"),
+        outputDirectory.resolve("services/orders/contracts/events/samples/rule-order-created.json"),
         "\"source\": \"modriss.eventbridge\"",
         "\"detail-type\": \"EventBridgeRule\"",
         "\"sourceStableId\":");
     assertJsonArtifactContains(
-        outputDirectory.resolve("events/samples/queue-order-work-sqs-message.json"),
+        outputDirectory.resolve(
+            "services/orders/contracts/events/samples/queue-order-work-sqs-message.json"),
         "\"source\": \"modriss.sqs\"",
         "\"detail-type\": \"SqsQueue\"",
         "\"sourceStableId\":");
     assertJsonArtifactContains(
-        outputDirectory.resolve("events/samples/topic-order-events-sns-message.json"),
+        outputDirectory.resolve(
+            "services/orders/contracts/events/samples/topic-order-events-sns-message.json"),
         "\"source\": \"modriss.sns\"",
         "\"detail-type\": \"SnsTopic\"",
         "\"sourceStableId\":");
@@ -1362,7 +1485,7 @@ final class EpsilonEgxGeneratorTest {
    */
   private void assertBroadSamTemplateCoversResourceSurface(Path outputDirectory)
       throws IOException {
-    Path template = outputDirectory.resolve("template.yaml");
+    Path template = generatedSamTemplate(outputDirectory);
     String samText = Files.readString(template);
 
     for (String expected :
@@ -1471,7 +1594,8 @@ final class EpsilonEgxGeneratorTest {
    * @throws IOException when generated ASL cannot be read
    */
   private void assertBroadAslCoversStateSurface(Path outputDirectory) throws IOException {
-    Path aslFile = outputDirectory.resolve("asl/broad-workflow.asl.json");
+    Path aslFile =
+        outputDirectory.resolve("services/application/workflows/broad-workflow.asl.json");
     assertTrue(Files.isRegularFile(aslFile), "Expected broad ASL artifact.");
     String aslText = Files.readString(aslFile);
     JSON.readTree(aslFile.toFile());
@@ -1799,12 +1923,14 @@ final class EpsilonEgxGeneratorTest {
         processBuilder(outputDirectory, environment, goExecutable, "mod", "tidy"),
         Duration.ofMinutes(2),
         "Generated Go dependency resolution before deploy");
-    Path functionsDirectory = outputDirectory.resolve("src/functions");
+    Path servicesDirectory = outputDirectory.resolve("services");
     Path functionDirectory;
-    try (Stream<Path> functionDirectories = Files.list(functionsDirectory)) {
+    try (Stream<Path> functionDirectories = Files.walk(servicesDirectory)) {
       functionDirectory =
           functionDirectories
               .filter(Files::isDirectory)
+              .filter(path -> path.getParent() != null)
+              .filter(path -> path.getParent().getFileName().toString().equals("cmd"))
               .findFirst()
               .orElseThrow(
                   () -> new AssertionError("No generated Lambda function directory found."));
@@ -1857,7 +1983,7 @@ final class EpsilonEgxGeneratorTest {
    */
   private void writeLocalStackPackagedTemplate(Path outputDirectory, String bucketName)
       throws IOException {
-    String templateText = Files.readString(outputDirectory.resolve("template.yaml"));
+    String templateText = Files.readString(generatedSamTemplate(outputDirectory));
     Matcher codeUriMatcher =
         Pattern.compile("(?m)^(\\s*)CodeUri:\\s*['\"]?[^'\"\\s]+['\"]?\\s*$").matcher(templateText);
     if (!codeUriMatcher.find()) {
@@ -1869,7 +1995,8 @@ final class EpsilonEgxGeneratorTest {
     String packagedTemplate =
         codeUriMatcher.replaceFirst(Matcher.quoteReplacement(packagedCodeUri));
     Matcher definitionUriMatcher =
-        Pattern.compile("(?m)^(\\s*)DefinitionUri:\\s*['\"]?(asl/[^'\"\\s]+)['\"]?\\s*$")
+        Pattern.compile(
+                "(?m)^(\\s*)DefinitionUri:\\s*['\"]?((?:\\.\\./\\.\\./\\.\\./)?services/[^'\"\\s]+/workflows/[^'\"\\s]+)['\"]?\\s*$")
             .matcher(packagedTemplate);
     StringBuffer rewrittenTemplate = new StringBuffer();
     while (definitionUriMatcher.find()) {
@@ -1905,12 +2032,17 @@ final class EpsilonEgxGeneratorTest {
       Map<String, String> environment,
       String bucketName)
       throws Exception {
-    Path aslDirectory = outputDirectory.resolve("asl");
-    if (!Files.isDirectory(aslDirectory)) {
+    Path servicesDirectory = outputDirectory.resolve("services");
+    if (!Files.isDirectory(servicesDirectory)) {
       return;
     }
-    try (Stream<Path> aslFiles = Files.walk(aslDirectory)) {
-      for (Path aslFile : aslFiles.filter(Files::isRegularFile).sorted().toList()) {
+    try (Stream<Path> aslFiles = Files.walk(servicesDirectory)) {
+      for (Path aslFile :
+          aslFiles
+              .filter(Files::isRegularFile)
+              .filter(path -> path.getFileName().toString().endsWith(".asl.json"))
+              .sorted()
+              .toList()) {
         String key = outputDirectory.relativize(aslFile).toString().replace('\\', '/');
         runProcess(
             processBuilder(
@@ -2074,7 +2206,7 @@ final class EpsilonEgxGeneratorTest {
             "Generated Step Functions state machine inspection");
     if (!stateMachines.contains("modriss-localstack-workflow")) {
       assertTrue(
-          Files.readString(outputDirectory.resolve("template.yaml"))
+          Files.readString(generatedSamTemplate(outputDirectory))
               .contains("Type: AWS::Serverless::StateMachine"),
           "Generated SAM template should include the Step Functions state machine even when "
               + "LocalStack Community omits it during CloudFormation deployment.");
@@ -2541,7 +2673,7 @@ final class EpsilonEgxGeneratorTest {
     if (existingArn != null) {
       return existingArn;
     }
-    Path aslFile = outputDirectory.resolve("asl/modriss-localstack-workflow.asl.json");
+    Path aslFile = generatedWorkflowAsl(outputDirectory, "modriss-localstack-workflow");
     assertTrue(
         Files.isRegularFile(aslFile), "Generated ASL artifact should exist for live execution.");
     JSON.readTree(aslFile.toFile());
@@ -3624,8 +3756,8 @@ final class EpsilonEgxGeneratorTest {
   private void assertRequiredProjectTreeWasGenerated(Path outputDirectory) throws IOException {
     List<String> requiredFiles =
         List.of(
-            "template.yaml",
-            "samconfig.toml",
+            "infrastructure/units/orders/template.yaml",
+            "infrastructure/samconfig.toml",
             "README.md",
             "Makefile",
             "go.mod",
@@ -3638,40 +3770,46 @@ final class EpsilonEgxGeneratorTest {
             "docs/deployment.md",
             "docs/runbooks/incident-response.md",
             "docs/runbooks/rollback.md",
-            "env/qa.json",
-            "openapi/orders-api.openapi.yaml",
-            "events/samples/rule-order-created.json",
-            "events/samples/queue-order-work-sqs-message.json",
-            "events/samples/topic-order-events-sns-message.json",
+            "infrastructure/environments/qa.json",
+            "services/orders/contracts/api/orders-api.openapi.yaml",
+            "services/orders/contracts/events/samples/rule-order-created.json",
+            "services/orders/contracts/events/samples/queue-order-work-sqs-message.json",
+            "services/orders/contracts/events/samples/topic-order-events-sns-message.json",
             "generated/documents/operator-note.md",
-            "src/shared/logger.go",
-            "src/shared/tracer.go",
-            "src/shared/metrics.go",
-            "src/shared/errors.go",
-            "src/shared/validation.go",
-            "src/shared/idempotency.go",
-            "src/shared/config.go",
-            "src/shared/event-publisher.go",
-            "src/shared/data-access.go",
-            "src/functions/order-handler/handler.go",
-            "src/functions/order-handler/schema.json",
-            "schemas/api/generated-api.schema.json",
-            "schemas/events/generated-event.schema.json",
-            "schemas/messages/generated-message.schema.json",
-            "schemas/errors/generated-error.schema.json",
-            "schemas/data/generated-data.schema.json",
-            "tests/unit/order-handler_test.go",
-            "tests/integration/order-handler_integration_test.go",
+            "platform/runtime/logger.go",
+            "platform/runtime/tracer.go",
+            "platform/runtime/metrics.go",
+            "platform/runtime/errors.go",
+            "platform/runtime/validation.go",
+            "platform/runtime/idempotency.go",
+            "platform/runtime/config.go",
+            "platform/runtime/event-publisher.go",
+            "platform/runtime/data-access.go",
+            "services/orders/cmd/order-handler/main.go",
+            "services/orders/internal/application/order-handler.go",
+            "services/orders/contracts/api/order-handler.schema.json",
+            "contracts/public/schemas/api/generated-api.schema.json",
+            "contracts/public/schemas/events/generated-event.schema.json",
+            "contracts/public/schemas/messages/generated-message.schema.json",
+            "contracts/public/schemas/errors/generated-error.schema.json",
+            "contracts/public/schemas/data/generated-data.schema.json",
+            "services/orders/tests/unit/order-handler_test.go",
+            "services/orders/tests/integration/order-handler_integration_test.go",
+            "services/orders/internal/domain/README.md",
+            "services/orders/internal/application/README.md",
+            "services/orders/internal/adapters/inbound/README.md",
+            "services/orders/internal/adapters/outbound/persistence/README.md",
+            "services/orders/internal/adapters/outbound/messaging/README.md",
             "tests/contract/generated_contracts_test.go",
             "tests/events/generated_events_test.go",
             "tests/e2e/security_generated_test.go",
             "tests/e2e/generated_flows_test.go",
             "tests/fixtures/README.md",
-            "env/local.json",
-            "env/dev.json",
-            "env/test.json",
-            "env/staging.json",
-            "env/prod.example.json",
+            "infrastructure/environments/local.json",
+            "infrastructure/environments/dev.json",
+            "infrastructure/environments/test.json",
+            "infrastructure/environments/staging.json",
+            "infrastructure/environments/prod.example.json",
             "scripts/validate-models.sh",
             "scripts/validate-template.sh",
             "scripts/validate-contracts.sh",
@@ -3734,14 +3872,14 @@ final class EpsilonEgxGeneratorTest {
     assertTrue(goMod.contains("github.com/aws/aws-lambda-go"));
 
     String handler =
-        Files.readString(outputDirectory.resolve("src/functions/order-handler/handler.go"));
+        Files.readString(outputDirectory.resolve("services/orders/cmd/order-handler/main.go"));
     assertTrue(handler.contains("package main"));
     assertTrue(handler.contains("lambda.Start(Handler)"));
-    assertTrue(handler.contains("\"example.com/representative-psm/src/shared\""));
+    assertTrue(handler.contains("\"example.com/representative-psm/platform/runtime\""));
     assertTrue(handler.contains("return mapKnownError("));
     assertFalse(
         handler.contains(
-            "return GeneratedResult{}, shared.NewGeneratedHandlerError(\"NOT_IMPLEMENTED\""));
+            "return GeneratedResult{}, runtime.NewGeneratedHandlerError(\"NOT_IMPLEMENTED\""));
   }
 
   /**
@@ -3763,7 +3901,7 @@ final class EpsilonEgxGeneratorTest {
     assertTrue(
         artifactTrace.contains("\"checksum\":"),
         "Artifact trace sections should include checksums.");
-    assertTrue(artifactTrace.contains("\"path\": \"template.yaml\""));
+    assertTrue(artifactTrace.contains("\"path\": \"infrastructure/units/orders/template.yaml\""));
     assertTrue(artifactTrace.contains("\"artifactKind\": \"SAM_TEMPLATE\""));
   }
 
@@ -6222,7 +6360,7 @@ final class EpsilonEgxGeneratorTest {
     set(stack, "id", "stack_main");
     set(stack, "name", "Main Stack");
     set(stack, "stackName", "modriss-main");
-    set(stack, "templatePath", "template.yaml");
+    set(stack, "templatePath", "infrastructure/units/orders/template.yaml");
     set(stack, "templateDescription", "Representative generated stack.");
     set(stack, "useSamTransform", true);
     set(stack, "packageIndividually", false);
@@ -6252,6 +6390,28 @@ final class EpsilonEgxGeneratorTest {
     set(stage, "stackNamePrefix", "modriss");
     add(stage, "deploysStacks", stack);
 
+    EObject service = create(metamodelResource, "AwsService");
+    set(service, "id", "service_orders");
+    set(service, "name", "Orders");
+    set(service, "responsibility", "Owns order processing.");
+    set(service, "ownerTeam", "Orders Team");
+    set(service, "businessCapabilityRef", "Order Management");
+    set(service, "boundaryType", "BOUNDED_CONTEXT_BASED");
+    for (EObject resource :
+        List.of(
+            lambdaRole,
+            logGroup,
+            lambdaFunction,
+            stateMachine,
+            httpApi,
+            apiIntegration,
+            queue,
+            topic,
+            bridgeRule,
+            bucket)) {
+      set(resource, "service", service);
+    }
+
     EObject model = create(metamodelResource, "AwsPsmModel");
     set(model, "id", "aws_psm_representative");
     set(model, "name", "Representative PSM");
@@ -6264,6 +6424,7 @@ final class EpsilonEgxGeneratorTest {
     set(model, "productionMode", false);
     add(model, "stages", stage);
     add(model, "stacks", stack);
+    add(model, "services", service);
     add(model, "allResources", lambdaRole);
     add(model, "allResources", logGroup);
     add(model, "allResources", lambdaFunction);

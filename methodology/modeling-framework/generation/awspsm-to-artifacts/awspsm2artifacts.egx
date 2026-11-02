@@ -70,19 +70,79 @@ rule DatabaseInitialize {
 rule RelationalDataAccess {
   guard : AWSPSMSTORAGE!RdsDbCluster.all.notEmpty()
   template : "lambda/shared-relational.egl"
-  target : "src/shared/relational.go"
+  target : emitCtx().platformRuntimePath("relational.go")
   merge : false
   overwrite : true
-  post { emitCtx().recordArtifact("src/shared/relational.go", "SHARED_RUNTIME", "AWSPSM2ART_RelationalDataAccess", AWSPSMSTORAGE!RdsDbCluster.all, "OVERWRITE_GENERATED", Sequence{}); }
+  post { emitCtx().recordArtifact(emitCtx().platformRuntimePath("relational.go"), "PLATFORM_RUNTIME", "AWSPSM2ART_RelationalDataAccess", AWSPSMSTORAGE!RdsDbCluster.all, "OVERWRITE_GENERATED", Sequence{}); }
 }
 
 rule DynamoDbDataAccess {
   guard : AWSPSMSTORAGE!DynamoDbTable.all.notEmpty()
   template : "lambda/shared-dynamodb.egl"
-  target : "src/shared/dynamodb.go"
+  target : emitCtx().platformRuntimePath("dynamodb.go")
   merge : false
   overwrite : true
-  post { emitCtx().recordArtifact("src/shared/dynamodb.go", "SHARED_RUNTIME", "AWSPSM2ART_DynamoDbDataAccess", AWSPSMSTORAGE!DynamoDbTable.all, "OVERWRITE_GENERATED", Sequence{}); }
+  post { emitCtx().recordArtifact(emitCtx().platformRuntimePath("dynamodb.go"), "PLATFORM_RUNTIME", "AWSPSM2ART_DynamoDbDataAccess", AWSPSMSTORAGE!DynamoDbTable.all, "OVERWRITE_GENERATED", Sequence{}); }
+}
+
+/** Creates a service-owned domain scaffold once, leaving later edits developer-owned. */
+rule ServiceDomainScaffold transform serviceObj : AWSPSMCORE!AwsService {
+  template : "docs/service-layer-scaffold.egl"
+  target : serviceObj.serviceRoot() + "/internal/domain/README.md"
+  merge : false
+  overwrite : false
+  parameters : Map {"serviceObj" = serviceObj, "layerText" = "domain"}
+  post { emitCtx().recordArtifact(serviceObj.serviceRoot() + "/internal/domain/README.md", "SERVICE_SCAFFOLD", "AWSPSM2ART_ServiceDomainScaffold", Sequence{serviceObj}, "CREATE_IF_ABSENT", Sequence{}); }
+}
+
+/** Creates a service-owned application scaffold once, leaving later edits developer-owned. */
+rule ServiceApplicationScaffold transform serviceObj : AWSPSMCORE!AwsService {
+  template : "docs/service-layer-scaffold.egl"
+  target : serviceObj.serviceRoot() + "/internal/application/README.md"
+  merge : false
+  overwrite : false
+  parameters : Map {"serviceObj" = serviceObj, "layerText" = "application"}
+  post { emitCtx().recordArtifact(serviceObj.serviceRoot() + "/internal/application/README.md", "SERVICE_SCAFFOLD", "AWSPSM2ART_ServiceApplicationScaffold", Sequence{serviceObj}, "CREATE_IF_ABSENT", Sequence{}); }
+}
+
+/** Creates the service-owned inbound adapter scaffold once. */
+rule ServiceInboundAdapterScaffold transform serviceObj : AWSPSMCORE!AwsService {
+  template : "docs/service-layer-scaffold.egl"
+  target : serviceObj.serviceRoot() + "/internal/adapters/inbound/README.md"
+  merge : false
+  overwrite : false
+  parameters : Map {"serviceObj" = serviceObj, "layerText" = "adapters/inbound"}
+  post { emitCtx().recordArtifact(serviceObj.serviceRoot() + "/internal/adapters/inbound/README.md", "SERVICE_SCAFFOLD", "AWSPSM2ART_ServiceInboundAdapterScaffold", Sequence{serviceObj}, "CREATE_IF_ABSENT", Sequence{}); }
+}
+
+/** Creates the service-owned persistence adapter scaffold once. */
+rule ServicePersistenceAdapterScaffold transform serviceObj : AWSPSMCORE!AwsService {
+  template : "docs/service-layer-scaffold.egl"
+  target : serviceObj.serviceRoot() + "/internal/adapters/outbound/persistence/README.md"
+  merge : false
+  overwrite : false
+  parameters : Map {"serviceObj" = serviceObj, "layerText" = "adapters/outbound/persistence"}
+  post { emitCtx().recordArtifact(serviceObj.serviceRoot() + "/internal/adapters/outbound/persistence/README.md", "SERVICE_SCAFFOLD", "AWSPSM2ART_ServicePersistenceAdapterScaffold", Sequence{serviceObj}, "CREATE_IF_ABSENT", Sequence{}); }
+}
+
+/** Creates the service-owned messaging adapter scaffold once. */
+rule ServiceMessagingAdapterScaffold transform serviceObj : AWSPSMCORE!AwsService {
+  template : "docs/service-layer-scaffold.egl"
+  target : serviceObj.serviceRoot() + "/internal/adapters/outbound/messaging/README.md"
+  merge : false
+  overwrite : false
+  parameters : Map {"serviceObj" = serviceObj, "layerText" = "adapters/outbound/messaging"}
+  post { emitCtx().recordArtifact(serviceObj.serviceRoot() + "/internal/adapters/outbound/messaging/README.md", "SERVICE_SCAFFOLD", "AWSPSM2ART_ServiceMessagingAdapterScaffold", Sequence{serviceObj}, "CREATE_IF_ABSENT", Sequence{}); }
+}
+
+/** Creates a human-owned application use-case entry once for each Lambda. */
+rule ServiceApplicationHandlerScaffold transform awsFn : AWSPSMCOMPUTE!AwsLambdaFunction {
+  template : "lambda/service-application-handler.egl"
+  target : awsFn.serviceApplicationHandlerPath(emitCtx())
+  merge : false
+  overwrite : false
+  parameters : Map {"awsFn" = awsFn, "emitCtx" = emitCtx()}
+  post { emitCtx().recordArtifact(awsFn.serviceApplicationHandlerPath(emitCtx()), "SERVICE_SCAFFOLD", "AWSPSM2ART_ServiceApplicationHandlerScaffold", Sequence{awsFn}, "CREATE_IF_ABSENT", Sequence{}); }
 }
 
 rule ProjectScaffold {
@@ -167,7 +227,7 @@ rule StackToSamTemplate transform stackObj : AWSPSMCORE!SamStack {
 /** Generates artifacts or model elements for Sam Config. */
 rule SamConfig {
   template : "infrastructure/samconfig.egl"
-  target : "samconfig.toml"
+  target : emitCtx().projectSamConfigPath()
   merge : true
   overwrite : true
   parameters : Map {
@@ -176,7 +236,7 @@ rule SamConfig {
   }
   /** Records or verifies results after execution. */
   post {
-    emitCtx().recordArtifact("samconfig.toml", "SAM_CONFIG", "AWSPSM2ART_SamConfig", Sequence{awsRoot()}, "PRESERVE_PROTECTED_REGIONS", Sequence{awsRoot().manualRegionId("samconfig-local-overrides")});
+    emitCtx().recordArtifact(emitCtx().projectSamConfigPath(), "SAM_CONFIG", "AWSPSM2ART_SamConfig", Sequence{awsRoot()}, "PRESERVE_PROTECTED_REGIONS", Sequence{awsRoot().manualRegionId("samconfig-local-overrides")});
   }
 }
 
@@ -198,71 +258,71 @@ rule StageEnvironment transform stageObj : AWSPSMCORE!AwsStage {
 
 /** Generates artifacts or model elements for Local Environment File. */
 rule LocalEnvironmentFile {
-  guard : not AWSPSMCORE!AwsStage.all.exists(stageObj | stageObj.envPath() = "env/local.json")
+  guard : not AWSPSMCORE!AwsStage.all.exists(stageObj | stageObj.envPath() = "infrastructure/environments/local.json")
   template : "infrastructure/default-env-json.egl"
-  target : "env/local.json"
+  target : emitCtx().defaultEnvironmentPath("local")
   merge : false
   overwrite : true
   parameters : Map {"stageNameText" = "local", "environmentClassText" = "LOCAL", "emitCtx" = emitCtx()}
   /** Records or verifies results after execution. */
   post {
-    emitCtx().recordArtifact("env/local.json", "ENVIRONMENT_CONFIG", "AWSPSM2ART_Default_Local_Environment", Sequence{awsRoot()}, "OVERWRITE_GENERATED", Sequence{});
+    emitCtx().recordArtifact(emitCtx().defaultEnvironmentPath("local"), "ENVIRONMENT_CONFIG", "AWSPSM2ART_Default_Local_Environment", Sequence{awsRoot()}, "OVERWRITE_GENERATED", Sequence{});
   }
 }
 
 /** Generates artifacts or model elements for Dev Environment File. */
 rule DevEnvironmentFile {
-  guard : not AWSPSMCORE!AwsStage.all.exists(stageObj | stageObj.envPath() = "env/dev.json")
+  guard : not AWSPSMCORE!AwsStage.all.exists(stageObj | stageObj.envPath() = "infrastructure/environments/dev.json")
   template : "infrastructure/default-env-json.egl"
-  target : "env/dev.json"
+  target : emitCtx().defaultEnvironmentPath("dev")
   merge : false
   overwrite : true
   parameters : Map {"stageNameText" = "dev", "environmentClassText" = "DEV", "emitCtx" = emitCtx()}
   /** Records or verifies results after execution. */
   post {
-    emitCtx().recordArtifact("env/dev.json", "ENVIRONMENT_CONFIG", "AWSPSM2ART_Default_Dev_Environment", Sequence{awsRoot()}, "OVERWRITE_GENERATED", Sequence{});
+    emitCtx().recordArtifact(emitCtx().defaultEnvironmentPath("dev"), "ENVIRONMENT_CONFIG", "AWSPSM2ART_Default_Dev_Environment", Sequence{awsRoot()}, "OVERWRITE_GENERATED", Sequence{});
   }
 }
 
 /** Generates artifacts or model elements for Test Environment File. */
 rule TestEnvironmentFile {
-  guard : not AWSPSMCORE!AwsStage.all.exists(stageObj | stageObj.envPath() = "env/test.json")
+  guard : not AWSPSMCORE!AwsStage.all.exists(stageObj | stageObj.envPath() = "infrastructure/environments/test.json")
   template : "infrastructure/default-env-json.egl"
-  target : "env/test.json"
+  target : emitCtx().defaultEnvironmentPath("test")
   merge : false
   overwrite : true
   parameters : Map {"stageNameText" = "test", "environmentClassText" = "TEST", "emitCtx" = emitCtx()}
   /** Records or verifies results after execution. */
   post {
-    emitCtx().recordArtifact("env/test.json", "ENVIRONMENT_CONFIG", "AWSPSM2ART_Default_Test_Environment", Sequence{awsRoot()}, "OVERWRITE_GENERATED", Sequence{});
+    emitCtx().recordArtifact(emitCtx().defaultEnvironmentPath("test"), "ENVIRONMENT_CONFIG", "AWSPSM2ART_Default_Test_Environment", Sequence{awsRoot()}, "OVERWRITE_GENERATED", Sequence{});
   }
 }
 
 /** Generates artifacts or model elements for Staging Environment File. */
 rule StagingEnvironmentFile {
-  guard : not AWSPSMCORE!AwsStage.all.exists(stageObj | stageObj.envPath() = "env/staging.json")
+  guard : not AWSPSMCORE!AwsStage.all.exists(stageObj | stageObj.envPath() = "infrastructure/environments/staging.json")
   template : "infrastructure/default-env-json.egl"
-  target : "env/staging.json"
+  target : emitCtx().defaultEnvironmentPath("staging")
   merge : false
   overwrite : true
   parameters : Map {"stageNameText" = "staging", "environmentClassText" = "STAGING", "emitCtx" = emitCtx()}
   /** Records or verifies results after execution. */
   post {
-    emitCtx().recordArtifact("env/staging.json", "ENVIRONMENT_CONFIG", "AWSPSM2ART_Default_Staging_Environment", Sequence{awsRoot()}, "OVERWRITE_GENERATED", Sequence{});
+    emitCtx().recordArtifact(emitCtx().defaultEnvironmentPath("staging"), "ENVIRONMENT_CONFIG", "AWSPSM2ART_Default_Staging_Environment", Sequence{awsRoot()}, "OVERWRITE_GENERATED", Sequence{});
   }
 }
 
 /** Generates artifacts or model elements for Prod Example Environment File. */
 rule ProdExampleEnvironmentFile {
-  guard : not AWSPSMCORE!AwsStage.all.exists(stageObj | stageObj.envPath() = "env/prod.example.json")
+  guard : not AWSPSMCORE!AwsStage.all.exists(stageObj | stageObj.envPath() = "infrastructure/environments/prod.example.json")
   template : "infrastructure/default-env-json.egl"
-  target : "env/prod.example.json"
+  target : emitCtx().defaultEnvironmentPath("prod.example")
   merge : false
   overwrite : true
   parameters : Map {"stageNameText" = "prod", "environmentClassText" = "PROD", "emitCtx" = emitCtx()}
   /** Records or verifies results after execution. */
   post {
-    emitCtx().recordArtifact("env/prod.example.json", "ENVIRONMENT_CONFIG", "AWSPSM2ART_Default_Prod_Example_Environment", Sequence{awsRoot()}, "OVERWRITE_GENERATED", Sequence{});
+    emitCtx().recordArtifact(emitCtx().defaultEnvironmentPath("prod.example"), "ENVIRONMENT_CONFIG", "AWSPSM2ART_Default_Prod_Example_Environment", Sequence{awsRoot()}, "OVERWRITE_GENERATED", Sequence{});
   }
 }
 
@@ -321,7 +381,6 @@ rule LambdaToHandler transform awsFn : AWSPSMCOMPUTE!AwsLambdaFunction {
       awsFn.manualRegionId("custom-imports"),
       awsFn.manualRegionId("custom-types"),
       awsFn.manualRegionId("custom-validation"),
-      awsFn.manualRegionId("business-logic"),
       awsFn.manualRegionId("custom-error-mapping")
     };
     emitCtx().recordArtifact(awsFn.handlerPath(emitCtx()), "LAMBDA_HANDLER", "AWSPSM2ART_Lambda_To_Handler", Sequence{awsFn}, "PRESERVE_PROTECTED_REGIONS", regionSeq);
@@ -451,56 +510,56 @@ rule SnsTopicToFixture transform topicObj : AWSPSMMESSAGING!SnsTopic {
 /** Generates artifacts or model elements for Api Schema Catalog. */
 rule ApiSchemaCatalog {
   template : "contracts/catalog-schema.egl"
-  target : "schemas/api/generated-api.schema.json"
+  target : "contracts/public/schemas/api/generated-api.schema.json"
   merge : false
   overwrite : true
-  parameters : Map {"schemaIdText" = "schemas/api/generated-api.schema.json", "schemaTitleText" = "Generated API Schema Catalog", "emitCtx" = emitCtx()}
+  parameters : Map {"schemaIdText" = "contracts/public/schemas/api/generated-api.schema.json", "schemaTitleText" = "Generated API Schema Catalog", "emitCtx" = emitCtx()}
   /** Records or verifies results after execution. */
-  post { emitCtx().recordArtifact("schemas/api/generated-api.schema.json", "JSON_SCHEMA", "AWSPSM2ART_Api_Schema_Catalog", Sequence{awsRoot()}, "OVERWRITE_GENERATED", Sequence{}); }
+  post { emitCtx().recordArtifact("contracts/public/schemas/api/generated-api.schema.json", "JSON_SCHEMA", "AWSPSM2ART_Api_Schema_Catalog", Sequence{awsRoot()}, "OVERWRITE_GENERATED", Sequence{}); }
 }
 
 /** Generates artifacts or model elements for Event Schema Catalog. */
 rule EventSchemaCatalog {
   template : "contracts/catalog-schema.egl"
-  target : "schemas/events/generated-event.schema.json"
+  target : "contracts/public/schemas/events/generated-event.schema.json"
   merge : false
   overwrite : true
-  parameters : Map {"schemaIdText" = "schemas/events/generated-event.schema.json", "schemaTitleText" = "Generated Event Schema Catalog", "emitCtx" = emitCtx()}
+  parameters : Map {"schemaIdText" = "contracts/public/schemas/events/generated-event.schema.json", "schemaTitleText" = "Generated Event Schema Catalog", "emitCtx" = emitCtx()}
   /** Records or verifies results after execution. */
-  post { emitCtx().recordArtifact("schemas/events/generated-event.schema.json", "JSON_SCHEMA", "AWSPSM2ART_Event_Schema_Catalog", Sequence{awsRoot()}, "OVERWRITE_GENERATED", Sequence{}); }
+  post { emitCtx().recordArtifact("contracts/public/schemas/events/generated-event.schema.json", "JSON_SCHEMA", "AWSPSM2ART_Event_Schema_Catalog", Sequence{awsRoot()}, "OVERWRITE_GENERATED", Sequence{}); }
 }
 
 /** Generates artifacts or model elements for Message Schema Catalog. */
 rule MessageSchemaCatalog {
   template : "contracts/catalog-schema.egl"
-  target : "schemas/messages/generated-message.schema.json"
+  target : "contracts/public/schemas/messages/generated-message.schema.json"
   merge : false
   overwrite : true
-  parameters : Map {"schemaIdText" = "schemas/messages/generated-message.schema.json", "schemaTitleText" = "Generated Message Schema Catalog", "emitCtx" = emitCtx()}
+  parameters : Map {"schemaIdText" = "contracts/public/schemas/messages/generated-message.schema.json", "schemaTitleText" = "Generated Message Schema Catalog", "emitCtx" = emitCtx()}
   /** Records or verifies results after execution. */
-  post { emitCtx().recordArtifact("schemas/messages/generated-message.schema.json", "JSON_SCHEMA", "AWSPSM2ART_Message_Schema_Catalog", Sequence{awsRoot()}, "OVERWRITE_GENERATED", Sequence{}); }
+  post { emitCtx().recordArtifact("contracts/public/schemas/messages/generated-message.schema.json", "JSON_SCHEMA", "AWSPSM2ART_Message_Schema_Catalog", Sequence{awsRoot()}, "OVERWRITE_GENERATED", Sequence{}); }
 }
 
 /** Generates artifacts or model elements for Error Schema Catalog. */
 rule ErrorSchemaCatalog {
   template : "contracts/catalog-schema.egl"
-  target : "schemas/errors/generated-error.schema.json"
+  target : "contracts/public/schemas/errors/generated-error.schema.json"
   merge : false
   overwrite : true
-  parameters : Map {"schemaIdText" = "schemas/errors/generated-error.schema.json", "schemaTitleText" = "Generated Error Schema Catalog", "emitCtx" = emitCtx()}
+  parameters : Map {"schemaIdText" = "contracts/public/schemas/errors/generated-error.schema.json", "schemaTitleText" = "Generated Error Schema Catalog", "emitCtx" = emitCtx()}
   /** Records or verifies results after execution. */
-  post { emitCtx().recordArtifact("schemas/errors/generated-error.schema.json", "JSON_SCHEMA", "AWSPSM2ART_Error_Schema_Catalog", Sequence{awsRoot()}, "OVERWRITE_GENERATED", Sequence{}); }
+  post { emitCtx().recordArtifact("contracts/public/schemas/errors/generated-error.schema.json", "JSON_SCHEMA", "AWSPSM2ART_Error_Schema_Catalog", Sequence{awsRoot()}, "OVERWRITE_GENERATED", Sequence{}); }
 }
 
 /** Generates artifacts or model elements for Data Schema Catalog. */
 rule DataSchemaCatalog {
   template : "contracts/catalog-schema.egl"
-  target : "schemas/data/generated-data.schema.json"
+  target : "contracts/public/schemas/data/generated-data.schema.json"
   merge : false
   overwrite : true
-  parameters : Map {"schemaIdText" = "schemas/data/generated-data.schema.json", "schemaTitleText" = "Generated Data Schema Catalog", "emitCtx" = emitCtx()}
+  parameters : Map {"schemaIdText" = "contracts/public/schemas/data/generated-data.schema.json", "schemaTitleText" = "Generated Data Schema Catalog", "emitCtx" = emitCtx()}
   /** Records or verifies results after execution. */
-  post { emitCtx().recordArtifact("schemas/data/generated-data.schema.json", "JSON_SCHEMA", "AWSPSM2ART_Data_Schema_Catalog", Sequence{awsRoot()}, "OVERWRITE_GENERATED", Sequence{}); }
+  post { emitCtx().recordArtifact("contracts/public/schemas/data/generated-data.schema.json", "JSON_SCHEMA", "AWSPSM2ART_Data_Schema_Catalog", Sequence{awsRoot()}, "OVERWRITE_GENERATED", Sequence{}); }
 }
 
 /** Generates artifacts or model elements for Structured Document Artifact. */
@@ -532,100 +591,100 @@ rule TestFixturesReadme {
 /** Generates artifacts or model elements for Shared Runtime Logger. */
 rule SharedRuntimeLogger {
   template : "lambda/shared-logger.egl"
-  target : "src/shared/logger." + emitCtx().sourceExtension()
+  target : emitCtx().platformRuntimePath("logger." + emitCtx().sourceExtension())
   merge : false
   overwrite : true
   parameters : Map {"awsRoot" = awsRoot(), "emitCtx" = emitCtx()}
   /** Records or verifies results after execution. */
-  post { emitCtx().recordArtifact("src/shared/logger." + emitCtx().sourceExtension(), "SHARED_RUNTIME", "AWSPSM2ART_SharedRuntimeLogger", Sequence{awsRoot()}, "OVERWRITE_GENERATED", Sequence{}); }
+  post { emitCtx().recordArtifact(emitCtx().platformRuntimePath("logger." + emitCtx().sourceExtension()), "PLATFORM_RUNTIME", "AWSPSM2ART_SharedRuntimeLogger", Sequence{awsRoot()}, "OVERWRITE_GENERATED", Sequence{}); }
 }
 
 /** Generates artifacts or model elements for Shared Runtime Tracer. */
 rule SharedRuntimeTracer {
   template : "lambda/shared-tracer.egl"
-  target : "src/shared/tracer." + emitCtx().sourceExtension()
+  target : emitCtx().platformRuntimePath("tracer." + emitCtx().sourceExtension())
   merge : false
   overwrite : true
   parameters : Map {"awsRoot" = awsRoot(), "emitCtx" = emitCtx()}
   /** Records or verifies results after execution. */
-  post { emitCtx().recordArtifact("src/shared/tracer." + emitCtx().sourceExtension(), "SHARED_RUNTIME", "AWSPSM2ART_SharedRuntimeTracer", Sequence{awsRoot()}, "OVERWRITE_GENERATED", Sequence{}); }
+  post { emitCtx().recordArtifact(emitCtx().platformRuntimePath("tracer." + emitCtx().sourceExtension()), "PLATFORM_RUNTIME", "AWSPSM2ART_SharedRuntimeTracer", Sequence{awsRoot()}, "OVERWRITE_GENERATED", Sequence{}); }
 }
 
 /** Generates artifacts or model elements for Shared Runtime Metrics. */
 rule SharedRuntimeMetrics {
   template : "lambda/shared-metrics.egl"
-  target : "src/shared/metrics." + emitCtx().sourceExtension()
+  target : emitCtx().platformRuntimePath("metrics." + emitCtx().sourceExtension())
   merge : false
   overwrite : true
   parameters : Map {"awsRoot" = awsRoot(), "emitCtx" = emitCtx()}
   /** Records or verifies results after execution. */
-  post { emitCtx().recordArtifact("src/shared/metrics." + emitCtx().sourceExtension(), "SHARED_RUNTIME", "AWSPSM2ART_SharedRuntimeMetrics", Sequence{awsRoot()}, "OVERWRITE_GENERATED", Sequence{}); }
+  post { emitCtx().recordArtifact(emitCtx().platformRuntimePath("metrics." + emitCtx().sourceExtension()), "PLATFORM_RUNTIME", "AWSPSM2ART_SharedRuntimeMetrics", Sequence{awsRoot()}, "OVERWRITE_GENERATED", Sequence{}); }
 }
 
 /** Generates artifacts or model elements for Shared Runtime Errors. */
 rule SharedRuntimeErrors {
   template : "lambda/shared-errors.egl"
-  target : "src/shared/errors." + emitCtx().sourceExtension()
+  target : emitCtx().platformRuntimePath("errors." + emitCtx().sourceExtension())
   merge : false
   overwrite : true
   parameters : Map {"awsRoot" = awsRoot(), "emitCtx" = emitCtx()}
   /** Records or verifies results after execution. */
-  post { emitCtx().recordArtifact("src/shared/errors." + emitCtx().sourceExtension(), "SHARED_RUNTIME", "AWSPSM2ART_SharedRuntimeErrors", Sequence{awsRoot()}, "OVERWRITE_GENERATED", Sequence{}); }
+  post { emitCtx().recordArtifact(emitCtx().platformRuntimePath("errors." + emitCtx().sourceExtension()), "PLATFORM_RUNTIME", "AWSPSM2ART_SharedRuntimeErrors", Sequence{awsRoot()}, "OVERWRITE_GENERATED", Sequence{}); }
 }
 
 /** Generates artifacts or model elements for Shared Runtime Validation. */
 rule SharedRuntimeValidation {
   template : "lambda/shared-validation.egl"
-  target : "src/shared/validation." + emitCtx().sourceExtension()
+  target : emitCtx().platformRuntimePath("validation." + emitCtx().sourceExtension())
   merge : false
   overwrite : true
   parameters : Map {"awsRoot" = awsRoot(), "emitCtx" = emitCtx()}
   /** Records or verifies results after execution. */
-  post { emitCtx().recordArtifact("src/shared/validation." + emitCtx().sourceExtension(), "SHARED_RUNTIME", "AWSPSM2ART_SharedRuntimeValidation", Sequence{awsRoot()}, "OVERWRITE_GENERATED", Sequence{}); }
+  post { emitCtx().recordArtifact(emitCtx().platformRuntimePath("validation." + emitCtx().sourceExtension()), "PLATFORM_RUNTIME", "AWSPSM2ART_SharedRuntimeValidation", Sequence{awsRoot()}, "OVERWRITE_GENERATED", Sequence{}); }
 }
 
 /** Generates artifacts or model elements for Shared Runtime Config. */
 rule SharedRuntimeConfig {
   template : "lambda/shared-config.egl"
-  target : "src/shared/config." + emitCtx().sourceExtension()
+  target : emitCtx().platformRuntimePath("config." + emitCtx().sourceExtension())
   merge : false
   overwrite : true
   parameters : Map {"awsRoot" = awsRoot(), "emitCtx" = emitCtx()}
   /** Records or verifies results after execution. */
-  post { emitCtx().recordArtifact("src/shared/config." + emitCtx().sourceExtension(), "SHARED_RUNTIME", "AWSPSM2ART_SharedRuntimeConfig", Sequence{awsRoot()}, "OVERWRITE_GENERATED", Sequence{}); }
+  post { emitCtx().recordArtifact(emitCtx().platformRuntimePath("config." + emitCtx().sourceExtension()), "PLATFORM_RUNTIME", "AWSPSM2ART_SharedRuntimeConfig", Sequence{awsRoot()}, "OVERWRITE_GENERATED", Sequence{}); }
 }
 
 /** Generates artifacts or model elements for Shared Runtime Idempotency. */
 rule SharedRuntimeIdempotency {
   template : "lambda/shared-idempotency.egl"
-  target : "src/shared/idempotency." + emitCtx().sourceExtension()
+  target : emitCtx().platformRuntimePath("idempotency." + emitCtx().sourceExtension())
   merge : true
   overwrite : true
   parameters : Map {"awsRoot" = awsRoot(), "emitCtx" = emitCtx()}
   /** Records or verifies results after execution. */
-  post { emitCtx().recordArtifact("src/shared/idempotency." + emitCtx().sourceExtension(), "SHARED_RUNTIME", "AWSPSM2ART_SharedRuntimeIdempotency", Sequence{awsRoot()}, "PRESERVE_PROTECTED_REGIONS", Sequence{awsRoot().manualRegionId("idempotency-key-derivation")}); }
+  post { emitCtx().recordArtifact(emitCtx().platformRuntimePath("idempotency." + emitCtx().sourceExtension()), "PLATFORM_RUNTIME", "AWSPSM2ART_SharedRuntimeIdempotency", Sequence{awsRoot()}, "PRESERVE_PROTECTED_REGIONS", Sequence{awsRoot().manualRegionId("idempotency-key-derivation")}); }
 }
 
 /** Generates artifacts or model elements for Shared Runtime Event Publisher. */
 rule SharedRuntimeEventPublisher {
   template : "lambda/shared-event-publisher.egl"
-  target : "src/shared/event-publisher." + emitCtx().sourceExtension()
+  target : emitCtx().platformRuntimePath("event-publisher." + emitCtx().sourceExtension())
   merge : false
   overwrite : true
   parameters : Map {"awsRoot" = awsRoot(), "emitCtx" = emitCtx()}
   /** Records or verifies results after execution. */
-  post { emitCtx().recordArtifact("src/shared/event-publisher." + emitCtx().sourceExtension(), "SHARED_RUNTIME", "AWSPSM2ART_SharedRuntimeEventPublisher", Sequence{awsRoot()}, "OVERWRITE_GENERATED", Sequence{}); }
+  post { emitCtx().recordArtifact(emitCtx().platformRuntimePath("event-publisher." + emitCtx().sourceExtension()), "PLATFORM_RUNTIME", "AWSPSM2ART_SharedRuntimeEventPublisher", Sequence{awsRoot()}, "OVERWRITE_GENERATED", Sequence{}); }
 }
 
 /** Generates artifacts or model elements for Shared Runtime Data Access. */
 rule SharedRuntimeDataAccess {
   template : "lambda/shared-data-access.egl"
-  target : "src/shared/data-access." + emitCtx().sourceExtension()
+  target : emitCtx().platformRuntimePath("data-access." + emitCtx().sourceExtension())
   merge : false
   overwrite : true
   parameters : Map {"awsRoot" = awsRoot(), "emitCtx" = emitCtx()}
   /** Records or verifies results after execution. */
-  post { emitCtx().recordArtifact("src/shared/data-access." + emitCtx().sourceExtension(), "SHARED_RUNTIME", "AWSPSM2ART_SharedRuntimeDataAccess", Sequence{awsRoot()}, "OVERWRITE_GENERATED", Sequence{}); }
+  post { emitCtx().recordArtifact(emitCtx().platformRuntimePath("data-access." + emitCtx().sourceExtension()), "PLATFORM_RUNTIME", "AWSPSM2ART_SharedRuntimeDataAccess", Sequence{awsRoot()}, "OVERWRITE_GENERATED", Sequence{}); }
 }
 
 /** Generates artifacts or model elements for Contract Tests. */

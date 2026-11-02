@@ -36,7 +36,7 @@ Before deployment, review:
 - `generated/reports/manual-actions.md`
 - `generated/reports/security-review.md`
 - `generated/reports/generation-report.md`
-- every protected region containing application-specific business logic
+- every service-owned application use-case stub that returns `NOT_IMPLEMENTED`
 
 Manual actions are intentional design decisions, not deployment-ready values.
 In particular, replace generated external-secret placeholder values before a
@@ -47,7 +47,7 @@ production deployment.
 Prerequisites are Docker, AWS CLI, AWS SAM CLI, Go 1.24, and `make`.
 
 ```powershell
-sam validate --lint --template-file .\template-<deployment-unit>.yaml
+sam validate --lint --template-file .\infrastructure\units\<deployment-unit>\template.yaml
 docker run --rm -v modriss-go-cache:/go/pkg/mod -v "${PWD}:/src" -w /src `
   -e GOPROXY=https://proxy.golang.org,direct -e GOSUMDB=off `
   golang:1.24-bookworm bash scripts/test.sh
@@ -59,7 +59,7 @@ docker run --rm -v modriss-go-cache:/go/pkg/mod -v "${PWD}:/src" -w /src `
 Validate every ASL definition:
 
 ```powershell
-Get-ChildItem .\asl\*.json | ForEach-Object {
+Get-ChildItem .\services\*\workflows\*.json | ForEach-Object {
   aws --endpoint-url http://localhost:4566 stepfunctions `
     validate-state-machine-definition --definition file://$($_.FullName)
 }
@@ -75,10 +75,10 @@ $env:AWS_ENDPOINT_URL='http://localhost:4566'
 $env:NO_PROXY='localhost,127.0.0.1'
 
 aws --endpoint-url http://localhost:4566 s3 mb s3://modriss-sam-artifacts
-sam build --template-file .\template-<deployment-unit>.yaml
-sam package --template-file .\.aws-sam\build\template.yaml `
+sam build --template-file .\infrastructure\units\<deployment-unit>\template.yaml --config-file ..\..\samconfig.toml
+sam package --template-file .\.aws-sam\build\template.yaml --config-file ..\..\infrastructure\samconfig.toml `
   --s3-bucket modriss-sam-artifacts --output-template-file packaged.yaml
-sam deploy --template-file packaged.yaml --stack-name <stack-name> `
+sam deploy --template-file packaged.yaml --config-file .\infrastructure\samconfig.toml --stack-name <stack-name> `
   --region us-east-1 --capabilities CAPABILITY_IAM `
   --s3-bucket modriss-sam-artifacts --no-confirm-changeset
 ```
@@ -109,7 +109,7 @@ Concrete release checks:
 ```powershell
 # Lambda executes the packaged generated binary.
 aws --endpoint-url http://localhost:4566 lambda invoke `
-  --function-name <function-name> --payload fileb://events/samples/<event>.json response.json
+  --function-name <function-name> --payload fileb://services/<service>/contracts/events/samples/<event>.json response.json
 
 # Workflow starts and reaches the expected terminal state.
 $run = aws --endpoint-url http://localhost:4566 stepfunctions start-execution `
@@ -125,7 +125,7 @@ aws --endpoint-url http://localhost:4566 sns publish `
 
 # DynamoDB accepts and returns a record using the modeled key.
 aws --endpoint-url http://localhost:4566 dynamodb put-item `
-  --table-name <table> --item file://events/samples/<item>.json
+  --table-name <table> --item file://services/<service>/contracts/events/samples/<item>.json
 aws --endpoint-url http://localhost:4566 dynamodb scan --table-name <table>
 ```
 
@@ -133,11 +133,11 @@ Call each API route using its deployed API ID and stage, and verify both a valid
 request and a deliberately invalid request. Also inspect CloudWatch logs and
 CloudFormation stack events after every test.
 
-Before protected-region business logic is implemented, a generated Lambda
+Before a service-owned application use case is implemented, its generated stub
 deliberately returns `NOT_IMPLEMENTED`; a workflow may consequently stop at a
 Choice state because no business decision value was produced. That proves
 deployment and invocation, but a successful business-path test requires the
-protected logic and representative input.
+application implementation and representative input.
 
 ## 6. Real AWS Promotion
 

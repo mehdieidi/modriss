@@ -1,0 +1,3 @@
+[% /* Creates an initial service-layer note that generation never overwrites. */ %]# [%= serviceObj.name %] · [%= layerText %]
+
+This directory is owned by the [%= serviceObj.name %] service. Add service-specific implementation here. The generator creates this note only when it is absent.

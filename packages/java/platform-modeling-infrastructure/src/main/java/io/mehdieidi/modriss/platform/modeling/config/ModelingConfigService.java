@@ -364,6 +364,7 @@ public final class ModelingConfigService {
       List<String> configuredPalette = objectStringList(view.get("palette"));
       List<String> configuredCanvas = objectStringList(view.get("canvas"));
       List<String> scopeTypes = objectStringList(view.get("scopeTypes"));
+      boolean includeSubtypes = Boolean.TRUE.equals(view.get("includeSubtypes"));
       LinkedHashSet<String> relatedTypes =
           new LinkedHashSet<>(
               view.containsKey("canvas")
@@ -381,10 +382,13 @@ public final class ModelingConfigService {
                             && paletteEntryTypeAllowed(elementsByType.get(type))))
             .forEach(palette::add);
         relatedTypes.removeIf(
-            type ->
-                !standalonePaletteElement(elementsByType.get(type), standalonePaletteRoles)
-                    && !(scopeTypes.contains(type)
-                        && scopedCanvasElement(elementsByType.get(type))));
+            type -> {
+              if (includeSubtypes && isAbstractSubtypeFilter(type, elementsByType)) {
+                return false;
+              }
+              return !standalonePaletteElement(elementsByType.get(type), standalonePaletteRoles)
+                  && !(scopeTypes.contains(type) && scopedCanvasElement(elementsByType.get(type)));
+            });
       } else if (!configuredPalette.isEmpty()) {
         for (String type : configuredPalette) {
           Map<String, Object> element = elementsByType.get(type);
@@ -768,6 +772,19 @@ public final class ModelingConfigService {
       }
     }
     return result.isEmpty() ? List.of(expectedType) : result;
+  }
+
+  /** Preserves abstract canvas filters when the view explicitly requests their subtypes. */
+  private boolean isAbstractSubtypeFilter(
+      String type, Map<String, Map<String, Object>> elementsByType) {
+    Map<String, Object> element = elementsByType.get(type);
+    if (element == null || !Boolean.TRUE.equals(element.get("abstract"))) {
+      return false;
+    }
+    return elementsByType.values().stream()
+        .anyMatch(
+            candidate ->
+                !Boolean.TRUE.equals(candidate.get("abstract")) && typeMatches(type, candidate));
   }
 
   private boolean containmentPaletteElement(

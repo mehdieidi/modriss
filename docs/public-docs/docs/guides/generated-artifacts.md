@@ -29,12 +29,33 @@ Inspect at least:
 
 Manual actions are intentional. They identify decisions that should not be guessed by a generator.
 
+## Generated layout
+
+The generated file tree carries the ownership modeled in the PSM:
+
+- `services/<service>/` contains each service's Lambda entry points, API and event contracts,
+  workflows, tests, create-once application use-case stubs, and `internal/domain` and adapter notes.
+- `platform/runtime/` contains cross-cutting runtime support and low-level AWS SDK helpers.
+- `infrastructure/units/<deployment-unit>/template.yaml` contains a PIM-generated deployment
+  unit; stage files and SAM defaults live under `infrastructure/` as well.
+- `contracts/public/` contains system-wide contract catalogs, while project-wide contract and E2E
+  tests remain under `tests/`.
+
+The PIM-to-AWS transformation retains `ServerlessService` as a first-class AWS PSM element and
+links owned AWS resources to it. A resource without modeled service ownership uses the `application`
+directory. SAM stacks remain owned by deployment units, independently of service ownership. Explicit
+template paths in a hand-authored PSM remain authoritative.
+
+Service-layer notes and application use-case files use `CREATE_IF_ABSENT` ownership: generation
+creates each file once and keeps later developer edits on regeneration. Generated Lambda adapters,
+templates, contracts, and runtime artifacts remain generator-owned.
+
 ## Validate and Test
 
 Generated projects may require Docker, AWS CLI, AWS SAM CLI, Go 1.24, and `make`.
 
 ```powershell
-sam validate --lint --template-file .\template-<deployment-unit>.yaml
+sam validate --lint --template-file .\infrastructure\units\<deployment-unit>\template.yaml
 docker run --rm -v modriss-go-cache:/go/pkg/mod -v "${PWD}:/src" -w /src `
   golang:1.24-bookworm bash scripts/test.sh
 docker run --rm -v modriss-go-cache:/go/pkg/mod -v "${PWD}:/src" -w /src `
@@ -46,7 +67,7 @@ Validate every generated Step Functions ASL definition before deployment.
 ## Deploy to the local AWS emulator
 
 Start the MODRISS stack with Floci (or select LocalStack), configure test AWS credentials, create an artifact bucket,
-then run SAM build, package, and deploy for each generated deployment-unit template.
+then run `scripts/build.sh`, `scripts/package.sh`, and `scripts/deploy.sh` for each generated deployment unit. The scripts read templates from `infrastructure/units/`, stage files from `infrastructure/environments/`, and SAM defaults from `infrastructure/samconfig.toml`.
 
 Success criteria include:
 
@@ -57,8 +78,9 @@ Success criteria include:
 - DynamoDB, SQS, SNS, and EventBridge interactions behave as modeled.
 - Logs and stack events are inspectable.
 
-Generated handlers may intentionally return `NOT_IMPLEMENTED` until protected business logic is
-completed. That proves packaging and invocation, not business-path correctness.
+Generated handlers delegate to service-owned application functions. The generated application stub
+returns `NOT_IMPLEMENTED` until its use case is implemented. That proves packaging and invocation,
+not business-path correctness.
 
 ## Promote to AWS
 

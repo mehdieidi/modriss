@@ -1,4 +1,4 @@
-[% /* Generates the shared event publisher artifact. */ %]package shared
+[% /* Generates the shared event publisher artifact. */ %]package runtime
 
 import "context"
 

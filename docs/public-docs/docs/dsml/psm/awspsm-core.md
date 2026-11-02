@@ -1,6 +1,6 @@
 # PSM - Core and SAM
 
-Core classes provide the CloudFormation/SAM vocabulary shared by every AWS service resource, including logical IDs, tags, parameters, expressions, and lifecycle controls.
+Core classes provide the CloudFormation/SAM vocabulary shared by every AWS service resource, including logical IDs, tags, parameters, expressions, and lifecycle controls. `AwsService` records business ownership independently from `SamStack`, which records deployment ownership.
 
 Source: `methodology/modeling-framework/metamodels/psm/awspsm-core.emf`.
 
@@ -36,7 +36,31 @@ Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilit
 | `overrides` → `NativeProperty`     | containment, [*]                                | Explicit provider-property overrides applied after the model's normal resource mapping.                                                                                               |
 | `importDetails` → `ResourceImport` | containment, [?]                                | Ownership and identity details for a resource managed outside this model.                                                                                                             |
 | `stack` → `SamStack`               | reference; read-only, [?]; opposite `resources` | The SAM stack that owns and deploys this resource.                                                                                                                                    |
+| `service` → `AwsService`           | reference, [?]; opposite `resources`            | The business service that owns this resource. It is independent from `stack`, so one service may span deployment units.                                                               |
 | `dependsOn` → `AwsResource`        | reference, [*]                                  | The `dependsOn` reference on `AwsResource` records prerequisites among requirements. An `AwsResource` can remain independently owned and can participate in other parts of the model. |
+
+## `AwsService`
+
+A first-class business service boundary in the AWS PSM. It preserves service identity, ownership, capability, exposure, and data responsibility while deployment resources remain contained by their `SamStack` deployment unit.
+
+Direct supertypes: `TraceableElement`. Inherited attributes and marker capabilities are documented in the [kernel](../shared-kernel.md); this section lists every attribute declared by this class.
+
+### Declared attributes
+
+| Attribute               | Type and multiplicity | Meaning                                                    | Example                      |
+| ----------------------- | --------------------- | ---------------------------------------------------------- | ---------------------------- |
+| `responsibility`        | `String` [?]          | The service's business responsibility.                     | `Order lifecycle management` |
+| `ownerTeam`             | `String` [?]          | The team accountable for the service.                      | `Commerce Platform`          |
+| `businessCapabilityRef` | `String` [?]          | A reference to the owning business capability.             | `Order Management`           |
+| `externallyExposed`     | `Boolean` [?]         | Whether the service exposes an external interface.         | `true`                       |
+| `ownsData`              | `Boolean` [?]         | Whether the service owns persistent business data.         | `true`                       |
+| `boundaryType`          | `String` [?]          | The service boundary classification retained from the PIM. | `DOMAIN_SERVICE`             |
+
+### Relationships
+
+| Relationship                | Kind and multiplicity              | Meaning                                                                                                                        |
+| --------------------------- | ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| `resources` → `AwsResource` | reference, [*]; opposite `service` | The AWS resources owned by this business service. Each resource remains deployed through its independent `SamStack` reference. |
 
 ## `AwsTag`
 

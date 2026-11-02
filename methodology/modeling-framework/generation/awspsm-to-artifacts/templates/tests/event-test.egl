@@ -4,16 +4,17 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
 func TestGeneratedEventSamplesParse(t *testing.T) {
-	rootText := "../../events/samples"
+	rootText := "../../services"
 	if _, err := os.Stat(rootText); err != nil {
 		return
 	}
 	err := filepath.WalkDir(rootText, func(pathText string, entryObj os.DirEntry, walkErr error) error {
-		if walkErr != nil || entryObj.IsDir() || filepath.Ext(pathText) != ".json" {
+		if walkErr != nil || entryObj.IsDir() || filepath.Ext(pathText) != ".json" || !strings.Contains(filepath.ToSlash(pathText), "/contracts/events/samples/") {
 			return walkErr
 		}
 		encodedBytes, err := os.ReadFile(pathText)

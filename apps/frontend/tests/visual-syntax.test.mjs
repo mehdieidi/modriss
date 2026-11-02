@@ -5,8 +5,8 @@ globalThis.window = { location: { origin: "http://localhost" }, addEventListener
 globalThis.document = { getElementById: () => null, addEventListener() {} };
 
 const { state } = await import("../js/state.js");
-const { ensureViewContent, installGraphAndViews, refreshViewContent, selectElementIdsForView } = await import("../js/graph-store.js");
-const { modelingViewDefinition } = await import("../js/modeling-config-data.js");
+const { ensureViewContent, installGraphAndViews, refreshViewContent, selectElementIdsForView, selectRelationshipIdsForView } = await import("../js/graph-store.js");
+const { initializeModelingRuntimeState, modelingViewDefinition } = await import("../js/modeling-config-data.js");
 
 beforeEach(() => {
   state.activeType = "cim";
@@ -25,6 +25,7 @@ beforeEach(() => {
     },
   };
   state.tabs = { cim: {} };
+  initializeModelingRuntimeState(state.modelingConfig.config);
 });
 
 function savedView(extra = {}) {
@@ -117,6 +118,106 @@ test("refreshing the active configured view preserves hidden elements and explic
   assert.equal(updated.nodes[0].elementId, "requirement");
   assert.equal(updated.nodes[0].x, 500);
   assert.equal(updated.nodes[0].y, 100);
+});
+
+test("service ownership surfaces service roots and only resources linked to them", () => {
+  state.activeType = "psm";
+  state.modelingConfig.config = {
+    levelOrder: ["psm"],
+    levels: {
+      psm: {
+        rootTemplate: { eClass: "AwsPsmModel", modelLevel: "AWS_PSM" },
+        workbench: { defaultViewDefinitionId: "psm-service-ownership" },
+        relationshipSemantics: { containmentKind: "CONTAINS", containmentKinds: ["CONTAINS"] },
+        elements: [
+          { type: "AwsPsmModel" },
+          { type: "AwsService" },
+          { type: "AwsResource", abstract: true },
+          { type: "AwsLambdaFunction", supertypes: ["AwsResource"] },
+        ],
+        views: [
+          {
+            id: "psm-service-ownership",
+            displayName: "Service Ownership",
+            palette: ["AwsService"],
+            canvas: ["AwsService"],
+            viewEntryTypes: ["AwsService", "AwsResource"],
+            includeSubtypes: true,
+            relationshipKinds: ["SERVICE_OWNERSHIP"],
+            restrictPaletteToView: true,
+          },
+        ],
+      },
+    },
+  };
+  initializeModelingRuntimeState(state.modelingConfig.config);
+
+  const { graph, views } = installGraphAndViews(
+    "psm",
+    {
+      name: "Example",
+      eClass: "AwsPsmModel",
+      graph: {
+        elements: [
+          { id: "service-a", eClass: "AwsService" },
+          { id: "owned-function", eClass: "AwsLambdaFunction" },
+          { id: "unowned-function", eClass: "AwsLambdaFunction" },
+        ],
+        relationships: [
+          {
+            id: "ownership-link",
+            kind: "SERVICE_OWNERSHIP",
+            sourceElementId: "owned-function",
+            targetElementId: "service-a",
+          },
+        ],
+      },
+      views: [
+        {
+          id: "view-psm-psm-service-ownership-global",
+          name: "Service Ownership",
+          level: "AWS_PSM",
+          kind: "SERVICE_OWNERSHIP",
+          definitionId: "psm-service-ownership",
+          scope: { scopeKind: "MODEL" },
+          filters: { elementTypes: ["AwsService", "AwsResource"], relationshipKinds: ["SERVICE_OWNERSHIP"] },
+          palette: ["AwsService"],
+          canvas: ["AwsService", "AwsResource"],
+          nodes: [
+            { elementId: "service-a", x: 100, y: 100 },
+            { elementId: "owned-function", x: 400, y: 100 },
+            { elementId: "unowned-function", x: 700, y: 100 },
+          ],
+          edges: [{ relationshipId: "ownership-link", visible: true }],
+          autoLayoutApplied: true,
+          layoutGeometryVersion: 3,
+        },
+      ],
+    },
+    "Example",
+    { skipFragments: true, skipClientLayout: true },
+  );
+  const view = views.byId.get("view-psm-psm-service-ownership-global");
+  ensureViewContent(view, "psm", { skipClientLayout: true });
+
+  assert.deepEqual(
+    selectElementIdsForView(graph, view, "psm").sort(),
+    ["owned-function", "service-a"],
+  );
+  assert.deepEqual(
+    view.nodes.map((node) => node.elementId).sort(),
+    ["owned-function", "service-a"],
+  );
+  assert.equal(view.autoLayoutApplied, false);
+  assert.deepEqual(
+    selectRelationshipIdsForView(
+      graph,
+      view,
+      selectElementIdsForView(graph, view, "psm"),
+      "psm",
+    ),
+    ["ownership-link"],
+  );
 });
 
 test("saved user viewpoints retain their own name and filters", () => {

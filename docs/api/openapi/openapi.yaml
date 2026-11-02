@@ -4937,7 +4937,8 @@ components:
           $ref: "#/components/schemas/AdminOverview"
     ArtifactSummary:
       type: object
-      required: [id, projectId, name, cloudProviderId, filePaths, directoryPaths, createdAt, updatedAt]
+      required:
+        [id, projectId, name, cloudProviderId, filePaths, directoryPaths, createdAt, updatedAt]
       properties:
         id: { type: string }
         projectId: { type: string }

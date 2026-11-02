@@ -1,4 +1,4 @@
-[% /* Generates a reusable DynamoDB SDK client when the PSM contains DynamoDB tables. */ %]package shared
+[% /* Generates a reusable DynamoDB SDK client when the PSM contains DynamoDB tables. */ %]package runtime
 
 import (
 	"context"

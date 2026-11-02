@@ -211,12 +211,20 @@ operation AWSPSMCORE!AwsStage stageSlug() : String {
 /** Computes stack template path. */
 operation AWSPSMCORE!SamStack stackTemplatePath() : String {
   if (self.templatePath.isPresent()) {
-    if (self.generatedByTransformation.isDefined() and self.generatedByTransformation and self.templatePath.length() > 48 and self.templatePath.startsWith("template-") and not self.templatePath.contains("/") and not self.templatePath.contains("\\")) {
-      return artifactPathNaming.preservePath("template-" + self.stackSlug() + ".yaml", self.templatePath, self.stableKey(), "SAM_TEMPLATE");
+    if (self.generatedByTransformation.isDefined() and self.generatedByTransformation and self.templatePath.startsWith("template-") and not self.templatePath.contains("/") and not self.templatePath.contains("\\")) {
+      return artifactPathNaming.preservePath("infrastructure/units/" + self.stackSlug() + "/template.yaml", self.templatePath, self.stableKey(), "SAM_TEMPLATE");
     }
     return self.templatePath;
   }
-  return "template.yaml";
+  return "infrastructure/units/" + self.stackSlug() + "/template.yaml";
+}
+
+/** Computes the SAM configuration path relative to a unit template. */
+operation AWSPSMCORE!SamStack samConfigPathFromTemplate() : String {
+  if (self.stackTemplatePath().startsWith("infrastructure/units/")) {
+    return "../../samconfig.toml";
+  }
+  return "infrastructure/samconfig.toml";
 }
 
 /** Computes display name. */

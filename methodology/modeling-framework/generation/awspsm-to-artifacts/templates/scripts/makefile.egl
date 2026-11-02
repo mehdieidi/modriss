@@ -31,7 +31,7 @@ local-invoke:
 
 [% for (awsFn in AWSPSMCOMPUTE!AwsLambdaFunction.all.sortBy(awsFn | awsFn.cfnLogicalId())) { %]
 build-[%= awsFn.cfnLogicalId() %]:
-	GOFLAGS=-mod=mod GOOS=linux GOARCH=[%= awsFn.goBuildArchitectureText() %] go build -o "$(ARTIFACTS_DIR)/[%= awsFn.generatedHandlerName(emitCtx) %]" "./src/functions/[%= awsFn.functionPathSegment(emitCtx) %]"
+	GOFLAGS=-mod=mod GOOS=linux GOARCH=[%= awsFn.goBuildArchitectureText() %] go build -o "$(ARTIFACTS_DIR)/[%= awsFn.generatedHandlerName(emitCtx) %]" "./[%= awsFn.sourcePath() %]"
 
 [% } %]
 [%=out.startPreserve("#", "", awsRoot.manualRegionId("makefile-customizations"), true)%]

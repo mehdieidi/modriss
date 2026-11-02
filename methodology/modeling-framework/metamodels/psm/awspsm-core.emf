@@ -30,7 +30,20 @@ abstract class AwsResource extends kernel.TraceableElement {
 	val ResourceImport[?] importDetails;
 
 	readonly transient ref SamStack[?]#resources stack;
+	ref AwsService[?]#resources                  service;
 	ref AwsResource[*]                           dependsOn;
+}
+
+/** Business service ownership remains independent from CloudFormation stack containment. */
+class AwsService extends kernel.TraceableElement {
+	attr String  responsibility;
+	attr String  ownerTeam;
+	attr String  businessCapabilityRef;
+	attr Boolean externallyExposed;
+	attr Boolean ownsData;
+	attr String  boundaryType;
+
+	ref AwsResource[*]#service resources;
 }
 
 class AwsTag extends kernel.TraceableElement {

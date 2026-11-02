@@ -1,13 +1,13 @@
 [% /* Generates the readme artifact. */ %]# [%= emitCtx.get("projectName") %]
 
-Generated AWS serverless project from the PSM model.
+Generated AWS serverless project from the PSM model. Implement the service-owned application use cases under `services/<service>/internal/application` before exercising modeled business flows.
 
 ## Generated Commands
 
 - `make validate` validates generated model reports, contracts, and SAM template.
 - `make build` builds generated source.
 - `make test` runs generated tests.
-- `make deploy STAGE=[%= emitCtx.get("defaultStageName") %]` deploys with `samconfig.toml`.
+- `make deploy STAGE=[%= emitCtx.get("defaultStageName") %]` deploys with `infrastructure/samconfig.toml`.
 - `source scripts/emulator-env.sh` selects the local Floci/LocalStack endpoint for CLI and SDK tests.
 
 ## Local AWS emulator
@@ -19,9 +19,13 @@ then source `scripts/emulator-env.sh` before `make test` or local SAM commands. 
 
 ## Project Layout
 
-- `template.yaml` contains SAM/CloudFormation resources.
-- `src/functions` contains generated Lambda entry points with protected business-logic regions.
-- `src/shared` contains generated runtime support for logging, tracing, metrics, validation, idempotency, config, event publication, and data access.
+- `services/<service>/cmd/<function>` contains each service-owned Lambda entry point.
+- `services/<service>/contracts`, `workflows`, and `tests` keep interfaces and verification beside their owning service.
+- `services/<service>/internal` contains service-owned domain, application, and adapter scaffolds. The generator creates the notes and Lambda use-case stubs once, then leaves those files to developers.
+- `platform/runtime` contains generated cross-cutting runtime support and low-level AWS SDK helpers. Service-specific domain and adapter code belongs under the owning service's `internal` tree.
+- `contracts/public/schemas` contains system-wide generated schema catalogs.
+- `infrastructure/units/<deployment-unit>/template.yaml` contains each generated SAM/CloudFormation template.
+- `infrastructure/environments` contains stage configuration; `infrastructure/samconfig.toml` contains SAM CLI defaults.
 - `docs` contains generated architecture, operations, deployment, security, and runbook documentation.
 - `generated` contains traceability and generation reports.
 
@@ -37,7 +41,7 @@ are silently dropped or altered. SQL relationships/foreign keys require explicit
 than being inferred from similarly named fields.
 
 Generated functions receive `<STORE_PREFIX>_RESOURCE_ARN`, `<STORE_PREFIX>_SECRET_ARN`, and
-`<STORE_PREFIX>_DATABASE`. `shared.NewRelationalStore(ctx, "<STORE_PREFIX>")` loads these values;
+`<STORE_PREFIX>_DATABASE`. `runtime.NewRelationalStore(ctx, "<STORE_PREFIX>")` loads these values;
 its `Execute` method accepts SDK `SqlParameter` values and an optional transaction ID. Use
 `WithTransaction` for operations that must commit together. Business handlers still need their
 business logic. Credentials are generated outside source; review application database users/grants

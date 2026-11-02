@@ -4,7 +4,7 @@ set -euo pipefail
 stage_text="${1:-[%= emitCtx.get("defaultStageName") %]}"
 template_path="${2:-}"
 if [[ -z "$template_path" ]]; then
-  mapfile -t api_templates < <(grep -l "Type: AWS::Serverless::Api" template*.yaml | sort)
+  mapfile -t api_templates < <(grep -l "Type: AWS::Serverless::Api" infrastructure/units/*/template*.yaml template*.yaml 2>/dev/null | sort)
   if [[ "${#api_templates[@]}" -ne 1 ]]; then
     echo "Multiple API templates exist. Usage: scripts/local-start-api.sh <stage> <template-path>" >&2
     printf '  %s\n' "${api_templates[@]}" >&2
@@ -12,9 +12,11 @@ if [[ -z "$template_path" ]]; then
   fi
   template_path="${api_templates[0]}"
 fi
-build_dir=".aws-sam/local-api-$(basename "$template_path" .yaml)"
-sam build --template-file "$template_path" --build-dir "$build_dir"
-sam local start-api --template "$build_dir/template.yaml" --env-vars "env/${stage_text}.json"
+build_dir=".aws-sam/local-api-$(basename "$(dirname "$template_path")")"
+sam_config_file="infrastructure/samconfig.toml"
+if [[ "$template_path" == infrastructure/units/* ]]; then sam_config_file="../../samconfig.toml"; fi
+sam build --config-file "$sam_config_file" --template-file "$template_path" --build-dir "$build_dir"
+sam local start-api --config-file "../../infrastructure/samconfig.toml" --template "$build_dir/template.yaml" --env-vars "infrastructure/environments/${stage_text}.json"
 
 [%=out.startPreserve("#", "", awsRoot.manualRegionId("local-start-api-customizations"), true)%]
 # Add local API options here.

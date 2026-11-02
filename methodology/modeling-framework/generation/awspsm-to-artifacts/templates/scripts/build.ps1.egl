@@ -17,7 +17,7 @@ $env:GOARCH = 'arm64'
 [% } else { %]
 $env:GOARCH = 'amd64'
 [% } %]
-& go build -o 'bin/[%= awsFn.functionPathSegment(emitCtx) %]/bootstrap' './src/functions/[%= awsFn.functionPathSegment(emitCtx) %]'
+& go build -o 'bin/[%= awsFn.functionPathSegment(emitCtx) %]/bootstrap' './[%= awsFn.sourcePath() %]'
 if ($LASTEXITCODE -ne 0) { throw 'Go build failed for [%= awsFn.cfnLogicalId() %].' }
 [% } %]
 

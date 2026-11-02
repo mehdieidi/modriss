@@ -574,6 +574,10 @@ public final class EpsilonEtlExecutor {
                 null,
                 org.eclipse.epsilon.eol.types.EolAnyType.Instance),
             new Variable(
+                "cachedPimServiceIdByElementId",
+                null,
+                org.eclipse.epsilon.eol.types.EolAnyType.Instance),
+            new Variable(
                 "cachedPimOwnerTeamByElementId",
                 null,
                 org.eclipse.epsilon.eol.types.EolAnyType.Instance),

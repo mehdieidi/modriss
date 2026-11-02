@@ -1887,9 +1887,14 @@ function paletteTypesForActiveView() {
   if (entryPalette !== null) {
     return entryPalette;
   }
-  return availableConfiguredPaletteTypes(
+  const available = availableConfiguredPaletteTypes(
     modelingCanvasPaletteTypes(state.activeType, { ownerType: null }),
   ).filter((type) => type !== modelingRootType(state.activeType));
+  if (definition?.restrictPaletteToView) {
+    const viewPalette = new Set(safeArray(definition.palette).map(String));
+    return available.filter((type) => viewPalette.has(type));
+  }
+  return available;
 }
 
 function paletteEmptyHint() {

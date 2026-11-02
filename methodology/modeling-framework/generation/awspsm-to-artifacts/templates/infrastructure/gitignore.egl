@@ -5,7 +5,7 @@ build/
 *.log
 *.zip
 .env
-env/prod.json
+infrastructure/environments/prod.json
 generated/tmp/
 
 [%=out.startPreserve("#", "", awsRoot.manualRegionId("gitignore"), true)%]

@@ -168,7 +168,11 @@ class PsmExtensionServiceTest {
         regeneratedArtifact.files().get("functions/custom/notes.txt"),
         "Custom-provider regeneration must preserve manually added files.");
     assertTrue(
-        regeneratedArtifact.modelJson().path("directories").toString().contains("functions/custom"));
+        regeneratedArtifact
+            .modelJson()
+            .path("directories")
+            .toString()
+            .contains("functions/custom"));
 
     // Runtime value conforms to Ecore but violates EVL; ordinary saves must still succeed.
     var changed =

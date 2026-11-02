@@ -7,7 +7,7 @@ import (
 )
 
 func Test[%= stateMachineObj.cfnLogicalId() %]ASLIsValidJSON(t *testing.T) {
-	encodedBytes, err := os.ReadFile("../../[%= stateMachineObj.aslPath() %]")
+	encodedBytes, err := os.ReadFile("[%= stateMachineObj.workflowTestAslRelativePath() %]")
 	if err != nil {
 		t.Fatalf("ASL file should be readable: %v", err)
 	}

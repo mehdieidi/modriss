@@ -137,6 +137,7 @@
     "CONTAINS",
     "DEPENDS_ON",
     "DEPLOYS",
+    "SERVICE_OWNERSHIP",
     "DEPLOYS_TO",
     "ROUTES_TO",
     "INVOKES",
@@ -168,6 +169,7 @@
     "CONTAINS": "contains",
     "DEPENDS_ON": "depends on",
     "DEPLOYS": "deploys",
+    "SERVICE_OWNERSHIP": "owned by",
     "DEPLOYS_TO": "deploys to",
     "ROUTES_TO": "routes to",
     "INVOKES": "invokes",
@@ -190,6 +192,15 @@
     "ENCRYPTED_BY": "encrypted by"
   },
   "relationshipVisualRules": [
+    {
+      "matchKinds": ["SERVICE_OWNERSHIP"],
+      "className": "edge-service-ownership",
+      "stroke": {
+        "light": "#7c3aed",
+        "dark": "#a78bfa"
+      },
+      "lineWidth": 2.4
+    },
     {
       "matchKinds": ["CONTAINS", "DEPLOYS", "DEPLOYS_TO"],
       "className": "edge-domain-ownership",
@@ -273,6 +284,12 @@
       "targetType": "AwsResource",
       "feature": "dependsOn",
       "kind": "DEPENDS_ON"
+    },
+    {
+      "sourceType": "AwsResource",
+      "targetType": "AwsService",
+      "feature": "service",
+      "kind": "SERVICE_OWNERSHIP"
     },
     {
       "sourceType": "ApiGatewayApi",
@@ -1060,6 +1077,7 @@
     "name": "",
     "stages": [],
     "stacks": [],
+    "services": [],
     "relationshipViews": [],
     "diagram": {
       "elements": [],
@@ -1087,6 +1105,19 @@
     "productionMode": false,
     "summary": "Mandatory-valid starter model for assisted PSM modeling.",
     "rationale": "Created as the initial bounded context for assistant changes.",
+    "services": [
+      {
+        "id": "${safe:modelName-order-service}",
+        "name": "Order Service",
+        "eClass": "AwsService",
+        "responsibility": "Owns the model's application data and operations.",
+        "ownerTeam": "REVIEW_REQUIRED_OWNER_TEAM",
+        "businessCapabilityRef": "Order Management",
+        "externallyExposed": true,
+        "ownsData": true,
+        "boundaryType": "DOMAIN_SERVICE"
+      }
+    ],
     "stages": [
       {
         "id": "${safe:modelName-dev-stage}",
@@ -1125,6 +1156,7 @@
             "productionCritical": false,
             "retainInProduction": false,
             "bucketName": "${safe:modelName-artifacts}",
+            "service": "${safe:modelName-order-service}",
             "versioningStatus": "ENABLED",
             "objectLockEnabled": false,
             "transferAccelerationEnabled": false,
@@ -1508,6 +1540,33 @@
         "dark": "#2dd4bf"
       },
       "category": "CloudFormation / SAM"
+    },
+    {
+      "type": "AwsService",
+      "label": "Application Service",
+      "displayName": "Application Service",
+      "icon": "groups",
+      "color": {
+        "light": "#7c3aed",
+        "dark": "#a78bfa"
+      },
+      "category": "Service Ownership",
+      "creatable": true,
+      "visibleFields": [
+        "name",
+        "responsibility",
+        "ownerTeam",
+        "businessCapabilityRef",
+        "externallyExposed",
+        "ownsData",
+        "boundaryType"
+      ],
+      "notation": {
+        "tag": "SVC",
+        "shape": "resource-card",
+        "lineFields": ["responsibility", "ownerTeam"],
+        "detailFields": ["responsibility", "ownerTeam", "businessCapabilityRef", "boundaryType"]
+      }
     },
     {
       "type": "AwsResource",
@@ -4915,6 +4974,7 @@
       "palette": [
         "AwsStage",
         "SamStack",
+        "AwsService",
         "SamGlobals",
         "AwsNamingPolicy",
         "AwsTaggingPolicy",
@@ -4926,6 +4986,7 @@
       "canvas": [
         "AwsStage",
         "SamStack",
+        "AwsService",
         "SamGlobals",
         "AwsNamingPolicy",
         "AwsTaggingPolicy",
@@ -5403,6 +5464,7 @@
       "viewType": "PORTFOLIO_GOVERNANCE",
       "palette": [
         "AwsPsmModel",
+        "AwsService",
         "AwsStage",
         "SamStack",
         "SamGlobals",
@@ -5437,6 +5499,7 @@
       "relationshipKinds": [
         "DEPLOYS",
         "DEPENDS_ON",
+        "SERVICE_OWNERSHIP",
         "ROUTES_TO",
         "INVOKES",
         "EVENT_FLOW",
@@ -5451,6 +5514,7 @@
       "layoutHint": "CONTAINER",
       "canvas": [
         "AwsPsmModel",
+        "AwsService",
         "AwsStage",
         "SamStack",
         "SamGlobals",
@@ -5482,6 +5546,30 @@
         "StepFunctionStateMachine",
         "AwsNativeResource"
       ]
+    },
+    {
+      "id": "psm-service-landscape",
+      "displayName": "Service Landscape",
+      "viewType": "SERVICE_LANDSCAPE",
+      "elementTypes": ["AwsService"],
+      "palette": ["AwsService"],
+      "canvas": ["AwsService"],
+      "viewEntryTypes": ["AwsService"],
+      "relationshipKinds": [],
+      "restrictPaletteToView": true,
+      "layoutHint": "DEFAULT_LAYERED"
+    },
+    {
+      "id": "psm-service-ownership",
+      "displayName": "Service Ownership",
+      "viewType": "SERVICE_OWNERSHIP",
+      "palette": ["AwsService"],
+      "canvas": ["AwsService"],
+      "viewEntryTypes": ["AwsService", "AwsResource"],
+      "includeSubtypes": true,
+      "restrictPaletteToView": true,
+      "relationshipKinds": ["SERVICE_OWNERSHIP"],
+      "layoutHint": "DEFAULT_LAYERED"
     },
     {
       "id": "psm-resource-topology",

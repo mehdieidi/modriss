@@ -7,10 +7,13 @@ operation reads it back. The PSM also includes a custom EventBridge bus and rule
 S3 receipt bucket, a Step Functions workflow, CloudWatch log groups and alarm, IAM role/policy, and
 an SQS DLQ.
 
-The source model is [`orderpulse.awspsm.xmi`](orderpulse.awspsm.xmi). The manually completed
-generated project is [`generated-project`](generated-project/). The generated directory is ignored
-by the repository's generic `generated-project/` ignore rule, but is intentionally retained as the
-reproducible artifact under study.
+The source model is [`orderpulse.awspsm.xmi`](orderpulse.awspsm.xmi). Its `OrderPulse Service`
+retains logical ownership of the service's AWS resources, while `OrderPulse Stack` remains its
+independent deployment unit. The generated source, contracts, workflows, and service tests live
+under `services/orderpulse-service/`; the SAM template and environment configuration live under
+`infrastructure/`. The manually completed generated directory is ignored by the repository. Recreate
+the generated baseline with the command below; the checked-in generation report records the latest
+generated file list.
 
 ## Requirements and quality expectations
 
@@ -40,21 +43,21 @@ java -jar tools/code-generator-cli/target/code-generator-cli-0.0.1-SNAPSHOT.jar 
   --verbose
 ```
 
-The final generation produced 83 artifacts and zero generator-reported manual issues. The generator
+The final generation produced 92 planned artifacts and zero generator-reported manual issues. The generator
 report, trace, and manual-action report are under `generated-project/generated/reports/`.
 
 ## Manual completion
 
-The generated EGL protected regions were completed as follows:
+The generated Lambda application use cases and adapter customizations were completed as follows:
 
-1. `src/shared/data-access.go` was implemented with AWS SDK for Go v2 DynamoDB and SQS access,
+1. `platform/runtime/data-access.go` was implemented with AWS SDK for Go v2 DynamoDB and SQS access,
    Floci endpoint selection through `AWS_ENDPOINT_URL`, order serialization, lookup, update, and
    message decoding.
-2. `orderpulse-create-order/handler.go` was completed with request parsing, validation, persistence,
+2. `services/orderpulse-service/internal/application/orderpulse-create-order.go` was completed with request parsing, validation, persistence,
    queue submission, and `201` response construction.
-3. `orderpulse-get-order/handler.go` was completed with path parameter lookup and `200`/`404`
+3. `services/orderpulse-service/internal/application/orderpulse-get-order.go` was completed with path parameter lookup and `200`/`404`
    responses.
-4. `orderpulse-process-order/handler.go` was completed with SQS record decoding, status updates,
+4. `services/orderpulse-service/internal/application/orderpulse-process-order.go` was completed with SQS record decoding, status updates,
    and per-message partial-batch failure reporting.
 5. AWS SDK dependencies were added to `go.mod`; the three Linux `bootstrap` binaries were built
    into their generated `bin/<function-slug>/` directories.
@@ -98,9 +101,9 @@ rechecked.
 
 Static and artifact checks:
 
-- PSM generation completed successfully with 83 artifacts and zero manual issues.
+- PSM generation completed successfully with 92 planned artifacts and zero manual issues.
 - Generated JSON artifacts parse successfully.
-- `sam validate --lint --template-file template.yaml` passes.
+- `sam validate --lint --template-file infrastructure/units/orderpulse/template.yaml` passes.
 - The generator’s own model loading/semantic preflight completed without diagnostics. A separate
   repository EVL CLI run was also attempted; it exposes a pre-existing structural-loader
   incompatibility for richer cross-package relationship resources (the same loader fails on the
@@ -152,7 +155,8 @@ connection timed out. To exercise the real generated binaries, a local test-only
 already-cached `python:3.13-alpine` image was tagged as
 `public.ecr.aws/lambda/provided:al2023`; after restarting Floci to clear its failed image cache,
 the same deployed functions executed successfully. This workaround is test infrastructure only
-and is not part of the generated application. The remaining manual step is intentional: business
-logic is protected-region content that the PSM does not infer. The completed handlers are therefore
-tested as manual completion of generated extension points, while infrastructure defects are fixed
-in the model/generator and regenerated.
+and is not part of the generated application. The remaining manual step is intentional: the PSM
+does not infer application behavior. The generated application use-case files return
+`NOT_IMPLEMENTED` until a developer supplies that behavior. The completed use cases are tested as
+manual completion of create-once service-owned extension points, while infrastructure defects are
+fixed in the model/generator and regenerated.

@@ -8,10 +8,15 @@ import (
 )
 
 func TestTemplateHasNoPlaintextSecretMarker(t *testing.T) {
-	templatePaths, err := filepath.Glob("../../template*.yaml")
+	templatePaths, err := filepath.Glob("../../infrastructure/units/*/template*.yaml")
 	if err != nil {
 		t.Fatalf("generated template lookup failed: %v", err)
 	}
+	legacyTemplatePaths, err := filepath.Glob("../../template*.yaml")
+	if err != nil {
+		t.Fatalf("legacy generated template lookup failed: %v", err)
+	}
+	templatePaths = append(templatePaths, legacyTemplatePaths...)
 	if len(templatePaths) == 0 {
 		t.Fatal("expected at least one generated SAM template")
 	}

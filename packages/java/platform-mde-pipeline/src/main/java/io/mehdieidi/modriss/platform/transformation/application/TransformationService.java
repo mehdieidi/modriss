@@ -368,7 +368,8 @@ public final class TransformationService {
     if (previousArtifact == null) return result;
     Set<String> previousGeneratedPaths = new LinkedHashSet<>();
     JsonNode rules = previousArtifact.modelJson().path("generationRules");
-    if (rules.isObject()) rules.properties().forEach(entry -> previousGeneratedPaths.add(entry.getKey()));
+    if (rules.isObject())
+      rules.properties().forEach(entry -> previousGeneratedPaths.add(entry.getKey()));
     if (previousGeneratedPaths.isEmpty()) {
       // Older snapshots did not record generator ownership; treat their existing files as outputs.
       previousGeneratedPaths.addAll(previousArtifact.files().keySet());
@@ -780,10 +781,16 @@ public final class TransformationService {
     long stackCount = countElementsByClass(elements, "SamStack");
     boolean hasLambdaHandlers =
         files.keySet().stream()
-            .anyMatch(path -> path.startsWith("src/functions/") && path.endsWith("/handler.go"));
+            .anyMatch(
+                path ->
+                    path.startsWith("services/")
+                        && path.contains("/cmd/")
+                        && path.endsWith("/main.go"));
     boolean hasSamTemplates =
         files.keySet().stream()
-            .anyMatch(path -> path.startsWith("template") && path.endsWith(".yaml"));
+            .anyMatch(
+                path ->
+                    path.startsWith("infrastructure/units/") && path.endsWith("/template.yaml"));
     if (lambdaCount > 0 && !hasLambdaHandlers) {
       throw new PlatformException(
           500,

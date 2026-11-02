@@ -1,4 +1,4 @@
-[% /* Generates the shared logger artifact. */ %]package shared
+[% /* Generates the shared logger artifact. */ %]package runtime
 
 import (
 	"encoding/json"

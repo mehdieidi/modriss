@@ -15,6 +15,8 @@
           upperBound="-1" eType="#/3/AwsStage" containment="true"/>
       <eStructuralFeatures xsi:type="ecore:EReference" name="stacks" lowerBound="1"
           upperBound="-1" eType="#/3/SamStack" containment="true"/>
+      <eStructuralFeatures xsi:type="ecore:EReference" name="services" upperBound="-1"
+          eType="#/3/AwsService" containment="true"/>
       <eStructuralFeatures xsi:type="ecore:EReference" name="samGlobals" eType="#/3/SamGlobals"
           containment="true"/>
       <eStructuralFeatures xsi:type="ecore:EReference" name="namingPolicy" eType="#/3/AwsNamingPolicy"
@@ -621,8 +623,21 @@
           containment="true"/>
       <eStructuralFeatures xsi:type="ecore:EReference" name="stack" eType="#/3/SamStack"
           changeable="false" transient="true" eOpposite="#/3/SamStack/resources"/>
+      <eStructuralFeatures xsi:type="ecore:EReference" name="service" eType="#/3/AwsService"
+          eOpposite="#/3/AwsService/resources"/>
       <eStructuralFeatures xsi:type="ecore:EReference" name="dependsOn" upperBound="-1"
           eType="#/3/AwsResource"/>
+    </eClassifiers>
+    <eClassifiers xsi:type="ecore:EClass" name="AwsService" eSuperTypes="#/14/TraceableElement">
+      <eStructuralFeatures xsi:type="ecore:EAttribute" name="responsibility" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+      <eStructuralFeatures xsi:type="ecore:EAttribute" name="ownerTeam" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+      <eStructuralFeatures xsi:type="ecore:EAttribute" name="businessCapabilityRef"
+          eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+      <eStructuralFeatures xsi:type="ecore:EAttribute" name="externallyExposed" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EBooleanObject"/>
+      <eStructuralFeatures xsi:type="ecore:EAttribute" name="ownsData" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EBooleanObject"/>
+      <eStructuralFeatures xsi:type="ecore:EAttribute" name="boundaryType" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+      <eStructuralFeatures xsi:type="ecore:EReference" name="resources" upperBound="-1"
+          eType="#/3/AwsResource" eOpposite="#/3/AwsResource/service"/>
     </eClassifiers>
     <eClassifiers xsi:type="ecore:EClass" name="AwsTag" eSuperTypes="#/14/TraceableElement">
       <eStructuralFeatures xsi:type="ecore:EAttribute" name="key" lowerBound="1" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>

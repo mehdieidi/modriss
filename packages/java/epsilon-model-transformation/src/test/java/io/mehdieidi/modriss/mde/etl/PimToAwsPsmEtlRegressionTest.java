@@ -104,6 +104,25 @@ final class PimToAwsPsmEtlRegressionTest {
 
     List<EObject> resources = containedAwsResources(root);
     assertFalse(resources.isEmpty(), "Expected generated AWS resources.");
+    List<EObject> services = values(root, "services");
+    assertFalse(services.isEmpty(), "PIM services must remain first-class AWS PSM elements.");
+    EObject intakeService = first(services, "AwsService", "Intake and Eligibility Context Service");
+    assertEquals("Relief operations team", get(intakeService, "ownerTeam"));
+    EObject intakeFunction =
+        first(resources, "AwsLambdaFunction", "SubmitGrantApplication Handler");
+    assertEquals(
+        intakeService,
+        reference(intakeFunction, "service"),
+        "A Lambda keeps logical service ownership independently of its stack.");
+    assertTrue(
+        values(intakeService, "resources").contains(intakeFunction),
+        "Service/resource ownership references should be bidirectional.");
+    EObject intakeLogGroup =
+        first(resources, "CloudWatchLogGroup", "SubmitGrantApplication Handler Log Group");
+    assertEquals(
+        intakeService,
+        reference(intakeLogGroup, "service"),
+        "Generated service resources must retain the owning service too.");
     assertAny(resources, "AwsLambdaFunction", "Expected Lambda functions for PIM functions.");
     assertAnyOf(
         resources,
@@ -663,7 +682,7 @@ final class PimToAwsPsmEtlRegressionTest {
     EObject code = reference(helperLambda, "code");
     assertEquals("LambdaZipCodeConfig", code.eClass().getName());
     assertEquals("java21", get(code, "runtimeIdentifier"));
-    assertEquals("src/helper", get(code, "codeUri"));
+    assertEquals("services/helper-service/cmd/helper-handler", get(code, "codeUri"));
     assertTrue(
         values(helperLambda, "metadata").stream()
             .anyMatch(m -> "Metric:BusinessEvents".equals(get(m, "propertyName"))));

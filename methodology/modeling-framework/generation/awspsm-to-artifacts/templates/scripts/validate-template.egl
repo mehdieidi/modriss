@@ -4,9 +4,9 @@ set -euo pipefail
 if [[ "$#" -gt 0 ]]; then
   templates=("$@")
 else
-  mapfile -t templates < <(find . -maxdepth 2 -type f \( -name 'template*.yaml' -o -name 'template*.yml' \) | sort)
+  mapfile -t templates < <({ find infrastructure/units -type f \( -name 'template*.yaml' -o -name 'template*.yml' \) 2>/dev/null; find . -maxdepth 1 -type f \( -name 'template*.yaml' -o -name 'template*.yml' \); } | sort)
   if [[ "${#templates[@]}" -eq 0 ]]; then
-    templates=("template.yaml")
+    templates=("infrastructure/units/*/template.yaml")
   fi
 fi
 

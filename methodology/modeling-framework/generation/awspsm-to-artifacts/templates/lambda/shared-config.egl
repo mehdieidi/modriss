@@ -1,4 +1,4 @@
-[% /* Generates the shared config artifact. */ %]package shared
+[% /* Generates the shared config artifact. */ %]package runtime
 
 import "os"
 
