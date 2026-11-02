@@ -76,6 +76,15 @@ rule RelationalDataAccess {
   post { emitCtx().recordArtifact("src/shared/relational.go", "SHARED_RUNTIME", "AWSPSM2ART_RelationalDataAccess", AWSPSMSTORAGE!RdsDbCluster.all, "OVERWRITE_GENERATED", Sequence{}); }
 }
 
+rule DynamoDbDataAccess {
+  guard : AWSPSMSTORAGE!DynamoDbTable.all.notEmpty()
+  template : "lambda/shared-dynamodb.egl"
+  target : "src/shared/dynamodb.go"
+  merge : false
+  overwrite : true
+  post { emitCtx().recordArtifact("src/shared/dynamodb.go", "SHARED_RUNTIME", "AWSPSM2ART_DynamoDbDataAccess", AWSPSMSTORAGE!DynamoDbTable.all, "OVERWRITE_GENERATED", Sequence{}); }
+}
+
 rule ProjectScaffold {
   template : "docs/project-scaffold.egl"
   target : "generated/reports/project-scaffold.txt"

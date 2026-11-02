@@ -43,6 +43,12 @@ func MapKnownError(err error, correlationID string) GeneratedErrorResponse {
 			statusCode = 404
 		case "CONFLICT":
 			statusCode = 409
+		case "UNAUTHORIZED":
+			statusCode = 401
+		case "FORBIDDEN":
+			statusCode = 403
+		case "UPSTREAM_ERROR":
+			statusCode = 503
 		}
 	}
 	return GeneratedErrorResponse{
@@ -53,4 +59,10 @@ func MapKnownError(err error, correlationID string) GeneratedErrorResponse {
 		},
 		Body: JSONBody(map[string]any{"code": codeText, "message": messageText, "correlationId": correlationID}),
 	}
+}
+
+// IsApiGatewayEvent identifies the HTTP proxy envelope so business failures can
+// be returned as HTTP responses while workflow failures remain Lambda errors.
+func IsApiGatewayEvent(event map[string]any) bool {
+	return event["requestContext"] != nil
 }

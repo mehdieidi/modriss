@@ -82,6 +82,25 @@ class TemplateValidationTest(unittest.TestCase):
         self.assertEqual(validate_emulator_compatibility(documents, "2.2.0"), [])
         self.assertEqual(yaml.safe_load(original)["template.yaml"]["Resources"]["Workflow"]["Properties"]["AutoPublishAlias"], "live")
 
+    def test_floci_profile_marks_lambda_runtime_only_in_the_in_memory_template(self):
+        documents = {"template.yaml":{"Resources":{
+            "Function":{"Type":"AWS::Lambda::Function", "Properties":{
+                "Environment":{"Variables":{"EXISTING":"preserved"}}}},
+            "SamFunction":{"Type":"AWS::Serverless::Function", "Properties":{}},
+        }}}
+        original = yaml.safe_dump(documents)
+
+        profile = apply_floci_test_profile(documents, "2.2.0")
+
+        resources = documents["template.yaml"]["Resources"]
+        self.assertEqual(resources["Function"]["Properties"]["Environment"]["Variables"], {
+            "EXISTING":"preserved", "MODRISS_TEST_EMULATOR":"true"})
+        self.assertEqual(resources["SamFunction"]["Properties"]["Environment"]["Variables"], {
+            "MODRISS_TEST_EMULATOR":"true"})
+        self.assertEqual(profile["testOnlyLambdaRuntimeMarkerCount"], 2)
+        self.assertIn("saved AWS artifacts are unchanged", profile["syntheticFixtureIdentity"])
+        self.assertNotIn("MODRISS_TEST_EMULATOR", original)
+
     def test_floci_profile_keeps_explicit_alias_resources_visible_as_unsupported(self):
         documents = {"template.yaml":{"Resources":{
             "Version":{"Type":"AWS::StepFunctions::StateMachineVersion", "Properties":{}},
@@ -91,6 +110,38 @@ class TemplateValidationTest(unittest.TestCase):
         self.assertEqual(profile["adjustments"], [])
         self.assertEqual({issue["resourceId"] for issue in issues}, {"Version", "Alias"})
         self.assertTrue(all("cannot be safely rewritten" in issue["remedy"] for issue in issues))
+
+    def test_floci_profile_omits_only_unreferenced_eventbridge_api_destinations(self):
+        documents = {"template.yaml":{"Resources":{
+            "Connection":{"Type":"AWS::Events::Connection", "Properties":{"Name":"unused"}},
+            "Destination":{"Type":"AWS::Events::ApiDestination", "Properties":{
+                "ConnectionArn":{"Fn::GetAtt":["Connection", "Arn"]}}},
+            "Function":{"Type":"AWS::Lambda::Function", "Properties":{"Code":{"ZipFile":"handler"}}},
+        }}}
+
+        profile = apply_floci_test_profile(documents, "2.2.0")
+
+        self.assertEqual(set(documents["template.yaml"]["Resources"]), {"Function"})
+        self.assertEqual({item["resourceId"] for item in profile["adjustments"]}, {"Connection", "Destination"})
+        self.assertTrue(all("saved AWS artifact is unchanged" in item["effect"] for item in profile["adjustments"]))
+        self.assertEqual(validate_emulator_compatibility(documents, "2.2.0"), [])
+
+    def test_floci_profile_preserves_and_reports_referenced_eventbridge_api_destinations(self):
+        documents = {"template.yaml":{"Resources":{
+            "Connection":{"Type":"AWS::Events::Connection", "Properties":{"Name":"used"}},
+            "Destination":{"Type":"AWS::Events::ApiDestination", "Properties":{
+                "ConnectionArn":{"Fn::GetAtt":["Connection", "Arn"]}}},
+            "Rule":{"Type":"AWS::Events::Rule", "Properties":{"Targets":[{
+                "Arn":{"Fn::GetAtt":["Destination", "Arn"]}}]}},
+        }}}
+
+        profile = apply_floci_test_profile(documents, "2.2.0")
+        issues = validate_emulator_compatibility(documents, "2.2.0")
+
+        self.assertEqual(profile["adjustments"], [])
+        self.assertEqual(set(documents["template.yaml"]["Resources"]), {"Connection", "Destination", "Rule"})
+        self.assertEqual({issue["resourceId"] for issue in issues}, {"Connection", "Destination"})
+        self.assertTrue(all("unchanged AWS artifact" in issue["remedy"] for issue in issues))
 
     def test_deploy_expands_sam_without_publishing_workflow_alias_and_records_profile(self):
         source = yaml.safe_dump({
@@ -212,6 +263,9 @@ class TemplateValidationTest(unittest.TestCase):
             worker.command = MagicMock()
             cfn = MagicMock()
             cfn.describe_stacks.return_value = {"Stacks":[{"StackStatus":"ROLLBACK_COMPLETE"}]}
+            cfn.list_stack_resources.return_value = {"StackResourceSummaries":[
+                {"LogicalResourceId":"RetainedTable", "ResourceStatus":"DELETE_SKIPPED",
+                 "PhysicalResourceId":"retained-table"}]}
             worker.client = MagicMock(return_value=cfn)
             with contextlib.redirect_stdout(io.StringIO()), self.assertRaisesRegex(ValueError,"retained resources"):
                 worker.deploy()

@@ -110,6 +110,25 @@ final class CimToPimEtlRegressionTest {
     assertFalse(values(root, "services").isEmpty(), "Expected generated services.");
     assertFalse(
         serviceDeployables(root, "functions").isEmpty(), "Expected command/query functions.");
+    EObject placeOrder =
+        serviceDeployables(root, "functions").stream()
+            .filter(function -> "command_place_order".equals(get(function, "businessOperationRef")))
+            .findFirst()
+            .orElseThrow(() -> new AssertionError("Missing Place Order function."));
+    EObject placeOrderContract = reference(placeOrder, "contract");
+    assertEquals(
+        "requestIdempotencyKey",
+        get(placeOrderContract, "idempotencyKeyField"),
+        "The contract must name the concrete request key field, not the business-key description.");
+    assertTrue(
+        values(reference(placeOrderContract, "inputSchema"), "fields").stream()
+            .anyMatch(field -> "requestIdempotencyKey".equals(get(field, "name"))));
+    assertFalse(
+        values(reference(placeOrderContract, "inputSchema"), "fields").stream()
+            .anyMatch(
+                field ->
+                    "authenticated actor + place-order + request key".equals(get(field, "name"))),
+        "Business-key prose must not become a generated request property.");
     assertFalse(
         serviceDeployables(root, "apis").isEmpty(), "Expected an API for user-facing behavior.");
     assertFalse(values(root, "eventTypes").isEmpty(), "Expected business event types.");
@@ -121,6 +140,38 @@ final class CimToPimEtlRegressionTest {
     assertFalse(
         values(readiness, "manualDecisions").isEmpty(),
         "Runtime/language review decision should be generated.");
+  }
+
+  @Test
+  void emitsOnePimRootWhenTemporalConstraintHasNoOrderingExpression() throws Exception {
+    Path cimMetamodel =
+        REPOSITORY_ROOT.resolve("methodology/modeling-framework/metamodels/cim/cim-combined.ecore");
+    Path pimMetamodel =
+        REPOSITORY_ROOT.resolve("methodology/modeling-framework/metamodels/pim/pim-combined.ecore");
+    Path cimModel = tempDir.resolve("temporal-constraint-without-order-cim.xmi");
+    Path pimModel = tempDir.resolve("temporal-constraint-without-order-pim.xmi");
+
+    createRepresentativeCimModel(cimMetamodel, cimModel);
+    Resource cimResource = loadModel(cimMetamodel, cimModel);
+    EObject cimRoot = cimResource.getContents().get(0);
+    allObjects(cimRoot).stream()
+        .filter(object -> "TemporalConstraint".equals(object.eClass().getName()))
+        .forEach(object -> set(object, "orderingExpression", ""));
+    cimResource.save(null);
+
+    executeOrFail(CimToPimDefaults.request(REPOSITORY_ROOT, cimModel, pimModel, true, true));
+
+    Resource pimResource = loadModel(pimMetamodel, pimModel);
+    assertEquals(
+        1,
+        pimResource.getContents().size(),
+        "A conditional ETL target must not become a stray XMI root when its guard is false.");
+    EObject root = pimResource.getContents().get(0);
+    assertEquals("PIMModel", root.eClass().getName());
+    assertTrue(
+        allObjects(root).stream()
+            .noneMatch(object -> "OrderingPolicy".equals(object.eClass().getName())),
+        "No OrderingPolicy should be created when the temporal constraint has no ordering key.");
   }
 
   /**
@@ -364,6 +415,21 @@ final class CimToPimEtlRegressionTest {
                     "AuthorizationPolicy".equals(policy.eClass().getName())
                         && "Check Product Authorization".equals(get(policy, "name"))),
         "Protected queries should receive authorization policy coverage.");
+    EObject protectedProductRoute = first(allObjects(root), "ApiRoute", "Check Product Route");
+    EObject publicProductRoute =
+        first(allObjects(root), "ApiRoute", "Browse Product Catalog Route");
+    assertFalse(
+        get(protectedProductRoute, "pathTemplate").equals(get(publicProductRoute, "pathTemplate")),
+        "Queries over the same entity should receive distinct API paths.");
+    assertTrue(Boolean.TRUE.equals(get(protectedProductRoute, "authRequired")));
+    assertFalse(
+        Boolean.TRUE.equals(get(reference(protectedProductRoute, "api"), "authRequired")),
+        "A protected route must not make sibling public routes inherit API-wide authentication.");
+    assertFalse(
+        Boolean.TRUE.equals(
+            get(reference(publicProductRoute, "functionIntegration"), "publicEntryPoint")),
+        "The public API route should not expose its implementation Lambda as a direct entry"
+            + " point.");
     assertTrue(
         values(root, "schemas").stream()
             .flatMap(schema -> values(schema, "fields").stream())
@@ -402,6 +468,28 @@ final class CimToPimEtlRegressionTest {
         serviceDeployables(root, "stores").stream()
             .anyMatch(store -> !values(store, "dataProtectionPolicies").isEmpty()),
         "Classified data in stores should receive data protection policy attachment.");
+    EObject accessGuardTask = first(allObjects(root), "TaskStep", "Evaluate Access Guard");
+    EObject accessGuardFunction = reference(accessGuardTask, "invokesFunction");
+    assertFalse(
+        accessGuardFunction == null,
+        "A process-referenced guard policy should generate and bind an executable handler.");
+    assertEquals("Access Guard Policy Handler", get(accessGuardFunction, "name"));
+    assertTrue(
+        allObjects(root).stream()
+            .anyMatch(
+                element ->
+                    "DecisionModel".equals(element.eClass().getName())
+                        && "Unreferenced Decision Table Decision Model"
+                            .equals(get(element, "name"))),
+        "Unreferenced decision tables should remain represented as policy models.");
+    assertFalse(
+        allObjects(root).stream()
+            .anyMatch(
+                element ->
+                    "Function".equals(element.eClass().getName())
+                        && "Unreferenced Decision Table Decision Evaluator"
+                            .equals(get(element, "name"))),
+        "An unreferenced decision table must not create an unreachable runtime function.");
 
     EObject readiness = reference(root, "readiness");
     assertTrue(
@@ -617,12 +705,12 @@ final class CimToPimEtlRegressionTest {
     EObject commandRequest = reference(commandContract, "inputSchema");
     assertTrue(fieldNames(commandRequest).containsAll(List.of("customerId", "cartId")));
     assertTrue(fieldNames(commandRequest).containsAll(List.of("correlationId", "causationId")));
-    assertTrue(fieldNames(commandRequest).contains("idempotencyKey"));
-    assertEquals("idempotencyKey", get(commandContract, "idempotencyKeyField"));
+    assertTrue(fieldNames(commandRequest).contains("requestIdempotencyKey"));
+    assertEquals("requestIdempotencyKey", get(commandContract, "idempotencyKeyField"));
 
     EObject idempotency = reference(commandFunction, "idempotency");
     assertEquals("IdempotencyPolicy", idempotency.eClass().getName());
-    assertEquals("idempotencyKey", get(idempotency, "keySource"));
+    assertEquals("authenticated actor + place-order + request key", get(idempotency, "keySource"));
     assertTrue(Boolean.TRUE.equals(get(idempotency, "storeRequired")));
 
     EObject commandRoute = first(generated, "ApiRoute", "Place Order Route");
@@ -826,6 +914,13 @@ final class CimToPimEtlRegressionTest {
         informationItem(metamodelResource, "item_customer_id", "customerId", "IDENTIFIER", true);
     EObject cartId =
         informationItem(metamodelResource, "item_cart_id", "cartId", "IDENTIFIER", true);
+    EObject requestIdempotencyKey =
+        informationItem(
+            metamodelResource,
+            "item_request_idempotency_key",
+            "requestIdempotencyKey",
+            "IDENTIFIER",
+            true);
     EObject status =
         informationItem(metamodelResource, "item_order_status", "status", "TEXT", true);
     EObject total =
@@ -889,12 +984,14 @@ final class CimToPimEtlRegressionTest {
     set(command, "authorizationRequired", true);
     set(command, "authorizationRule", "Customer can place own order.");
     set(command, "duplicateSubmissionPossible", true);
+    set(command, "idempotencyBusinessKey", "authenticated actor + place-order + request key");
     set(command, "auditRequired", true);
     set(command, "targetCapability", capability);
     set(command, "targetAggregate", aggregate);
     add(command, "issuedBy", actor);
     add(command, "input", customerId);
     add(command, "input", cartId);
+    add(command, "input", requestIdempotencyKey);
     add(command, "expectedEvents", event);
 
     EObject query = create(metamodelResource, "Query");
@@ -922,6 +1019,7 @@ final class CimToPimEtlRegressionTest {
     add(model, "informationItems", orderId);
     add(model, "informationItems", customerId);
     add(model, "informationItems", cartId);
+    add(model, "informationItems", requestIdempotencyKey);
     add(model, "informationItems", status);
     add(model, "informationItems", total);
     add(model, "entities", entity);
@@ -1138,6 +1236,23 @@ final class CimToPimEtlRegressionTest {
     add(query, "output", productStatus);
     add(query, "reads", product);
 
+    EObject publicProductQuery = create(metamodelResource, "Query");
+    set(publicProductQuery, "id", "query_browse_product_catalog");
+    set(publicProductQuery, "name", "Browse Product Catalog");
+    set(publicProductQuery, "intent", "Browse available product details.");
+    set(publicProductQuery, "queryType", enumValue(metamodelResource, "QueryType", "LOOKUP"));
+    set(
+        publicProductQuery,
+        "freshnessNeed",
+        enumValue(metamodelResource, "FreshnessNeed", "REAL_TIME"));
+    set(publicProductQuery, "authorizationRequired", false);
+    set(publicProductQuery, "containsPersonalData", false);
+    set(publicProductQuery, "targetCapability", sales);
+    add(publicProductQuery, "issuedBy", actor);
+    add(publicProductQuery, "input", productId);
+    add(publicProductQuery, "output", productStatus);
+    add(publicProductQuery, "reads", product);
+
     EObject inventoryQuery = create(metamodelResource, "Query");
     set(inventoryQuery, "id", "query_inventory_status");
     set(inventoryQuery, "name", "Inventory Status");
@@ -1167,6 +1282,42 @@ final class CimToPimEtlRegressionTest {
     set(externalSystem, "sendsBusinessEvents", false);
     set(externalSystem, "receivesBusinessEvents", true);
 
+    EObject guardPolicy = create(metamodelResource, "Policy");
+    set(guardPolicy, "id", "policy_access_guard");
+    set(guardPolicy, "name", "Access Guard");
+    set(guardPolicy, "policyType", enumValue(metamodelResource, "PolicyType", "GUARD"));
+    set(
+        guardPolicy,
+        "naturalLanguageRule",
+        "Only an authorized partner may inspect product state.");
+    set(
+        guardPolicy,
+        "enforcementStrength",
+        enumValue(metamodelResource, "ConstraintStrength", "MANDATORY"));
+
+    EObject guardStep = create(metamodelResource, "PolicyStep");
+    set(guardStep, "id", "step_access_guard");
+    set(guardStep, "name", "Evaluate Access Guard");
+    set(guardStep, "stepKind", enumValue(metamodelResource, "StepKind", "POLICY"));
+    set(guardStep, "orderIndex", 2);
+    set(guardStep, "optional", false);
+    set(guardStep, "repeatable", false);
+    set(guardStep, "policy", guardPolicy);
+
+    EObject unusedDecisionTable = create(metamodelResource, "DecisionTable");
+    set(unusedDecisionTable, "id", "decision_table_unreferenced");
+    set(unusedDecisionTable, "name", "Unreferenced Decision Table");
+    set(unusedDecisionTable, "hitPolicy", "FIRST");
+    set(unusedDecisionTable, "complete", true);
+    set(unusedDecisionTable, "defaultOutcome", "Reject without mutation.");
+    EObject unusedDecisionRule = create(metamodelResource, "DecisionRule");
+    set(unusedDecisionRule, "id", "decision_rule_unreferenced");
+    set(unusedDecisionRule, "name", "Reject unmatched state");
+    set(unusedDecisionRule, "priorityOrder", 1);
+    set(unusedDecisionRule, "condition", "The request is invalid.");
+    set(unusedDecisionRule, "outcome", "Reject without mutation.");
+    add(unusedDecisionTable, "rules", unusedDecisionRule);
+
     EObject start = create(metamodelResource, "StartStep");
     set(start, "id", "step_start");
     set(start, "name", "Start");
@@ -1179,7 +1330,7 @@ final class CimToPimEtlRegressionTest {
     set(externalStep, "id", "step_external_fulfillment");
     set(externalStep, "name", "Send Fulfillment Request");
     set(externalStep, "stepKind", enumValue(metamodelResource, "StepKind", "EXTERNAL_INTERACTION"));
-    set(externalStep, "orderIndex", 2);
+    set(externalStep, "orderIndex", 3);
     set(externalStep, "optional", false);
     set(externalStep, "repeatable", false);
     set(externalStep, "externalSystem", externalSystem);
@@ -1189,23 +1340,30 @@ final class CimToPimEtlRegressionTest {
     set(end, "id", "step_end");
     set(end, "name", "End");
     set(end, "stepKind", enumValue(metamodelResource, "StepKind", "END"));
-    set(end, "orderIndex", 3);
+    set(end, "orderIndex", 4);
     set(end, "optional", false);
     set(end, "repeatable", false);
 
     EObject transition1 = create(metamodelResource, "ProcessTransition");
     set(transition1, "id", "transition_start_external");
-    set(transition1, "name", "Start to Fulfillment");
+    set(transition1, "name", "Start to Access Guard");
     set(transition1, "source", start);
-    set(transition1, "target", externalStep);
+    set(transition1, "target", guardStep);
     set(transition1, "orderIndex", 1);
+
+    EObject transitionGuard = create(metamodelResource, "ProcessTransition");
+    set(transitionGuard, "id", "transition_guard_external");
+    set(transitionGuard, "name", "Access Guard to Fulfillment");
+    set(transitionGuard, "source", guardStep);
+    set(transitionGuard, "target", externalStep);
+    set(transitionGuard, "orderIndex", 2);
 
     EObject transition2 = create(metamodelResource, "ProcessTransition");
     set(transition2, "id", "transition_external_end");
     set(transition2, "name", "Fulfillment to End");
     set(transition2, "source", externalStep);
     set(transition2, "target", end);
-    set(transition2, "orderIndex", 2);
+    set(transition2, "orderIndex", 3);
 
     EObject temporal = create(metamodelResource, "TemporalConstraint");
     set(temporal, "id", "temporal_fulfillment_timeout");
@@ -1233,9 +1391,11 @@ final class CimToPimEtlRegressionTest {
     set(process, "completionCriterion", "Fulfillment request accepted.");
     set(process, "owningCapability", sales);
     add(process, "steps", start);
+    add(process, "steps", guardStep);
     add(process, "steps", externalStep);
     add(process, "steps", end);
     add(process, "transitions", transition1);
+    add(process, "transitions", transitionGuard);
     add(process, "transitions", transition2);
     add(process, "temporalConstraints", temporal);
 
@@ -1267,6 +1427,8 @@ final class CimToPimEtlRegressionTest {
     add(model, "goals", goal);
     add(model, "actors", actor);
     add(model, "actors", externalSystem);
+    add(model, "policies", guardPolicy);
+    add(model, "decisionTables", unusedDecisionTable);
     add(model, "capabilities", sales);
     add(model, "capabilities", inventoryCap);
     add(model, "capabilityDependencies", dependency);
@@ -1286,6 +1448,7 @@ final class CimToPimEtlRegressionTest {
     add(model, "aggregates", productAggregate);
     add(model, "aggregates", inventoryAggregate);
     add(model, "queries", query);
+    add(model, "queries", publicProductQuery);
     add(model, "queries", inventoryQuery);
     add(model, "processes", process);
 

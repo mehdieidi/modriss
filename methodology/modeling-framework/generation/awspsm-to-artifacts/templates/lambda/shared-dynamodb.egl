@@ -1,0 +1,105 @@
+[% /* Generates a reusable DynamoDB SDK client when the PSM contains DynamoDB tables. */ %]package shared
+
+import (
+	"context"
+	"errors"
+	"os"
+
+	"github.com/aws/aws-sdk-go-v2/aws"
+	awsconfig "github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
+	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
+)
+
+// DynamoDBRuntime provides model-independent data operations. Table names,
+// keys, conditions, and item semantics remain owned by each application.
+type DynamoDBRuntime struct {
+	client *dynamodb.Client
+}
+
+type DynamoDBScanPage struct {
+	Items            []map[string]types.AttributeValue
+	LastEvaluatedKey map[string]types.AttributeValue
+}
+
+// NewDynamoDBClient creates a DynamoDB client using the standard AWS credential
+// chain. Local emulators can provide AWS_ENDPOINT_URL_DYNAMODB or AWS_ENDPOINT_URL.
+func NewDynamoDBClient(ctx context.Context) (*dynamodb.Client, error) {
+	config, err := awsconfig.LoadDefaultConfig(ctx)
+	if err != nil {
+		return nil, err
+	}
+	client := dynamodb.NewFromConfig(config, func(options *dynamodb.Options) {
+		endpoint := os.Getenv("AWS_ENDPOINT_URL_DYNAMODB")
+		if endpoint == "" {
+			endpoint = os.Getenv("AWS_ENDPOINT_URL")
+		}
+		if endpoint != "" {
+			options.BaseEndpoint = aws.String(endpoint)
+		}
+	})
+	return client, nil
+}
+
+// NewDynamoDBRuntime creates the shared DynamoDB data-access adapter.
+func NewDynamoDBRuntime(ctx context.Context) (*DynamoDBRuntime, error) {
+	client, err := NewDynamoDBClient(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return &DynamoDBRuntime{client: client}, nil
+}
+
+// PutItem writes an item, optionally enforcing a DynamoDB condition expression.
+func (runtime *DynamoDBRuntime) PutItem(ctx context.Context, table string, item map[string]types.AttributeValue, condition string) error {
+	input := &dynamodb.PutItemInput{TableName: aws.String(table), Item: item}
+	if condition != "" {
+		input.ConditionExpression = aws.String(condition)
+	}
+	_, err := runtime.client.PutItem(ctx, input)
+	return err
+}
+
+// GetItem reads one item by its modeled key.
+func (runtime *DynamoDBRuntime) GetItem(ctx context.Context, table string, key map[string]types.AttributeValue, consistentRead bool) (map[string]types.AttributeValue, error) {
+	result, err := runtime.client.GetItem(ctx, &dynamodb.GetItemInput{
+		TableName:      aws.String(table),
+		Key:            key,
+		ConsistentRead: aws.Bool(consistentRead),
+	})
+	if err != nil {
+		return nil, err
+	}
+	return result.Item, nil
+}
+
+// UpdateItem applies an application-supplied update expression and bindings.
+func (runtime *DynamoDBRuntime) UpdateItem(ctx context.Context, table string, key map[string]types.AttributeValue, expression string, names map[string]string, values map[string]types.AttributeValue) error {
+	_, err := runtime.client.UpdateItem(ctx, &dynamodb.UpdateItemInput{
+		TableName:                 aws.String(table),
+		Key:                       key,
+		UpdateExpression:          aws.String(expression),
+		ExpressionAttributeNames:  names,
+		ExpressionAttributeValues: values,
+	})
+	return err
+}
+
+// ScanPage reads one page; callers decide how to filter and paginate results.
+func (runtime *DynamoDBRuntime) ScanPage(ctx context.Context, table string, startKey map[string]types.AttributeValue) (DynamoDBScanPage, error) {
+	result, err := runtime.client.Scan(ctx, &dynamodb.ScanInput{
+		TableName:         aws.String(table),
+		ExclusiveStartKey: startKey,
+	})
+	if err != nil {
+		return DynamoDBScanPage{}, err
+	}
+	return DynamoDBScanPage{Items: result.Items, LastEvaluatedKey: result.LastEvaluatedKey}, nil
+}
+
+// IsConditionalCheckFailed identifies a conditional put collision without
+// exposing AWS SDK error matching in application-specific use cases.
+func IsConditionalCheckFailed(err error) bool {
+	var conditional *types.ConditionalCheckFailedException
+	return errors.As(err, &conditional)
+}

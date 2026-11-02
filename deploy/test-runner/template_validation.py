@@ -7,11 +7,78 @@ from urllib.parse import urlparse
 import re
 
 
+def resource_references(value):
+    """Yield CloudFormation logical resource references contained in an object."""
+    if isinstance(value, dict):
+        target = value.get("Ref")
+        if isinstance(target, str):
+            yield target
+        target = value.get("Fn::GetAtt")
+        if isinstance(target, str):
+            yield target.split(".", 1)[0]
+        elif isinstance(target, list) and target and isinstance(target[0], str):
+            yield target[0]
+        substitution = value.get("Fn::Sub")
+        if isinstance(substitution, str):
+            yield from re.findall(r"\$\{([A-Za-z][A-Za-z0-9]*)\}", substitution)
+        elif isinstance(substitution, list) and substitution and isinstance(substitution[0], str):
+            yield from re.findall(r"\$\{([A-Za-z][A-Za-z0-9]*)\}", substitution[0])
+        for item in value.values():
+            yield from resource_references(item)
+    elif isinstance(value, list):
+        for item in value:
+            yield from resource_references(item)
+
+
+def is_resource_referenced(documents, logical_id):
+    for template in documents.values():
+        for output in template.get("Outputs", {}).values():
+            if logical_id in resource_references(output):
+                return True
+        for source_id, resource in template.get("Resources", {}).items():
+            if source_id == logical_id:
+                continue
+            dependencies = resource.get("DependsOn", [])
+            if isinstance(dependencies, str):
+                dependencies = [dependencies]
+            if logical_id in dependencies or logical_id in resource_references(resource):
+                return True
+    return False
+
+
 def apply_floci_test_profile(documents, version):
     """Prepare an in-memory Floci test deployment without changing saved artifacts."""
     adjustments = []
+    marked_lambda_count = 0
+    parsed = re.match(r"^(\d+)\.(\d+)\.(\d+)", version or "")
+    if parsed and tuple(map(int, parsed.groups())) <= (2, 2, 0):
+        for path, template in documents.items():
+            resources = template.get("Resources", {})
+            for resource_type in ("AWS::Events::ApiDestination", "AWS::Events::Connection"):
+                for logical, resource in list(resources.items()):
+                    if resource.get("Type") != resource_type or is_resource_referenced(documents, logical):
+                        continue
+                    del resources[logical]
+                    adjustments.append({
+                        "template": path,
+                        "resourceId": logical,
+                        "resourceType": resource_type,
+                        "effect": "Omitted from this Floci deployment because the resource is unsupported and unused; the saved AWS artifact is unchanged.",
+                    })
     for path, template in documents.items():
         for logical, resource in template.get("Resources", {}).items():
+            if resource.get("Type") in ("AWS::Lambda::Function", "AWS::Serverless::Function"):
+                props = resource.setdefault("Properties", {})
+                if not isinstance(props, dict):
+                    continue
+                environment = props.setdefault("Environment", {})
+                if not isinstance(environment, dict):
+                    raise ValueError(f"{path}/{logical} has a non-object Lambda Environment")
+                variables = environment.setdefault("Variables", {})
+                if not isinstance(variables, dict):
+                    raise ValueError(f"{path}/{logical} has non-object Lambda Environment.Variables")
+                variables["MODRISS_TEST_EMULATOR"] = "true"
+                marked_lambda_count += 1
             if resource.get("Type") != "AWS::Serverless::StateMachine":
                 continue
             props = resource.get("Properties", {})
@@ -37,6 +104,8 @@ def apply_floci_test_profile(documents, version):
         "name": "Floci Test",
         "emulatorVersion": version,
         "workflowVersionAndAliasPublication": "disabled",
+        "testOnlyLambdaRuntimeMarkerCount": marked_lambda_count,
+        "syntheticFixtureIdentity": "Enabled only in this in-memory Floci profile; saved AWS artifacts are unchanged.",
         "adjustments": adjustments,
     }
 
@@ -62,6 +131,10 @@ def validate_emulator_compatibility(documents, version):
                     "message":f"Floci {version} does not provision Secrets Manager rotation schedules through CloudFormation.",
                     "remedy":"Evaluate secret rotation separately on a supported provider; retain the requirement in the model. "
                              "Do not treat a deployed secret alone as verified rotation."})
+            if kind in ("AWS::Events::Connection", "AWS::Events::ApiDestination"):
+                diagnostics.append({"template":path, "resourceId":logical, "field":"Type",
+                    "message":f"Floci {version} does not provision {kind} resources through CloudFormation.",
+                    "remedy":"Use a supported Lambda or EventBridge target for this Floci run, or deploy the unchanged AWS artifact to a provider that supports EventBridge API destinations."})
     return diagnostics
 
 

@@ -21,6 +21,7 @@ from botocore import UNSIGNED
 from botocore.auth import SigV4Auth
 from botocore.awsrequest import AWSRequest
 from botocore.config import Config
+from botocore.credentials import Credentials
 from botocore.exceptions import (
     ClientError,
     ConnectionClosedError,
@@ -269,6 +270,67 @@ class Worker:
     def stack_events(self, stack):
         return self.client("cloudformation").describe_stack_events(StackName=stack).get("StackEvents", [])
 
+    def recover_rollback_complete_stack(self, cfn, stack):
+        """Remove a failed initial stack only after confirming it owns no surviving resources."""
+        resources = []
+        token = None
+        while True:
+            arguments = {"StackName": stack}
+            if token:
+                arguments["NextToken"] = token
+            page = cfn.list_stack_resources(**arguments)
+            resources.extend(page.get("StackResourceSummaries", []))
+            token = page.get("NextToken")
+            if not token:
+                break
+
+        surviving = [
+            item for item in resources
+            if item.get("ResourceStatus") != "DELETE_COMPLETE"
+            and not (
+                item.get("ResourceStatus") == "CREATE_FAILED"
+                and not item.get("PhysicalResourceId")
+            )
+        ]
+        if surviving:
+            names = ", ".join(
+                f"{item.get('LogicalResourceId', 'unknown')} ({item.get('ResourceStatus', 'unknown')})"
+                for item in surviving[:8]
+            )
+            raise ValueError(
+                f"Stack {stack} is from a rolled-back initial deployment and still has resources "
+                f"that must be preserved: {names}. No resources were deleted; clean up or recover "
+                "the retained resources before retrying deployment."
+            )
+
+        emit("stage", title="Removing empty rolled-back CloudFormation stack", stack=stack)
+        try:
+            cfn.delete_stack(StackName=stack)
+        except ClientError as error:
+            if not self._missing_stack(error):
+                raise
+            return
+
+        deadline = time.monotonic() + 240
+        while time.monotonic() < deadline:
+            try:
+                response = cfn.describe_stacks(StackName=stack)
+                stacks = response.get("Stacks", [])
+                if not stacks or stacks[0].get("StackStatus") == "DELETE_COMPLETE":
+                    return
+                info = stacks[0]
+                if info.get("StackStatus") == "DELETE_FAILED":
+                    raise RuntimeError(
+                        f"Could not remove empty rolled-back stack {stack}: "
+                        f"{info.get('StackStatusReason', 'CloudFormation deletion failed.')}"
+                    )
+            except ClientError as error:
+                if self._missing_stack(error):
+                    return
+                raise
+            time.sleep(1)
+        raise TimeoutError(f"Timed out removing empty rolled-back stack {stack}.")
+
     def deploy(self):
         self.materialize()
         paths = self.template_paths()
@@ -302,9 +364,7 @@ class Worker:
                     raise
                 continue
             if info.get("StackStatus") == "ROLLBACK_COMPLETE":
-                raise ValueError(f"Stack {stack} is from a rolled-back initial deployment and AWS cannot update it. "
-                                 "Recover or recreate that failed stack while preserving its retained resources, "
-                                 "or deploy into a fresh test project. No existing resources have been deleted.")
+                self.recover_rollback_complete_stack(self.client("cloudformation"), stack)
         # Use the project's real build, including developer refinements and Go unit tests.
         if (self.root / "scripts/build.sh").is_file():
             self.command(["bash", "scripts/build.sh"])
@@ -359,9 +419,8 @@ class Worker:
                 previous_stack = cfn.describe_stacks(StackName=stack)["Stacks"][0]
                 exists = True
                 if previous_stack.get("StackStatus") == "ROLLBACK_COMPLETE":
-                    raise ValueError(f"Stack {stack} is from a rolled-back initial deployment and AWS cannot update it. "
-                                     "Recover or recreate that failed stack while preserving its retained resources, "
-                                     "or deploy into a fresh test project. No existing resources have been deleted.")
+                    self.recover_rollback_complete_stack(cfn, stack)
+                    exists = False
             except ClientError as error:
                 if "does not exist" not in str(error) and "not exist" not in str(error):
                     raise
@@ -879,7 +938,11 @@ class Worker:
             if any(name.lower() == "authorization" for name in headers):
                 raise ValueError("AWS IAM signing cannot be combined with a supplied Authorization header")
             signed = AWSRequest(method=method, url=url, data=body, headers=headers)
-            SigV4Auth(self.session.get_credentials(), "execute-api", self.region).add_auth(signed)
+            # The runner's 12-digit access key selects a project account for AWS
+            # management calls, but Floci's API Gateway IAM verifier requires a
+            # registered key. Its built-in test/test key resolves to the dedicated
+            # instance's FLOCI_DEFAULT_ACCOUNT_ID, which the deploy check verifies.
+            SigV4Auth(Credentials("test", "test"), "execute-api", self.region).add_auth(signed)
             headers = dict(signed.headers)
         emit("stage", title=f"{method} {path}", url=url)
         # No redirects: a project API cannot turn this proxy into an arbitrary HTTP client.

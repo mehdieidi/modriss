@@ -46,11 +46,19 @@ operation tag(key : String, value : String) {
   t.id = uniqueId("tag_" + slug(key + "_" + value));
   t.name = key;
   t.key = key;
-  t.value = value;
+  t.value = awsTagValue(value);
   t.propagated = true;
   t.generatedByTransformation = true;
   t.manuallyMaintained = false;
   return t;
+}
+
+/** Normalizes free-form text to the characters supported by AWS resource tags. */
+operation awsTagValue(value : String) {
+  return asText(value)
+    .replaceAll("[^\\p{L}\\p{N} .:+=@_/-]+", " ")
+    .replaceAll("\\s+", " ")
+    .trim();
 }
 
 /** Computes literal value. */

@@ -19,7 +19,7 @@ operation AWSPSMSTORAGE!RdsDbCluster schemaStatements() : Sequence {
   if (self.credentialsSecret.isDefined() and self.credentialsSecret.generateSecretString.isDefined()) {
     var credentials = self.credentialsSecret.generateSecretString;
     if (credentials.generateStringKey <> "password") throw "Relational credentials must generate the password JSON key: " + self.name;
-    var mapper = new Native("tools.jackson.databind.json.JsonMapper");
+    var mapper = new Native("com.fasterxml.jackson.databind.ObjectMapper");
     var template = mapper.readTree(credentials.secretStringTemplate);
     if (template.path("username").asText() <> self.masterUsername) throw "Relational masterUsername must match credentialsSecret.generateSecretString.secretStringTemplate.username: " + self.name;
   }

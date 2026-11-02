@@ -290,10 +290,12 @@ operation createAslDocument(w) {
       evaluator.nextStateName = aslState.stateName;
       d.states.add(evaluator);
       entryState = evaluator;
-      manualDecision("WORKFLOW_CHOICE_OUTCOME_MAPPING_REQUIRED",
-        "Define how decision evaluator outcomes select branches for workflow choice " + ws.name + ".",
-        KERNEL!Severity#BLOCKER, true, Sequence{w, ws, ws.invokesFunction},
-        "Add an explicit mapping from the evaluator output outcome to each WorkflowTransition, or explicitly remove the evaluator and make the reviewed input predicate authoritative before deployment.");
+      if (not choiceRoutingIsComplete(w, ws)) {
+        manualDecision("WORKFLOW_CHOICE_OUTCOME_MAPPING_REQUIRED",
+          "Define how decision evaluator outcomes select branches for workflow choice " + ws.name + ".",
+          KERNEL!Severity#BLOCKER, true, Sequence{w, ws, ws.invokesFunction},
+          "Add an explicit mapping from the evaluator output outcome to each WorkflowTransition, or explicitly remove the evaluator and make the reviewed input predicate authoritative before deployment.");
+      }
     }
     entryByPimId.put(cacheKeyFor(ws), entryState);
   }
@@ -341,19 +343,34 @@ operation createAslState(w, ws) {
     delete st;
     st = new AWSPSMWORKFLOW!AslFailState;
     st.summary = "MODRISS_REVIEW_REQUIRED: Define explicit decision outcomes and a default path for " + ws.name + ".";
-    manualDecision("WORKFLOW_CHOICE_ROUTING_REQUIRED",
-      "Define explicit outcome mappings and exactly one default path for workflow choice " + ws.name + ".",
-      KERNEL!Severity#BLOCKER, true, Sequence{w, ws},
-      "Set decisionOutcome on every non-default WorkflowTransition and mark exactly one transition as defaultTransition before deployment.");
+    var outgoing = w.transitions.select(x | x.source = ws);
+    var defaultCount = outgoing.select(tr | isTrue(tr.defaultTransition)).size();
+    if (defaultCount > 1) {
+      manualDecision("WORKFLOW_CHOICE_DEFAULT_AMBIGUOUS",
+        "Choose exactly one default path for workflow choice " + ws.name + ".",
+        KERNEL!Severity#BLOCKER, true, Sequence{w, ws},
+        "Mark one outgoing WorkflowTransition as defaultTransition and mark all other branches non-default.");
+    }
+    else {
+      manualDecision("WORKFLOW_CHOICE_ROUTING_REQUIRED",
+        "Define explicit outcome mappings and exactly one default path for workflow choice " + ws.name + ".",
+        KERNEL!Severity#BLOCKER, true, Sequence{w, ws},
+        "Set decisionOutcome on every evaluator-backed branch or a conditionExpression on every predicate branch, and mark exactly one transition as default before deployment.");
+    }
   }
   st.id = generatedId("asl_state", ws, "state");
   st.name = ws.name;
-  st.stateName = firstText(ws.name, "State");
+  st.stateName = uniqueAslStateName(w, ws);
   st.timeoutSeconds = ws.timeoutSeconds;
   st.inputPath = aslJsonPathOrRoot(ws.inputMapping);
   st.outputPath = aslJsonPathOrRoot(ws.outputMapping);
   if (ws.isKindOf(PIM!TaskStep)
       and (ws.invokesFunction.isDefined() or ws.nestedWorkflow.isDefined())) {
+    // WorkflowStep.outputMapping describes where the task result is merged
+    // into the existing state.  OutputPath must then pass that merged state
+    // onward; using the same path for both fields drops the original request
+    // context whenever the result is written to a child property.
+    st.outputPath = "$";
     if (hasExplicitWorkflowOutputMapping(ws.outputMapping)) {
       st.resultPath = ws.outputMapping;
     }
@@ -437,6 +454,26 @@ operation createAslState(w, ws) {
   return st;
 }
 
+/** Returns a deterministic ASL state name even when PIM steps share display names. */
+operation uniqueAslStateName(w, ws) {
+  var baseName = firstText(ws.name, "State");
+  var duplicates = w.steps.select(s | s <> ws and firstText(s.name, "State") = baseName);
+  if (duplicates.isEmpty()) {
+    return baseName;
+  }
+  // Step Functions state names are limited to 80 characters. Keep room for an
+  // order/id suffix so duplicated PIM labels cannot make an otherwise valid
+  // workflow invalid ASL.
+  if (baseName.length() > 55) {
+    baseName = baseName.substring(0, 55);
+  }
+  var idSuffix = asText(ws.id).replaceAll("[^A-Za-z0-9]", "");
+  if (idSuffix.length() > 8) {
+    idSuffix = idSuffix.substring(0, 8);
+  }
+  return baseName + " (" + ws.orderIndex + "-" + idSuffix + ")";
+}
+
 /** Creates the concrete ASL state classifier corresponding to a PIM workflow step. */
 operation newAslStateForStep(ws) {
   if (ws.isKindOf(PIM!TaskStep)) {
@@ -467,9 +504,14 @@ operation newAslStateForStep(ws) {
 operation choiceRoutingIsComplete(w, ws) {
   var out = w.transitions.select(x | x.source = ws);
   var branches = out.select(tr | not isTrue(tr.defaultTransition));
-  return branches.notEmpty() and
-    out.select(tr | not isTrue(tr.defaultTransition)).forAll(tr |
-      hasText(tr.decisionOutcome) and tr.target.isDefined());
+  var defaults = out.select(tr | isTrue(tr.defaultTransition));
+  if (branches.isEmpty() or defaults.size() <> 1) {
+    return false;
+  }
+  if (ws.invokesFunction.isDefined()) {
+    return branches.forAll(tr | hasText(tr.decisionOutcome) and tr.target.isDefined());
+  }
+  return branches.forAll(tr | hasText(tr.conditionExpression) and tr.target.isDefined());
 }
 
 /** Returns a valid JSONPath root when an upstream mapping is absent or still a placeholder. */
@@ -577,6 +619,9 @@ operation completeAslStateTransitions(w, stateByPimId, entryByPimId) {
           "Resolve the next ordered state for workflow state " + ws.name + ".",
           KERNEL!Severity#ERROR, true, Sequence{w, ws},
           "Add an explicit workflow transition or ensure ordered workflow steps form a complete path.");
+        // Keep the generated ASL syntactically valid while the blocking decision
+        // prevents deployment of this fail-closed terminal draft.
+        st.end = true;
       }
     }
     else {
@@ -585,6 +630,9 @@ operation completeAslStateTransitions(w, stateByPimId, entryByPimId) {
           "Resolve outgoing transition for workflow state " + ws.name + ".",
           KERNEL!Severity#ERROR, true, Sequence{w, ws},
           "Non-choice states need exactly one outgoing transition unless terminal.");
+        // A non-choice ASL state cannot fan out. Terminate the draft after
+        // recording the blocking model decision instead of emitting invalid ASL.
+        st.end = true;
       }
     }
     if (st.isDefined()) {

@@ -142,6 +142,13 @@ final class PimToAwsPsmEtlRegressionTest {
             .allMatch(s -> !get(s, "resultPath").toString().isBlank()),
         "Every Lambda-backed sample workflow task must preserve or explicitly map its result.");
     assertTrue(
+        resources.stream()
+            .filter(r -> "StepFunctionStateMachine".equals(r.eClass().getName()))
+            .flatMap(r -> values(reference(r, "aslDocument"), "states").stream())
+            .filter(s -> "AslTaskState".equals(s.eClass().getName()))
+            .allMatch(s -> "$".equals(get(s, "outputPath"))),
+        "Lambda task result mappings must pass the merged workflow state to downstream steps.");
+    assertTrue(
         allObjects(root).stream()
             .filter(s -> "AslWaitState".equals(s.eClass().getName()))
             .anyMatch(s -> Integer.valueOf(432000).equals(get(s, "timeoutSeconds"))),
@@ -260,6 +267,53 @@ final class PimToAwsPsmEtlRegressionTest {
             .count(),
         "Every ordinary function-backed workflow task with TBD output mapping must require"
             + " review.");
+  }
+
+  @Test
+  void makesAslStateNamesUniqueWhenPimStepsShareNames() throws Exception {
+    Path pimMetamodel =
+        REPOSITORY_ROOT.resolve("methodology/modeling-framework/metamodels/pim/pim-combined.ecore");
+    Path psmMetamodel =
+        REPOSITORY_ROOT.resolve("methodology/modeling-framework/metamodels/psm/psm-combined.ecore");
+    Path sourceModel = REPOSITORY_ROOT.resolve("methodology/modeling-framework/samples/pim.xmi");
+    Path duplicateNamePim = tempDir.resolve("duplicate-workflow-step-names-pim.xmi");
+    Path psmModel = tempDir.resolve("duplicate-workflow-step-names-psm.xmi");
+
+    Resource source = loadModel(pimMetamodel, sourceModel);
+    EObject root = source.getContents().get(0);
+    EObject workflow =
+        allObjects(root).stream()
+            .filter(object -> "Workflow".equals(object.eClass().getName()))
+            .filter(object -> values(object, "steps").size() >= 2)
+            .findFirst()
+            .orElseThrow(() -> new AssertionError("Sample PIM has no two-step workflow."));
+    List<EObject> steps = values(workflow, "steps");
+    String duplicateName = String.valueOf(get(steps.get(0), "name"));
+    set(steps.get(1), "name", duplicateName);
+    source.setURI(URI.createFileURI(duplicateNamePim.toString()));
+    source.save(null);
+
+    executeOrFail(
+        PimToAwsPsmDefaults.request(REPOSITORY_ROOT, duplicateNamePim, psmModel, true, true));
+
+    EObject psmRoot = loadModel(psmMetamodel, psmModel).getContents().get(0);
+    List<EObject> documents =
+        containedAwsResources(psmRoot).stream()
+            .filter(resource -> "StepFunctionStateMachine".equals(resource.eClass().getName()))
+            .map(resource -> reference(resource, "aslDocument"))
+            .filter(java.util.Objects::nonNull)
+            .toList();
+    assertFalse(documents.isEmpty(), "Expected at least one generated ASL document.");
+    for (EObject document : documents) {
+      List<String> names =
+          values(document, "states").stream()
+              .map(state -> String.valueOf(get(state, "stateName")))
+              .toList();
+      assertEquals(
+          names.size(),
+          names.stream().distinct().count(),
+          "ASL state names must remain unique after a duplicated PIM step label.");
+    }
   }
 
   /**
@@ -391,6 +445,14 @@ final class PimToAwsPsmEtlRegressionTest {
 
     EObject bus = first(resources, "EventBridgeBus", "Order Bus");
     assertTrue(get(bus, "eventSourceName").toString().contains("orders-domain"));
+    assertEquals(
+        "Orders Team",
+        values(bus, "tags").stream()
+            .filter(tag -> "Owner".equals(get(tag, "key")))
+            .map(tag -> get(tag, "value"))
+            .findFirst()
+            .orElse(""),
+        "Generated AWS tags must normalize free-form owner text to AWS-supported characters.");
     EObject rule = first(resources, "EventBridgeRule", "Route Order Events");
     assertEquals("ENABLED", get(rule, "state"));
     assertTrue(get(rule, "eventPatternJson").toString().contains("OrderCreated"));
@@ -413,6 +475,10 @@ final class PimToAwsPsmEtlRegressionTest {
         "$",
         get(workflowTask, "resultPath"),
         "An explicit root output mapping must be honored for a workflow task.");
+    assertEquals(
+        "$",
+        get(workflowTask, "outputPath"),
+        "A task must pass its mapped workflow state onward after applying ResultPath.");
     assertTrue(get(asl, "content").toString().contains("\"Resource\": \"${"));
 
     EObject userPool = first(resources, "CognitoUserPool", "Customer Identity");
@@ -681,7 +747,10 @@ final class PimToAwsPsmEtlRegressionTest {
                         && get(decision, "question")
                             .toString()
                             .contains("exactly one default path")),
-        "Multiple Choice defaults must be a blocking review item.");
+        "Multiple Choice defaults must be a blocking review item. Questions: "
+            + values(rootReadiness, "manualDecisions").stream()
+                .map(decision -> String.valueOf(get(decision, "question")))
+                .toList());
     assertTrue(
         values(rootReadiness, "manualDecisions").stream()
             .anyMatch(
@@ -1098,7 +1167,7 @@ final class PimToAwsPsmEtlRegressionTest {
 
     EObject service = create(metamodelResource, "ServerlessService");
     base(service, "svc_orders", "Orders Service");
-    set(service, "ownerTeam", "Orders Team");
+    set(service, "ownerTeam", "Orders; Team");
     set(service, "boundaryType", enumValue(metamodelResource, "BoundaryType", "CAPABILITY_BASED"));
     add(service, "functions", function);
     add(service, "apis", publicApi);
@@ -1627,11 +1696,23 @@ final class PimToAwsPsmEtlRegressionTest {
     set(choiceToTask, "decisionOutcome", "APPROVE");
     add(advancedWorkflow, "transitions", choiceToTask);
     EObject choiceToSuccess = transition(metamodelResource, "tr_choice_success", choice, success);
-    set(choiceToSuccess, "defaultTransition", true);
+    set(choiceToSuccess, "decisionOutcome", "SUCCESS");
+    set(choiceToSuccess, "defaultTransition", false);
     add(advancedWorkflow, "transitions", choiceToSuccess);
     EObject choiceToFailure = transition(metamodelResource, "tr_choice_failure", choice, failure);
     set(choiceToFailure, "defaultTransition", true);
     add(advancedWorkflow, "transitions", choiceToFailure);
+    EObject ambiguousChoice =
+        step(metamodelResource, "ChoiceStep", "step_adv_ambiguous_choice", "Ambiguous Choice", 6);
+    add(advancedWorkflow, "steps", ambiguousChoice);
+    EObject ambiguousDefaultA =
+        transition(metamodelResource, "tr_ambiguous_default_a", ambiguousChoice, success);
+    set(ambiguousDefaultA, "defaultTransition", true);
+    add(advancedWorkflow, "transitions", ambiguousDefaultA);
+    EObject ambiguousDefaultB =
+        transition(metamodelResource, "tr_ambiguous_default_b", ambiguousChoice, failure);
+    set(ambiguousDefaultB, "defaultTransition", true);
+    add(advancedWorkflow, "transitions", ambiguousDefaultB);
     add(
         advancedWorkflow,
         "transitions",

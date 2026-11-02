@@ -134,7 +134,9 @@ class WorkerTest(unittest.TestCase):
         with patch("urllib.request.build_opener") as factory:
             factory.return_value.open.return_value = response
             self.worker().http(resource, {"stage":"test", "auth":"aws-iam"})
-            self.assertTrue(factory.return_value.open.call_args.args[0].get_header("Authorization").startswith("AWS4-HMAC-SHA256 "))
+            authorization = factory.return_value.open.call_args.args[0].get_header("Authorization")
+            self.assertTrue(authorization.startswith("AWS4-HMAC-SHA256 "))
+            self.assertIn("Credential=test/", authorization)
 
     def test_template_detection_accepts_cloudformation_without_optional_version(self):
         worker = self.worker(files={"infra/main.yml": "Resources: {Table: {Type: 'AWS::DynamoDB::Table'}}",
@@ -155,6 +157,30 @@ class WorkerTest(unittest.TestCase):
             health.return_value.__enter__.return_value = io.BytesIO(b'{"version":"test","services":{}}')
             with self.assertRaisesRegex(ValueError,"dedicated Floci"):
                 worker.run()
+
+    def test_empty_rollback_complete_stack_is_removed_before_retry(self):
+        worker = self.worker()
+        cfn = MagicMock()
+        cfn.list_stack_resources.return_value = {"StackResourceSummaries": [
+            {"LogicalResourceId": "DeletedTable", "ResourceStatus": "DELETE_COMPLETE",
+             "PhysicalResourceId": "table"},
+            {"LogicalResourceId": "RejectedBus", "ResourceStatus": "CREATE_FAILED"},
+        ]}
+        cfn.describe_stacks.side_effect = ClientError(
+            {"Error": {"Code": "ValidationError", "Message": "Stack does not exist"}}, "DescribeStacks")
+        worker.recover_rollback_complete_stack(cfn, "empty-stack")
+        cfn.delete_stack.assert_called_once_with(StackName="empty-stack")
+
+    def test_rollback_complete_stack_with_retained_resources_is_preserved(self):
+        worker = self.worker()
+        cfn = MagicMock()
+        cfn.list_stack_resources.return_value = {"StackResourceSummaries": [
+            {"LogicalResourceId": "RetainedTable", "ResourceStatus": "DELETE_SKIPPED",
+             "PhysicalResourceId": "retained-table"},
+        ]}
+        with self.assertRaisesRegex(ValueError, "must be preserved"):
+            worker.recover_rollback_complete_stack(cfn, "retained-stack")
+        cfn.delete_stack.assert_not_called()
 
     def test_rest_routes_are_discovered_when_floci_omits_embedded_methods(self):
         api = MagicMock()

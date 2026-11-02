@@ -462,7 +462,27 @@ operation ensureFunctionContractFields() {
       ensureSchemaField(contract.inputSchema, contract.causationIdField, PIMTYPES!FieldType#STRING, false);
     }
     if (hasText(contract.idempotencyKeyField)) {
-      ensureSchemaField(contract.inputSchema, contract.idempotencyKeyField, PIMTYPES!FieldType#STRING, true);
+      var concreteKeyField = contract.inputSchema.fields.selectOne(f | f.name = contract.idempotencyKeyField);
+      if (concreteKeyField.isUndefined()) {
+        var idempotencyCandidate = contract.inputSchema.fields.select(f | f.name.toLowerCase().contains("idempotency")).first();
+        if (idempotencyCandidate.isDefined()) {
+          contract.idempotencyKeyField = idempotencyCandidate.name;
+        } else {
+          var businessEventCandidate = contract.inputSchema.fields.select(f |
+            f.name.toLowerCase().contains("providerfactidentifier") or
+            f.name.toLowerCase().contains("businesseventidentifier") or
+            f.name.toLowerCase().contains("logicaldispensecommandid") or
+            f.name.toLowerCase().contains("operationalalertidentifier") or
+            f.name.toLowerCase().contains("vendtransactionidentifier")
+          ).first();
+          if (businessEventCandidate.isDefined()) {
+            contract.idempotencyKeyField = businessEventCandidate.name;
+          } else {
+            contract.idempotencyKeyField = "idempotencyKey";
+            ensureSchemaField(contract.inputSchema, contract.idempotencyKeyField, PIMTYPES!FieldType#STRING, true);
+          }
+        }
+      }
     }
   }
 }

@@ -153,7 +153,8 @@ rule Policy2PolicyHandlerFunction
   transform pol : CIMPROCESS!Policy
   to fn : COMPUTE!Function {
 
-  guard : pol.policyType.asString() = "REACTION" or pol.policyType.asString() = "DERIVATION" or pol.policyType.asString() = "ESCALATION" or pol.policyType.asString() = "VALIDATION" or pol.triggeredBy.notEmpty() or pol.emitsCommands.notEmpty() or pol.emitsEvents.notEmpty()
+  guard : pol.policyType.asString() = "REACTION" or pol.policyType.asString() = "DERIVATION" or pol.policyType.asString() = "ESCALATION" or pol.policyType.asString() = "VALIDATION" or pol.triggeredBy.notEmpty() or pol.emitsCommands.notEmpty() or pol.emitsEvents.notEmpty() or
+    CIMPROCESS!PolicyStep.all.exists(stepItem | stepItem.policy = pol)
 
   fn.id = idFor("fn_policy", pol);
   fn.name = nameFor(pol, " Policy Handler");
@@ -242,6 +243,11 @@ rule Policy2ArchitecturePolicy
 rule DecisionTable2ChoiceLogic
   transform dt : CIMPROCESS!DecisionTable
   to fn : COMPUTE!Function {
+
+  // Only emit a runtime evaluator when a process DecisionStep actually invokes it.
+  // Unreferenced tables remain design models; generating an unattached Lambda would
+  // create an unreachable function and a deployment artifact with no caller.
+  guard : CIMPROCESS!DecisionStep.all.exists(stepItem | stepItem.decisionTable = dt)
 
   fn.id = idFor("fn_decision", dt);
   fn.name = nameFor(dt, " Decision Evaluator");
@@ -753,8 +759,7 @@ rule SecurityConstraint2SecurityPolicies
 /** Transforms Temporal Constraint elements into Timeout Policy elements. */
 rule TemporalConstraint2TimeoutPolicy
   transform tc : CIMPROCESS!TemporalConstraint
-  to timeout : POLICY!TimeoutPolicy,
-     ordering : POLICY!OrderingPolicy {
+  to timeout : POLICY!TimeoutPolicy {
 
   timeout.id = idFor("timeout", tc);
   timeout.name = nameFor(tc, " Timeout");
@@ -765,26 +770,6 @@ rule TemporalConstraint2TimeoutPolicy
   timeout.attachedTo.addAll(policyTargetsForAll(tc.constrainedElements));
   pimRoot().policies.add(timeout);
   traceGenerated(tc, timeout, "TR-130", "MEDIUM");
-
-  ordering.id = idFor("ordering", tc);
-  ordering.name = nameFor(tc, " Ordering");
-  ordering.policyScope = tc.orderingExpression;
-  ordering.productionRequired = timeout.productionRequired;
-  if (hasText(tc.orderingExpression)) {
-    ordering.orderingRequirement = PIMTYPES!OrderingRequirement#PER_KEY;
-    ordering.orderingKey = tc.orderingExpression;
-    ordering.strictOrderingRequired = tc.violationSeverity.asString() = "ERROR" or tc.violationSeverity.asString() = "CRITICAL" or tc.violationSeverity.asString() = "BLOCKER";
-  }
-  else {
-    ordering.orderingRequirement = PIMTYPES!OrderingRequirement#NONE;
-    ordering.orderingKey = "";
-    ordering.strictOrderingRequired = false;
-  }
-  ordering.attachedTo.addAll(policyTargetsForAll(tc.constrainedElements));
-  if (hasText(tc.orderingExpression)) {
-    pimRoot().policies.add(ordering);
-    traceGenerated(tc, ordering, "TR-130", "MEDIUM");
-  }
 
   for (target in policyTargetsForAll(tc.constrainedElements)) {
     if (target.isKindOf(WORKFLOW!Workflow) and timeout.timeoutSeconds > 0) {
@@ -824,9 +809,26 @@ rule TemporalConstraint2TimeoutPolicy
     manualDecision("TR-130", "Translate temporal constraint '" + tc.name + "' into concrete provider-independent timeout and schedule semantics.", KERNEL!Severity#WARNING, timeout.productionRequired, Sequence{tc, timeout});
     readinessFinding("TR-130", KERNEL!FindingType#VALIDATION_WARNING, mapSeverity(tc.violationSeverity), "Temporal constraint '" + tc.name + "' could not be converted to seconds.", "Provide duration/deadline as a parseable provider-independent duration.", timeout.productionRequired, Sequence{tc, timeout});
   }
-  if (hasText(tc.orderingExpression)) {
-    manualDecision("TR-130", "Confirm ordering semantics and idempotency strategy for temporal constraint '" + tc.name + "'.", KERNEL!Severity#WARNING, ordering.strictOrderingRequired, Sequence{tc, ordering});
-  }
+}
+
+/** Creates an ordering policy only when the source constraint defines ordering. */
+rule TemporalConstraint2OrderingPolicy
+  transform tc : CIMPROCESS!TemporalConstraint
+  to ordering : POLICY!OrderingPolicy {
+
+  guard : hasText(tc.orderingExpression)
+
+  ordering.id = idFor("ordering", tc);
+  ordering.name = nameFor(tc, " Ordering");
+  ordering.policyScope = tc.orderingExpression;
+  ordering.productionRequired = tc.violationSeverity.asString() = "ERROR" or tc.violationSeverity.asString() = "CRITICAL" or tc.violationSeverity.asString() = "BLOCKER";
+  ordering.orderingRequirement = PIMTYPES!OrderingRequirement#PER_KEY;
+  ordering.orderingKey = tc.orderingExpression;
+  ordering.strictOrderingRequired = ordering.productionRequired;
+  ordering.attachedTo.addAll(policyTargetsForAll(tc.constrainedElements));
+  pimRoot().policies.add(ordering);
+  traceGenerated(tc, ordering, "TR-130", "MEDIUM");
+  manualDecision("TR-130", "Confirm ordering semantics and idempotency strategy for temporal constraint '" + tc.name + "'.", KERNEL!Severity#WARNING, ordering.strictOrderingRequired, Sequence{tc, ordering});
 }
 
 /** Computes preferred temporal routing target. */

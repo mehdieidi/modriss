@@ -32,8 +32,8 @@ operation commandPath(cmd : CIMBEHAVIOR!Command) {
   return "/" + kebab(resource);
 }
 
-/** Computes query path. */
-operation queryPath(q : CIMBEHAVIOR!Query) {
+/** Computes the resource path shared by queries over the same primary entity. */
+operation queryResourcePath(q : CIMBEHAVIOR!Query) {
   if (q.reads.notEmpty()) {
     var entity = q.reads.first();
     if (q.queryType.asString() = "LOOKUP" or q.queryType.asString() = "STATUS") {
@@ -42,6 +42,23 @@ operation queryPath(q : CIMBEHAVIOR!Query) {
     return "/" + kebab(pluralize(entity.name));
   }
   return "/" + kebab(pluralize(q.name));
+}
+
+/** Computes a stable query path and disambiguates sibling queries on one entity. */
+operation queryPath(q : CIMBEHAVIOR!Query) {
+  var resourcePath = queryResourcePath(q);
+  var hasSiblingQuery = CIMBEHAVIOR!Query.all.exists(other |
+    other <> q and queryResourcePath(other) = resourcePath);
+  if (hasSiblingQuery) {
+    var queryPath = resourcePath + "/" + kebab(q.name);
+    var hasNameCollision = CIMBEHAVIOR!Query.all.exists(other |
+      other <> q and queryResourcePath(other) = resourcePath and kebab(other.name) = kebab(q.name));
+    if (hasNameCollision) {
+      queryPath = queryPath + "/" + kebab(q.id);
+    }
+    return queryPath;
+  }
+  return resourcePath;
 }
 
 /** Computes event subject. */
@@ -142,7 +159,9 @@ rule Command2Function
   contract.validatesOutput = true;
   contract.correlationIdField = "correlationId";
   contract.causationIdField = "causationId";
-  contract.idempotencyKeyField = cmd.idempotencyBusinessKey.orDefault("idempotencyKey");
+  // idempotencyBusinessKey describes the business composition of the key; it is not a
+  // schema-field name. Resolve the concrete input field after constructing the request schema.
+  contract.idempotencyKeyField = "idempotencyKey";
   contract.authContextRequired = cmd.authorizationRequired;
   contract.inputSchema = createCommandRequestSchema(cmd);
   contract.outputSchema = createCommandResponseSchema(cmd);
@@ -228,7 +247,6 @@ rule UserInitiatedCommand2ApiRoute
   }
 
   api.routes.add(route);
-  api.authRequired = api.authRequired or route.authRequired;
   traceGenerated(cmd, route, "TR-070", "MEDIUM");
 
   if (fn.isDefined()) {
@@ -277,7 +295,11 @@ rule Query2Function
   fn.responsibility = q.intent.orDefault("Handle query " + q.name);
   fn.handlerResponsibility = fn.responsibility;
   fn.sourceNameSuggestion = pascalCase(q.name) + "QueryHandler";
-  fn.publicEntryPoint = q.issuedBy.exists(a | isPublicActor(a));
+  // A public query is exposed through its ApiRoute. Do not also describe the
+  // implementation Lambda as a direct public entry point; protected queries
+  // remain public entry points with their route/function authorization policy.
+  fn.publicEntryPoint = q.issuedBy.exists(a | isPublicActor(a)) and
+    (q.authorizationRequired or q.containsPersonalData);
   fn.writesState = false;
   fn.readsState = q.reads.notEmpty();
   fn.publishesEvents = false;
@@ -356,7 +378,6 @@ rule Query2ApiRoute
   }
 
   api.routes.add(route);
-  api.authRequired = api.authRequired or route.authRequired;
   traceGenerated(q, route, "TR-080", "MEDIUM");
 
   if (fn.isDefined()) {

@@ -24,6 +24,9 @@ type GeneratedResult struct {
 	StatusCode int               `json:"statusCode,omitempty"`
 	Headers    map[string]string `json:"headers,omitempty"`
 	Body       string            `json:"body,omitempty"`
+	// WorkflowResult exposes the typed business result to Step Functions while
+	// preserving the API Gateway proxy response envelope in Body.
+	WorkflowResult map[string]any `json:"workflowResult,omitempty"`
 	BatchItemFailures []map[string]string `json:"batchItemFailures,omitempty"`
 }
 

@@ -283,7 +283,13 @@ operation createCommandRequestSchema(cmd : CIMBEHAVIOR!Command) {
   }
   addCorrelationFields(s);
   if (hasText(cmd.idempotencyBusinessKey) or cmd.duplicateSubmissionPossible) {
-    s.fields.add(fieldFor(s.id, cmd.idempotencyBusinessKey.orDefault("idempotencyKey"), PIMTYPES!FieldType#STRING, true));
+    var explicitKeyInput = cmd.input.select(i | i.name.toLowerCase().contains("idempotency")).first();
+    if (explicitKeyInput.isUndefined()) {
+      // The CIM business key can describe a composition (actor + transaction + request key).
+      // Keep that description in the idempotency policy and expose a concrete field in the
+      // request contract instead of serializing prose as a property name.
+      s.fields.add(fieldFor(s.id, "idempotencyKey", PIMTYPES!FieldType#STRING, true));
+    }
   }
   traceGenerated(cmd, s, "TR-070", "HIGH");
   pimRoot().schemas.add(s);

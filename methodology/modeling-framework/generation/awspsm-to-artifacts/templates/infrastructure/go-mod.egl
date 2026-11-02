@@ -1,13 +1,18 @@
 [% /* Generates the go mod artifact. */ %]module [%= emitCtx.goModulePath() %]
 
-go 1.22
+go 1.24
 
 require github.com/aws/aws-lambda-go v1.47.0
-[% if (AWSPSMSTORAGE!RdsDbCluster.all.notEmpty()) { %]
+[% if (AWSPSMSTORAGE!RdsDbCluster.all.notEmpty() or AWSPSMSTORAGE!DynamoDbTable.all.notEmpty()) { %]
 
 require (
   github.com/aws/aws-sdk-go-v2 v1.37.1
   github.com/aws/aws-sdk-go-v2/config v1.29.9
+[% if (AWSPSMSTORAGE!DynamoDbTable.all.notEmpty()) { %]
+  github.com/aws/aws-sdk-go-v2/service/dynamodb v1.72.3
+[% } %]
+[% if (AWSPSMSTORAGE!RdsDbCluster.all.notEmpty()) { %]
   github.com/aws/aws-sdk-go-v2/service/rdsdata v1.29.1
+[% } %]
 )
 [% } %]

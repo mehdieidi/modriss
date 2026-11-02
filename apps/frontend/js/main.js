@@ -2,7 +2,7 @@ import { startAssistantModelLockMonitor } from "./assistant-model-lock-monitor.j
 import { el } from "./dom.js";
 import { initEditorTutorial } from "./editor-tutorial.js";
 import { state } from "./state.js";
-import { renderTestControls } from "./test-environment.js?v=mjs-module-mime-20261101";
+import { renderTestControls } from "./test-environment.js";
 import { initFrontendTelemetry } from "./telemetry.js";
 import { initTheme, toggleTheme } from "./theme.js";
 import {

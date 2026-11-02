@@ -33,6 +33,9 @@ export async function verifyBrowser({api,project,token,userId,workflow}) {
     await page.screenshot({path:"target/test-environment-artifact-controls.png"});
     await page.locator('#deployTestBtn').click();
     await page.getByRole("heading",{name:"Deploy a project snapshot",exact:true}).waitFor();
+    await page.locator('#teArtifact').waitFor({state:"visible"});
+    assert.ok(await page.locator('#teArtifact option').count() > 0,
+      "Saved AWS artifacts must remain available after opening the deployment view");
     assert.equal(await page.locator('#deployTestBtn').isVisible(),false);
     assert.equal(await page.locator('#modelTabs [data-type="test"]').isVisible(),false);
     await page.locator('#modelTabs [data-type="artifact"]').click();

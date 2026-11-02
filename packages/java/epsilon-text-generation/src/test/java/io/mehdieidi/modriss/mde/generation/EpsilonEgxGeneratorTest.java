@@ -424,6 +424,45 @@ final class EpsilonEgxGeneratorTest {
   }
 
   @Test
+  void generatesDynamoDbRuntimeOnlyWhenModeledTablesExist() throws Exception {
+    Path sourceModel = tempDir.resolve("dynamodb-runtime.xmi");
+    Path outputDirectory = tempDir.resolve("dynamodb-runtime-project");
+    createLocalStackDeployableAwsPsmModel(sourceModel);
+
+    generateOrFail(
+        AwsPsmToArtifactsDefaults.request(
+            REPOSITORY_ROOT, sourceModel, outputDirectory, true, true));
+
+    Path generatedClient = outputDirectory.resolve("src/shared/dynamodb.go");
+    assertTrue(Files.isRegularFile(generatedClient));
+    String generatedSource = Files.readString(generatedClient);
+    assertTrue(generatedSource.contains("func NewDynamoDBClient"));
+    assertTrue(generatedSource.contains("func NewDynamoDBRuntime"));
+    assertTrue(generatedSource.contains("func (runtime *DynamoDBRuntime) PutItem"));
+    assertTrue(generatedSource.contains("func (runtime *DynamoDBRuntime) GetItem"));
+    assertTrue(generatedSource.contains("func (runtime *DynamoDBRuntime) UpdateItem"));
+    assertTrue(generatedSource.contains("func (runtime *DynamoDBRuntime) ScanPage"));
+    assertTrue(generatedSource.contains("func IsConditionalCheckFailed"));
+    assertTrue(generatedSource.contains("AWS_ENDPOINT_URL_DYNAMODB"));
+    String generatedModule = Files.readString(outputDirectory.resolve("go.mod"));
+    assertTrue(generatedModule.contains("go 1.24"));
+    assertTrue(generatedModule.contains("service/dynamodb"));
+    assertFalse(generatedModule.contains("service/rdsdata"));
+
+    createRepresentativeAwsPsmModel(sourceModel);
+    generateOrFail(
+        AwsPsmToArtifactsDefaults.request(
+            REPOSITORY_ROOT, sourceModel, outputDirectory, false, true));
+
+    assertFalse(
+        Files.exists(generatedClient),
+        "Removing the last DynamoDB table must remove its generated shared client.");
+    assertFalse(
+        Files.readString(outputDirectory.resolve("go.mod")).contains("service/dynamodb"),
+        "DynamoDB SDK dependencies must follow the current PSM resources.");
+  }
+
+  @Test
   void generatesRelationalResourcesSchemasAndCrossStackConfiguration() throws Exception {
     Path source = tempDir.resolve("relational.xmi");
     createRepresentativeAwsPsmModel(source);
