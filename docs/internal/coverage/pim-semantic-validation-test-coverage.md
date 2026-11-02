@@ -15,14 +15,15 @@ This document traces the PIM EVL semantic validation coverage added in
 ## Coverage Strategy
 
 The suite validates mandatory EVL `constraint` rules as `MANDATORY` findings and optional EVL
-`critique` rules as `OPTIONAL` findings. It covers 178 executable PIM rules out of 184 EVL rule
-declarations. The remaining 6 rules are retained in EVL but documented below because the current
+`critique` rules as `OPTIONAL` findings. It covers 176 executable PIM rule names out of 182
+distinct declared names. The EVL sources contain 183 declarations because one name appears in two
+contexts. The remaining 6 names are retained in EVL but documented below because the current
 metamodel/runtime shape prevents a meaningful failing instance.
 
 | Scenario                                                    | EVL area covered                                                                                                                                      |
 | ----------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `repositoryPimSamplePassesAllMandatoryAndOptionalSemantics` | Repository PIM sample is the good model and must pass all mandatory and optional PIM semantics.                                                       |
-| `root-core`                                                 | PIM root domain/profile/provider-neutrality, base kernel ids, portable names, generated traceability, manual rationale.                               |
+| `root-core`                                                 | PIM root domain/profile and architecture style, base kernel ids, generated traceability, manual rationale.                                            |
 | `deployment`                                                | Services, ownership, exposure/data ownership, deployment units, environments, implementation profile, membership consistency.                         |
 | `compute-contracts-api`                                     | Function reachability/responsibility/idempotency/state/event declarations, triggers, function contracts, API/auth/routes/validation/error mappings.   |
 | `schemas-events-channels`                                   | Schemas/fields/schema constraints, event types/envelopes, channels, queues, topics, event buses, routing rules, subscriptions, schedules, flows.      |
@@ -46,14 +47,13 @@ pass the critique.
 ## EOL Helper Coverage
 
 The helper-only test imports `methodology/modeling-framework/validation/pim/lib/pim-validation-helpers.eol` and asserts helper
-behavior against a compact, valid PIM fixture. All 45 helper operations are directly called by the
+behavior against a compact, valid PIM fixture. All 44 helper operations are directly called by the
 helper-contract EVL used in `pimEolHelpersHaveExplicitBehaviorCoverage`. Covered helper behavior
 includes:
 
 | Helper behavior                     | Covered by assertion                                                                                                                                                              |
 | ----------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Text/boolean/enum helpers           | `hasText`, `isTrue`, `enumIs`, `enumIn`, `notEmpty`.                                                                                                                              |
-| Provider-neutral checks             | `containsProviderToken` detects provider terms and ignores generic terms.                                                                                                         |
 | Service ownership helpers           | `ownedElements`, `serviceMemberships`, `serviceMembershipsByServiceId`, `hasMembershipFor`, `displayName`, `allServiceApis`, `allServiceChannels`, `allServiceWorkflows`.         |
 | Reachability and function semantics | `reachableFunctionIds`, `hasAnyIncomingBinding`, `changesStateOrEmitsEvents`, `needsIdempotencyPolicy`, `idempotentConsumerFunctionIds`.                                          |
 | Schema and data sensitivity         | `hasFieldNamed`, `hasClassifiedSensitiveFields`, event/channel/storage personal-data helpers.                                                                                     |

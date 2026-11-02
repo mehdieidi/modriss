@@ -19,7 +19,7 @@ The JUnit suite uses the real repository CIM sample as the trusted good model, t
 | Scenario               | EVL area covered                                                                                                                                   |
 | ---------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `core-root-readiness`  | CIM root scope, production readiness blockers, transformation-profile authorization/privacy gates                                                  |
-| `kernel-trace`         | kernel trace links, generated-element traceability, provider-neutral language, explanation/source critiques                                        |
+| `kernel-trace`         | kernel trace links, generated-element traceability, explanation/source critiques                                                                   |
 | `organization-intent`  | requirements, acceptance criteria, goals, KPIs, stakeholders, actors, roles, external systems, capabilities, bounded contexts, ubiquitous language |
 | `domain-data`          | entities, value objects, relationships, aggregates, invariants, information items, classifications                                                 |
 | `behavior`             | commands, queries, events, business errors, conditions                                                                                             |

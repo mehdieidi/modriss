@@ -383,7 +383,7 @@ context CIM!CIMModel {
   <commands id="cmd-external-bad" name="Bad External Command" issuedBy="ext-identity" expectedEvents="evt-submitted" targetCapability="cap-intake" />
   <queries id="qry-bad" name="Bad Query" queryType="LIST" containsPersonalData="true" output="info-resident-id" />
   <queries id="qry-flag-bad" name="Bad Flag Query" queryType="SEARCH" containsPersonalData="false" output="info-resident-id" authorizationRequired="true" authorizationRule="Reader must be authorized" />
-  <events id="evt-bad" name="ApproveCustomer" externallyVisible="true" semanticVersion="one" payload="info-resident-id" />
+  <events id="evt-bad" name="CustomerApproved" externallyVisible="true" semanticVersion="one" payload="info-resident-id" />
   <businessErrors id="err-bad" name="Bad Error" retryMeaningful="true" recoverable="false" />
   <conditions id="cond-bad" name="Bad Condition" mustBeAutomatable="true" />
 """),
@@ -397,8 +397,6 @@ context CIM!CIMModel {
             mandatory("PersonalQueryMustDeclareAuthorization"),
             optional("QueryPersonalFlagMatchesOutput"),
             optional("ListSearchQueryDeclaresResultHandling"),
-            mandatory("EventNamePastTense"),
-            mandatory("EventIsBusinessFactNotCommand"),
             mandatory("EventHasBusinessMeaning"),
             optional("EventHasProducerOrConsumer"),
             mandatory("ProductionRelevantEventHasVersioningMetadata"),
@@ -688,8 +686,6 @@ context CIM!CIMModel {
         "PersonalQueryMustDeclareAuthorization",
         "QueryPersonalFlagMatchesOutput",
         "ListSearchQueryDeclaresResultHandling",
-        "EventNamePastTense",
-        "EventIsBusinessFactNotCommand",
         "EventHasBusinessMeaning",
         "EventHasProducerOrConsumer",
         "ProductionRelevantEventHasVersioningMetadata",

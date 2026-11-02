@@ -132,30 +132,6 @@ context CIM!Query {
 /** Validates Business Event elements. */
 context CIM!BusinessEvent {
 
-  /** Checks that event name past tense. */
-  constraint EventNamePastTense {
-    check :
-      (self.name.matches("(?i).*(ed|done|completed|created|updated|deleted|rejected|accepted|submitted|failed|cancelled)$")) or
-      self.occurredInPastTenseName.hasText()
-    message :
-      "Error [CIM-EVT-001] BusinessEvent '" + self.labelText() + "' is not clearly named as a past-tense business fact. " +
-      "Suggestion: rename it to a past-tense fact such as 'OrderSubmitted', 'PaymentRejected', or fill occurredInPastTenseName."
-  }
-
-  /** Checks that event is business fact not command. */
-  constraint EventIsBusinessFactNotCommand {
-    check :
-      (not self.name.startsWith("Create")) and
-      (not self.name.startsWith("Update")) and
-      (not self.name.startsWith("Delete")) and
-      (not self.name.startsWith("Submit")) and
-      (not self.name.startsWith("Approve")) and
-      (not self.name.startsWith("Cancel"))
-    message :
-      "Error [CIM-EVT-002] BusinessEvent '" + self.labelText() + "' is named like an imperative command. " +
-      "Suggestion: model commands as Command elements and events as facts that already happened, e.g. 'CustomerApproved' instead of 'ApproveCustomer'."
-  }
-
   /** Checks that event has business meaning. */
   constraint EventHasBusinessMeaning {
     check : self.businessMeaning.hasText() or self.semanticName.hasText()

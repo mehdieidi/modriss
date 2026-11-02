@@ -36,38 +36,6 @@ operation KERNEL!ModelElement displayName() : String {
 }
 
 @cached
-/** Returns whether the receiver contains provider token. */
-operation Any containsProviderToken() : Boolean {
-  if (not self.hasText()) {
-    return false;
-  }
-  var text = self.asString().toLowerCase();
-  return text.contains("lambda")
-    or text.contains("dynamodb")
-    or text.contains("sqs")
-    or text.contains("sns")
-    or text.contains("eventbridge")
-    or text.contains("cloudwatch")
-    or text.contains("xray")
-    or text.contains("iam")
-    or text.contains("cognito")
-    or text.contains("s3")
-    or text.contains("aws")
-    or text.contains("arn")
-    or text.contains("sam")
-    or text.contains("cloudformation")
-    or text.contains("apigateway")
-    or text.contains("azure")
-    or text.contains("gcp")
-    or text.contains("pubsub")
-    or text.contains("cloudrun")
-    or text.contains("cloudfunctions")
-    or text.contains("servicebus")
-    or text.contains("cosmosdb")
-    or text.contains("bigquery");
-}
-
-@cached
 /** Computes reachable function ids. */
 operation reachableFunctionIds() : Set {
   var ids : Set = Set{};

@@ -16,17 +16,6 @@ context PIM!PIMModel {
     message : "[PIM-ROOT-003] Artifact generation requires an ImplementationProfile. Fix: add one with primaryLanguage, packageManager, sourceLayout, test/build commands and contract-generation choices."
   }
 
-  /** Checks that no provider specific names in model. */
-  constraint NoProviderSpecificNamesInModel {
-    check : KERNEL!ModelElement.all.forAll(elementItem |
-      not elementItem.name.containsProviderToken()
-      and not elementItem.summary.containsProviderToken()
-      and not elementItem.description.containsProviderToken()
-      and not elementItem.documentation.containsProviderToken()
-    )
-    message : "[PIM-ROOT-004] The model contains provider-specific wording in a name or description. Fix: replace cloud/vendor service names with provider-independent domain terms such as function, queue, topic, object store, identity provider, event bus, trace, metric or deployment unit."
-  }
-
   critique DefaultCorrelationIdShouldBeNamed {
     check : self.defaultCorrelationIdName.hasText()
     message : "No defaultCorrelationIdName is defined. Suggested fix: set a portable name such as correlationId so APIs, events, workflows and logs can share the same correlation convention."
@@ -50,15 +39,6 @@ context KERNEL!ModelElement {
     message : "[PIM-NAME-001] Element id is missing. Fix: generate an id for '" + self.displayName() + "'."
   }
 
-  /** Advises that portable name recommended. */
-  critique PortableNameRecommended {
-    guard : not self.isKindOf(KERNEL!TraceLink)
-      and not self.isKindOf(KERNEL!ManualDecision)
-      and not self.isKindOf(KERNEL!ReadinessFinding)
-      and not self.isKindOf(KERNEL!ReadinessCheck)
-    check : self.name.hasText() and self.name.matches("^[A-Za-z][A-Za-z0-9 _\\-.]*$")
-    message : "[PIM-NAME-002] The element name '" + self.displayName() + "' is hard to use in generated artifacts. Suggested fix: start with a letter and use only letters, numbers, spaces, underscores, hyphens or dots."
-  }
 }
 
 /** Validates Traceable Element elements. */

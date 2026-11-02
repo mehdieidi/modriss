@@ -438,87 +438,11 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 ---
 
-## `EventNamePastTense`
-
-**Context:** `CIM!BusinessEvent`  
-**Classification:** Mandatory semantic constraint (error)  
-**Source:** `methodology/modeling-framework/validation/cim/rules/behavior.evl:136`
-
-### Why this rule exists
-
-The rule checks whether event name past tense. The business event element provides the relevant evidence through name, occurred in past tense name, label text. At this level, business behavior can be turned into operations, events, policies, and tests without changing its meaning. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: BusinessEvent ' ' is not clearly named as a past-tense business fact.
-
-### When it applies
-
-No guard is defined, so the check runs for every instance of this context in the validated model.
-
-No guard expression is present. Every instance of the context is checked.
-
-### What counts as valid
-
-The model passes when the following EVL check evaluates to `true`:
-
-```evl
-check : (self.name.matches("(?i).*(ed|done|completed|created|updated|deleted|rejected|accepted|submitted|failed|cancelled)$")) or self.occurredInPastTenseName.hasText()
-```
-
-This rule reads: `name`, `occurredInPastTenseName`, `labelText`.
-
-### Diagnostic and repair
-
-> Error [CIM-EVT-001] BusinessEvent ' ' is not clearly named as a past-tense business fact. Suggestion: rename it to a past-tense fact such as 'OrderSubmitted', 'PaymentRejected', or fill occurredInPastTenseName.
-
-**How to fix it:**
-
-rename it to a past-tense fact such as 'OrderSubmitted', 'PaymentRejected', or fill occurredInPastTenseName.
-
-A constraint represents a mandatory semantic invariant for this validation profile. Transformation or deployment work should not treat the model as semantically ready while this violation remains unresolved.
-
----
-
-## `EventIsBusinessFactNotCommand`
-
-**Context:** `CIM!BusinessEvent`  
-**Classification:** Mandatory semantic constraint (error)  
-**Source:** `methodology/modeling-framework/validation/cim/rules/behavior.evl:146`
-
-### Why this rule exists
-
-Events describe something that happened; commands ask for something to happen. Keeping the distinction prevents generated consumers from treating an event as an instruction and protects event-driven autonomy.
-
-### When it applies
-
-No guard is defined, so the check runs for every instance of this context in the validated model.
-
-No guard expression is present. Every instance of the context is checked.
-
-### What counts as valid
-
-The model passes when the following EVL check evaluates to `true`:
-
-```evl
-check : (not self.name.startsWith("Create")) and (not self.name.startsWith("Update")) and (not self.name.startsWith("Delete")) and (not self.name.startsWith("Submit")) and (not self.name.startsWith("Approve")) and (not self.name.startsWith("Cancel"))
-```
-
-This rule reads: `name`, `labelText`.
-
-### Diagnostic and repair
-
-> Error [CIM-EVT-002] BusinessEvent ' ' is named like an imperative command. Suggestion: model commands as Command elements and events as facts that already happened, e.g. 'CustomerApproved' instead of 'ApproveCustomer'.
-
-**How to fix it:**
-
-model commands as Command elements and events as facts that already happened, e.g. 'CustomerApproved' instead of 'ApproveCustomer'.
-
-A constraint represents a mandatory semantic invariant for this validation profile. Transformation or deployment work should not treat the model as semantically ready while this violation remains unresolved.
-
----
-
 ## `EventHasBusinessMeaning`
 
 **Context:** `CIM!BusinessEvent`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `methodology/modeling-framework/validation/cim/rules/behavior.evl:160`
+**Source:** `methodology/modeling-framework/validation/cim/rules/behavior.evl:136`
 
 ### Why this rule exists
 
@@ -556,7 +480,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `CIM!BusinessEvent`  
 **Classification:** Advisory critique (warning)  
-**Source:** `methodology/modeling-framework/validation/cim/rules/behavior.evl:168`
+**Source:** `methodology/modeling-framework/validation/cim/rules/behavior.evl:144`
 
 ### Why this rule exists
 
@@ -594,7 +518,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 **Context:** `CIM!BusinessEvent`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `methodology/modeling-framework/validation/cim/rules/behavior.evl:180`
+**Source:** `methodology/modeling-framework/validation/cim/rules/behavior.evl:156`
 
 ### Why this rule exists
 
@@ -634,7 +558,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `CIM!BusinessEvent`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `methodology/modeling-framework/validation/cim/rules/behavior.evl:189`
+**Source:** `methodology/modeling-framework/validation/cim/rules/behavior.evl:165`
 
 ### Why this rule exists
 
@@ -674,7 +598,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `CIM!BusinessEvent`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `methodology/modeling-framework/validation/cim/rules/behavior.evl:198`
+**Source:** `methodology/modeling-framework/validation/cim/rules/behavior.evl:174`
 
 ### Why this rule exists
 
@@ -712,7 +636,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `CIM!BusinessError`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `methodology/modeling-framework/validation/cim/rules/behavior.evl:210`
+**Source:** `methodology/modeling-framework/validation/cim/rules/behavior.evl:186`
 
 ### Why this rule exists
 
@@ -750,7 +674,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `CIM!BusinessError`  
 **Classification:** Advisory critique (warning)  
-**Source:** `methodology/modeling-framework/validation/cim/rules/behavior.evl:219`
+**Source:** `methodology/modeling-framework/validation/cim/rules/behavior.evl:195`
 
 ### Why this rule exists
 
@@ -790,7 +714,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 **Context:** `CIM!Condition`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `methodology/modeling-framework/validation/cim/rules/behavior.evl:232`
+**Source:** `methodology/modeling-framework/validation/cim/rules/behavior.evl:208`
 
 ### Why this rule exists
 
@@ -828,7 +752,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `CIM!Condition`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `methodology/modeling-framework/validation/cim/rules/behavior.evl:240`
+**Source:** `methodology/modeling-framework/validation/cim/rules/behavior.evl:216`
 
 ### Why this rule exists
 
@@ -868,7 +792,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `CIM!Condition`  
 **Classification:** Advisory critique (warning)  
-**Source:** `methodology/modeling-framework/validation/cim/rules/behavior.evl:249`
+**Source:** `methodology/modeling-framework/validation/cim/rules/behavior.evl:225`
 
 ### Why this rule exists
 

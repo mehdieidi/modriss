@@ -145,7 +145,6 @@ context PIM!PIMModel {
         PIM!DataAccessMode#READ.enumIn(Sequence{"READ", "WRITE"}) and
         Sequence{1}.notEmpty() and not Sequence{}.notEmpty() and
         service.displayName() = "Helper Service" and
-        not "generic queue".containsProviderToken() and "AWS Lambda".containsProviderToken() and
         reachableFunctionIds().includes("helper-function") and functionItem.hasAnyIncomingBinding() and
         service.ownedElements().includes(functionItem) and service.serviceMemberships().size() = 1 and
         serviceMembershipsByServiceId().get("helper-service").size() = 1 and
@@ -201,7 +200,6 @@ context PIM!PIMModel {
             minimalRootCoreModel(),
             mandatory("DomainNameRequired"),
             mandatory("ImplementationProfileRequiredForGeneration"),
-            mandatory("NoProviderSpecificNamesInModel"),
             mandatory("ModelElementIdRequired"),
             optional("DefaultCorrelationIdShouldBeNamed"),
             optional("ArchitectureStyleShouldMatchContents"),
@@ -218,7 +216,7 @@ context PIM!PIMModel {
                         "primaryLanguage=\"CUSTOM\" packageManager=\"NONE\"",
                         "primaryLanguage=\"PYTHON\" packageManager=\"NPM\""),
                 """
-  <services id="bad-service-empty" name="1 Bad Service" externallyExposed="true" ownsData="true" boundaryType="CAPABILITY_BASED"/>
+  <services id="bad-service-empty" name="Bad Service" externallyExposed="true" ownsData="true" boundaryType="CAPABILITY_BASED"/>
   <deploymentUnits id="bad-du" name="Bad Deployment Unit" independentlyDeployable="true" unitType="SERVICE"/>
   <environments id="bad-prod" name="Bad Prod" productionLike="false" requiresApproval="false" environmentClass="PROD"/>
   <serviceMemberships id="bad-membership" name="Bad Membership" ownershipKind="OWNS" service="bad-service-empty" element="%s"/>
@@ -237,8 +235,7 @@ context PIM!PIMModel {
             mandatory("ProfileHasGenerationBasics"),
             mandatory("PackageManagerMatchesRuntimeLanguage"),
             optional("RuntimeValidationShouldGenerateTypedContracts"),
-            mandatory("MembershipMatchesServiceOwnership"),
-            optional("PortableNameRecommended")),
+            mandatory("MembershipMatchesServiceOwnership")),
         scenario(
             "compute-contracts-api",
             insertBeforeFirstServiceClose(
@@ -732,11 +729,9 @@ context PIM!PIMModel {
     return Set.of(
         "DomainNameRequired",
         "ImplementationProfileRequiredForGeneration",
-        "NoProviderSpecificNamesInModel",
         "DefaultCorrelationIdShouldBeNamed",
         "ArchitectureStyleShouldMatchContents",
         "ModelElementIdRequired",
-        "PortableNameRecommended",
         "GeneratedElementShouldBeTraceable",
         "RationaleRecommendedForManuallyMaintainedElements",
         "ServiceResponsibilityRequired",

@@ -1,6 +1,6 @@
 # PIM validation: Core
 
-PIM core rules protect the provider-independent architecture's identity, portability, naming, traceability, and explanation. They are the guard against a PIM that is structurally valid but already assumes an AWS resource or has lost its business origin.
+PIM core rules check domain and implementation-profile completeness, architecture-style consistency, model identity, generated-element traceability, and rationale for manually maintained elements.
 
 Source profile: `methodology/modeling-framework/validation/pim/rules/core.evl`.
 
@@ -18,7 +18,7 @@ Each entry preserves the actual EVL guard and check. Treat the guard as the appl
 
 ### Why this rule exists
 
-The rule checks whether domain name required. The pimmodel element provides the relevant evidence through domain name. At this level, the PIM remains portable and traceable instead of quietly becoming an AWS design under a generic name. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: [PIM-ROOT-002] The PIM model is missing a domainName.
+The rule checks that the PIM declares its business domain. This gives generated artifacts and reports a stable domain context. Missing evidence would leave generated names and reports without a consistent context. The rule prevents the following failure: [PIM-ROOT-002] The PIM model is missing a domainName.
 
 ### When it applies
 
@@ -56,7 +56,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ### Why this rule exists
 
-The rule checks whether implementation profile required for generation. The pimmodel element provides the relevant evidence through implementation profile. At this level, the PIM remains portable and traceable instead of quietly becoming an AWS design under a generic name. Missing evidence would leave an unresolved choice in generated infrastructure. The rule prevents the following failure: [PIM-ROOT-003] Artifact generation requires an ImplementationProfile.
+The rule checks that an implementation profile is present. The profile gives artifact generation explicit language, package, and build choices. Missing evidence would leave generation without a concrete implementation setup. The rule prevents the following failure: [PIM-ROOT-003] Artifact generation requires an ImplementationProfile.
 
 ### When it applies
 
@@ -86,53 +86,15 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ---
 
-## `NoProviderSpecificNamesInModel`
-
-**Context:** `PIM!PIMModel`  
-**Classification:** Mandatory semantic constraint (error)  
-**Source:** `methodology/modeling-framework/validation/pim/rules/core.evl:20`
-
-### Why this rule exists
-
-PIM is intentionally provider-independent. This rule stops AWS service names from entering its vocabulary, where they would bias the architecture and make a later provider choice look inevitable.
-
-### When it applies
-
-No guard is defined, so the check runs for every instance of this context in the validated model.
-
-No guard expression is present. Every instance of the context is checked.
-
-### What counts as valid
-
-The model passes when the following EVL check evaluates to `true`:
-
-```evl
-check : KERNEL!ModelElement.all.forAll(elementItem | not elementItem.name.containsProviderToken() and not elementItem.summary.containsProviderToken() and not elementItem.description.containsProviderToken() and not elementItem.documentation.containsProviderToken() )
-```
-
-This rule reads: `name`, `summary`, `description`, `documentation`.
-
-### Diagnostic and repair
-
-> [PIM-ROOT-004] The model contains provider-specific wording in a name or description. Fix: replace cloud/vendor service names with provider-independent domain terms such as function, queue, topic, object store, identity provider, event bus, trace, metric or deployment unit.
-
-**How to fix it:**
-
-replace cloud/vendor service names with provider-independent domain terms such as function, queue, topic, object store, identity provider, event bus, trace, metric or deployment unit.
-
-A constraint represents a mandatory semantic invariant for this validation profile. Transformation or deployment work should not treat the model as semantically ready while this violation remains unresolved.
-
----
-
 ## `DefaultCorrelationIdShouldBeNamed`
 
 **Context:** `PIM!PIMModel`  
 **Classification:** Advisory critique (warning)  
-**Source:** `methodology/modeling-framework/validation/pim/rules/core.evl:30`
+**Source:** `methodology/modeling-framework/validation/pim/rules/core.evl:19`
 
 ### Why this rule exists
 
-The rule examines default correlation id name. Within this part of the model, the PIM remains portable and traceable instead of quietly becoming an AWS design under a generic name. The gap is No defaultCorrelationIdName is defined. Suggested fix: set a portable name such as correlationId so APIs, events, workflows and logs can share the same correlation convention. A later transformation, generator, or reviewer would otherwise have to infer the missing decision.
+The rule advises that a default correlation identifier name be defined. A shared name lets APIs, events, workflows, and logs use a consistent correlation convention. The gap is No defaultCorrelationIdName is defined. Suggested fix: set a name such as correlationId. A later transformation, generator, or reviewer would otherwise have to infer the missing decision.
 
 ### When it applies
 
@@ -166,11 +128,11 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 **Context:** `PIM!PIMModel`  
 **Classification:** Advisory critique (warning)  
-**Source:** `methodology/modeling-framework/validation/pim/rules/core.evl:35`
+**Source:** `methodology/modeling-framework/validation/pim/rules/core.evl:24`
 
 ### Why this rule exists
 
-The rule examines architecture style, all service apis, event types, all service channels, all service workflows. Within this part of the model, the PIM remains portable and traceable instead of quietly becoming an AWS design under a generic name. The gap is The selected architectureStyle does not match the model contents. Suggested fix: add the matching APIs/events/workflows or choose HYBRID_SERVERLESS if multiple styles are intentionally combined. A later transformation, generator, or reviewer would otherwise have to infer the missing decision.
+The rule checks whether the selected architecture style matches the APIs, events, channels, and workflows in the model. The gap is The selected architectureStyle does not match the model contents. Suggested fix: add the matching APIs/events/workflows or choose HYBRID_SERVERLESS if multiple styles are intentionally combined. A later transformation, generator, or reviewer would otherwise have to infer the missing decision.
 
 ### When it applies
 
@@ -204,7 +166,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 **Context:** `KERNEL!ModelElement`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `methodology/modeling-framework/validation/pim/rules/core.evl:48`
+**Source:** `methodology/modeling-framework/validation/pim/rules/core.evl:37`
 
 ### Why this rule exists
 
@@ -238,51 +200,11 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ---
 
-## `PortableNameRecommended`
-
-**Context:** `KERNEL!ModelElement`  
-**Classification:** Advisory critique (warning)  
-**Source:** `methodology/modeling-framework/validation/pim/rules/core.evl:54`
-
-### Why this rule exists
-
-The rule checks whether portable name recommended. It examines is kind of, name, display name. Within this part of the model, the PIM remains portable and traceable instead of quietly becoming an AWS design under a generic name. The gap is [PIM-NAME-002] The element name ' ' is hard to use in generated artifacts. Suggested fix: start with a letter and use only letters, numbers, spaces, underscores, hyphens or dots. A later transformation, generator, or reviewer would otherwise have to infer the missing decision.
-
-### When it applies
-
-The rule is considered only when the guard below is true. A false guard is intentional: it means this invariant is not relevant to the current variant or modeling situation.
-
-```evl
-guard : not self.isKindOf(KERNEL!TraceLink) and not self.isKindOf(KERNEL!ManualDecision) and not self.isKindOf(KERNEL!ReadinessFinding) and not self.isKindOf(KERNEL!ReadinessCheck)
-```
-
-### What counts as valid
-
-The model passes when the following EVL check evaluates to `true`:
-
-```evl
-check : self.name.hasText() and self.name.matches("^[A-Za-z][A-Za-z0-9 _\\-.]*$")
-```
-
-This rule reads: `isKindOf`, `name`, `displayName`.
-
-### Diagnostic and repair
-
-> [PIM-NAME-002] The element name ' ' is hard to use in generated artifacts. Suggested fix: start with a letter and use only letters, numbers, spaces, underscores, hyphens or dots.
-
-**How to fix it:**
-
-This is advisory rather than a structural blocker. Decide whether the modeled situation genuinely needs the recommendation; if it does, change the referenced model features so the check evaluates to true and record the rationale when the omission is intentional.
-
-A critique does not necessarily make the model invalid. It is a deliberate quality/readiness signal; disposition it by improving the model, documenting why it is acceptable, or carrying the decision into the review record.
-
----
-
 ## `GeneratedElementShouldBeTraceable`
 
 **Context:** `KERNEL!TraceableElement`  
 **Classification:** Advisory critique (warning)  
-**Source:** `methodology/modeling-framework/validation/pim/rules/core.evl:68`
+**Source:** `methodology/modeling-framework/validation/pim/rules/core.evl:48`
 
 ### Why this rule exists
 
@@ -322,11 +244,11 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 **Context:** `KERNEL!TraceableElement`  
 **Classification:** Advisory critique (warning)  
-**Source:** `methodology/modeling-framework/validation/pim/rules/core.evl:82`
+**Source:** `methodology/modeling-framework/validation/pim/rules/core.evl:62`
 
 ### Why this rule exists
 
-The rule checks whether rationale recommended for manually maintained elements. It examines manually maintained, rationale, review notes, display name. Within this part of the model, the PIM remains portable and traceable instead of quietly becoming an AWS design under a generic name. The gap is [PIM-TRACE-002] Manually maintained element ' ' has no rationale/review notes. Suggested fix: explain why this element is manual and how it should be reviewed. A later transformation, generator, or reviewer would otherwise have to infer the missing decision.
+The rule advises documenting why an element is manually maintained and how it should be reviewed. The gap is [PIM-TRACE-002] Manually maintained element ' ' has no rationale/review notes. Suggested fix: explain why this element is manual and how it should be reviewed. A later transformation, generator, or reviewer would otherwise have to infer the missing decision.
 
 ### When it applies
 
