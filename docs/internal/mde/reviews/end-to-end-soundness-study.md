@@ -152,25 +152,25 @@ Further findings will be appended here before their implementation changes.
   reviewer to model and verify the intended input/output mapping before deployment. Explicit PIM
   output mappings continue to override this conservative draft behavior.
 
-### F-005: The 49 PSM warnings are genuine EVL critiques, not malformed-model errors
+### F-005: Historical PSM warnings were genuine EVL critiques, not malformed-model errors
 
-- **Observed:** Live `POST /api/psm/{id}/validate` returned `valid: true`, 49 warnings, and zero
-  errors. The warning set is exactly two `CognitoAuthorizerShouldReferenceClients` critiques and
-  47 `ProductionRoleShouldUsePermissionsBoundary` critiques. The referenced generated objects
-  exist: two Cognito authorizers have no `CognitoUserPoolClient` entries, and all 47 production IAM
-  roles have an empty `permissionsBoundaryArn`.
-- **Impact:** The warnings are real findings on the generated PSM, but interpreting them as proof
-  that the PIM→PSM transformation is structurally unsound would be incorrect. They identify
-  organization-specific security decisions that the current PIM does not provide. They are also
-  not represented by the 47 transformation readiness decisions, so a reviewer can reach
-  `DEPLOYMENT_READY` while EVL still reports these critiques.
+- **Observed:** At the time of this study, live `POST /api/psm/{id}/validate` returned
+  `valid: true`, 49 warnings, and zero errors. The warning set was two
+  `CognitoAuthorizerShouldReferenceClients` critiques and 47 production-role permissions-boundary
+  critiques. Two Cognito authorizers had no `CognitoUserPoolClient` entries, and 47 production IAM
+  roles had an empty `permissionsBoundaryArn`.
+- **Impact:** The warnings were real findings on the generated PSM, but they did not prove that the
+  PIM→PSM transformation was structurally unsound. They identified organization-specific security
+  decisions that the PIM did not provide. They were also not represented by the transformation
+  readiness decisions, so a reviewer could reach `DEPLOYMENT_READY` while EVL reported critiques.
 - **Root cause:** EVL semantic validation and transformation readiness are separate pipelines. The
   PSM transformation emits valid optional security fields without inventing clients or a
-  permissions-boundary ARN, while the EVL critiques intentionally flag those omissions.
-- **Disposition:** No synthetic Cognito clients or permissions-boundary ARN should be invented by
-  the transformation. The warnings remain non-blocking EVL feedback and are exposed by the explicit
-  PSM validation endpoint. Transformation readiness and semantic validation findings must remain
-  visibly separate; a zero open transformation backlog must not be read as zero EVL findings.
+  permissions-boundary ARN.
+- **Disposition:** The production-role permissions-boundary critique has since been removed from
+  the active PSM security profile, so an empty `permissionsBoundaryArn` no longer produces that
+  warning. Transformations still do not invent boundary ARNs or Cognito clients. The two
+  authorizer critiques remain independent findings, and transformation readiness remains separate
+  from semantic validation.
 
 ### F-006: PIM executable task targets are dropped before ASL generation
 

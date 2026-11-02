@@ -22,7 +22,7 @@ The tests follow the Eclipse Epsilon EVL semantics documented in the [EVL docume
 
 ## Test Strategy
 
-- `repositoryPsmSamplePassesMandatorySemanticsAndReportsOptionalReadinessGaps` validates the checked-in PSM sample through the normal validation path and asserts that mandatory EVL diagnostics remain clean.
+- `repositoryPsmSamplePassesMandatorySemantics` validates the checked-in PSM sample through the normal validation path and asserts that mandatory EVL diagnostics remain clean.
 - `psmNegativeScenariosExerciseDocumentedSemanticRules` builds targeted invalid PSM models and asserts the exact mandatory/optional rule names that must execute.
 - `psmEolHelpersHaveExplicitBehaviorCoverage` validates helper EOL operation behavior that is used by the EVL rules.
 - `psmEolHelpersCoverExplicitTaggingPolicyBranch` validates the explicit tagging-policy branch of `activeTaggingPolicy()` and `requiredTagKeys()`.
@@ -176,7 +176,6 @@ ProductionModeHasProdStage
 ProductionQueueShouldBeEncrypted
 ProductionResourcesHaveRequiredTags
 ProductionResourcesShouldRetainOnDelete
-ProductionRoleShouldUsePermissionsBoundary
 ProductionSecretShouldUseKms
 ProductionStageShouldThrottle
 ProductionStateMachineShouldLogAndTrace

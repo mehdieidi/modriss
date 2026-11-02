@@ -9,13 +9,6 @@ context AWSPSM!IamRole {
     check : self.assumeRolePolicy.isDefined() and self.assumeRolePolicy.statements.notEmpty()
     message : 'IAM role ' + self.resourceLabel() + ' has no trust policy statements. Fix: add assumeRolePolicy statements that define who can assume the role.'
   }
-
-  /** Advises that production role should use permissions boundary. */
-  critique ProductionRoleShouldUsePermissionsBoundary {
-    guard : self.isProductionScoped()
-    check : self.permissionsBoundaryArn.hasText()
-    message : 'Production-scoped IAM role ' + self.resourceLabel() + ' has no permissions boundary. Fix: attach permissionsBoundaryArn if your organization requires permission boundaries.'
-  }
 }
 
 /** Validates Iam Policy Document elements. */

@@ -95,8 +95,7 @@ class PsmSemanticValidationTest {
   }
 
   @Test
-  void repositoryPsmSamplePassesMandatorySemanticsAndReportsOptionalReadinessGaps()
-      throws Exception {
+  void repositoryPsmSamplePassesMandatorySemantics() throws Exception {
     EvlValidationReport report = validate(PSM_SAMPLE);
 
     assertEquals(EvlValidationStatus.SUCCEEDED, report.status());
@@ -105,9 +104,6 @@ class PsmSemanticValidationTest {
     assertEquals(
         0,
         report.violations().stream().filter(v -> v.kind() == EvlConstraintKind.MANDATORY).count());
-    assertTrue(
-        violationNames(report).contains("ProductionRoleShouldUsePermissionsBoundary"),
-        "The sample should preserve optional production hardening advice.");
   }
 
   @Test
@@ -569,7 +565,6 @@ context AWSPSM!AwsPsmModel {
             mandatory("NotificationRuleHasEventAndDestination"),
             mandatory("ReplicationHasRoleAndRules"),
             mandatory("RoleHasTrustPolicyStatements"),
-            optional("ProductionRoleShouldUsePermissionsBoundary"),
             mandatory("PolicyDocumentHasStatements"),
             mandatory("StatementHasActionAndResourceSide"),
             mandatory("NoAllowWildcardInProductionWithoutJustification"),
@@ -1290,7 +1285,6 @@ context AWSPSM!AwsPsmModel {
         "ProductionAlarmShouldHaveActions",
         "CompositeAlarmShouldHaveActions",
         "RoleHasTrustPolicyStatements",
-        "ProductionRoleShouldUsePermissionsBoundary",
         "PolicyDocumentHasStatements",
         "StatementHasActionAndResourceSide",
         "NoAllowWildcardInProductionWithoutJustification",

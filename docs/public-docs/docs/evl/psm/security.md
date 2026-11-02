@@ -48,51 +48,11 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 ---
 
-## `ProductionRoleShouldUsePermissionsBoundary`
-
-**Context:** `AWSPSM!IamRole`  
-**Classification:** Advisory critique (warning)  
-**Source:** `methodology/modeling-framework/validation/psm/rules/security.evl:14`
-
-### Why this rule exists
-
-The rule checks whether production role should use permissions boundary. It examines is production scoped, permissions boundary arn, resource label. Within this part of the model, IAM, KMS, Secrets Manager, and SSM artifacts enforce the intended trust, scope, rotation, and secure-reference decisions. The gap is Production-scoped IAM role has no permissions boundary. A later transformation, generator, or reviewer would otherwise have to infer the missing decision.
-
-### When it applies
-
-The rule is considered only when the guard below is true. A false guard is intentional: it means this invariant is not relevant to the current variant or modeling situation.
-
-```evl
-guard : self.isProductionScoped()
-```
-
-### What counts as valid
-
-The model passes when the following EVL check evaluates to `true`:
-
-```evl
-check : self.permissionsBoundaryArn.hasText()
-```
-
-This rule reads: `isProductionScoped`, `permissionsBoundaryArn`, `resourceLabel`.
-
-### Diagnostic and repair
-
-> Production-scoped IAM role has no permissions boundary. Fix: attach permissionsBoundaryArn if your organization requires permission boundaries.
-
-**How to fix it:**
-
-attach permissionsBoundaryArn if your organization requires permission boundaries.
-
-A critique does not necessarily make the model invalid. It is a deliberate quality/readiness signal; disposition it by improving the model, documenting why it is acceptable, or carrying the decision into the review record.
-
----
-
 ## `PolicyDocumentHasStatements`
 
 **Context:** `AWSPSM!IamPolicyDocument`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `methodology/modeling-framework/validation/psm/rules/security.evl:24`
+**Source:** `methodology/modeling-framework/validation/psm/rules/security.evl:17`
 
 ### Why this rule exists
 
@@ -130,7 +90,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `AWSPSM!IamStatement`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `methodology/modeling-framework/validation/psm/rules/security.evl:33`
+**Source:** `methodology/modeling-framework/validation/psm/rules/security.evl:26`
 
 ### Why this rule exists
 
@@ -168,7 +128,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `AWSPSM!IamStatement`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `methodology/modeling-framework/validation/psm/rules/security.evl:39`
+**Source:** `methodology/modeling-framework/validation/psm/rules/security.evl:32`
 
 ### Why this rule exists
 
@@ -208,7 +168,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `AWSPSM!IamStatement`  
 **Classification:** Advisory critique (warning)  
-**Source:** `methodology/modeling-framework/validation/psm/rules/security.evl:46`
+**Source:** `methodology/modeling-framework/validation/psm/rules/security.evl:39`
 
 ### Why this rule exists
 
@@ -248,7 +208,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 **Context:** `AWSPSM!IamPrincipal`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `methodology/modeling-framework/validation/psm/rules/security.evl:56`
+**Source:** `methodology/modeling-framework/validation/psm/rules/security.evl:49`
 
 ### Why this rule exists
 
@@ -286,7 +246,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `AWSPSM!IamCondition`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `methodology/modeling-framework/validation/psm/rules/security.evl:65`
+**Source:** `methodology/modeling-framework/validation/psm/rules/security.evl:58`
 
 ### Why this rule exists
 
@@ -324,7 +284,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `AWSPSM!KmsKey`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `methodology/modeling-framework/validation/psm/rules/security.evl:74`
+**Source:** `methodology/modeling-framework/validation/psm/rules/security.evl:67`
 
 ### Why this rule exists
 
@@ -364,7 +324,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `AWSPSM!KmsKey`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `methodology/modeling-framework/validation/psm/rules/security.evl:81`
+**Source:** `methodology/modeling-framework/validation/psm/rules/security.evl:74`
 
 ### Why this rule exists
 
@@ -402,7 +362,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `AWSPSM!KmsAlias`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `methodology/modeling-framework/validation/psm/rules/security.evl:90`
+**Source:** `methodology/modeling-framework/validation/psm/rules/security.evl:83`
 
 ### Why this rule exists
 
@@ -440,7 +400,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `AWSPSM!SecretsManagerSecret`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `methodology/modeling-framework/validation/psm/rules/security.evl:99`
+**Source:** `methodology/modeling-framework/validation/psm/rules/security.evl:92`
 
 ### Why this rule exists
 
@@ -478,7 +438,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `AWSPSM!SecretsManagerSecret`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `methodology/modeling-framework/validation/psm/rules/security.evl:105`
+**Source:** `methodology/modeling-framework/validation/psm/rules/security.evl:98`
 
 ### Why this rule exists
 
@@ -518,7 +478,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `AWSPSM!SecretsManagerSecret`  
 **Classification:** Advisory critique (warning)  
-**Source:** `methodology/modeling-framework/validation/psm/rules/security.evl:112`
+**Source:** `methodology/modeling-framework/validation/psm/rules/security.evl:105`
 
 ### Why this rule exists
 
@@ -558,7 +518,7 @@ A critique does not necessarily make the model invalid. It is a deliberate quali
 
 **Context:** `AWSPSM!SecretRotationSchedule`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `methodology/modeling-framework/validation/psm/rules/security.evl:122`
+**Source:** `methodology/modeling-framework/validation/psm/rules/security.evl:115`
 
 ### Why this rule exists
 
@@ -596,7 +556,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `AWSPSM!SsmParameter`  
 **Classification:** Mandatory semantic constraint (error)  
-**Source:** `methodology/modeling-framework/validation/psm/rules/security.evl:131`
+**Source:** `methodology/modeling-framework/validation/psm/rules/security.evl:124`
 
 ### Why this rule exists
 
@@ -636,7 +596,7 @@ A constraint represents a mandatory semantic invariant for this validation profi
 
 **Context:** `AWSPSM!SsmParameter`  
 **Classification:** Advisory critique (warning)  
-**Source:** `methodology/modeling-framework/validation/psm/rules/security.evl:138`
+**Source:** `methodology/modeling-framework/validation/psm/rules/security.evl:131`
 
 ### Why this rule exists
 
