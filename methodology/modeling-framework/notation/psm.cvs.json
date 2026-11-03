@@ -1064,7 +1064,7 @@
     }
   ],
   "workbench": {
-    "defaultViewDefinitionId": "psm-portfolio-governance"
+    "defaultViewDefinitionId": "psm-workflow-asl"
   },
   "scaffoldRecipes": [],
   "constraints": [],

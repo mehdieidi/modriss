@@ -1,7 +1,7 @@
 {
   "displayName": "PSM",
   "workbench": {
-    "defaultViewDefinitionId": "psm-portfolio-governance"
+    "defaultViewDefinitionId": "psm-workflow-asl"
   },
   "elementVisualDefaults": {
     "icon": "aws-cloud",

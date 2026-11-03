@@ -28,7 +28,7 @@
       "modelNameTemplate": "psm-model",
       "assistantEnabled": false,
       "workbench": {
-        "defaultViewDefinitionId": "psm-portfolio-governance"
+        "defaultViewDefinitionId": "psm-workflow-asl"
       }
     }
   },
