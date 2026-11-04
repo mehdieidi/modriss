@@ -347,6 +347,10 @@ try {
     mimeType: "application/zip",
     buffer: Buffer.from("zip fixture"),
   });
+  const importConfirmation = page.locator("#confirmActionOverlay");
+  await importConfirmation.waitFor({ state: "visible" });
+  assert.match(await importConfirmation.textContent(), /Files missing from the ZIP will be removed/);
+  await page.locator("#confirmActionConfirmBtn").click();
   await page.getByRole("status").filter({ hasText: "Imported local-refinement.zip" }).waitFor();
   assert.equal(await page.locator(".file-tree-item[data-path='src/user-added/notes.md']").count(), 1);
   assert.match(await page.locator("#fileTree").textContent(), /empty/);
@@ -358,7 +362,7 @@ try {
   assert.ok(requests.some((item) => item.path === "/api/artifact/artifact/download"));
   assert.ok(requests.some((item) => item.path === "/api/artifact/artifact/directories"));
   assert.equal(await page.locator("#downloadProjectZipBtn").count(), 0);
-  assert.deepEqual(dialogs, ["confirm"]);
+  assert.deepEqual(dialogs, []);
   assert.deepEqual(errors, []);
   console.log("Artifact explorer browser checks passed: Ctrl+S save, expansion preservation, rename, file/folder creation, ZIP import and artifact ZIP download.");
 } finally {

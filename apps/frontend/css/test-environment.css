@@ -396,13 +396,26 @@ html.light .test-environment {
   margin: 8px 0 16px;
   flex-wrap: wrap;
 }
-.te-invoke-heading label {
+.te-action-field {
   display: flex;
   gap: 10px;
   align-items: center;
   font-size: 12px;
+  flex: 0 1 340px;
+  min-width: 0;
 }
-.test-environment select,
+.te-action-field > span {
+  flex: 0 0 auto;
+}
+.te-action-field .themed-select {
+  flex: 1 1 220px;
+  min-width: 0;
+}
+.test-environment .themed-select .attr-custom-select-trigger {
+  min-height: 36px;
+  border-color: var(--border);
+  background: var(--bg);
+}
 .te-invoke-footer input {
   background: var(--bg);
   color: var(--text);
@@ -521,6 +534,39 @@ html.light .test-environment {
   gap: 8px;
   margin-top: 20px;
   font-size: 12px;
+}
+.te-field input[type="file"] {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 8px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg);
+  color: var(--muted);
+  font-size: 11px;
+}
+.te-field input[type="file"]::file-selector-button {
+  margin-right: 12px;
+  padding: 7px 10px;
+  border: 1px solid color-mix(in srgb, var(--border) 72%, transparent);
+  border-radius: 5px;
+  background: color-mix(in srgb, var(--surface-3) 90%, var(--surface) 10%);
+  color: var(--text);
+  font: 600 11px/1.2 var(--font-ui);
+  cursor: pointer;
+  transition:
+    background var(--transition),
+    border-color var(--transition),
+    color var(--transition);
+}
+.te-field input[type="file"]::file-selector-button:hover {
+  border-color: color-mix(in srgb, var(--te-accent) 58%, var(--border) 42%);
+  background: color-mix(in srgb, var(--surface-high) 86%, var(--surface-3) 14%);
+  color: var(--text-strong);
+}
+.te-field input[type="file"]:disabled::file-selector-button {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 .te-template-list {
   border: 1px solid var(--border);

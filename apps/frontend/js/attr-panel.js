@@ -2677,13 +2677,13 @@ function synchronizeContainmentParent(node) {
   }
 }
 
-export async function deleteSelection() {
+export async function deleteSelection(targetNodeId = null) {
   if (isAssistantModelLocked()) return;
-  if (state.selectedConnectionId) {
+  if (!targetNodeId && state.selectedConnectionId) {
     await deleteSelectedConnection();
     return;
   }
-  const nodeId = state.selectedNodeId;
+  const nodeId = targetNodeId || state.selectedNodeId;
   if (!nodeId) {
     return;
   }

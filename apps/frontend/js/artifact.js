@@ -4,6 +4,7 @@ import { api, apiAuthHeaders } from "./api.js";
 import { apiUrl } from "./config.js";
 import { setStatus } from "./status.js";
 import { fetchImpact } from "./impact.js";
+import { confirmAction } from "./confirm-action.js";
 
 const MONACO_VS_PATH = "/vendor/monaco/vs";
 const DEFAULT_LANGUAGE = "plaintext";
@@ -1460,11 +1461,13 @@ export function openArtifactArchivePicker() {
 
 export async function importArtifactArchive(file) {
   if (!state.artifact.id || !file || !(await preserveEditorChangesBeforeStructureEdit())) return;
-  if (
-    !window.confirm(
+  const confirmed = await confirmAction({
+    title: "Import artifact ZIP?",
+    message:
       "Import this ZIP as the current artifact project? Files missing from the ZIP will be removed, and all generated files must be present.",
-    )
-  ) {
+    confirmLabel: "Import ZIP",
+  });
+  if (!confirmed) {
     return;
   }
   const form = new FormData();

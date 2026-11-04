@@ -1086,6 +1086,19 @@ export function bindG6Interactions(editor, callbacks = {}) {
   el.g6EditorHost?.addEventListener("pointermove", pinchPointerMoveCapture, true);
   el.g6EditorHost?.addEventListener("pointermove", hostPointerMove);
   el.g6EditorHost?.addEventListener("pointerleave", hostPointerLeave);
+  const handleNodeContextMenu = (event) => {
+    event.preventDefault();
+    const point = eventClientPoint(event);
+    const hitId = targetId(event, editor);
+    let id = null;
+    if (!isAssistantModelLocked()) {
+      id = state.nodesById.has(hitId)
+        ? hitId
+        : findNodeAtClientPoint(editor, null, point.x, point.y);
+    }
+    callbacks.onNodeContextMenu?.(id || null, event);
+  };
+  el.g6EditorHost?.addEventListener("contextmenu", handleNodeContextMenu);
   el.canvasViewport?.addEventListener("selectstart", preventCanvasTextSelection, true);
   el.g6EditorHost?.addEventListener("lostpointercapture", finishNodeDrag);
   window.addEventListener("pointerup", finishCanvasPan);
@@ -1156,6 +1169,7 @@ export function bindG6Interactions(editor, callbacks = {}) {
     el.g6EditorHost?.removeEventListener("pointermove", pinchPointerMoveCapture, true);
     el.g6EditorHost?.removeEventListener("pointermove", hostPointerMove);
     el.g6EditorHost?.removeEventListener("pointerleave", hostPointerLeave);
+    el.g6EditorHost?.removeEventListener("contextmenu", handleNodeContextMenu);
     el.canvasViewport?.removeEventListener("selectstart", preventCanvasTextSelection, true);
     el.g6EditorHost?.removeEventListener("lostpointercapture", finishNodeDrag);
     window.removeEventListener("pointerup", finishCanvasPan);

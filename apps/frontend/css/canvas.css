@@ -15,6 +15,16 @@
   --canvas-controls-left: calc(var(--rail-w) + var(--sidebar-w, 248px) + 16px);
 }
 
+.canvas-context-delete {
+  position: absolute;
+  z-index: 160;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: calc(100% - 16px);
+  box-shadow: var(--shadow-lg);
+}
+
 .assistant-canvas-trace {
   position: absolute;
   right: 18px;

@@ -633,6 +633,15 @@
 
           <section class="canvas-pane">
             <div class="canvas-stage">
+              <button
+                aria-label="Delete element"
+                class="btn btn-danger btn-sm canvas-context-delete hidden"
+                id="canvasContextDeleteBtn"
+                type="button"
+              >
+                <span aria-hidden="true">🗑</span>
+                <span>Delete</span>
+              </button>
               <div class="canvas-viewport" id="canvasViewport">
                 <div class="canvas-grid" id="canvasGrid">
                   <div class="g6-editor-host" id="g6EditorHost"></div>

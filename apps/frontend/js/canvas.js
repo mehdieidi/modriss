@@ -145,6 +145,39 @@ let hoveredEdgeId = null;
 let _inlineLabelEditStartLabel = "";
 let _inlineLabelEditUndoSnapshot = null;
 
+function hideCanvasContextDelete() {
+  const button = el.canvasContextDeleteBtn;
+  if (!button) {
+    return;
+  }
+  button.classList.add("hidden");
+  delete button.dataset.nodeId;
+}
+
+function showCanvasNodeContextDelete(nodeId, event) {
+  const button = el.canvasContextDeleteBtn;
+  const node = nodeId ? state.nodesById.get(nodeId) : null;
+  const stage = el.canvasStage;
+  if (!button || !stage || !node || !isModelingLevel(state.activeType)) {
+    hideCanvasContextDelete();
+    return;
+  }
+
+  const stageRect = stage.getBoundingClientRect();
+  const x = Number(event?.clientX) - stageRect.left + 8;
+  const y = Number(event?.clientY) - stageRect.top + 8;
+  button.dataset.nodeId = nodeId;
+  button.title = `Delete ${node.label || node.id || "element"}`;
+  button.setAttribute("aria-label", button.title);
+  button.classList.remove("hidden");
+
+  const inset = 8;
+  const maxLeft = Math.max(inset, stageRect.width - button.offsetWidth - inset);
+  const maxTop = Math.max(inset, stageRect.height - button.offsetHeight - inset);
+  button.style.left = `${Math.max(inset, Math.min(x, maxLeft))}px`;
+  button.style.top = `${Math.max(inset, Math.min(y, maxTop))}px`;
+}
+
 function syncCanvasIndexesFromState() {
   state.nodesById.clear();
   edgeIdsByNodeId.clear();
@@ -1185,6 +1218,7 @@ function ensureCanvas() {
     },
     callbacks: {
       onNodeClick: handleG6NodeClick,
+      onNodeContextMenu: showCanvasNodeContextDelete,
       onNodeDoubleClick: handleG6NodeDoubleClick,
       onNodeHover: setHoveredNode,
       onEdgeClick: handleG6EdgeClick,

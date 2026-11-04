@@ -102,6 +102,12 @@ import {
 const TOPBAR_MENU_BREAKPOINT = 1200;
 const CHAT_INPUT_MAX_HEIGHT = 132;
 const getElementTarget = (event) => (event.target instanceof Element ? event.target : null);
+const hideCanvasContextDeleteButton = () => {
+  el.canvasContextDeleteBtn?.classList.add("hidden");
+  if (el.canvasContextDeleteBtn) {
+    delete el.canvasContextDeleteBtn.dataset.nodeId;
+  }
+};
 
 window.modrissFrontendBoot = {
   ...(window.modrissFrontendBoot || {}),
@@ -746,8 +752,10 @@ function bindEvents() {
     }
     closeMobilePanels();
     closeTopbarMenu();
+    hideCanvasContextDeleteButton();
     switchTab(btn.dataset.type);
   });
+  el.modelTabs?.addEventListener("contextmenu", (event) => event.preventDefault());
 
   el.mobileModelLevelTabs?.addEventListener("click", (event) => {
     const target = getElementTarget(event);
@@ -758,8 +766,10 @@ function bindEvents() {
     const type = tab.dataset.mobileModelType;
     closeMobilePanels();
     closeTopbarMenu();
+    hideCanvasContextDeleteButton();
     void switchTab(type).finally(renderMobileModelLevelTabs);
   });
+  el.mobileModelLevelTabs?.addEventListener("contextmenu", (event) => event.preventDefault());
 
   window.addEventListener("modriss-active-modeling-level-change", renderMobileModelLevelTabs);
   window.addEventListener("modriss-cloud-provider-change", renderMobileModelLevelTabs);
@@ -968,6 +978,7 @@ function bindEvents() {
   document.addEventListener("keydown", (event) => {
     if (event.key === "Escape") {
       closeRailMenus();
+      hideCanvasContextDeleteButton();
     }
   });
   document.addEventListener("keydown", (event) => {
@@ -1004,6 +1015,29 @@ function bindEvents() {
   });
 
   // Canvas interaction
+  el.canvasStage?.addEventListener("contextmenu", (event) => {
+    event.preventDefault();
+    if (!el.g6EditorHost?.contains(getElementTarget(event))) {
+      hideCanvasContextDeleteButton();
+    }
+  });
+  el.canvasContextDeleteBtn?.addEventListener("click", () => {
+    const nodeId = el.canvasContextDeleteBtn.dataset.nodeId;
+    hideCanvasContextDeleteButton();
+    if (nodeId && state.nodesById.has(nodeId)) {
+      void deleteSelection(nodeId);
+    }
+  });
+  document.addEventListener(
+    "pointerdown",
+    (event) => {
+      const target = getElementTarget(event);
+      if (el.canvasContextDeleteBtn && !el.canvasContextDeleteBtn.contains(target)) {
+        hideCanvasContextDeleteButton();
+      }
+    },
+    true,
+  );
   el.canvasZoomControl?.addEventListener("mousedown", (event) => event.stopPropagation());
   el.canvasZoomControl?.addEventListener("pointerdown", (event) => event.stopPropagation());
   el.canvasZoomControl?.addEventListener("touchstart", (event) => event.stopPropagation(), {
@@ -1280,7 +1314,7 @@ function bindEvents() {
       // saveCurrentModel updates the visible save status.
     });
   });
-  el.attrPanelDeleteBtn?.addEventListener("click", deleteSelection);
+  el.attrPanelDeleteBtn?.addEventListener("click", () => deleteSelection());
   document.addEventListener("keydown", (event) => {
     if (event.key !== "Delete" && event.key !== "Backspace") {
       return;

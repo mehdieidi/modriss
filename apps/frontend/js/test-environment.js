@@ -1,6 +1,7 @@
 import { state } from "./state.js";
 import { api } from "./api.js";
 import { escapeHtml as h } from "./utils.js";
+import { enhanceSelects } from "./themed-select.js";
 import {
   resourceGroup,
   workflowGraph,
@@ -258,6 +259,7 @@ function render() {
     )
     .join("")}</nav>
   <div class="te-content">${loading && !overview ? '<div class="te-empty" role="status">Loading your test environment…</div>' : view === "deployment" ? deploymentView() : view === "runs" ? historyView() : resourcesView()}</div>`;
+  enhanceSelects(host());
   host().scrollTop = previousScrollTop;
   renderRun();
 }
@@ -362,7 +364,7 @@ function inspector() {
     ${item.definition ? `<div class="te-workflow-heading"><strong>Workflow</strong><span>Actual state events appear during execution</span></div><div id="teWorkflow">${workflowView(item)}</div><div id="teStateDetail"></div>` : ""}
     ${item.routes?.length ? `<div class="te-routes" aria-label="API routes">${item.routes.map((route, i) => `<button type="button" data-route="${i}"><b>${h(route.method)}</b> ${h(route.path)}</button>`).join("")}</div>` : ""}
     ${item.database ? `<details class="te-properties"><summary>Database ${h(item.database.database)} · ${item.database.tables.length} modeled tables</summary><div class="te-object-list">${item.database.tables.map((table) => `<button type="button" data-sql-table="${h(table.name)}"><span>${h(table.name)}</span><small>${table.columns.length} columns</small></button>`).join("")}</div><p class="te-muted">Select a table to prepare a query. Transaction controls return an ID to include as transactionId in subsequent SQL inputs.</p></details>` : ""}
-    <div class="te-invoke-heading"><label for="teAction">Action <select id="teAction">${item.actions.map((value) => `<option value="${value}" ${value === action ? "selected" : ""}>${h(actionLabel(value))}</option>`).join("")}</select></label><span class="te-muted">${action === "peek" ? "Messages remain in the queue; consumers may still receive them." : item.ResourceType === "Script" ? "Runs the deployed script snapshot in an isolated backend container." : "Executes on the backend emulator"}</span></div>
+    <div class="te-invoke-heading"><div class="te-action-field"><span>Action</span><select id="teAction" aria-label="Action">${item.actions.map((value) => `<option value="${value}" ${value === action ? "selected" : ""}>${h(actionLabel(value))}</option>`).join("")}</select></div><span class="te-muted">${action === "peek" ? "Messages remain in the queue; consumers may still receive them." : item.ResourceType === "Script" ? "Runs the deployed script snapshot in an isolated backend container." : "Executes on the backend emulator"}</span></div>
     ${action === "aws-api" ? `<details class="te-properties"><summary>${h(item.sdk.service)} · available AWS operations</summary><p>Choose an operation and its AWS SDK parameters. Requests use this project's Floci account.</p><select id="teSdkOperation" aria-label="AWS SDK operation"><option value="">Choose an operation…</option>${item.sdk.operations.map((operation) => `<option value="${h(operation)}">${h(operation)}</option>`).join("")}</select></details>` : ""}
     ${action !== "inspect" ? `<label class="te-input-label" for="teInput">${action === "request" ? "HTTP request" : "Input"} <span>JSON · editable</span></label><textarea id="teInput" data-project="${h(scope)}" data-draft-key="${h(draftKey)}" class="te-json-input" spellcheck="false" rows="${action === "request" ? 12 : 7}" aria-label="Execution input JSON">${h(requestDrafts.get(draftKey) ?? json(input))}</textarea>` : `<details class="te-properties"><summary>Resource definition</summary><pre>${h(json(item))}</pre></details>`}
     <div class="te-invoke-footer"><label>Requirement / scenario <input id="teScenario" placeholder="e.g. UC-03 · Book a workshop" aria-label="Requirement or scenario" /></label>${button("execute", busy() ? "Operation in progress…" : environmentReady() ? actionLabel(action) : "Redeployment required", busy() || !environmentReady(), "te-primary")}</div></section>`;
@@ -402,7 +404,7 @@ function deploymentView() {
   ${state.artifact.dirty ? '<div class="te-notice">The artifact editor contains unsaved changes. Save them in Artifacts before deploying.</div>' : ""}
   ${
     artifacts.length
-      ? `<label class="te-field">AWS artifact<select id="teArtifact">${artifacts.map((item) => `<option value="${h(item.id)}" ${item.id === artifact.id ? "selected" : ""}>${h(item.name)} · ${h(stamp(item.updatedAt))}</option>`).join("")}</select></label><div id="teDeploymentOptions">${deploymentOptions(artifact)}</div>
+      ? `<div class="te-field"><span>AWS artifact</span><select id="teArtifact" aria-label="AWS artifact">${artifacts.map((item) => `<option value="${h(item.id)}" ${item.id === artifact.id ? "selected" : ""}>${h(item.name)} · ${h(stamp(item.updatedAt))}</option>`).join("")}</select></div><div id="teDeploymentOptions">${deploymentOptions(artifact)}</div>
   <label class="te-field">Import refined project sources (optional ZIP)<input type="file" id="teSourceArchive" accept=".zip" ${busy() ? "disabled" : ""} /><span class="te-muted">Replaces this artifact’s source files with your local edits. UTF-8 text; build output is excluded.</span></label>
   <label class="te-input-label" for="teParameters">Template parameters <span>JSON key / value pairs</span></label><textarea id="teParameters" class="te-json-input" rows="4" spellcheck="false">{}</textarea>
   <div class="te-invoke-footer"><span class="te-muted">Build logs and provisioning events are retained.</span>${button("deploy", "Build & deploy to Floci", busy() || state.artifact.dirty, "te-primary")}</div>`
