@@ -46,6 +46,9 @@ function pruneIsolatedGeneratedNodes(graph, view, elementIds, relationshipIds) {
   if (!shouldPruneIsolatedGeneratedNodes(view) || !relationshipIds.length) {
     return elementIds;
   }
+  if (safeArray(view?.hidden?.elementIds).length || safeArray(view?.hidden?.elementTypes).length) {
+    return elementIds;
+  }
   const connected = new Set();
   const pinned = new Set(safeArray(view?.pinnedElementIds).map(String));
   relationshipIds.forEach((relationshipId) => {

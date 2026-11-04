@@ -136,7 +136,7 @@
 
 .model-tree-node {
   display: grid;
-  grid-template-columns: 18px minmax(0, 1fr) auto auto;
+  grid-template-columns: 18px minmax(0, 1fr) auto auto auto;
   align-items: center;
   gap: 6px;
   min-height: 30px;
@@ -171,6 +171,26 @@
   font: 700 9px/1 var(--font-display);
   letter-spacing: 0.07em;
   text-transform: uppercase;
+}
+
+.model-tree-hide-kind-btn {
+  min-height: 24px;
+  padding: 4px 6px;
+  border: 1px solid color-mix(in srgb, var(--accent) 34%, var(--border) 66%);
+  border-radius: 5px;
+  background: color-mix(in srgb, var(--accent-glow) 12%, var(--surface-high) 88%);
+  color: var(--accent-light);
+  cursor: pointer;
+  font: 800 8px/1 var(--font-display);
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+}
+
+.model-tree-hide-kind-btn:hover,
+.model-tree-hide-kind-btn:focus-visible {
+  border-color: color-mix(in srgb, var(--accent-light) 64%, var(--border) 36%);
+  background: color-mix(in srgb, var(--accent-glow) 24%, var(--surface-high) 76%);
+  outline: none;
 }
 
 .model-tree-relationship {

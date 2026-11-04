@@ -231,6 +231,7 @@ function inspectionView(view, hiddenOverrides = {}) {
     hidden: {
       elementIds: safeArray(hiddenOverrides.elementIds ?? view?.hidden?.elementIds),
       relationshipIds: safeArray(hiddenOverrides.relationshipIds ?? view?.hidden?.relationshipIds),
+      elementTypes: safeArray(hiddenOverrides.elementTypes ?? view?.hidden?.elementTypes),
     },
   };
 }
@@ -241,27 +242,30 @@ function inspectableElementIdsForView(view) {
   }
   return selectElementIdsForView(
     state.graph,
-    inspectionView(view, { elementIds: [] }),
+    inspectionView(view, { elementIds: [], elementTypes: [] }),
     state.activeType,
   );
 }
 
 function activeViewElementRows(view) {
-  const hiddenIds = new Set(safeArray(view?.hidden?.elementIds));
+  const hiddenIds = new Set(safeArray(view?.hidden?.elementIds).map(String));
+  const hiddenTypes = new Set(safeArray(view?.hidden?.elementTypes).map(String));
   const visibleIds =
     state.views?.visibleNodeIds instanceof Set
       ? state.views.visibleNodeIds
-      : new Set(safeArray(view?.nodes).map((node) => node.elementId));
+      : new Set(safeArray(view?.nodes).map((node) => String(node?.elementId || node?.id || "")));
   return inspectableElementIdsForView(view)
     .map((id) => {
       const element = state.graph.elementsById.get(id);
       if (!element) {
         return null;
       }
+      const kindHidden = hiddenTypes.has(elementType(element));
       return {
         id,
         element,
-        checked: visibleIds.has(id) && !hiddenIds.has(id),
+        checked: visibleIds.has(id) && !hiddenIds.has(id) && !kindHidden,
+        kindHidden,
         search: normalizeLabel(`${elementLabel(element)} ${elementType(element)} ${id}`),
       };
     })
@@ -299,6 +303,7 @@ function relationshipsForActiveView(view) {
   const inspectableView = inspectionView(view, {
     elementIds: [],
     relationshipIds: [],
+    elementTypes: [],
   });
   const elementIds = inspectableElementIdsForView(view);
   const visibleElementIds = new Set(elementIds);
@@ -395,7 +400,7 @@ function elementRowsMarkup(view) {
   return `<div class="model-tree-panel-list">
     ${filtered
       .map(
-        ({ id, element, checked }) => `
+        ({ id, element, checked, kindHidden }) => `
       <div class="model-tree-node${checked ? "" : " is-hidden"}"
            data-tree-select-element-id="${escapeHtml(id)}"
            role="button"
@@ -405,6 +410,17 @@ function elementRowsMarkup(view) {
         )}" type="checkbox" ${checked ? "checked" : ""}>
         <span class="model-tree-node-label">${escapeHtml(elementLabel(element))}</span>
         <span class="model-tree-node-type">${escapeHtml(elementType(element))}</span>
+        <button class="model-tree-hide-kind-btn"
+                data-tree-toggle-element-type="${escapeHtml(elementType(element))}"
+                data-tree-element-type-hidden="${kindHidden ? "true" : "false"}"
+                aria-pressed="${kindHidden ? "true" : "false"}"
+                type="button"
+                aria-label="${kindHidden ? "Show" : "Hide"} all ${escapeHtml(
+                  elementType(element),
+                )} elements"
+                title="${kindHidden ? "Show" : "Hide"} all ${escapeHtml(
+                  elementType(element),
+                )} elements">${kindHidden ? "show all" : "hide all"}</button>
         <button class="model-tree-locate-btn"
                 data-tree-locate-element-id="${escapeHtml(id)}"
                 type="button">locate</button>
@@ -638,19 +654,66 @@ async function toggleTreeElement(elementId, checked) {
   if (!view || !elementId) {
     return;
   }
+  const element = state.graph.elementsById.get(elementId);
+  if (!element) {
+    return;
+  }
+  const type = elementType(element);
+  view.hidden ??= { elementIds: [], relationshipIds: [], elementTypes: [] };
+  const hidden = new Set(safeArray(view.hidden.elementIds).map(String));
+  const hiddenTypes = new Set(safeArray(view.hidden.elementTypes).map(String));
+  const isVisible = !hidden.has(elementId) && !hiddenTypes.has(type);
+  if (checked === isVisible) {
+    return;
+  }
   syncActiveViewFromVisibleGraph();
-  view.hidden ??= { elementIds: [], relationshipIds: [] };
-  const hidden = new Set(safeArray(view.hidden.elementIds));
   if (checked) {
+    if (hiddenTypes.delete(type)) {
+      for (const [id, candidate] of state.graph.elementsById.entries()) {
+        if (id !== elementId && elementType(candidate) === type) {
+          hidden.add(id);
+        }
+      }
+    }
     hidden.delete(elementId);
   } else {
     hidden.add(elementId);
   }
   view.hidden.elementIds = [...hidden];
+  view.hidden.elementTypes = [...hiddenTypes];
   materializeActiveView();
   renderDiagramCallback?.();
   renderViewWorkbench();
   saveCurrentTabGraphState();
+  markModelDirty({ kind: "view" });
+}
+
+async function toggleTreeElementType(type) {
+  const view = activeView();
+  if (!view || !type) {
+    return;
+  }
+  syncActiveViewFromVisibleGraph();
+  view.hidden ??= { elementIds: [], relationshipIds: [], elementTypes: [] };
+  const hidden = new Set(safeArray(view.hidden.elementIds).map(String));
+  const hiddenTypes = new Set(safeArray(view.hidden.elementTypes).map(String));
+  if (hiddenTypes.has(type)) {
+    hiddenTypes.delete(type);
+    for (const [id, element] of state.graph.elementsById.entries()) {
+      if (elementType(element) === type) {
+        hidden.delete(id);
+      }
+    }
+  } else {
+    hiddenTypes.add(type);
+  }
+  view.hidden.elementIds = [...hidden];
+  view.hidden.elementTypes = [...hiddenTypes];
+  materializeActiveView();
+  renderDiagramCallback?.();
+  renderViewWorkbench();
+  saveCurrentTabGraphState();
+  markModelDirty({ kind: "view" });
 }
 
 async function toggleTreeRelationship(relationshipId, checked) {
@@ -680,17 +743,31 @@ async function ensureTreeElementVisible(elementId) {
   if (!view || !elementId) {
     return false;
   }
-  view.hidden ??= { elementIds: [], relationshipIds: [] };
-  const hidden = new Set(safeArray(view.hidden.elementIds));
-  if (!hidden.has(elementId)) {
+  view.hidden ??= { elementIds: [], relationshipIds: [], elementTypes: [] };
+  const element = state.graph.elementsById.get(elementId);
+  const type = element ? elementType(element) : "";
+  const hidden = new Set(safeArray(view.hidden.elementIds).map(String));
+  const hiddenTypes = new Set(safeArray(view.hidden.elementTypes).map(String));
+  const typeIsHidden = type && hiddenTypes.has(type);
+  if (!hidden.has(elementId) && !typeIsHidden) {
     return true;
   }
   syncActiveViewFromVisibleGraph();
   hidden.delete(elementId);
+  if (typeIsHidden) {
+    hiddenTypes.delete(type);
+    for (const [id, candidate] of state.graph.elementsById.entries()) {
+      if (id !== elementId && elementType(candidate) === type) {
+        hidden.add(id);
+      }
+    }
+  }
   view.hidden.elementIds = [...hidden];
+  view.hidden.elementTypes = [...hiddenTypes];
   materializeActiveView();
   renderViewWorkbench();
   saveCurrentTabGraphState();
+  markModelDirty({ kind: "view" });
   await renderDiagramAsync({ full: true });
   return true;
 }
@@ -784,6 +861,16 @@ function bindTreeEvents() {
   el.modelTreeBody?.addEventListener("click", (event) => {
     const target = event.target instanceof Element ? event.target : null;
     if (target?.closest(".model-tree-node-toggle")) {
+      return;
+    }
+    const elementTypeButton = target?.closest("[data-tree-toggle-element-type]");
+    if (elementTypeButton) {
+      event.preventDefault();
+      event.stopPropagation();
+      const type = elementTypeButton.dataset.treeToggleElementType;
+      if (type) {
+        void toggleTreeElementType(type);
+      }
       return;
     }
     const elementId = target?.closest("[data-tree-locate-element-id]")?.dataset

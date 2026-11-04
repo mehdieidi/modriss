@@ -1346,10 +1346,12 @@ function shouldIncludeRelationshipEndpointOnView(
   view,
   elementId,
   typeKey,
-  { filterTypes, pinned, hidden } = {},
+  { filterTypes, pinned, hidden, hiddenTypes } = {},
 ) {
   const element = graph.elementsById.get(elementId);
-  if (!element || hidden?.has(elementId)) {
+  const hiddenElementTypes =
+    hiddenTypes ?? new Set(safeArray(view?.hidden?.elementTypes).map(String));
+  if (!element || hidden?.has(elementId) || hiddenElementTypes.has(semanticType(element))) {
     return false;
   }
   if (shouldExcludeContainedElementFromView(graph, view, elementId, element, typeKey)) {
@@ -1387,12 +1389,20 @@ function withRelationshipEndpoints(
   graph,
   elementIds,
   relationshipIds = [],
-  { view = null, typeKey = null, filterTypes = null, pinned = null, hidden = null } = {},
+  {
+    view = null,
+    typeKey = null,
+    filterTypes = null,
+    pinned = null,
+    hidden = null,
+    hiddenTypes = null,
+  } = {},
 ) {
   const expanded = new Set(elementIds);
   const types = filterTypes ?? surfaceElementTypesForView(view);
   const pinnedSet = pinned ?? new Set(safeArray(view?.pinnedElementIds).map(String));
   const hiddenSet = hidden ?? new Set(safeArray(view?.hidden?.elementIds));
+  const hiddenTypeSet = hiddenTypes ?? new Set(safeArray(view?.hidden?.elementTypes).map(String));
   const applyEndpointFilter = Boolean(view && typeKey) || types.size > 0;
   safeArray(relationshipIds).forEach((relationshipId) => {
     const relationship = graph.relationshipsById.get(relationshipId);
@@ -1409,6 +1419,7 @@ function withRelationshipEndpoints(
           filterTypes: types,
           pinned: pinnedSet,
           hidden: hiddenSet,
+          hiddenTypes: hiddenTypeSet,
         })
       ) {
         expanded.add(elementId);
@@ -1604,10 +1615,14 @@ function shouldExcludeContainedElementFromView(graph, view, elementId, element, 
 
 export function selectElementIdsForView(graph, view, typeKey) {
   const hidden = new Set(safeArray(view?.hidden?.elementIds));
+  const hiddenTypes = new Set(safeArray(view?.hidden?.elementTypes).map(String));
   if (view?._temporaryIssueView) {
     return safeArray(view.nodes)
       .map((node) => node.elementId)
-      .filter((id) => graph.elementsById.has(id) && !hidden.has(id));
+      .filter((id) => {
+        const element = graph.elementsById.get(id);
+        return element && !hidden.has(id) && !hiddenTypes.has(semanticType(element));
+      });
   }
   const pinned = new Set(safeArray(view?.pinnedElementIds).map(String));
   const filterTypes = surfaceElementTypesForView(view);
@@ -1617,6 +1632,7 @@ export function selectElementIdsForView(graph, view, typeKey) {
   const explicitNodeIds = safeArray(view?.nodes)
     .map((node) => String(node?.elementId || node?.id || ""))
     .filter(Boolean);
+  const explicitNodeIdSet = new Set(explicitNodeIds);
   const rootType = rootScopeType(typeKey);
   const includeCanvasSubtypes = Boolean(matchingViewDefinition(typeKey, view)?.includeSubtypes);
   const hasOnlyRootExplicitNodes =
@@ -1674,7 +1690,11 @@ export function selectElementIdsForView(graph, view, typeKey) {
   const selected = [];
   candidates.forEach((elementId) => {
     const element = graph.elementsById.get(elementId);
-    if (!element || hidden.has(elementId)) {
+    if (!element || hidden.has(elementId) || hiddenTypes.has(semanticType(element))) {
+      return;
+    }
+    if ((hidden.size || hiddenTypes.size) && explicitNodeIdSet.has(elementId)) {
+      selected.push(elementId);
       return;
     }
     if (shouldExcludeContainedElementFromView(graph, view, elementId, element, typeKey)) {
@@ -1709,6 +1729,7 @@ export function selectElementIdsForView(graph, view, typeKey) {
     return [...graph.elementsById.keys()].filter(
       (elementId) =>
         !hidden.has(elementId) &&
+        !hiddenTypes.has(semanticType(graph.elementsById.get(elementId))) &&
         !shouldExcludeContainedElementFromView(
           graph,
           view,
@@ -1722,7 +1743,12 @@ export function selectElementIdsForView(graph, view, typeKey) {
   if (!isContainerScope) {
     [...selected].forEach((elementId) => {
       let parentId = graph.parentByChild.get(elementId);
-      while (parentId && !selectedSet.has(parentId) && !hidden.has(parentId)) {
+      while (
+        parentId &&
+        !selectedSet.has(parentId) &&
+        !hidden.has(parentId) &&
+        !hiddenTypes.has(semanticType(graph.elementsById.get(parentId)))
+      ) {
         const parent = graph.elementsById.get(parentId);
         if (!parent || semanticType(parent) === rootScopeType(typeKey)) {
           break;
@@ -1754,6 +1780,7 @@ export function selectElementIdsForView(graph, view, typeKey) {
               filterTypes,
               pinned,
               hidden,
+              hiddenTypes,
             })
           ) {
             selectedSet.add(elementId);
@@ -2030,6 +2057,21 @@ function buildViewFromDefinition(
     hidden: hidden ? clone(hidden) : { elementIds: [], relationshipIds: [] },
   };
   let elementIds = selectElementIdsForView(graph, view, typeKey);
+  const manuallyHiddenElements =
+    safeArray(view.hidden?.elementIds).length || safeArray(view.hidden?.elementTypes).length;
+  if (manuallyHiddenElements) {
+    const retained = new Set(elementIds);
+    const hiddenIds = new Set(safeArray(view.hidden?.elementIds).map(String));
+    const hiddenTypes = new Set(safeArray(view.hidden?.elementTypes).map(String));
+    safeArray(existingNodes).forEach((node) => {
+      const elementId = String(node?.elementId || node?.id || "");
+      const element = graph.elementsById.get(elementId);
+      if (element && !hiddenIds.has(elementId) && !hiddenTypes.has(semanticType(element))) {
+        retained.add(elementId);
+      }
+    });
+    elementIds = [...retained];
+  }
   const relationshipKinds = safeArray(definition.relationshipKinds);
   if (relationshipKinds.length) {
     elementIds = withRelationshipEndpoints(
@@ -2291,6 +2333,7 @@ function normalizeView(view, graph, typeKey, modelName, { deferLayout = false } 
     hidden: {
       elementIds: safeArray(view?.hidden?.elementIds).map(String),
       relationshipIds: safeArray(view?.hidden?.relationshipIds).map(String),
+      elementTypes: safeArray(view?.hidden?.elementTypes).map(String),
     },
   };
   if (!normalized.filters || typeof normalized.filters !== "object") {
