@@ -30,20 +30,23 @@ public class GlobalExceptionHandler {
    */
   @ExceptionHandler(PlatformException.class)
   ResponseEntity<ApiErrorResponse> platform(PlatformException ex) {
+    String errorId = errorId();
     if (ex.status() >= 500) {
-      log.error("Platform error [{}]: {}", errorId(), ex.getMessage(), ex);
+      log.error("Platform error [{}]: {}", errorId, ex.getMessage(), ex);
     } else {
-      log.warn("Request rejected [{}]: {}", errorId(), ex.getMessage());
+      log.warn("Request rejected [{}]: {}", errorId, ex.getMessage());
     }
-    return ResponseEntity.status(ex.status()).body(error(ex.status(), ex.getMessage(), List.of()));
+    return ResponseEntity.status(ex.status())
+        .body(error(ex.status(), ex.getMessage(), List.of(), errorId));
   }
 
   /** Returns target-model findings when a synchronization finalization cannot be committed. */
   @ExceptionHandler(TransformationValidationException.class)
   ResponseEntity<ApiErrorResponse> transformationValidation(TransformationValidationException ex) {
-    log.warn("Request rejected [{}]: {}", errorId(), ex.getMessage());
+    String errorId = errorId();
+    log.warn("Request rejected [{}]: {}", errorId, ex.getMessage());
     return ResponseEntity.status(ex.status())
-        .body(error(ex.status(), ex.getMessage(), ex.issues()));
+        .body(error(ex.status(), ex.getMessage(), ex.issues(), errorId));
   }
 
   /**
@@ -58,7 +61,8 @@ public class GlobalExceptionHandler {
         ex.getBindingResult().getFieldErrors().stream()
             .map(error -> error.getField() + ": " + error.getDefaultMessage())
             .toList();
-    return ResponseEntity.badRequest().body(error(400, "Request validation failed.", issues));
+    return ResponseEntity.badRequest()
+        .body(error(400, "Request validation failed.", issues, errorId()));
   }
 
   /**
@@ -69,8 +73,9 @@ public class GlobalExceptionHandler {
    */
   @ExceptionHandler(NoResourceFoundException.class)
   ResponseEntity<ApiErrorResponse> missingResource(NoResourceFoundException ex) {
-    log.warn("Route not found [{}]: {}", errorId(), ex.getResourcePath());
-    return ResponseEntity.status(404).body(error(404, "Resource not found.", List.of()));
+    String errorId = errorId();
+    log.warn("Route not found [{}]: {}", errorId, ex.getResourcePath());
+    return ResponseEntity.status(404).body(error(404, "Resource not found.", List.of(), errorId));
   }
 
   /**
@@ -81,14 +86,15 @@ public class GlobalExceptionHandler {
    */
   @ExceptionHandler(Exception.class)
   ResponseEntity<ApiErrorResponse> unexpected(Exception ex) {
-    log.error("Unhandled backend exception [{}]", errorId(), ex);
+    String errorId = errorId();
+    log.error("Unhandled backend exception [{}]", errorId, ex);
     return ResponseEntity.internalServerError()
-        .body(error(500, "An unexpected server error occurred.", List.of()));
+        .body(error(500, "An unexpected server error occurred.", List.of(), errorId));
   }
 
-  private ApiErrorResponse error(int status, String detailMessage, List<?> issues) {
+  private ApiErrorResponse error(int status, String detailMessage, List<?> issues, String errorId) {
     return new ApiErrorResponse(
-        clientMessage(status, detailMessage), status, Instant.now(), issues, errorId());
+        clientMessage(status, detailMessage), status, Instant.now(), issues, errorId);
   }
 
   private String clientMessage(int status, String detailMessage) {

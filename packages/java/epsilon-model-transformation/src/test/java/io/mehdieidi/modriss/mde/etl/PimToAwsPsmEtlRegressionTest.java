@@ -292,12 +292,15 @@ final class PimToAwsPsmEtlRegressionTest {
   void mergesOverlappingFunctionAndDataAccessIamGrantsWithoutDuplicateSids() throws Exception {
     Path psmMetamodel =
         REPOSITORY_ROOT.resolve("methodology/modeling-framework/metamodels/psm/psm-combined.ecore");
-    Path pimModel =
-        REPOSITORY_ROOT.resolve(
-            ".idea/evaluation/case-studies/vending-machine-backend/models/vending-machine.refined.pim.xmi");
+    Path pimModel = tempDir.resolve("vending-machine-refined.pim.xmi");
     Path psmModel = tempDir.resolve("overlapping-data-access.awspsm.xmi");
 
-    assertTrue(Files.isRegularFile(pimModel), "The vending PIM regression fixture must exist.");
+    try (var fixture =
+        PimToAwsPsmEtlRegressionTest.class.getResourceAsStream(
+            "/regression/vending-machine-refined.pim.xmi")) {
+      assertNotNull(fixture, "The vending PIM regression fixture must be on the test classpath.");
+      Files.copy(fixture, pimModel);
+    }
     executeOrFail(PimToAwsPsmDefaults.request(REPOSITORY_ROOT, pimModel, psmModel, true, true));
 
     EObject root = loadModel(psmMetamodel, psmModel).getContents().get(0);
