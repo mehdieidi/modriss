@@ -787,12 +787,12 @@ body.modal-open {
 }
 
 .workspace.artifact-mode .workspace-main {
-  grid-template-columns: 280px 1fr;
-  --sidebar-w: 280px;
+  grid-template-columns: var(--artifact-sidebar-w, 280px) 6px minmax(0, 1fr);
+  --sidebar-w: var(--artifact-sidebar-w, 280px);
 }
 
 .workspace.artifact-mode .workspace-main > .canvas-pane {
-  grid-column: 2 / -1;
+  grid-column: 3 / -1;
   margin-left: 0;
   margin-top: 0;
   width: 100%;
@@ -820,7 +820,7 @@ body.modal-open {
 }
 
 .workspace.artifact-mode.impact-open .workspace-main {
-  grid-template-columns: 280px 1fr;
+  grid-template-columns: var(--artifact-sidebar-w, 280px) 6px minmax(0, 1fr);
 }
 
 .workspace.palette-collapsed .workspace-main {
@@ -849,7 +849,7 @@ body.modal-open {
 .workspace.artifact-mode.palette-collapsed .workspace-main,
 .workspace.artifact-mode.palette-collapsed.attr-open .workspace-main,
 .workspace.artifact-mode.palette-collapsed.impact-open .workspace-main {
-  grid-template-columns: 280px 1fr;
+  grid-template-columns: var(--artifact-sidebar-w, 280px) 6px minmax(0, 1fr);
 }
 
 .workspace.palette-hidden .workspace-main {
@@ -878,12 +878,12 @@ body.modal-open {
 
 .workspace.artifact-mode.palette-hidden .workspace-main,
 .workspace.artifact-mode.palette-hidden.attr-open .workspace-main {
-  grid-template-columns: 0 1fr;
+  grid-template-columns: 0 0 minmax(0, 1fr);
   --sidebar-w: 0px;
 }
 
 .workspace.artifact-mode.palette-hidden.impact-open .workspace-main {
-  grid-template-columns: 0 1fr;
+  grid-template-columns: 0 0 minmax(0, 1fr);
 }
 
 .workspace.artifact-mode.palette-hidden .workspace-main > .left-pane {
@@ -920,8 +920,7 @@ body.modal-open {
   .workspace.artifact-mode.palette-collapsed.attr-open .workspace-main,
   .workspace.artifact-mode.palette-collapsed.impact-open .workspace-main,
   .workspace.artifact-mode.impact-open .workspace-main {
-    --sidebar-w: clamp(220px, 24vw, 252px);
-    grid-template-columns: var(--sidebar-w) 1fr;
+    grid-template-columns: var(--artifact-sidebar-w, 252px) 6px minmax(0, 1fr);
   }
 
   .workspace.palette-collapsed .workspace-main,
@@ -940,6 +939,16 @@ body.modal-open {
   .workspace.artifact-mode.palette-hidden.impact-open .workspace-main {
     grid-template-columns: 0 1fr;
     --sidebar-w: 0px;
+  }
+
+  .workspace.artifact-mode.palette-hidden .workspace-main,
+  .workspace.artifact-mode.palette-hidden.attr-open .workspace-main,
+  .workspace.artifact-mode.palette-hidden.impact-open .workspace-main {
+    grid-template-columns: 0 0 minmax(0, 1fr);
+  }
+
+  .workspace.artifact-mode.palette-hidden .artifact-pane-resize-handle {
+    display: none;
   }
 }
 
@@ -992,9 +1001,14 @@ body.modal-open {
   }
 
   .workspace.artifact-mode .workspace-main > .canvas-pane {
+    grid-column: 1;
     margin: 0;
     width: 100%;
     height: 100%;
+  }
+
+  .artifact-pane-resize-handle {
+    display: none !important;
   }
 
   .left-pane {

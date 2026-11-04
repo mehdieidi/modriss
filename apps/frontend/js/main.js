@@ -35,6 +35,7 @@ import {
   downloadCurrentArtifact,
   closeArtifactContextMenu,
   importArtifactArchive,
+  initArtifactPaneResizing,
   openArtifactContextMenu,
   openArtifactArchivePicker,
   renameArtifactEntry,
@@ -731,6 +732,7 @@ function revealActiveMobileTab() {
 // ── Bind all DOM event handlers ───────────────────────────────────────────────
 
 function bindEvents() {
+  initArtifactPaneResizing();
   startAssistantModelLockMonitor();
   configureLandingBrandLink();
   bindCriticalActions();

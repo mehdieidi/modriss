@@ -618,6 +618,19 @@
             </div>
           </aside>
 
+          <button
+            aria-label="Resize project files pane"
+            aria-orientation="vertical"
+            aria-valuemin="180"
+            aria-valuemax="560"
+            class="artifact-pane-resize-handle"
+            id="artifactPaneResizeHandle"
+            role="separator"
+            tabindex="0"
+            title="Drag to resize project files pane"
+            type="button"
+          ></button>
+
           <section class="canvas-pane">
             <div class="canvas-stage">
               <div class="canvas-viewport" id="canvasViewport">
@@ -705,16 +718,12 @@
 
               <div class="artifact-editor hidden" id="artifactEditor">
                 <div class="artifact-editor-tabs">
-                  <div class="artifact-editor-tab active">
-                    <span
-                      aria-hidden="true"
-                      class="artifact-editor-tab-icon icon-svg icon-mask"
-                      style="--icon-src: url(&quot;/assets/icons/description.svg&quot;)"
-                    ></span>
-                    <span class="artifact-editor-filename" id="artifactEditorFileName"
-                      >No file selected</span
-                    >
-                  </div>
+                  <div
+                    aria-label="Open artifact files"
+                    class="artifact-editor-tab-list"
+                    id="artifactEditorTabs"
+                    role="tablist"
+                  ></div>
                   <button
                     class="btn btn-primary btn-sm hidden artifact-editor-save-btn"
                     id="saveFileBtn"

@@ -101,6 +101,7 @@ export const state = {
     generatedPaths: [],
     selectedDirectory: "",
     expandedDirectories: {},
+    openFiles: [],
     activeFile: null,
     openingFile: false,
     downloading: false,

@@ -117,6 +117,7 @@ export const el = {
   // artifact explorer
   modelingPanel: document.getElementById("modelingPanel"),
   artifactPanel: document.getElementById("artifactPanel"),
+  artifactPaneResizeHandle: document.getElementById("artifactPaneResizeHandle"),
   adminPanel: document.getElementById("adminPanel"),
   artifactTreeToggleBtn: document.getElementById("artifactTreeToggleBtn"),
   artifactImportBtn: document.getElementById("artifactImportBtn"),
@@ -136,7 +137,7 @@ export const el = {
   artifactExplorerRoot: document.getElementById("artifactExplorerRoot"),
   fileTree: document.getElementById("fileTree"),
   artifactEditor: document.getElementById("artifactEditor"),
-  artifactEditorFileName: document.getElementById("artifactEditorFileName"),
+  artifactEditorTabs: document.getElementById("artifactEditorTabs"),
   artifactEditorContent: document.getElementById("artifactEditorContent"),
   artifactEditorLoading: document.getElementById("artifactEditorLoading"),
   artifactEditorStatusBar: document.getElementById("artifactEditorStatusBar"),

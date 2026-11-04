@@ -9,6 +9,9 @@ const MONACO_VS_PATH = "/vendor/monaco/vs";
 const DEFAULT_LANGUAGE = "plaintext";
 const FALLBACK_LANGUAGE_LABEL = "Plain Text";
 const DEFAULT_TAB_SIZE = 2;
+const ARTIFACT_SIDEBAR_WIDTH_STORAGE_KEY = "modriss.artifactExplorerWidth";
+const ARTIFACT_SIDEBAR_MIN_WIDTH = 180;
+const ARTIFACT_SIDEBAR_MAX_WIDTH = 560;
 
 const LANGUAGE_BY_EXTENSION = {
   js: "javascript",
@@ -41,6 +44,11 @@ const LANGUAGE_BY_EXTENSION = {
 let monacoLoaderPromise = null;
 let monacoEditor = null;
 let monacoModel = null;
+let activeArtifactModelPath = null;
+let artifactPlaceholderModel = null;
+const artifactModels = new Map();
+const artifactViewStates = new Map();
+const dirtyArtifactFiles = new Set();
 let monacoThemeObserver = null;
 let applyingProgrammaticEdit = false;
 let currentLanguageLabel = FALLBACK_LANGUAGE_LABEL;
@@ -50,7 +58,91 @@ let artifactContextMenuReturnFocus = null;
 let artifactContextTarget = null;
 let artifactCreateDialogResolve = null;
 let artifactCreateDialogBound = false;
+let artifactPaneResizeBound = false;
 const artifactScope = () => `${state.project?.id}:${state.cloudProvider?.id || "aws"}`;
+
+function applyArtifactSidebarWidth(width, { persist = false } = {}) {
+  const main = el.artifactPaneResizeHandle?.parentElement;
+  if (!main) return ARTIFACT_SIDEBAR_MIN_WIDTH;
+  const availableWidth = main.getBoundingClientRect().width;
+  const maximum = Math.max(
+    ARTIFACT_SIDEBAR_MIN_WIDTH,
+    Math.min(ARTIFACT_SIDEBAR_MAX_WIDTH, availableWidth - 360),
+  );
+  const boundedWidth = Math.round(
+    Math.min(maximum, Math.max(ARTIFACT_SIDEBAR_MIN_WIDTH, Number(width) || 280)),
+  );
+  main.style.setProperty("--artifact-sidebar-w", `${boundedWidth}px`);
+  el.artifactPaneResizeHandle?.setAttribute("aria-valuemax", String(maximum));
+  el.artifactPaneResizeHandle?.setAttribute("aria-valuenow", String(boundedWidth));
+  if (persist) {
+    try {
+      window.localStorage.setItem(ARTIFACT_SIDEBAR_WIDTH_STORAGE_KEY, String(boundedWidth));
+    } catch {
+      // Keep the current width even when browser storage is unavailable.
+    }
+  }
+  return boundedWidth;
+}
+
+export function initArtifactPaneResizing() {
+  const handle = el.artifactPaneResizeHandle;
+  const main = handle?.parentElement;
+  if (!handle || !main) return;
+  if (artifactPaneResizeBound) return;
+  artifactPaneResizeBound = true;
+
+  let storedWidth = 280;
+  try {
+    const stored = Number(window.localStorage.getItem(ARTIFACT_SIDEBAR_WIDTH_STORAGE_KEY));
+    if (Number.isFinite(stored) && stored > 0) storedWidth = stored;
+  } catch {
+    // The editor remains resizable for private browsing and restricted storage.
+  }
+  applyArtifactSidebarWidth(storedWidth);
+
+  let pointerId = null;
+  const finishResize = (event) => {
+    if (pointerId === null || (event?.pointerId != null && event.pointerId !== pointerId)) return;
+    pointerId = null;
+    document.body.classList.remove("is-resizing-artifact-pane");
+    applyArtifactSidebarWidth(
+      Number.parseFloat(main.style.getPropertyValue("--artifact-sidebar-w")),
+      { persist: true },
+    );
+  };
+
+  handle.addEventListener("pointerdown", (event) => {
+    if (window.matchMedia("(max-width: 920px)").matches) return;
+    event.preventDefault();
+    pointerId = event.pointerId;
+    handle.setPointerCapture?.(pointerId);
+    document.body.classList.add("is-resizing-artifact-pane");
+  });
+  handle.addEventListener("pointermove", (event) => {
+    if (event.pointerId !== pointerId) return;
+    const bounds = main.getBoundingClientRect();
+    applyArtifactSidebarWidth(event.clientX - bounds.left);
+  });
+  handle.addEventListener("pointerup", finishResize);
+  handle.addEventListener("pointercancel", finishResize);
+  handle.addEventListener("lostpointercapture", finishResize);
+  handle.addEventListener("keydown", (event) => {
+    let width = Number.parseFloat(main.style.getPropertyValue("--artifact-sidebar-w")) || 280;
+    if (event.key === "ArrowLeft") width -= event.shiftKey ? 48 : 16;
+    else if (event.key === "ArrowRight") width += event.shiftKey ? 48 : 16;
+    else if (event.key === "Home") width = ARTIFACT_SIDEBAR_MIN_WIDTH;
+    else if (event.key === "End") width = ARTIFACT_SIDEBAR_MAX_WIDTH;
+    else return;
+    event.preventDefault();
+    applyArtifactSidebarWidth(width, { persist: true });
+  });
+  window.addEventListener("resize", () => {
+    applyArtifactSidebarWidth(
+      Number.parseFloat(main.style.getPropertyValue("--artifact-sidebar-w")) || 280,
+    );
+  });
+}
 
 function setArtifactFileLoading(loading) {
   state.artifact.openingFile = Boolean(loading);
@@ -75,15 +167,6 @@ function setExplorerRootLabel(label) {
   if (text) {
     text.textContent = label;
   }
-}
-
-function setEditorFileName(filePath) {
-  if (!el.artifactEditorFileName) {
-    return;
-  }
-  const display = toFileDisplayName(filePath);
-  el.artifactEditorFileName.textContent = display;
-  el.artifactEditorFileName.title = filePath || display;
 }
 
 function setStatusField(node, value) {
@@ -133,10 +216,10 @@ function syncArtifactEditorStatusBar() {
 
 function setArtifactDirty(dirty) {
   state.artifact.dirty = Boolean(dirty);
-  if (!el.saveFileBtn) {
-    return;
+  if (el.saveFileBtn) {
+    el.saveFileBtn.textContent = state.artifact.dirty ? "Save *" : "Save";
   }
-  el.saveFileBtn.textContent = state.artifact.dirty ? "Save *" : "Save";
+  updateArtifactTabStates();
 }
 
 function isLightTheme() {
@@ -212,48 +295,146 @@ function languageLabelForId(monaco, languageId) {
   return languageId ? languageId.toUpperCase() : FALLBACK_LANGUAGE_LABEL;
 }
 
-function disposeArtifactModel() {
-  if (monacoModel) {
-    monacoModel.dispose();
-    monacoModel = null;
-  }
-}
-
-function setArtifactEditorValue(value, filePath = "") {
+function createArtifactModel(value, filePath) {
   if (!monacoEditor || !window.monaco?.editor) {
-    return;
+    return null;
   }
   const monaco = window.monaco;
   const languageId = detectLanguageId(monaco, filePath);
-  currentLanguageLabel = languageLabelForId(monaco, languageId);
-
-  applyingProgrammaticEdit = true;
-  disposeArtifactModel();
   const uri = monaco.Uri.parse(`artifact:///${encodeURI(filePath || "untitled.txt")}`);
-  const model = monaco.editor.createModel(value || "", languageId, uri);
-  monacoModel = model;
-  monacoEditor.setModel(model);
+  const existingModel = monaco.editor.getModel(uri);
+  if (existingModel) return existingModel;
+  return monaco.editor.createModel(value || "", languageId, uri);
+}
+
+function activateArtifactModel(filePath) {
+  if (!monacoEditor) return;
+  const model = filePath ? artifactModels.get(filePath) : null;
+  if (monacoModel && activeArtifactModelPath) {
+    artifactViewStates.set(activeArtifactModelPath, monacoEditor.saveViewState());
+  }
+  monacoModel = model || null;
+  activeArtifactModelPath = model ? filePath : null;
+  currentLanguageLabel = model
+    ? languageLabelForId(window.monaco, model.getLanguageId())
+    : FALLBACK_LANGUAGE_LABEL;
+  applyingProgrammaticEdit = true;
+  if (model) {
+    if (artifactPlaceholderModel) {
+      artifactPlaceholderModel.dispose();
+      artifactPlaceholderModel = null;
+    }
+    monacoEditor.setModel(model);
+    const viewState = artifactViewStates.get(filePath);
+    if (viewState) monacoEditor.restoreViewState(viewState);
+  } else {
+    artifactPlaceholderModel ||= window.monaco.editor.createModel("");
+    monacoEditor.setModel(artifactPlaceholderModel);
+  }
   monacoEditor.updateOptions({
-    readOnly: !state.artifact.activeFile,
+    readOnly: !model,
   });
-  monacoEditor.setScrollTop(0);
-  monacoEditor.setScrollLeft(0);
   applyingProgrammaticEdit = false;
   syncArtifactEditorStatusBar();
 }
 
-function getArtifactEditorValue() {
-  return monacoEditor?.getValue() || "";
+function disposeArtifactModels() {
+  artifactModels.forEach((model) => model.dispose());
+  artifactModels.clear();
+  artifactViewStates.clear();
+  dirtyArtifactFiles.clear();
+  monacoModel = null;
+  activeArtifactModelPath = null;
+  if (artifactPlaceholderModel) {
+    artifactPlaceholderModel.dispose();
+    artifactPlaceholderModel = null;
+  }
 }
 
-function resetArtifactEditor() {
-  state.artifact.activeFile = null;
+function updateArtifactTabStates() {
+  el.artifactEditorTabs?.querySelectorAll(".artifact-editor-tab").forEach((tab) => {
+    const path = tab.dataset.path || "";
+    const dirty = dirtyArtifactFiles.has(path);
+    const active = path === state.artifact.activeFile;
+    tab.classList.toggle("active", path === state.artifact.activeFile);
+    tab.classList.toggle("is-dirty", dirty);
+    const select = tab.querySelector("[role='tab']");
+    select?.setAttribute("aria-selected", String(active));
+    if (select) select.tabIndex = active ? 0 : -1;
+    const marker = tab.querySelector(".artifact-editor-tab-dirty");
+    if (marker) marker.setAttribute("aria-label", dirty ? "Unsaved changes" : "");
+  });
+}
+
+function renderArtifactTabs() {
+  const container = el.artifactEditorTabs;
+  if (!container) return;
+  container.innerHTML = "";
+  (state.artifact.openFiles || []).forEach((filePath) => {
+    const tab = document.createElement("div");
+    tab.className = "artifact-editor-tab";
+    tab.dataset.path = filePath;
+    tab.setAttribute("role", "presentation");
+
+    const select = document.createElement("button");
+    select.type = "button";
+    select.className = "artifact-editor-tab-select";
+    select.setAttribute("role", "tab");
+    select.setAttribute("aria-label", filePath);
+    select.title = filePath;
+    select.setAttribute("aria-controls", "artifactEditorContent");
+    const icon = createIcon(fileIconForPath(filePath), "artifact-editor-tab-icon");
+    const label = document.createElement("span");
+    label.className = "artifact-editor-tab-label";
+    label.textContent = toFileDisplayName(filePath);
+    const dirty = document.createElement("span");
+    dirty.className = "artifact-editor-tab-dirty";
+    dirty.setAttribute("aria-hidden", "false");
+    select.append(icon, label, dirty);
+    select.addEventListener("click", () => activateOpenArtifactFile(filePath));
+    select.addEventListener("keydown", (event) => {
+      const tabs = [...container.querySelectorAll("[role='tab']")];
+      const currentIndex = tabs.indexOf(select);
+      let nextIndex = currentIndex;
+      if (event.key === "ArrowLeft") nextIndex = (currentIndex - 1 + tabs.length) % tabs.length;
+      else if (event.key === "ArrowRight") nextIndex = (currentIndex + 1) % tabs.length;
+      else if (event.key === "Home") nextIndex = 0;
+      else if (event.key === "End") nextIndex = tabs.length - 1;
+      else return;
+      event.preventDefault();
+      const nextTab = tabs[nextIndex];
+      nextTab?.focus();
+      const nextPath = nextTab?.closest(".artifact-editor-tab")?.dataset.path;
+      if (nextPath) activateOpenArtifactFile(nextPath);
+    });
+
+    const close = document.createElement("button");
+    close.type = "button";
+    close.className = "artifact-editor-tab-close";
+    close.setAttribute("aria-label", `Close ${filePath}`);
+    close.title = `Close ${filePath}`;
+    close.textContent = "×";
+    close.addEventListener("click", (event) => {
+      event.stopPropagation();
+      closeArtifactFile(filePath);
+    });
+    tab.append(select, close);
+    container.appendChild(tab);
+  });
+  updateArtifactTabStates();
+}
+
+function resetArtifactEditor({ clearTabs = true } = {}) {
+  if (clearTabs) {
+    state.artifact.openFiles = [];
+    state.artifact.activeFile = null;
+    disposeArtifactModels();
+    renderArtifactTabs();
+  }
   setArtifactDirty(false);
-  setEditorFileName("");
   currentLanguageLabel = FALLBACK_LANGUAGE_LABEL;
   if (monacoEditor) {
-    setArtifactEditorValue("", "");
-    monacoEditor.updateOptions({ readOnly: true });
+    activateArtifactModel(null);
   }
   if (el.saveFileBtn) {
     el.saveFileBtn.classList.add("hidden");
@@ -512,9 +693,8 @@ function attachMonacoListeners() {
       syncArtifactEditorStatusBar();
       return;
     }
-    if (!state.artifact.dirty) {
-      setArtifactDirty(true);
-    }
+    dirtyArtifactFiles.add(state.artifact.activeFile);
+    setArtifactDirty(true);
     syncArtifactEditorStatusBar();
   });
 }
@@ -572,6 +752,7 @@ export function clearArtifactState() {
   state.artifact.generatedPaths = [];
   state.artifact.selectedDirectory = "";
   state.artifact.expandedDirectories = {};
+  state.artifact.openFiles = [];
   state.artifact.activeFile = null;
   state.artifact.openingFile = false;
   state.artifact.downloading = false;
@@ -609,8 +790,11 @@ export async function loadArtifactRecord(
     collapseTree = true,
     expandedDirectories = null,
     treeCollapsed: preserveTreeCollapsed = null,
+    preserveOpenFiles = false,
   } = {},
 ) {
+  const previousArtifactId = state.artifact.id;
+  const isNewArtifact = previousArtifactId !== record.id;
   artifactLoadRequestId += 1;
   artifactFileRequestId += 1;
   if (expandedDirectories && typeof expandedDirectories === "object") {
@@ -623,11 +807,11 @@ export async function loadArtifactRecord(
   state.artifact.cloudProviderId =
     record.cloudProviderId || record.modelJson?.psmPackageId || "aws";
   setArtifactFileLoading(false);
-  setArtifactDirty(false);
 
   const filePaths = Array.isArray(record.filePaths)
     ? record.filePaths
     : Object.keys(record.files || record.modelJson?.files || {});
+  const availablePaths = new Set(filePaths);
   state.artifact.files = filePaths.map((path) => ({ path }));
   const generationRules = record.modelJson?.generationRules;
   const generatedPaths =
@@ -648,10 +832,40 @@ export async function loadArtifactRecord(
     state.artifact.treeCollapsed = collapseTree;
   }
 
+  if (isNewArtifact || !preserveOpenFiles) {
+    resetArtifactEditor();
+  } else {
+    for (const filePath of [...artifactModels.keys()]) {
+      if (!availablePaths.has(filePath)) {
+        if (filePath === activeArtifactModelPath) {
+          monacoModel = null;
+          activeArtifactModelPath = null;
+        }
+        artifactModels.get(filePath)?.dispose();
+        artifactModels.delete(filePath);
+        dirtyArtifactFiles.delete(filePath);
+      }
+    }
+    state.artifact.openFiles = (state.artifact.openFiles || []).filter((path) =>
+      availablePaths.has(path),
+    );
+    if (!availablePaths.has(state.artifact.activeFile)) {
+      state.artifact.activeFile = state.artifact.openFiles.at(-1) || null;
+    }
+    renderArtifactTabs();
+    if (state.artifact.activeFile && artifactModels.has(state.artifact.activeFile)) {
+      activateArtifactModel(state.artifact.activeFile);
+      setArtifactDirty(dirtyArtifactFiles.has(state.artifact.activeFile));
+      el.saveFileBtn?.classList.remove("hidden");
+    } else {
+      state.artifact.activeFile = null;
+      resetArtifactEditor({ clearTabs: false });
+    }
+  }
+
   setExplorerRootLabel(state.artifact.name);
   updateTreeToggleButton();
   updateArtifactActions();
-  resetArtifactEditor();
   renderFileTree(state.artifact.files);
   setStatus(`Loaded artifact: ${state.artifact.name} (${state.artifact.files.length} files)`);
 }
@@ -748,6 +962,97 @@ export function renderFileTree(files) {
   updateTreeSelection();
 }
 
+function activateOpenArtifactFile(filePath) {
+  if (!artifactModels.has(filePath)) return false;
+  artifactFileRequestId += 1;
+  setArtifactFileLoading(false);
+  state.artifact.activeFile = filePath;
+  activateArtifactModel(filePath);
+  setArtifactDirty(dirtyArtifactFiles.has(filePath));
+  el.saveFileBtn?.classList.remove("hidden");
+  el.saveFileBtn.textContent = state.artifact.dirty ? "Save *" : "Save";
+  updateTreeSelection();
+  syncArtifactEditorStatusBar();
+  return true;
+}
+
+function closeArtifactFile(filePath) {
+  const openFiles = state.artifact.openFiles || [];
+  const index = openFiles.indexOf(filePath);
+  if (index < 0) return;
+  if (
+    dirtyArtifactFiles.has(filePath) &&
+    !window.confirm(`Discard unsaved changes in ${toFileDisplayName(filePath)}?`)
+  ) {
+    return;
+  }
+  state.artifact.openFiles = openFiles.filter((path) => path !== filePath);
+  if (state.artifact.activeFile === filePath) {
+    const nextFile =
+      state.artifact.openFiles[Math.min(index, state.artifact.openFiles.length - 1)] || null;
+    if (nextFile) {
+      state.artifact.activeFile = nextFile;
+      activateArtifactModel(nextFile);
+      setArtifactDirty(dirtyArtifactFiles.has(nextFile));
+      el.saveFileBtn?.classList.remove("hidden");
+      el.saveFileBtn.textContent = state.artifact.dirty ? "Save *" : "Save";
+    } else {
+      state.artifact.activeFile = null;
+      setArtifactDirty(false);
+      activateArtifactModel(null);
+      el.saveFileBtn?.classList.add("hidden");
+    }
+    updateTreeSelection();
+    syncArtifactEditorStatusBar();
+  }
+  dirtyArtifactFiles.delete(filePath);
+  artifactViewStates.delete(filePath);
+  const model = artifactModels.get(filePath);
+  if (model) {
+    artifactModels.delete(filePath);
+    if (model !== monacoModel) model.dispose();
+  }
+  updateArtifactTabStates();
+  renderArtifactTabs();
+}
+
+function remapArtifactOpenFiles(pathMap) {
+  const entries = Object.entries(pathMap || {});
+  if (!entries.length) return;
+  if (activeArtifactModelPath && pathMap[activeArtifactModelPath] && monacoEditor) {
+    artifactViewStates.set(activeArtifactModelPath, monacoEditor.saveViewState());
+    monacoModel = null;
+    activeArtifactModelPath = null;
+  }
+  entries.forEach(([oldPath, newPath]) => {
+    const oldModel = artifactModels.get(oldPath);
+    if (!oldModel) return;
+    const content = oldModel.getValue();
+    const viewState = artifactViewStates.get(oldPath);
+    const wasDirty = dirtyArtifactFiles.has(oldPath);
+    artifactModels.delete(oldPath);
+    artifactViewStates.delete(oldPath);
+    dirtyArtifactFiles.delete(oldPath);
+    const newModel = createArtifactModel(content, newPath);
+    if (!newModel) return;
+    if (newModel.getValue() !== content) newModel.setValue(content);
+    newModel.setLanguage(detectLanguageId(window.monaco, newPath));
+    if (newModel !== oldModel) oldModel.dispose();
+    artifactModels.set(newPath, newModel);
+    if (viewState) artifactViewStates.set(newPath, viewState);
+    if (wasDirty) dirtyArtifactFiles.add(newPath);
+  });
+  state.artifact.openFiles = (state.artifact.openFiles || []).map((path) => pathMap[path] || path);
+  if (state.artifact.activeFile) {
+    state.artifact.activeFile = pathMap[state.artifact.activeFile] || state.artifact.activeFile;
+  }
+  renderArtifactTabs();
+  if (state.artifact.activeFile && artifactModels.has(state.artifact.activeFile)) {
+    activateArtifactModel(state.artifact.activeFile);
+    setArtifactDirty(dirtyArtifactFiles.has(state.artifact.activeFile));
+  }
+}
+
 export async function openArtifactFile(filePath, { preserveImpact = false } = {}) {
   if (!state.artifact.id) {
     return;
@@ -755,14 +1060,23 @@ export async function openArtifactFile(filePath, { preserveImpact = false } = {}
   if (state.impactMode && state.activeType === "artifact" && !preserveImpact) {
     void fetchImpact(filePath);
   }
+  if (artifactModels.has(filePath)) {
+    if (!(state.artifact.openFiles || []).includes(filePath)) {
+      state.artifact.openFiles = [...(state.artifact.openFiles || []), filePath];
+      renderArtifactTabs();
+    }
+    activateOpenArtifactFile(filePath);
+    return;
+  }
   const requestId = ++artifactFileRequestId;
+  const artifactId = state.artifact.id;
   setArtifactFileLoading(true);
   try {
     const editorReady = await initArtifactEditor();
     if (!editorReady) {
       return;
     }
-    const url = apiUrl(`/artifact/${state.artifact.id}/file?path=${encodeURIComponent(filePath)}`);
+    const url = apiUrl(`/artifact/${artifactId}/file?path=${encodeURIComponent(filePath)}`);
     const response = await fetch(url, {
       headers: {
         Accept: "text/plain",
@@ -773,15 +1087,19 @@ export async function openArtifactFile(filePath, { preserveImpact = false } = {}
       throw new Error(`HTTP ${response.status}`);
     }
     const content = await response.text();
-    if (requestId !== artifactFileRequestId) {
+    if (requestId !== artifactFileRequestId || artifactId !== state.artifact.id) {
       return;
     }
 
+    const model = createArtifactModel(content, filePath);
+    if (!model) return;
+    artifactModels.set(filePath, model);
+    state.artifact.openFiles = [...(state.artifact.openFiles || []), filePath];
     state.artifact.activeFile = filePath;
+    dirtyArtifactFiles.delete(filePath);
+    renderArtifactTabs();
+    activateArtifactModel(filePath);
     setArtifactDirty(false);
-
-    setEditorFileName(filePath);
-    setArtifactEditorValue(content, filePath);
     if (el.saveFileBtn) {
       el.saveFileBtn.classList.remove("hidden");
       el.saveFileBtn.textContent = "Save";
@@ -800,19 +1118,33 @@ export async function openArtifactFile(filePath, { preserveImpact = false } = {}
 }
 
 export async function saveCurrentFile() {
-  if (!state.artifact.id || !state.artifact.activeFile || !monacoEditor) {
-    return;
-  }
-  const content = getArtifactEditorValue();
+  return saveArtifactFile(state.artifact.activeFile);
+}
+
+async function saveArtifactFile(filePath) {
+  if (!state.artifact.id || !filePath || !artifactModels.has(filePath)) return false;
+  const artifactId = state.artifact.id;
+  const model = artifactModels.get(filePath);
+  const content = model.getValue();
   try {
-    await api(`/artifact/${state.artifact.id}/files`, {
+    await api(`/artifact/${artifactId}/files`, {
       method: "PUT",
-      body: JSON.stringify({ path: state.artifact.activeFile, content }),
+      body: JSON.stringify({ path: filePath, content }),
     });
-    setArtifactDirty(false);
-    setStatus(`Saved: ${state.artifact.activeFile}`);
+    if (state.artifact.id !== artifactId) return false;
+    if (artifactModels.get(filePath) === model && model.getValue() === content) {
+      dirtyArtifactFiles.delete(filePath);
+    }
+    if (state.artifact.activeFile === filePath) {
+      setArtifactDirty(dirtyArtifactFiles.has(filePath));
+    } else {
+      updateArtifactTabStates();
+    }
+    setStatus(`Saved: ${filePath}`);
+    return !dirtyArtifactFiles.has(filePath);
   } catch (error) {
     setStatus(error, { prefix: "Save failed.", error: true });
+    return false;
   }
 }
 
@@ -917,9 +1249,11 @@ function requestArtifactEntryName(kind, directory, initialName = "") {
 }
 
 async function preserveEditorChangesBeforeStructureEdit() {
-  if (!state.artifact.dirty) return true;
-  await saveCurrentFile();
-  return !state.artifact.dirty;
+  const dirtyPaths = [...dirtyArtifactFiles];
+  for (const filePath of dirtyPaths) {
+    if (!(await saveArtifactFile(filePath))) return false;
+  }
+  return true;
 }
 
 export async function createArtifactFile() {
@@ -940,6 +1274,7 @@ export async function createArtifactFile() {
       collapseTree: false,
       expandedDirectories: expansion,
       treeCollapsed,
+      preserveOpenFiles: true,
     });
     state.artifact.selectedDirectory = directory;
     await openArtifactFile(path);
@@ -968,6 +1303,7 @@ export async function createArtifactDirectory() {
       collapseTree: false,
       expandedDirectories: expansion,
       treeCollapsed,
+      preserveOpenFiles: true,
     });
     state.artifact.selectedDirectory = path;
     setStatus(`Created folder: ${path}`);
@@ -1065,6 +1401,7 @@ export async function renameArtifactEntry() {
   const treeCollapsed = state.artifact.treeCollapsed;
   const activeFile = state.artifact.activeFile;
   let renamedActiveFile = activeFile;
+  const renamedPaths = {};
   if (kind === "directory") {
     const remappedExpansion = {};
     Object.entries(expansion).forEach(([path, isOpen]) => {
@@ -1081,8 +1418,16 @@ export async function renameArtifactEntry() {
     if (activeFile === sourcePath || activeFile?.startsWith(`${sourcePath}/`)) {
       renamedActiveFile = `${destination}${activeFile.slice(sourcePath.length)}`;
     }
+    (state.artifact.openFiles || []).forEach((path) => {
+      if (path.startsWith(`${sourcePath}/`)) {
+        renamedPaths[path] = `${destination}${path.slice(sourcePath.length)}`;
+      }
+    });
   } else if (activeFile === sourcePath) {
     renamedActiveFile = destination;
+  }
+  if (kind === "file" && (state.artifact.openFiles || []).includes(sourcePath)) {
+    renamedPaths[sourcePath] = destination;
   }
 
   try {
@@ -1090,10 +1435,12 @@ export async function renameArtifactEntry() {
       method: "PUT",
       body: JSON.stringify({ sourcePath, newName: name }),
     });
+    remapArtifactOpenFiles(renamedPaths);
     await loadArtifactRecord(record, {
       collapseTree: false,
       expandedDirectories: expansion,
       treeCollapsed,
+      preserveOpenFiles: true,
     });
     state.artifact.selectedDirectory = kind === "directory" ? destination : parent;
     if (renamedActiveFile && renamedActiveFile !== activeFile) {
@@ -1127,7 +1474,7 @@ export async function importArtifactArchive(file) {
       method: "POST",
       body: form,
     });
-    await loadArtifactRecord(record, { collapseTree: false });
+    await loadArtifactRecord(record, { collapseTree: false, preserveOpenFiles: false });
     setStatus(`Imported ${file.name} into ${state.artifact.name}`);
   } catch (error) {
     setStatus(error, { prefix: "Artifact ZIP import failed.", error: true });

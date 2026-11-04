@@ -86,6 +86,59 @@
   padding: 0;
 }
 
+.artifact-pane-resize-handle {
+  position: relative;
+  display: none;
+  grid-column: 2;
+  grid-row: 1;
+  align-self: stretch;
+  z-index: 8;
+  width: 6px;
+  min-width: 6px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  cursor: col-resize;
+  touch-action: none;
+}
+
+.workspace.artifact-mode:not(.palette-hidden) .artifact-pane-resize-handle {
+  display: block;
+}
+
+.artifact-pane-resize-handle::after {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 2px;
+  width: 2px;
+  background: color-mix(in srgb, var(--border-subtle) 78%, transparent);
+  content: "";
+  transition:
+    background var(--transition),
+    width var(--transition),
+    left var(--transition);
+}
+
+.artifact-pane-resize-handle:hover::after,
+.artifact-pane-resize-handle:focus-visible::after,
+body.is-resizing-artifact-pane .artifact-pane-resize-handle::after {
+  left: 1px;
+  width: 4px;
+  background: color-mix(in srgb, var(--accent) 78%, var(--border) 22%);
+}
+
+.artifact-pane-resize-handle:focus-visible {
+  outline: none;
+}
+
+body.is-resizing-artifact-pane {
+  cursor: col-resize;
+  user-select: none;
+}
+
 .artifact-explorer-title {
   color: var(--muted);
   font: 700 10px/1.2 var(--font-display);
@@ -253,14 +306,35 @@
   background: color-mix(in srgb, var(--surface-2) 94%, var(--surface-high) 6%);
 }
 
-.artifact-editor-tab {
+.artifact-editor-tabs {
   min-width: 0;
-  max-width: 420px;
+  padding-right: 8px;
+  overflow: hidden;
+}
+
+.artifact-editor-tab-list {
+  display: flex;
+  align-self: stretch;
+  align-items: stretch;
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.artifact-editor-tab-list::-webkit-scrollbar {
+  display: none;
+}
+
+.artifact-editor-tab {
+  position: relative;
+  flex: 0 0 auto;
+  min-width: 0;
+  max-width: 240px;
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  height: 100%;
-  padding: 0 10px;
+  gap: 2px;
+  padding: 0 5px 0 10px;
   border-top: 2px solid transparent;
   color: var(--muted);
   background: transparent;
@@ -272,6 +346,69 @@
   border-top-color: color-mix(in srgb, var(--accent) 84%, transparent);
 }
 
+.artifact-editor-tab-select,
+.artifact-editor-tab-close {
+  min-width: 0;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+
+.artifact-editor-tab-select {
+  gap: 6px;
+  padding: 0 3px 0 0;
+  font: inherit;
+  text-align: left;
+}
+
+.artifact-editor-tab-label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.artifact-editor-tab-close {
+  flex: 0 0 20px;
+  width: 20px;
+  padding: 0;
+  border-radius: 4px;
+  color: var(--muted-2);
+  font: 500 15px/1 var(--font-ui);
+  opacity: 0.64;
+}
+
+.artifact-editor-tab:hover .artifact-editor-tab-close,
+.artifact-editor-tab.active .artifact-editor-tab-close,
+.artifact-editor-tab-close:focus-visible {
+  opacity: 1;
+}
+
+.artifact-editor-tab-close:hover,
+.artifact-editor-tab-close:focus-visible {
+  outline: none;
+  background: color-mix(in srgb, var(--surface-3) 76%, transparent);
+  color: var(--text-strong);
+}
+
+.artifact-editor-tab-dirty {
+  display: none;
+  width: 7px;
+  height: 7px;
+  flex: 0 0 7px;
+  border-radius: 50%;
+  background: var(--warning);
+}
+
+.artifact-editor-tab.is-dirty .artifact-editor-tab-dirty {
+  display: inline-block;
+}
+
 .artifact-editor-tab-icon {
   width: 18px;
   height: 18px;
@@ -281,6 +418,7 @@
 
 .artifact-editor-save-btn {
   margin-left: auto;
+  flex: 0 0 auto;
 }
 
 .artifact-editor-fileicon {
