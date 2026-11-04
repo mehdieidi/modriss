@@ -495,6 +495,9 @@ This inventory is synchronized by `AwsPsmArtifactGenerationSyntaxTest.coverageRe
 - `paths.eol:AWSPSMCORE!AwsService.serviceRoot`
 - `paths.eol:AWSPSMCOMPUTE!AwsLambdaFunction.serviceApplicationHandlerPath`
 - `paths.eol:AWSPSMCOMPUTE!AwsLambdaFunction.serviceApplicationHandlerName`
+- `paths.eol:AWSPSMCOMPUTE!AwsLambdaFunction.apiSuccessStatusCode`
+- `paths.eol:AWSPSMCOMPUTE!AwsLambdaFunction.apiErrorStatusMap`
+- `paths.eol:AWSPSMCOMPUTE!AwsLambdaFunction.apiErrorCodeByStatusMap`
 - `paths.eol:AWSPSMCOMPUTE!AwsLambdaFunction.sourcePath`
 - `paths.eol:AWSPSMCOMPUTE!AwsLambdaFunction.handlerPath`
 - `paths.eol:AWSPSMCOMPUTE!AwsLambdaFunction.localSchemaPath`
@@ -549,9 +552,11 @@ This inventory is synchronized by `AwsPsmArtifactGenerationSyntaxTest.coverageRe
 ### `validation.eol`
 
 - `validation.eol:AWSPSM!AwsPsmModel.collectBlockingIssues`
+- `validation.eol:AWSPSM!AwsPsmModel.collectManualDecisionRows`
 - `validation.eol:AWSPSMCORE!AwsResource.supportsStableCrossStackReference`
 - `validation.eol:Any.validIamActionText`
 - `validation.eol:Any.validIamResourceText`
+- `validation.eol:Any.isValidAwsScheduleExpression`
 - `validation.eol:AWSPSM!AwsPsmModel.missingResourcePolicyPrincipalIssues`
 - `validation.eol:AWSPSM!AwsPsmModel.issueTuple`
 
@@ -561,6 +566,7 @@ This inventory is synchronized by `AwsPsmArtifactGenerationSyntaxTest.coverageRe
 - `values.eol:Any.jsonEscape`
 - `values.eol:Any.jsonString`
 - `values.eol:Any.yamlScalar`
+- `values.eol:Any.yamlStringScalar`
 - `values.eol:Any.yamlPlainScalar`
 - `values.eol:yamlBlock`
 - `values.eol:emitYamlScalarProperty`
@@ -578,6 +584,7 @@ This inventory is synchronized by `AwsPsmArtifactGenerationSyntaxTest.coverageRe
 - `values.eol:arnForResource`
 - `values.eol:Any.normalizeCfnArnReference`
 - `values.eol:AWSPSMCORE!ValueExpression.cfnInlineYaml`
+- `values.eol:AWSPSMCORE!ValueExpression.cfnStringYaml`
 - `values.eol:AWSPSMCORE!ValueExpression.cfnValueYaml`
 - `values.eol:AWSPSMCORE!ValueExpression.emitCfnValueProperty`
 - `values.eol:AWSPSMEVENTS!EventBridgeApiKeyAuthParameters.eventBridgeAuthYaml`

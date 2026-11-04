@@ -1777,6 +1777,7 @@ final class EpsilonEgxGeneratorTest {
         || outputText.contains("connected host did not properly respond")
         || outputText.contains("context deadline exceeded")
         || outputText.contains("proxyconnect tcp")
+        || (outputText.contains("proxy.golang.org") && outputText.contains(": EOF"))
         || outputText.contains("The requested URL returned error")
         || outputText.contains("Proxy Error")
         || outputText.contains("unrecognized import path");

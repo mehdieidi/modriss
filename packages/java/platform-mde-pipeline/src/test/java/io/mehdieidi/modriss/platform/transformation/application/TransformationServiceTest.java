@@ -25,6 +25,7 @@ import java.io.ByteArrayOutputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -1667,16 +1668,19 @@ class TransformationServiceTest {
     for (String eventId :
         List.of(
             "evt-submitted", "evt-approved", "evt-disbursement-scheduled", "evt-appeal-filed")) {
-      EObject topic = findByGeneratedFrom(initialPim, eventId, "Topic");
-      assertTrue(topic != null, () -> "Expected topic generated from " + eventId);
-      assertFalse(
-          values(topic, "subscriptions").isEmpty(),
-          () -> "Expected generated subscriptions for topic from " + eventId);
-      ObjectNode topicJson = findGeneratedElement(pim.modelJson(), "Topic", eventId);
-      assertTrue(topicJson != null, () -> "Expected stored JSON topic generated from " + eventId);
-      assertFalse(
-          topicJson.path("subscriptions").isEmpty(),
-          () -> "Stored JSON lost generated subscriptions for topic from " + eventId);
+      EObject eventType = findByGeneratedFrom(initialPim, eventId, "EventType");
+      assertTrue(eventType != null, () -> "Expected event type generated from " + eventId);
+      assertTrue(reference(eventType, "schema") != null, () -> "Missing schema for " + eventId);
+      assertTrue(reference(eventType, "envelope") != null, () -> "Missing envelope for " + eventId);
+      assertTrue(
+          findEventBusContaining(initialPim, eventType) != null,
+          () -> "Expected event type " + eventId + " on its generated event bus");
+      ObjectNode eventTypeJson = findGeneratedElement(pim.modelJson(), "EventType", eventId);
+      assertTrue(
+          eventTypeJson != null, () -> "Expected stored JSON event type generated from " + eventId);
+      assertEquals(
+          eventType.eGet(eventType.eClass().getEStructuralFeature("semanticName")),
+          eventTypeJson.path("semanticName").asText());
     }
     for (String principalSourceId :
         List.of(
@@ -2008,7 +2012,7 @@ class TransformationServiceTest {
     Resource pimXmi = loadSourceXmi(services, ModelLevel.PIM, pim, "delete-pim-workflow");
     EObject workflowObject = findById(pimXmi, workflowId);
     assertTrue(workflowObject != null, "Expected generated PIM workflow " + workflowId);
-    EcoreUtil.delete(workflowObject, true);
+    deleteWorkflowAndDependentArtifacts(pimXmi, workflowObject);
     pim = saveChangedSourceXmi(services, context, pim, ModelLevel.PIM, pimXmi, "delete workflow");
 
     ModelRecord unchanged = services.transformations().pimToPsm(context.user(), pim.id());
@@ -2150,6 +2154,67 @@ class TransformationServiceTest {
       }
     }
     return null;
+  }
+
+  private EObject findEventBusContaining(Resource resource, EObject eventType) {
+    for (TreeIterator<EObject> iterator = resource.getAllContents(); iterator.hasNext(); ) {
+      EObject candidate = iterator.next();
+      if ("EventBus".equals(candidate.eClass().getName())
+          && values(candidate, "eventTypes").contains(eventType)) {
+        return candidate;
+      }
+    }
+    return null;
+  }
+
+  /**
+   * Deletes generated relationships whose required references point into a removed workflow. This
+   * keeps the edited source PIM valid so synchronization can report the downstream PSM deletion
+   * conflict.
+   */
+  private void deleteWorkflowAndDependentArtifacts(Resource resource, EObject workflow) {
+    Set<EObject> workflowElements = new HashSet<>();
+    Set<String> workflowElementIds = new HashSet<>();
+    workflowElements.add(workflow);
+    workflow.eAllContents().forEachRemaining(workflowElements::add);
+    for (EObject element : workflowElements) {
+      var idFeature = element.eClass().getEStructuralFeature("id");
+      if (idFeature != null && element.eGet(idFeature) != null) {
+        workflowElementIds.add(element.eGet(idFeature).toString());
+      }
+      var generatedFromFeature = element.eClass().getEStructuralFeature("generatedFrom");
+      if (generatedFromFeature != null && element.eGet(generatedFromFeature) != null) {
+        workflowElementIds.add(element.eGet(generatedFromFeature).toString());
+      }
+    }
+
+    List<EObject> dependentArtifacts = new ArrayList<>();
+    for (TreeIterator<EObject> iterator = resource.getAllContents(); iterator.hasNext(); ) {
+      EObject candidate = iterator.next();
+      String className = candidate.eClass().getName();
+      var generatedFromFeature = candidate.eClass().getEStructuralFeature("generatedFrom");
+      if ("Function".equals(className)
+          && generatedFromFeature != null
+          && workflowElementIds.contains(candidate.eGet(generatedFromFeature))) {
+        workflowElements.add(candidate);
+        dependentArtifacts.add(candidate);
+      }
+    }
+
+    for (TreeIterator<EObject> iterator = resource.getAllContents(); iterator.hasNext(); ) {
+      EObject candidate = iterator.next();
+      String className = candidate.eClass().getName();
+      if ("ServiceElementMembership".equals(className)
+          && workflowElements.contains(reference(candidate, "element"))) {
+        dependentArtifacts.add(candidate);
+      } else if ("ExternalIntegrationFlow".equals(className)
+          && workflowElements.contains(reference(candidate, "source"))) {
+        dependentArtifacts.add(candidate);
+      }
+    }
+
+    dependentArtifacts.forEach(artifact -> EcoreUtil.delete(artifact, true));
+    EcoreUtil.delete(workflow, true);
   }
 
   private EObject generatedFromMatch(EObject candidate, String sourceId, String className) {
