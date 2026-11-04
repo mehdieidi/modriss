@@ -177,7 +177,7 @@ function adoptSavedBaseModel(nextModel) {
   state.baseModel = nextModel;
 }
 
-export async function prepareModelForSave({ syncView = true } = {}) {
+export async function prepareModelForSave({ syncView = true, buildPatch = true } = {}) {
   await yieldToMain();
   if (syncView && consumeViewSyncNeeded()) {
     syncActiveViewFromVisibleGraph();
@@ -187,7 +187,9 @@ export async function prepareModelForSave({ syncView = true } = {}) {
     reconcileRelationships: false,
   });
   await yieldToMain();
-  const operations = await buildModelPatchAsync(state.baseModel || {}, nextModel);
+  const operations = buildPatch
+    ? await buildModelPatchAsync(state.baseModel || {}, nextModel)
+    : null;
   return { nextModel, operations };
 }
 

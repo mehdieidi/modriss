@@ -99,8 +99,7 @@ final class ModelImportExportService {
   }
 
   /**
-   * Imports a model payload and, for XMI, attaches source bytes to the resulting JSON payload for
-   * later persistence.
+   * Imports a model payload and stages project-scoped XMI bytes for later persistence.
    *
    * @param user requesting user
    * @param projectId project identifier
@@ -135,7 +134,11 @@ final class ModelImportExportService {
               : fileName.replaceFirst("\\.[^.]+$", "");
       JsonNode normalizedModel = normalizeModel(name, level, model);
       if ("xmi".equals(normalizedFormat) && normalizedModel instanceof ObjectNode objectModel) {
-        objectModel.put("_sourceXmiBase64", Base64.getEncoder().encodeToString(bytes));
+        if (user != null && projectId != null && !projectId.isBlank()) {
+          objectModel.put("_sourceXmiToken", stageSourceXmi(user, projectId, level, bytes));
+        } else {
+          objectModel.put("_sourceXmiBase64", Base64.getEncoder().encodeToString(bytes));
+        }
       }
       ModelService.ValidationResult validation =
           "xmi".equals(normalizedFormat)
@@ -247,6 +250,13 @@ final class ModelImportExportService {
       copy.set("views", store.objectMapper().createArrayNode());
     }
     return copy;
+  }
+
+  /** Returns whether a full model payload carries the source XMI from an import. */
+  boolean hasSourceXmiPayload(JsonNode modelJson) {
+    return modelJson != null
+        && (!modelJson.path("_sourceXmiBase64").asText("").isBlank()
+            || !modelJson.path("_sourceXmiToken").asText("").isBlank());
   }
 
   /**

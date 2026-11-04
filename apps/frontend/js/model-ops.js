@@ -799,7 +799,9 @@ async function performSaveCurrentModel({
       if (!quiet) setStatus("Model saved");
       return;
     }
-    let prepared = await prepareModelForSave();
+    // A forced full update will not use JSON Patch operations. Avoid diffing the entire model;
+    // large imported PIM snapshots can make that redundant comparison block the editor.
+    let prepared = await prepareModelForSave({ buildPatch: !forceFullUpdate });
     if (doBusy) {
       await waitForSaveIndicatorPaint();
     }

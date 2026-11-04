@@ -593,28 +593,33 @@ public final class ModelService {
           requireExpectedRevision(existing, expectedRevision);
           ProjectRecord project = projectService.get(user, existing.projectId());
           projectService.requireEditor(project, user.id());
+          boolean importedSourceXmi = importExport.hasSourceXmiPayload(modelJson);
           JsonNode normalizedInput = importExport.normalizeModel(name, level, modelJson);
-          importExport.preserveGraphOmittedSemanticObjects(
-              level, existing.modelJson(), normalizedInput);
+          if (!importedSourceXmi) {
+            importExport.preserveGraphOmittedSemanticObjects(
+                level, existing.modelJson(), normalizedInput);
+          }
           boolean semanticChanged =
-              !importExport.semanticModelEquals(existing.modelJson(), normalizedInput);
-          // A full browser save can contain both the semantic model and a graph projection. When
-          // the semantic model changed, it is authoritative; only use graph scalar synchronization
-          // when the semantic projection was otherwise unchanged (for graph-originated edits).
-          if (!semanticChanged) {
+              !importedSourceXmi
+                  && !importExport.semanticModelEquals(existing.modelJson(), normalizedInput);
+          // An XMI import is a complete semantic snapshot. For ordinary editor saves, a changed
+          // semantic model is authoritative; synchronize graph scalars only when the semantic
+          // projection was otherwise unchanged (for graph-originated edits).
+          if (!importedSourceXmi && !semanticChanged) {
             importExport.synchronizeSemanticGraphProjection(level, normalizedInput);
             semanticChanged =
                 !importExport.semanticModelEquals(existing.modelJson(), normalizedInput);
           }
-          java.util.Set<String> deletedSemanticIds =
-              new java.util.HashSet<>(importExport.semanticIds(level, existing.modelJson()));
-          deletedSemanticIds.removeAll(importExport.semanticIds(level, normalizedInput));
-          // Reference cleanup is destructive: it removes generated dependents and clears
-          // references that do not resolve in the submitted semantic tree. A browser save can
-          // legitimately contain a partial/lazy graph projection while changing only a scalar
-          // attribute, so reference differences alone are not evidence of an interactive delete.
-          // Expand the deletion closure only after an actual semantic object disappeared.
-          if (!deletedSemanticIds.isEmpty()) {
+          java.util.Set<String> deletedSemanticIds = new java.util.HashSet<>();
+          if (!importedSourceXmi) {
+            deletedSemanticIds.addAll(importExport.semanticIds(level, existing.modelJson()));
+            deletedSemanticIds.removeAll(importExport.semanticIds(level, normalizedInput));
+          }
+          // Reference cleanup is destructive and applies to interactive editor changes, not a
+          // complete XMI snapshot. A browser save can legitimately contain a partial/lazy graph
+          // projection while changing only a scalar attribute, so expand the deletion closure only
+          // after an actual semantic object disappeared.
+          if (!importedSourceXmi && !deletedSemanticIds.isEmpty()) {
             deletedSemanticIds.addAll(
                 importExport.removedReferenceTargets(level, existing.modelJson(), normalizedInput));
             deletedSemanticIds.addAll(
@@ -624,7 +629,7 @@ public final class ModelService {
                 importExport.removedGeneratedSources(level, existing.modelJson(), normalizedInput));
           }
           JsonNode normalizedModel = normalizedInput;
-          if (semanticChanged) {
+          if (!importedSourceXmi && semanticChanged) {
             normalizedModel =
                 deletedSemanticIds.isEmpty()
                     ? importExport.removeDanglingReferences(level, normalizedModel)
@@ -640,10 +645,10 @@ public final class ModelService {
           ModelImportExportService.SourceXmiUpdate sourceXmi =
               importExport.resolveSourceXmiUpdate(
                   user, existing.projectId(), level, normalizedModel, true);
-          // A no-op save must not rewrite an imported XMI sidecar. Re-export only when the
-          // semantic JSON projection actually changed, so the uploaded model remains the
-          // authoritative transformation input until an edit is made.
-          if (semanticChanged) {
+          // Keep uploaded XMI bytes as the authoritative replacement snapshot. For ordinary
+          // editor saves, re-export only after a semantic change so imported bytes remain the
+          // transformation input until the model is edited.
+          if (!importedSourceXmi && semanticChanged) {
             sourceXmi = importExport.regenerateSourceXmi(level, normalizedModel);
           }
           MetamodelDescriptor metamodel = metamodelResolver.resolve(level);
@@ -1038,8 +1043,7 @@ public final class ModelService {
   }
 
   /**
-   * Imports a model payload and, for XMI, attaches source bytes to the resulting JSON payload for
-   * later persistence.
+   * Imports a model payload and, for project-scoped XMI, stages source bytes for later persistence.
    *
    * @param user requesting user
    * @param projectId project identifier
