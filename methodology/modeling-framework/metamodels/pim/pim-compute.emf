@@ -64,7 +64,7 @@ class Trigger extends kernel.TraceableElement, kernel.PolicyTarget {
 
 	val kernel.Expression[?] filter;
 
-	readonly transient ref Function[1]#triggers function;
+	readonly transient ref Function[?]#triggers function;
 	ref kernel.InvocationSource[1]              source;
 	ref kernel.WorkflowTarget[?]                startsWorkflow;
 	ref policy.ResiliencePolicy[?]              resilience;

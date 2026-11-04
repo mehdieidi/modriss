@@ -502,8 +502,8 @@
           eType="#/12/InvocationMode"/>
       <eStructuralFeatures xsi:type="ecore:EReference" name="filter" eType="#/1/Expression"
           containment="true"/>
-      <eStructuralFeatures xsi:type="ecore:EReference" name="function" lowerBound="1"
-          eType="#/3/Function" changeable="false" transient="true" eOpposite="#/3/Function/triggers"/>
+      <eStructuralFeatures xsi:type="ecore:EReference" name="function" eType="#/3/Function"
+          changeable="false" transient="true" eOpposite="#/3/Function/triggers"/>
       <eStructuralFeatures xsi:type="ecore:EReference" name="source" lowerBound="1"
           eType="#/1/InvocationSource"/>
       <eStructuralFeatures xsi:type="ecore:EReference" name="startsWorkflow" eType="#/1/WorkflowTarget"/>
@@ -893,6 +893,8 @@
           eType="#/13/Workflow" containment="true"/>
       <eStructuralFeatures xsi:type="ecore:EReference" name="adapters" upperBound="-1"
           eType="#/8/ExternalAdapter" containment="true"/>
+      <eStructuralFeatures xsi:type="ecore:EReference" name="triggers" upperBound="-1"
+          eType="#/3/Trigger" containment="true"/>
       <eStructuralFeatures xsi:type="ecore:EReference" name="constrainedBy" upperBound="-1"
           eType="#/10/ArchitecturePolicy"/>
     </eClassifiers>

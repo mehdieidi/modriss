@@ -219,11 +219,8 @@ operation AWSPSMCORE!SamStack stackTemplatePath() : String {
   return "infrastructure/units/" + self.stackSlug() + "/template.yaml";
 }
 
-/** Computes the SAM configuration path relative to a unit template. */
+/** Computes the SAM configuration path relative to the project root. */
 operation AWSPSMCORE!SamStack samConfigPathFromTemplate() : String {
-  if (self.stackTemplatePath().startsWith("infrastructure/units/")) {
-    return "../../samconfig.toml";
-  }
   return "infrastructure/samconfig.toml";
 }
 

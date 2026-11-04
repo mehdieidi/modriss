@@ -32,7 +32,6 @@ MethodLibrary: MODRISS
 | `method-content-index.json`                     | Consolidated, lossless index of source RoleDefinitions, TaskDefinitions, WorkProductDefinitions, Guidance, and provenance                                    |
 | `modriss-method-library.spem.xml`               | SPEM-logical XMI/XML representation of the library, method plugin, content packages, configurations, Activities, uses, parameters, performers, and sequences |
 | `../library/reusable-method-content-catalog.md` | Generated human-readable catalog of every reusable role, task, work product, and guidance element                                                            |
-| `../12-method-library-and-fragment-report.md`   | Academic narrative explaining the library design, all method fragments, selection, assembly, governance, and validity boundary                               |
 | `views/lifecycle.puml`                          | Normative overview of the product lifecycle, nested release cycle, increment cycle, and retirement decision                                                  |
 | `views/release-cycle.puml`                      | Focused release-to-release control flow, including G6 rework, promotion rollback, G7, continued operation, and the next release                              |
 | `views/operations-flow.puml`                    | Operations and Maintenance pull flow from intake through classification, WIP/SLE control, verification, and three explicit dispositions                      |
@@ -41,7 +40,7 @@ MethodLibrary: MODRISS
 | `views/*-process.activity.puml`                 | Integrated and CIM/PIM/PSM/artifact executable-process activity views                                                                                        |
 | `diagram-catalog.md`                            | Diagram hierarchy, semantic authority, and synchronization rules                                                                                             |
 
-The first two files and `../library/repository-inventory.csv` are built
+The index, XML representation, catalog, and `../library/repository-inventory.csv` are built
 by `../tools/build-method-package.mjs` from the executable process definitions,
 the engineered core-content catalog, and the reusable fragment catalog. Shared
 elements occur once in the canonical content package, while provenance records

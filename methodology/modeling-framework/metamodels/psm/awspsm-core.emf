@@ -43,7 +43,7 @@ class AwsService extends kernel.TraceableElement {
 	attr Boolean ownsData;
 	attr String  boundaryType;
 
-	ref AwsResource[*]#service resources;
+	!ordered ref AwsResource[*]#service resources;
 }
 
 class AwsTag extends kernel.TraceableElement {

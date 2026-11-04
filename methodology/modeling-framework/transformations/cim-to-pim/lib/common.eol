@@ -515,16 +515,10 @@ operation serviceForDeadLetterSeed(seed) {
   return null;
 }
 
-/** Adds a trigger under its hosting function containment. */
+/** Adds a workflow trigger under its hosting service containment. */
 operation addTriggerToService(trigger, service) {
-  if (trigger.isUndefined()) {
+  if (trigger.isUndefined() or service.isUndefined()) {
     return;
   }
-  var host = trigger.`function`;
-  if (host.isUndefined() and service.isDefined()) {
-    host = firstOwnedFunction(service);
-  }
-  if (host.isDefined()) {
-    host.triggers.add(trigger);
-  }
+  service.triggers.add(trigger);
 }

@@ -1,9 +1,9 @@
 {
   "level": "psm",
   "processId": "modriss.psm.modeling",
-  "generatedAt": "2026-09-24T21:13:18.042Z",
-  "totalConcepts": 305,
-  "coveredConcepts": 305,
+  "generatedAt": "2026-11-03T15:36:16.307Z",
+  "totalConcepts": 312,
+  "coveredConcepts": 312,
   "orphanedConcepts": [],
   "entries": [
     {
@@ -394,6 +394,12 @@
       "concept": "AwsResource",
       "kind": "EClass",
       "taskIds": ["psm.ph1.st1.t3"],
+      "covered": true
+    },
+    {
+      "concept": "AwsService",
+      "kind": "EClass",
+      "taskIds": ["psm.ph1.st0.t1"],
       "covered": true
     },
     {
@@ -1012,6 +1018,42 @@
       "concept": "SecretValueExpression",
       "kind": "EClass",
       "taskIds": ["psm.ph1.st3.t2"],
+      "covered": true
+    },
+    {
+      "concept": "RdsDbCluster",
+      "kind": "EClass",
+      "taskIds": ["psm.ph3.st1.t3"],
+      "covered": true
+    },
+    {
+      "concept": "RdsDbInstance",
+      "kind": "EClass",
+      "taskIds": ["psm.ph3.st1.t3"],
+      "covered": true
+    },
+    {
+      "concept": "RdsDbSubnetGroup",
+      "kind": "EClass",
+      "taskIds": ["psm.ph3.st1.t3"],
+      "covered": true
+    },
+    {
+      "concept": "RdsTable",
+      "kind": "EClass",
+      "taskIds": ["psm.ph3.st1.t3"],
+      "covered": true
+    },
+    {
+      "concept": "RdsIndex",
+      "kind": "EClass",
+      "taskIds": ["psm.ph3.st1.t3"],
+      "covered": true
+    },
+    {
+      "concept": "RdsColumn",
+      "kind": "EClass",
+      "taskIds": ["psm.ph3.st1.t3"],
       "covered": true
     },
     {

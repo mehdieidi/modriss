@@ -236,11 +236,13 @@ for (const [label, diagram] of [['exported primary SVG', lifecycleSvg], ['export
   requireText(diagram, '.node {', label);
 }
 
-const processNarrative = read('methodology/process/method/04-development-process.md');
-const thesisChapter = read('methodology/process/method/10-thesis-process-chapter.md');
-requireText(processNarrative, '## Normative process vocabulary', 'development-process narrative');
-requireText(processNarrative, 'Operations and Maintenance Process: ongoing and event-driven', 'development-process narrative');
-requireText(thesisChapter, 'two coordinated processes', 'thesis chapter');
+const methodContent = read('methodology/process/method/spem/method-content.md');
+const spemReadme = read('methodology/process/method/spem/README.md');
+const developmentDelivery = read('docs/public-docs/docs/process-reference/development-delivery.md');
+requireText(methodContent, 'The end-to-end process distinguishes two repeatable Activities', 'SPEM method-content narrative');
+requireText(methodContent, 'Process is ongoing and event-driven', 'SPEM method-content narrative');
+requireText(spemReadme, 'The enclosing process is explicitly ongoing and event-driven', 'SPEM package narrative');
+requireText(developmentDelivery, 'independent Operations and Maintenance Process sustains accepted live baselines', 'public development-delivery reference');
 
 const xml = read('methodology/process/method/spem/modriss-method-library.spem.xml');
 requireText(xml, 'modriss:sourceId="modriss.end-to-end.release-cycle"', 'generated SPEM XML');
@@ -263,5 +265,5 @@ console.log(JSON.stringify({
   checkedBoundRoles: roleBindings.size,
   checkedPlantUmlViews: plantUmlPaths.length,
   checkedPublicationSourcesAndExports: 6,
-  checkedNarratives: 2,
+  checkedNarratives: 3,
 }, null, 2));

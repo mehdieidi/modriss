@@ -267,6 +267,203 @@ class Worker:
                 props["Code"] = {"S3Bucket": b, "S3Key": k}
         return template
 
+    @staticmethod
+    def _eventbridge_fixture_auth(value, logical_id):
+        """Replace secret dynamic references with opaque, deterministic test-only credentials."""
+        if isinstance(value, dict):
+            return {key: Worker._eventbridge_fixture_auth(item, logical_id) for key, item in value.items()}
+        if isinstance(value, list):
+            return [Worker._eventbridge_fixture_auth(item, logical_id) for item in value]
+        if not isinstance(value, str) or not value.startswith("{{resolve:secretsmanager:"):
+            return value
+        digest = hashlib.sha256((logical_id + "\0" + value).encode()).hexdigest()[:20]
+        return "modriss-test-" + digest
+
+    @staticmethod
+    def _event_resource_name(properties, logical_id):
+        name = properties.get("Name")
+        if not isinstance(name, str) or not name or "${" in name or "{{resolve:" in name:
+            raise ValueError(f"Floci Events resource {logical_id} needs a concrete generated Name")
+        return name
+
+    @staticmethod
+    def _replace_event_resource_references(value, arn_by_id):
+        if isinstance(value, list):
+            return [Worker._replace_event_resource_references(item, arn_by_id) for item in value]
+        if not isinstance(value, dict):
+            return value
+        if isinstance(value.get("Ref"), str) and value["Ref"] in arn_by_id:
+            return arn_by_id[value["Ref"]]
+        get_att = value.get("Fn::GetAtt")
+        if get_att is not None:
+            target, attribute = (get_att.split(".", 1) if isinstance(get_att, str)
+                                 else (get_att[0], get_att[1]))
+            if target in arn_by_id:
+                if attribute != "Arn":
+                    raise ValueError(f"Floci Events resource {target} only exposes Arn to CloudFormation references")
+                return arn_by_id[target]
+        substitution = value.get("Fn::Sub")
+        if isinstance(substitution, str):
+            for logical_id, arn in arn_by_id.items():
+                substitution = substitution.replace("${" + logical_id + "}", arn)
+            value["Fn::Sub"] = substitution
+        elif isinstance(substitution, list) and substitution and isinstance(substitution[0], str):
+            template_text, variables = substitution[0], substitution[1]
+            for logical_id, arn in arn_by_id.items():
+                placeholder = "${" + logical_id + "}"
+                if placeholder in template_text:
+                    variables.pop(logical_id, None)
+                    template_text = template_text.replace(placeholder, arn)
+            value["Fn::Sub"] = [template_text, variables]
+        return {key: Worker._replace_event_resource_references(item, arn_by_id)
+                for key, item in value.items()}
+
+    def materialize_floci_event_resources(self, documents):
+        """Provision modeled EventBridge connections/destinations using Floci's Events API.
+
+        Floci 2.2 implements these Events operations but its CloudFormation provider does
+        not. The test deployment therefore provisions those modeled resources through the
+        same service API and rewrites only the disposable in-memory templates.
+        """
+        planned = []
+        for path, template in documents.items():
+            for logical, resource in template.get("Resources", {}).items():
+                if resource.get("Type") in ("AWS::Events::Connection", "AWS::Events::ApiDestination"):
+                    planned.append((path, logical, resource))
+        if not planned:
+            return []
+
+        events = self.client("events")
+        operations = set(events.meta.method_to_api_mapping)
+        required_operations = {"create_connection", "describe_connection", "update_connection",
+                               "create_api_destination", "describe_api_destination", "update_api_destination"}
+        missing = required_operations - operations
+        if missing:
+            raise ValueError("Floci Events API is missing operations required for modeled API destinations: "
+                             + ", ".join(sorted(missing)))
+
+        arns_by_template = {}
+        adjustments = []
+        # Connections must exist before ApiDestinations can bind to their ARNs.
+        for path, logical, resource in planned:
+            if resource.get("Type") != "AWS::Events::Connection":
+                continue
+            properties = resource.get("Properties", {})
+            name = self._event_resource_name(properties, logical)
+            auth_type = properties.get("AuthorizationType")
+            if not isinstance(auth_type, str) or not auth_type:
+                raise ValueError(f"Floci Events connection {logical} has no AuthorizationType")
+            auth = self._eventbridge_fixture_auth(copy.deepcopy(properties.get("AuthParameters", {})), logical)
+            arguments = {"Name": name, "AuthorizationType": auth_type}
+            if auth:
+                arguments["AuthParameters"] = auth
+            emit("stage", title="Provisioning Floci EventBridge connection", resource=logical, name=name,
+                 authorizationType=auth_type, credentials="synthetic test fixture")
+            try:
+                existing = events.describe_connection(Name=name)
+            except ClientError as error:
+                if error.response.get("Error", {}).get("Code") not in (
+                        "ResourceNotFoundException", "ResourceNotFound", "NotFoundException"):
+                    raise RuntimeError(f"Could not inspect Floci EventBridge connection {logical} ({name})") from error
+                try:
+                    existing = events.create_connection(**arguments)
+                except ClientError as create_error:
+                    if create_error.response.get("Error", {}).get("Code") not in (
+                            "ResourceAlreadyExistsException", "AlreadyExistsException", "AlreadyExists"):
+                        raise RuntimeError(f"Could not provision Floci EventBridge connection {logical} ({name})") from create_error
+                    existing = events.describe_connection(Name=name)
+                    arn = existing.get("ConnectionArn")
+                    if not arn:
+                        raise RuntimeError(f"Floci did not return the ARN for EventBridge connection {logical}")
+                    existing = events.update_connection(**arguments)
+            else:
+                arn = existing.get("ConnectionArn")
+                if not arn:
+                    raise RuntimeError(f"Floci did not return the ARN for EventBridge connection {logical}")
+                existing = events.update_connection(**arguments)
+            arn = existing.get("ConnectionArn")
+            if not arn:
+                raise RuntimeError(f"Floci did not return the ARN for EventBridge connection {logical}")
+            arns_by_template.setdefault(path, {})[logical] = arn
+            adjustments.append({"template": path, "resourceId": logical,
+                "resourceType": "AWS::Events::Connection", "provisioner": "Floci Events API",
+                "effect": "Provisioned with synthetic test-only credentials; credentials are not emitted."})
+
+        for path, logical, resource in planned:
+            if resource.get("Type") != "AWS::Events::ApiDestination":
+                continue
+            properties = resource.get("Properties", {})
+            name = self._event_resource_name(properties, logical)
+            connection = properties.get("ConnectionArn")
+            if isinstance(connection, dict):
+                connection = self._replace_event_resource_references(
+                    connection, arns_by_template.get(path, {}))
+            if not isinstance(connection, str) or not connection.startswith("arn:"):
+                raise ValueError(f"Floci API destination {logical} does not resolve to a modeled EventBridge connection ARN")
+            endpoint = properties.get("InvocationEndpoint")
+            method = properties.get("HttpMethod")
+            if not isinstance(endpoint, str) or not endpoint.startswith(("http://", "https://")):
+                raise ValueError(f"Floci API destination {logical} needs a concrete HTTP(S) InvocationEndpoint")
+            if method not in ("POST", "GET", "HEAD", "OPTIONS", "PATCH", "PUT", "DELETE"):
+                raise ValueError(f"Floci API destination {logical} has an invalid HttpMethod")
+            arguments = {"Name": name, "ConnectionArn": connection,
+                         "InvocationEndpoint": endpoint, "HttpMethod": method}
+            rate = properties.get("InvocationRateLimitPerSecond")
+            if rate is not None:
+                arguments["InvocationRateLimitPerSecond"] = int(rate)
+            emit("stage", title="Provisioning Floci EventBridge API destination", resource=logical, name=name,
+                 endpoint=endpoint, httpMethod=method)
+            try:
+                existing = events.describe_api_destination(Name=name)
+            except ClientError as error:
+                if error.response.get("Error", {}).get("Code") not in (
+                        "ResourceNotFoundException", "ResourceNotFound", "NotFoundException"):
+                    raise RuntimeError(f"Could not inspect Floci API destination {logical} ({name})") from error
+                try:
+                    existing = events.create_api_destination(**arguments)
+                except ClientError as create_error:
+                    if create_error.response.get("Error", {}).get("Code") not in (
+                            "ResourceAlreadyExistsException", "AlreadyExistsException", "AlreadyExists"):
+                        raise RuntimeError(f"Could not provision Floci API destination {logical} ({name})") from create_error
+                    existing = events.describe_api_destination(Name=name)
+                    arn = existing.get("ApiDestinationArn")
+                    if not arn:
+                        raise RuntimeError(f"Floci did not return the ARN for API destination {logical}")
+                    existing = events.update_api_destination(**arguments)
+            else:
+                arn = existing.get("ApiDestinationArn")
+                if not arn:
+                    raise RuntimeError(f"Floci did not return the ARN for API destination {logical}")
+                existing = events.update_api_destination(**arguments)
+            arn = existing.get("ApiDestinationArn")
+            if not arn:
+                raise RuntimeError(f"Floci did not return the ARN for API destination {logical}")
+            arns_by_template.setdefault(path, {})[logical] = arn
+            adjustments.append({"template": path, "resourceId": logical,
+                "resourceType": "AWS::Events::ApiDestination", "provisioner": "Floci Events API",
+                "effect": "Provisioned from the modeled connection, endpoint, method, and rate limit."})
+
+        for path, template in list(documents.items()):
+            arns = arns_by_template.get(path, {})
+            template["Resources"] = {
+                logical: resource for logical, resource in template.get("Resources", {}).items()
+                if resource.get("Type") not in ("AWS::Events::Connection", "AWS::Events::ApiDestination")
+            }
+            for resource in template.get("Resources", {}).values():
+                dependencies = resource.get("DependsOn", [])
+                dependencies = [dependencies] if isinstance(dependencies, str) else dependencies
+                dependencies = [dependency for dependency in dependencies if dependency not in arns]
+                if dependencies:
+                    resource["DependsOn"] = dependencies
+                else:
+                    resource.pop("DependsOn", None)
+            rewritten = self._replace_event_resource_references(template, arns)
+            template.clear()
+            template.update(rewritten)
+            documents[path] = template
+
+        return adjustments
+
     def stack_events(self, stack):
         return self.client("cloudformation").describe_stack_events(StackName=stack).get("StackEvents", [])
 
@@ -347,13 +544,14 @@ class Worker:
             raise ValueError(f"Template preflight found {len(diagnostics)} issue(s). "
                              f"{first['template']} · {first['resourceId']} · {first['field']}: "
                              f"{first['message']} {first['remedy']} See the preflight observation for all issues.")
-        emit("deployment-profile", title="Floci Test deployment profile", profile=profile)
         if "cognito_user_pools" in json.dumps(documents).lower() and hasattr(self, "emulator_version"):
             version = re.match(r"^(\d+)\.(\d+)\.(\d+)", self.emulator_version)
             if not version or tuple(map(int, version.groups())) < (2, 2, 0):
                 raise ValueError("REST Cognito authentication requires Floci 2.2.0 or newer. "
                                  "Upgrade this project's emulator while retaining its data volume, then redeploy. "
                                  "Older versions do not enforce Cognito tokens and cannot evaluate protected APIs reliably.")
+        profile["adjustments"].extend(self.materialize_floci_event_resources(documents))
+        emit("deployment-profile", title="Floci Test deployment profile", profile=profile)
         selected = order_templates(documents)
         for name in selected:
             stack = "modriss-" + self.request["projectId"].replace("-", "")[:20] + "-" + hashlib.sha256(name.encode()).hexdigest()[:10]

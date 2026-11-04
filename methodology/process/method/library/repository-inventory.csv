@@ -212,6 +212,7 @@ psm,TaskDefinition,task.psm.ph2.st2.t1,Configure Cognito user pools,methodology/
 psm,TaskDefinition,task.psm.ph2.st2.t2,"Configure clients, groups, and identity pools",methodology/process/definitions/psm.json
 psm,TaskDefinition,task.psm.ph3.st1.t1,Provision DynamoDB tables,methodology/process/definitions/psm.json
 psm,TaskDefinition,task.psm.ph3.st1.t2,Configure S3 buckets and policies,methodology/process/definitions/psm.json
+psm,TaskDefinition,task.psm.ph3.st1.t3,Provision relational databases and schemas,methodology/process/definitions/psm.json
 psm,TaskDefinition,task.psm.ph3.st2.t1,Create SQS queues,methodology/process/definitions/psm.json
 psm,TaskDefinition,task.psm.ph3.st2.t2,Configure SNS topics and subscriptions,methodology/process/definitions/psm.json
 psm,TaskDefinition,task.psm.ph4.st1.t1,Configure EventBridge buses and rules,methodology/process/definitions/psm.json

@@ -50,21 +50,6 @@ def apply_floci_test_profile(documents, version):
     """Prepare an in-memory Floci test deployment without changing saved artifacts."""
     adjustments = []
     marked_lambda_count = 0
-    parsed = re.match(r"^(\d+)\.(\d+)\.(\d+)", version or "")
-    if parsed and tuple(map(int, parsed.groups())) <= (2, 2, 0):
-        for path, template in documents.items():
-            resources = template.get("Resources", {})
-            for resource_type in ("AWS::Events::ApiDestination", "AWS::Events::Connection"):
-                for logical, resource in list(resources.items()):
-                    if resource.get("Type") != resource_type or is_resource_referenced(documents, logical):
-                        continue
-                    del resources[logical]
-                    adjustments.append({
-                        "template": path,
-                        "resourceId": logical,
-                        "resourceType": resource_type,
-                        "effect": "Omitted from this Floci deployment because the resource is unsupported and unused; the saved AWS artifact is unchanged.",
-                    })
     for path, template in documents.items():
         for logical, resource in template.get("Resources", {}).items():
             if resource.get("Type") in ("AWS::Lambda::Function", "AWS::Serverless::Function"):
@@ -106,6 +91,7 @@ def apply_floci_test_profile(documents, version):
         "workflowVersionAndAliasPublication": "disabled",
         "testOnlyLambdaRuntimeMarkerCount": marked_lambda_count,
         "syntheticFixtureIdentity": "Enabled only in this in-memory Floci profile; saved AWS artifacts are unchanged.",
+        "eventBridgeApiDestinations": "Provisioned through Floci Events API and substituted in memory when CloudFormation support is unavailable.",
         "adjustments": adjustments,
     }
 
@@ -131,10 +117,6 @@ def validate_emulator_compatibility(documents, version):
                     "message":f"Floci {version} does not provision Secrets Manager rotation schedules through CloudFormation.",
                     "remedy":"Evaluate secret rotation separately on a supported provider; retain the requirement in the model. "
                              "Do not treat a deployed secret alone as verified rotation."})
-            if kind in ("AWS::Events::Connection", "AWS::Events::ApiDestination"):
-                diagnostics.append({"template":path, "resourceId":logical, "field":"Type",
-                    "message":f"Floci {version} does not provision {kind} resources through CloudFormation.",
-                    "remedy":"Use a supported Lambda or EventBridge target for this Floci run, or deploy the unchanged AWS artifact to a provider that supports EventBridge API destinations."})
     return diagnostics
 
 
@@ -229,7 +211,22 @@ def validate_templates(documents):
                 issue(logical, "Properties", "Resource properties must be an object.", "Correct the template structure.")
                 continue
             references(logical, props)
-            if kind == "AWS::SNS::Subscription":
+            if kind == "AWS::Events::Rule":
+                event_pattern = props.get("EventPattern")
+                schedule_expression = props.get("ScheduleExpression")
+                if event_pattern is not None and not isinstance(event_pattern, dict):
+                    issue(logical, "EventPattern",
+                          "EventBridge EventPattern must be a CloudFormation object, not a scalar or serialized JSON string.",
+                          "Emit the modeled event pattern as a structured JSON/YAML mapping, then regenerate the artifact.")
+                if event_pattern is None and not schedule_expression:
+                    issue(logical, "EventPattern",
+                          "An EventBridge rule requires an event pattern or schedule expression.",
+                          "Define the rule's modeled event pattern or schedule expression, then regenerate the artifact.")
+                if event_pattern is not None and schedule_expression:
+                    issue(logical, "EventPattern",
+                          "An EventBridge rule cannot combine EventPattern and ScheduleExpression.",
+                          "Model the rule as event-driven or scheduled, then regenerate the artifact.")
+            elif kind == "AWS::SNS::Subscription":
                 protocol, endpoint = props.get("Protocol"), props.get("Endpoint")
                 symbolic_url = isinstance(endpoint, dict) and len(endpoint) == 1 and next(iter(endpoint)) in (
                     "Ref", "Fn::Sub", "Fn::Join", "Fn::If", "Fn::GetAtt")

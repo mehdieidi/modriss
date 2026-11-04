@@ -47,10 +47,6 @@ rule Function2AwsLambdaFunction
   l.tracing = createLambdaTracing(f);
   l.logging = createLambdaLogging(l);
   l.environment.addAll(createLambdaEnvironment(f));
-  if (isProductionRoot()) {
-    l.deadLetterConfig = createLambdaDeadLetterConfig(f);
-  }
-
   if (isTrue(f.requiresNetworkAccess)) {
     l.vpcConfig = createVpcAttachmentDecision(f);
   }
@@ -390,7 +386,45 @@ operation createLambdaEnvironment(f) {
       out.add(relationalEnvironment(f, store, "DATABASE", literalValue(database.databaseName, false)));
     }
   }
+  var publicationEnv = eventPublisherEnvironment(f);
+  if (publicationEnv.isDefined()) out.add(publicationEnv);
   return out;
+}
+
+/** Builds a function's event publication bindings from its modeled EventTypes and buses. */
+operation eventPublisherEnvironment(f) {
+  if (f.publishes.isEmpty()) return null;
+  var bindings = "";
+  var bindingCount = 0;
+  for (eventType in f.publishes) {
+    if (not hasText(eventType.semanticName) or not hasText(eventType.sourceDomain)) {
+      manualDecision("EVENT_PUBLICATION_METADATA_REQUIRED", "Provide source and detail type for event published by " + f.name + ".",
+        KERNEL!Severity#ERROR, true, Sequence{f, eventType},
+        "Set EventType.sourceDomain and EventType.semanticName before generating the EventBridge publisher binding.");
+      continue;
+    }
+    var buses = INTEGRATION!EventBus.all.select(bus | bus.eventTypes.includes(eventType));
+    for (bus in buses) {
+      var awsBus = awsEquivalent(bus);
+      if (awsBus.isUndefined() or not hasText(awsBus.busName)) continue;
+      if (bindingCount > 0) bindings = bindings + ",";
+      bindings = bindings + "{\"eventBusName\":\"" + escapeJson(awsBus.busName) + "\",\"source\":\"" + escapeJson(eventType.sourceDomain) + "\",\"detailType\":\"" + escapeJson(eventType.semanticName) + "\"}";
+      bindingCount = bindingCount + 1;
+    }
+  }
+  if (bindingCount = 0) {
+    manualDecision("EVENT_PUBLICATION_BUS_REQUIRED", "Map published EventTypes from " + f.name + " to an EventBus.",
+      KERNEL!Severity#ERROR, true, Sequence{f},
+      "Add each published EventType to the destination EventBus.eventTypes collection so generated bindings include the bus, source, and detail type.");
+    return null;
+  }
+  var env = new AWSPSMCOMPUTE!LambdaEnvironmentVariable;
+  env.id = generatedId("lambda_event_publications", f, "bindings");
+  env.name = f.name + " modeled event publication bindings";
+  env.variableName = "MODRISS_EVENT_PUBLICATIONS";
+  env.value = literalValue("[" + bindings + "]", false);
+  env.stageSpecific = false;
+  return env;
 }
 
 operation relationalEnvironment(f, store, suffix : String, value) {
@@ -419,7 +453,7 @@ operation createLambdaRole(f) {
   var role = new AWSPSMSECURITY!IamRole;
   copyAwsResource(f, role, "LambdaRole", "AWS::IAM::Role");
   role.id = generatedId("iam_role", f, "lambda");
-  role.roleName = physicalName(f, "lambda-role", defaultStage());
+  role.roleName = role.physicalName;
   role.path = "/";
   role.maxSessionDuration = 3600;
   role.descriptionText = "Execution role for " + f.name;
@@ -442,7 +476,13 @@ operation createVpcAttachmentDecision(f) {
 
 /** Computes route needs auth. */
 operation routeNeedsAuth(r) {
-  return isTrue(r.authRequired) or (r.api.isDefined() and isTrue(r.api.authRequired)) or (not isTrue(r.publicRoute));
+  if (r.authRequired.isDefined()) {
+    return isTrue(r.authRequired);
+  }
+  if (r.api.isDefined() and r.api.authRequired.isDefined()) {
+    return isTrue(r.api.authRequired);
+  }
+  return not isTrue(r.publicRoute);
 }
 
 /** Derives infer authorization type. */
@@ -451,7 +491,7 @@ operation applyRouteAuthorizationRequirements(r, gr) {
     manualDecision("ROUTE_AUTHORIZATION_REFINEMENT_REQUIRED",
       "Implement the route authorization requirement for " + r.pathTemplate + ": " + r.authorization.roleOrScopeRequired,
       KERNEL!Severity#ERROR, true, Sequence{r, gr},
-      "Cognito verifies token identity. Implement the modeled role/ownership rules in the handler or a reviewed authorizer; prose is not an OAuth scope.");
+      "The configured gateway scheme authenticates the caller. Enforce the modeled role, ownership, and resource-scope rule in the handler or a reviewed authorizer; prose is not an OAuth scope.");
   }
   if (r.api.isDefined() and r.api.auth.isDefined() and hasText(r.api.auth.scopesRequired)) {
     var text = r.api.auth.scopesRequired.trim();
@@ -472,46 +512,62 @@ operation inferAuthorizationType(r) {
   if (not routeNeedsAuth(r)) {
     return AWSPSMENUMS!ApiGatewayAuthorizationType#NONE;
   }
-  if (r.api.isDefined() and isTrue(r.api.authRequired) and r.api.auth.isDefined()
-      and r.api.auth.identityProvider.isDefined()) {
-    return AWSPSMENUMS!ApiGatewayAuthorizationType#COGNITO_USER_POOLS;
-  }
   if (r.authorization.isDefined() and hasText(r.authorization.roleOrScopeRequired)) {
-    if (r.api.isDefined() and isTrue(r.api.authRequired) and r.api.auth.isDefined()) {
-      return AWSPSMENUMS!ApiGatewayAuthorizationType#JWT;
+    if (not (r.api.isDefined() and isTrue(r.api.authRequired) and r.api.auth.isDefined())) {
+      return AWSPSMENUMS!ApiGatewayAuthorizationType#NONE;
     }
-    return AWSPSMENUMS!ApiGatewayAuthorizationType#AWS_IAM;
+  }
+  if (r.authorization.isDefined()
+      and not (r.api.isDefined() and isTrue(r.api.authRequired) and r.api.auth.isDefined())) {
+    return AWSPSMENUMS!ApiGatewayAuthorizationType#NONE;
   }
   if (r.api.isDefined() and isTrue(r.api.authRequired) and r.api.auth.isDefined()) {
+    var scheme = asText(r.api.auth.authScheme).toLowerCase().trim();
+    if (hasText(scheme)) {
+      if (scheme.contains("jwt") or scheme.contains("oauth") or scheme.contains("oidc")) {
+        return AWSPSMENUMS!ApiGatewayAuthorizationType#JWT;
+      }
+      if (scheme.contains("iam") or scheme.contains("sigv4") or scheme.contains("sigv 4")) {
+        return AWSPSMENUMS!ApiGatewayAuthorizationType#AWS_IAM;
+      }
+      if (scheme.contains("api key") or scheme.contains("api_key") or scheme.contains("apikey")) {
+        return AWSPSMENUMS!ApiGatewayAuthorizationType#API_KEY;
+      }
+      if (scheme.contains("cognito")) {
+        if (r.api.auth.identityProvider.isDefined()) {
+          return AWSPSMENUMS!ApiGatewayAuthorizationType#COGNITO_USER_POOLS;
+        }
+        manualDecision("API_COGNITO_IDENTITY_PROVIDER_REQUIRED",
+          "Model an identity provider for Cognito-protected API " + r.api.name + ".",
+          KERNEL!Severity#ERROR, true, Sequence{r.api, r},
+          "Attach a PIM IdentityProvider to AuthPolicy.identityProvider or choose another explicit supported scheme.");
+        return AWSPSMENUMS!ApiGatewayAuthorizationType#NONE;
+      }
+      if (scheme.contains("lambda") or scheme.contains("custom")) {
+        return AWSPSMENUMS!ApiGatewayAuthorizationType#CUSTOM_LAMBDA;
+      }
+      manualDecision("AUTH_SCHEME_AMBIGUOUS",
+        "Choose a supported AWS authorization scheme for API " + r.api.name + ".",
+        KERNEL!Severity#ERROR, true, Sequence{r.api, r},
+        "Use a recognized AuthPolicy.authScheme value. An attached identity provider does not override an explicit but unrecognized scheme.");
+      return AWSPSMENUMS!ApiGatewayAuthorizationType#NONE;
+    }
     if (r.api.auth.identityProvider.isDefined()) {
       return AWSPSMENUMS!ApiGatewayAuthorizationType#COGNITO_USER_POOLS;
     }
-    if (not hasText(r.api.auth.authScheme)) {
+    else {
       manualDecision("AUTH_SCHEME_REQUIRED",
         "Choose an auth scheme for API " + r.api.name + ".",
         KERNEL!Severity#ERROR, isProductionRoot(), Sequence{r.api, r},
         "Set AuthPolicy.authScheme to JWT/OIDC/OAuth, Cognito, IAM/SigV4, API key, or Lambda/custom.");
       return AWSPSMENUMS!ApiGatewayAuthorizationType#NONE;
     }
-    var scheme = r.api.auth.authScheme.toLowerCase();
-    if (scheme.contains("jwt") or scheme.contains("oauth") or scheme.contains("oidc")) {
-      return AWSPSMENUMS!ApiGatewayAuthorizationType#JWT;
-    }
-    if (scheme.contains("iam")) {
-      return AWSPSMENUMS!ApiGatewayAuthorizationType#AWS_IAM;
-    }
-    if (scheme.contains("key")) {
-      return AWSPSMENUMS!ApiGatewayAuthorizationType#API_KEY;
-    }
-    if (scheme.contains("lambda") or scheme.contains("custom")) {
-      return AWSPSMENUMS!ApiGatewayAuthorizationType#CUSTOM_LAMBDA;
-    }
   }
   manualDecision("AUTH_SCHEME_AMBIGUOUS",
     "Choose an AWS API authorization scheme for route " + r.pathTemplate + ".",
-    KERNEL!Severity#WARNING, isProductionRoot(), Sequence{r},
-    "Set AuthPolicy.authScheme to JWT/OIDC/OAuth, Cognito, IAM/SigV4, API key, or Lambda/custom.");
-  return AWSPSMENUMS!ApiGatewayAuthorizationType#AWS_IAM;
+    KERNEL!Severity#ERROR, true, Sequence{r},
+    "Set an explicit AuthPolicy.authScheme or model authorization as an application-level rule; an AWS IAM fallback would change the caller identity contract.");
+  return AWSPSMENUMS!ApiGatewayAuthorizationType#NONE;
 }
 
 /** Computes apply authorizer fallback. */
@@ -528,16 +584,6 @@ operation applyAuthorizerFallback(r, gr) {
       KERNEL!Severity#ERROR, true, Sequence{r, gr},
       "REST validation/API-key requirements are retained. Supply a REST-compatible authorizer; native JWT is supported only by HTTP APIs.");
     return;
-  }
-  if (routeNeedsAuth(r)
-      and gr.authorizationType <> AWSPSMENUMS!ApiGatewayAuthorizationType#AWS_IAM
-      and gr.authorizationType <> AWSPSMENUMS!ApiGatewayAuthorizationType#API_KEY
-      and gr.authorizer.isUndefined()) {
-    gr.authorizationType = AWSPSMENUMS!ApiGatewayAuthorizationType#AWS_IAM;
-    manualDecision("API_ROUTE_AUTHORIZER_MISSING",
-      "Confirm AWS API authorization for protected route " + r.pathTemplate + ".",
-      KERNEL!Severity#WARNING, isProductionRoot(), Sequence{r, gr},
-      "Generated AWS_IAM as a safe provider-specific fallback because no concrete authorizer is available.");
   }
 }
 
@@ -613,7 +659,7 @@ operation createApiIntegration(r, gr) {
 
 /** Returns whether the receiver requires rest api. */
 operation requiresRestApi(api) {
-  return (api.auth.isDefined() and api.auth.identityProvider.isDefined())
+  return api.routes.exists(r | inferAuthorizationType(r) = AWSPSMENUMS!ApiGatewayAuthorizationType#COGNITO_USER_POOLS)
     or api.routes.exists(r | isTrue(r.requestValidationRequired) or isTrue(r.responseValidationRequired) or inferAuthorizationType(r) = AWSPSMENUMS!ApiGatewayAuthorizationType#API_KEY);
 }
 
@@ -674,7 +720,10 @@ operation createApiAuthorizer(api, g) {
   if (api.auth.isUndefined() or not isTrue(api.authRequired)) {
     return null;
   }
-  if (api.auth.identityProvider.isDefined()) {
+  var scheme = asText(api.auth.authScheme).toLowerCase().trim();
+  var cognitoRequired = api.routes.exists(r | inferAuthorizationType(r) = AWSPSMENUMS!ApiGatewayAuthorizationType#COGNITO_USER_POOLS);
+  var jwtRequired = api.routes.exists(r | inferAuthorizationType(r) = AWSPSMENUMS!ApiGatewayAuthorizationType#JWT);
+  if (cognitoRequired and api.auth.identityProvider.isDefined()) {
     var pool = awsEquivalent(api.auth.identityProvider);
     if (pool.isDefined()) {
       var c = new AWSPSMAPI!CognitoAuthorizer;
@@ -690,15 +739,14 @@ operation createApiAuthorizer(api, g) {
       return c;
     }
   }
-  if (not hasText(api.auth.authScheme)) {
+  if (not jwtRequired and not hasText(scheme)) {
     manualDecision("AUTH_SCHEME_REQUIRED",
       "Choose an auth scheme for API " + api.name + ".",
       KERNEL!Severity#ERROR, isProductionRoot(), Sequence{api, g},
       "Set AuthPolicy.authScheme before generating an authorizer.");
     return null;
   }
-  var scheme = api.auth.authScheme.toLowerCase();
-  if (scheme.contains("jwt") or scheme.contains("oauth") or scheme.contains("oidc")) {
+  if (jwtRequired or scheme.contains("jwt") or scheme.contains("oauth") or scheme.contains("oidc")) {
     if (g.eClass().getName() <> "HttpApi") {
       manualDecision("REST_API_JWT_AUTHORIZER_REQUIRED",
         "Choose a REST-compatible JWT validation mechanism for API " + api.name + ".",
@@ -796,8 +844,19 @@ operation attachOpenApiModels(route, awsRoute) {
   if (route.responseSchema.isDefined()) {
     awsRoute.responseModels.add(createResponseModel(route, route.responseSchema, positiveOr(route.expectedSuccessStatus, 200).asString()));
   }
+  var emittedStatuses = Set{};
   for (errorMapping in route.errorMappings.select(em | em.errorSchema.isDefined())) {
-    awsRoute.responseModels.add(createResponseModel(route, errorMapping.errorSchema, statusForError(errorMapping)));
+    var statusText = statusForError(errorMapping);
+    if (not hasText(statusText)) {
+      manualDecision("HTTP_ERROR_STATUS_REQUIRED", "Assign a single HTTP status code to error mapping " + errorMapping.name + ".",
+        KERNEL!Severity#ERROR, true, Sequence{errorMapping},
+        "Set ErrorMapping.abstractStatusClass to a three-digit HTTP status followed by an optional classification, for example 409_CONFLICT.");
+    }
+    if (hasText(statusText) and not emittedStatuses.includes(statusText)) {
+      var sameStatusMappings = route.errorMappings.select(em | em.errorSchema.isDefined() and statusForError(em) = statusText);
+      awsRoute.responseModels.add(createErrorResponseModel(route, statusText, sameStatusMappings));
+      emittedStatuses.add(statusText);
+    }
   }
 }
 
@@ -822,6 +881,33 @@ operation createResponseModel(route, schema, statusCode : String) {
   apiModel.statusCode = statusCode;
   apiModel.contentType = "application/json";
   apiModel.schemaJson = schemaToOpenApiSchema(schema);
+  return apiModel;
+}
+
+/** Combines all modeled error schemas for one HTTP status into one API response model. */
+operation createErrorResponseModel(route, statusCode : String, errorMappings) {
+  var apiModel = new AWSPSMAPI!ApiGatewayResponseModel;
+  var schemaList = "";
+  var emittedCodes = Set{};
+  for (mapping in errorMappings) {
+    if (hasText(schemaList)) schemaList = schemaList + ", ";
+    schemaList = schemaList + schemaToOpenApiSchema(mapping.errorSchema);
+    if (hasText(mapping.domainErrorCode) and not emittedCodes.includes(mapping.domainErrorCode)) {
+      apiModel.errorCodes.add(mapping.domainErrorCode);
+      emittedCodes.add(mapping.domainErrorCode);
+    }
+  }
+  copyTraceable(errorMappings.first().errorSchema, apiModel);
+  apiModel.id = generatedId("api_error_response_model", route, statusCode);
+  apiModel.name = pascalCase(firstText(route.name, route.id)) + statusCode + "ErrorResponse";
+  apiModel.statusCode = statusCode;
+  apiModel.contentType = "application/json";
+  if (errorMappings.size() = 1) {
+    apiModel.schemaJson = schemaList;
+  }
+  else {
+    apiModel.schemaJson = "{ \"oneOf\": [ " + schemaList + " ] }";
+  }
   return apiModel;
 }
 
@@ -890,8 +976,17 @@ operation openApiResponses(r) {
   responses = responses + " }";
   for (e in r.errorMappings) {
     var errorStatus = statusForError(e);
-    if (not emittedStatuses.includes(errorStatus)) {
-      responses = responses + ", \"" + errorStatus + "\": { \"description\": \"" + escapeJson(firstText(e.responseMessage, e.domainErrorCode)) + "\" }";
+    if (hasText(errorStatus) and not emittedStatuses.includes(errorStatus)) {
+      var mappings = r.errorMappings.select(candidate | statusForError(candidate) = errorStatus and candidate.errorSchema.isDefined());
+      var schemaRefs = "";
+      for (mapping in mappings) {
+        if (hasText(schemaRefs)) schemaRefs = schemaRefs + ", ";
+        schemaRefs = schemaRefs + "{ \"$ref\": \"#/components/schemas/" + escapeJson(pascalCase(mapping.errorSchema.name)) + "\" }";
+      }
+      var schemaJson = "{}";
+      if (mappings.size() = 1) schemaJson = schemaRefs;
+      else if (mappings.size() > 1) schemaJson = "{ \"oneOf\": [ " + schemaRefs + " ] }";
+      responses = responses + ", \"" + errorStatus + "\": { \"description\": \"" + escapeJson(firstText(e.responseMessage, e.domainErrorCode)) + "\", \"content\": { \"application/json\": { \"schema\": " + schemaJson + " } } }";
       emittedStatuses.add(errorStatus);
     }
   }
@@ -900,18 +995,22 @@ operation openApiResponses(r) {
 
 /** Computes status for error. */
 operation statusForError(e) {
-  if (e.abstractStatusClass.toLowerCase().contains("4")) {
-    return "400";
+  var statusClass = firstText(e.abstractStatusClass, "").trim();
+  if (statusClass.length() >= 3) {
+    var statusText = statusClass.substring(0, 3);
+    if (statusText.matches("^[1-5][0-9]{2}$") and (statusClass.length() = 3 or statusClass.substring(3, 4).matches("[_ -]"))) {
+      return statusText;
+    }
   }
-  if (e.abstractStatusClass.toLowerCase().contains("5")) {
-    return "500";
-  }
-  return "default";
+  return "";
 }
 
 /** Computes open api security. */
 operation openApiSecurity(r) {
   if (not routeNeedsAuth(r)) {
+    return "[]";
+  }
+  if (inferAuthorizationType(r) = AWSPSMENUMS!ApiGatewayAuthorizationType#NONE) {
     return "[]";
   }
   if (inferAuthorizationType(r) = AWSPSMENUMS!ApiGatewayAuthorizationType#API_KEY) {

@@ -19,9 +19,9 @@ independent of the order in which content is used in one delivery process.
 - The complete consolidated task catalog is generated into
   `../spem/method-content-index.json`.
 
-The thesis-style rationale and the narrative description of all 19
-lifecycle/integration fragments plus the composite continuous fragment are in
-`../12-method-library-and-fragment-report.md`.
+The generated human-readable catalog includes descriptions of the 19
+lifecycle/integration fragments and the composite continuous fragment. Their
+authoritative selection and provenance data are in `method-fragments.json`.
 
 Stable source TaskDefinitions remain in
 `methodology/process/definitions/{cim,pim,psm,artifact,end-to-end}.json`.

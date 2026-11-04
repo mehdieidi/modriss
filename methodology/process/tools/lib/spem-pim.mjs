@@ -333,7 +333,7 @@ const PIM_PROCESS_PHASES_SOURCE = [
             artifactIds: ["pim-artifact.compute-catalog"],
             types: ["Trigger", "RuntimeLanguage", "PackageManager"],
             steps: [
-              "Define Trigger elements linking functions to events and schedules.",
+              "Define Trigger elements linking functions or service-owned workflows to events and schedules.",
               "Set runtime language and package manager per function.",
             ],
             entryCriteria: ["Functions defined"],

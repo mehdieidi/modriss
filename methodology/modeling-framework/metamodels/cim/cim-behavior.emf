@@ -28,6 +28,7 @@ class Command extends kernel.TraceableElement {
 	ref Condition[*]                                  preconditions;
 	ref BusinessEvent[*]#expectedByCommands           expectedEvents;
 	ref BusinessEvent[*]#rejectedByCommands           rejectionEvents;
+	ref BusinessEvent[*]#consumedByCommands           triggeredByEvents;
 	ref BusinessError[*]                              possibleErrors;
 }
 
@@ -57,6 +58,7 @@ class Query extends kernel.TraceableElement {
 	ref cimdomain.InformationItem[*]                 input;
 	ref cimdomain.InformationItem[+]                 output;
 	ref cimdomain.DomainEntity[*]                    reads;
+	ref BusinessError[*]                             possibleErrors;
 	ref cimorg.Actor[*]#issuesQueries                issuedBy;
 	ref cimorg.BusinessCapability[?]#containsQueries targetCapability;
 }
@@ -78,6 +80,7 @@ class BusinessEvent extends kernel.TraceableElement {
 
 	ref Command[*]#expectedEvents               expectedByCommands;
 	ref Command[*]#rejectionEvents              rejectedByCommands;
+	ref Command[*]#triggeredByEvents            consumedByCommands;
 	ref cimorg.ExternalSystem[*]#producedEvents causedByExternalSystems;
 	ref cimorg.ExternalSystem[*]#consumedEvents consumedByExternalSystems;
 	ref cimprocess.Policy[*]#emitsEvents        causedByPolicies;

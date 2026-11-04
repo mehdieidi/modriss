@@ -323,6 +323,9 @@ rule Query2Function
   contract.authContextRequired = q.authorizationRequired or q.containsPersonalData;
   contract.inputSchema = createQueryRequestSchema(q);
   contract.outputSchema = createQueryResponseSchema(q);
+  for (err in q.possibleErrors) {
+    contract.errorSchemas.add(cachedEquivalent(err, "BusinessError2ErrorSchema"));
+  }
   fn.contract = contract;
   fn.observability = createDefaultObservability(fn, "TR-080", false, false);
 
@@ -379,6 +382,23 @@ rule Query2ApiRoute
 
   api.routes.add(route);
   traceGenerated(q, route, "TR-080", "MEDIUM");
+
+  for (err in q.possibleErrors) {
+    var mapping = new API!ErrorMapping;
+    mapping.id = newId("errormap", q.id + "_" + err.id);
+    mapping.name = q.name + " " + err.name + " Error Mapping";
+    mapping.domainErrorCode = err.errorCode;
+    if (err.recoverable) {
+      mapping.abstractStatusClass = "409_OR_422_RETRYABLE_BUSINESS_CONFLICT";
+    }
+    else {
+      mapping.abstractStatusClass = "400_OR_422_BUSINESS_VALIDATION";
+    }
+    mapping.responseMessage = err.userVisibleMessage;
+    mapping.errorSchema = cachedEquivalent(err, "BusinessError2ErrorSchema");
+    route.errorMappings.add(mapping);
+    traceGenerated(err, mapping, "TR-130", "HIGH");
+  }
 
   if (fn.isDefined()) {
     var trigger = new COMPUTE!Trigger;

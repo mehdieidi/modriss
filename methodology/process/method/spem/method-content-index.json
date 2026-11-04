@@ -7059,7 +7059,7 @@
       ],
       "coverageGroups": [],
       "steps": [
-        "Define Trigger elements linking functions to events and schedules.",
+        "Define Trigger elements linking functions or service-owned workflows to events and schedules.",
         "Set runtime language and package manager per function."
       ],
       "entryCriteria": ["Functions defined"],
@@ -9072,6 +9072,7 @@
       "coverageGroups": [],
       "steps": [
         "Select one PIM service slice or deployment unit to materialize on AWS.",
+        "Preserve each service's business ownership group independently of CloudFormation stack containment.",
         "Record AWS account, region, stage, networking, IAM, and deployment assumptions.",
         "Define the PSM EVL gate, artifact-generation readiness criteria, and review participants."
       ],
@@ -9079,8 +9080,14 @@
       "exitCriteria": ["Deployable-slice scope and definition of done are agreed"],
       "validationRules": [],
       "durationEstimate": "30m",
-      "paletteFocus": [],
-      "metamodelBindings": [],
+      "paletteFocus": ["AwsService"],
+      "metamodelBindings": [
+        {
+          "metamodel": "psm",
+          "classifier": "AwsService",
+          "kind": "EClass"
+        }
+      ],
       "sourceProcesses": ["psm"],
       "sourceVariants": []
     },
@@ -10581,6 +10588,114 @@
         {
           "metamodel": "psm",
           "classifier": "S3NotificationDestination",
+          "kind": "EClass"
+        }
+      ],
+      "sourceProcesses": ["psm"],
+      "sourceVariants": []
+    },
+    {
+      "id": "task.psm.ph3.st1.t3",
+      "type": "TaskDefinition",
+      "name": "Provision relational databases and schemas",
+      "purpose": "Provision relational databases and schemas",
+      "viewpoint": "storage",
+      "performerRoleRefs": ["role.cloud-platform-engineer"],
+      "primaryPerformerRoleRef": "role.cloud-platform-engineer",
+      "inputWorkProductRefs": [
+        "psm-artifact.storage-layer",
+        "psm-artifact.network-identity",
+        "psm-artifact.security-baseline",
+        "psm-artifact.deployment-strategy",
+        "psm-artifact.stack-scaffold"
+      ],
+      "inputSource": "declared",
+      "outputWorkProductRefs": ["psm-artifact.storage-layer"],
+      "workProductParameters": [
+        {
+          "type": "Default_TaskDefinitionParameter",
+          "workProductDefinitionRef": "psm-artifact.storage-layer",
+          "direction": "in",
+          "optional": false
+        },
+        {
+          "type": "Default_TaskDefinitionParameter",
+          "workProductDefinitionRef": "psm-artifact.network-identity",
+          "direction": "in",
+          "optional": false
+        },
+        {
+          "type": "Default_TaskDefinitionParameter",
+          "workProductDefinitionRef": "psm-artifact.security-baseline",
+          "direction": "in",
+          "optional": false
+        },
+        {
+          "type": "Default_TaskDefinitionParameter",
+          "workProductDefinitionRef": "psm-artifact.deployment-strategy",
+          "direction": "in",
+          "optional": false
+        },
+        {
+          "type": "Default_TaskDefinitionParameter",
+          "workProductDefinitionRef": "psm-artifact.stack-scaffold",
+          "direction": "in",
+          "optional": false
+        },
+        {
+          "type": "Default_TaskDefinitionParameter",
+          "workProductDefinitionRef": "psm-artifact.storage-layer",
+          "direction": "out",
+          "optional": false
+        }
+      ],
+      "coverageGroups": [],
+      "steps": [
+        "Create RdsDbCluster and RdsDbInstance resources for relational PIM DataStore definitions.",
+        "Define RdsTable, RdsColumn, and RdsIndex schema elements from PIM data models and access patterns.",
+        "Configure credentials, encryption, networking, backups, and database availability for the deployment slice."
+      ],
+      "entryCriteria": ["Identity configured"],
+      "exitCriteria": ["Relational database resources and schemas match PIM data models"],
+      "validationRules": [],
+      "durationEstimate": "1-2h",
+      "paletteFocus": [
+        "RdsDbCluster",
+        "RdsDbInstance",
+        "RdsDbSubnetGroup",
+        "RdsTable",
+        "RdsIndex",
+        "RdsColumn"
+      ],
+      "metamodelBindings": [
+        {
+          "metamodel": "psm",
+          "classifier": "RdsDbCluster",
+          "kind": "EClass"
+        },
+        {
+          "metamodel": "psm",
+          "classifier": "RdsDbInstance",
+          "kind": "EClass"
+        },
+        {
+          "metamodel": "psm",
+          "classifier": "RdsDbSubnetGroup",
+          "kind": "EClass"
+        },
+        {
+          "metamodel": "psm",
+          "classifier": "RdsTable",
+          "kind": "EClass"
+        },
+        {
+          "metamodel": "psm",
+          "classifier": "RdsIndex",
+          "kind": "EClass"
+        },
+        {
+          "metamodel": "psm",
+          "classifier": "RdsColumn",
           "kind": "EClass"
         }
       ],
@@ -14165,7 +14280,7 @@
       "name": "PSM",
       "sourceProcess": "psm",
       "phaseCount": 6,
-      "workSequenceCount": 34,
+      "workSequenceCount": 35,
       "repeatableActivities": [
         {
           "id": "modriss.psm.modeling.iteration",

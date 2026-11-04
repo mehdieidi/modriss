@@ -185,10 +185,6 @@ public final class TransformationSynchronizationCoordinator {
       return new CoordinatedResult(
           working, emptyResult(SynchronizationStatus.APPLIED, working.id(), List.of()));
     }
-    if (sourceUnchanged && workingProjectionMatchesGenerated && workingXmiStructurallyValid) {
-      return new CoordinatedResult(
-          working, emptyResult(SynchronizationStatus.APPLIED, working.id(), List.of()));
-    }
     // The frontend persists editable JSON and its canonical XMI sidecar together. Three-way EMF
     // comparison must use that XMI graph: recreating it from JSON can turn valid typed
     // cross-references in newly added subtrees into detached objects whose serializer URIs cannot

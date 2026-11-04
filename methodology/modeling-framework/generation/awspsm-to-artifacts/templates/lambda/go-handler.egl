@@ -51,7 +51,7 @@ func Handler(ctx context.Context, lambdaEvt map[string]any) (GeneratedResult, er
 	if err := runtime.ValidatePayload(lambdaEvt, &validatedInput); err != nil {
 		metricObj.AddMetric("ValidationError", 1)
 		logObj.Error("validation failed", err)
-		return mapKnownError(err, correlationID), nil
+		return handleError(err, correlationID, lambdaEvt)
 	}
 
 [% if (awsFn.requiresIdempotency()) { %]
@@ -72,23 +72,24 @@ func Handler(ctx context.Context, lambdaEvt map[string]any) (GeneratedResult, er
 	if err != nil {
 		metricObj.AddMetric("Error", 1)
 		logObj.Error("application handler failed", err)
-		return mapKnownError(err, correlationID), nil
+		return handleError(err, correlationID, lambdaEvt)
+	}
+
+	applicationOutput, err := eventPublisherObj.PublishModeledEvents(ctx, "[%= awsFn.stableKey() %]", applicationResult)
+	if err != nil {
+		metricObj.AddMetric("Error", 1)
+		logObj.Error("event publishing failed", err)
+		return handleError(err, correlationID, lambdaEvt)
 	}
 
 	generatedResult := GeneratedResult{
-		StatusCode: 200,
+		StatusCode: [%= awsFn.apiSuccessStatusCode() %],
 		Headers: map[string]string{
 			"content-type":     "application/json",
 			"x-correlation-id": correlationID,
 		},
-		Body: runtime.JSONBody(applicationResult),
-		WorkflowResult: applicationResult,
-	}
-
-	if err := eventPublisherObj.PublishModeledEvents(ctx, "[%= awsFn.stableKey() %]", generatedResult); err != nil {
-		metricObj.AddMetric("Error", 1)
-		logObj.Error("event publishing failed", err)
-		return mapKnownError(err, correlationID), nil
+		Body: runtime.JSONBody(applicationOutput),
+		WorkflowResult: applicationOutput,
 	}
 [% if (awsFn.requiresIdempotency()) { %]
 	idemStoreObj.Put(idemKeyText, generatedResult)
@@ -100,12 +101,21 @@ func Handler(ctx context.Context, lambdaEvt map[string]any) (GeneratedResult, er
 }
 
 func mapKnownError(err error, correlationID string) GeneratedResult {
-	mappedResult := runtime.MapKnownError(err, correlationID)
+	mappedResult := runtime.MapKnownError(err, correlationID, [%= awsFn.apiErrorStatusMap() %], [%= awsFn.apiErrorCodeByStatusMap() %])
 	return GeneratedResult{
 		StatusCode: mappedResult.StatusCode,
 		Headers:    mappedResult.Headers,
 		Body:       mappedResult.Body,
 	}
+}
+
+// HTTP callers receive the modeled error contract. Workflow and event callers
+// receive a Lambda error so Step Functions retry/catch policy remains effective.
+func handleError(err error, correlationID string, event map[string]any) (GeneratedResult, error) {
+	if runtime.IsApiGatewayEvent(event) {
+		return mapKnownError(err, correlationID), nil
+	}
+	return GeneratedResult{}, err
 }
 
 func main() {

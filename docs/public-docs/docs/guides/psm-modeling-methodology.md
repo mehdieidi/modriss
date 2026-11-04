@@ -59,7 +59,7 @@ flowchart TD
 
 ## Task Catalog
 
-Process `modriss.psm.modeling` · 6 phases · 28 TaskUses / TaskDefinitions · PSM metamodel coverage enforced in CI.
+Process `modriss.psm.modeling` · 6 phases · 29 TaskUses / TaskDefinitions · PSM metamodel coverage enforced in CI.
 
 ### Deployment & Slice Framing (`psm.ph1`)
 
@@ -90,12 +90,14 @@ Select the AWS deployable slice and define deployment review expectations.
 **Viewpoint:** stack
 **Duration:** 30m
 **Work products:** PSM Increment Plan
+**Palette focus:** `AwsService`
 
 **Steps:**
 
 1. Select one PIM service slice or deployment unit to materialize on AWS.
-2. Record AWS account, region, stage, networking, IAM, and deployment assumptions.
-3. Define the PSM EVL gate, artifact-generation readiness criteria, and review participants.
+2. Preserve each service's business ownership group independently of CloudFormation stack containment.
+3. Record AWS account, region, stage, networking, IAM, and deployment assumptions.
+4. Define the PSM EVL gate, artifact-generation readiness criteria, and review participants.
 
 **Entry criteria:**
 
@@ -541,6 +543,34 @@ Provision DynamoDB tables and S3 buckets aligned to PIM data architecture.
 **Exit criteria:**
 
 - S3 buckets match PIM object stores
+
+#### Provision relational databases and schemas (`psm.ph3.st1.t3`)
+
+**Viewpoint:** storage
+**Duration:** 1-2h
+**Inputs:**
+
+- Durable Storage Layer
+- Network & Identity
+- Security Baseline
+- Deployment Strategy
+- SAM Stack Scaffold
+  **Work products:** Durable Storage Layer
+  **Palette focus:** `RdsDbCluster`, `RdsDbInstance`, `RdsDbSubnetGroup`, `RdsTable`, `RdsIndex`, `RdsColumn`
+
+**Steps:**
+
+1. Create RdsDbCluster and RdsDbInstance resources for relational PIM DataStore definitions.
+2. Define RdsTable, RdsColumn, and RdsIndex schema elements from PIM data models and access patterns.
+3. Configure credentials, encryption, networking, backups, and database availability for the deployment slice.
+
+**Entry criteria:**
+
+- Identity configured
+
+**Exit criteria:**
+
+- Relational database resources and schemas match PIM data models
 
 #### Messaging (`psm.ph3.st2`)
 

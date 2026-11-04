@@ -121,16 +121,16 @@ rule IdentityProvider2CognitoUserPool
   createTrace(idp, pool, "IdentityProvider2CognitoUserPool", "MEDIUM", KERNEL!TraceLinkType#REALIZES);
 }
 
-/** Transforms Principal elements into Iam Role elements. */
+/** Transforms executable service principals into IAM roles. Application roles retain provider-neutral authorization semantics. */
 rule Principal2IamRole
   transform p : SECURITY!Principal
   to role : AWSPSMSECURITY!IamRole {
 
-  guard : p.principalKind = PIMTYPES!PrincipalKind#SERVICE or p.principalKind = PIMTYPES!PrincipalKind#ROLE
+  guard : p.principalKind = PIMTYPES!PrincipalKind#SERVICE
 
   copyAwsResource(p, role, "PrincipalRole", "AWS::IAM::Role");
   role.id = idFor("principal_role", p);
-  role.roleName = physicalName(p, "role", defaultStage());
+  role.roleName = role.physicalName;
   role.path = "/";
   role.maxSessionDuration = 3600;
   role.descriptionText = firstText(p.summary, "IAM role generated from PIM principal.");
@@ -731,7 +731,7 @@ operation createStateMachineRole(w) {
   var role = new AWSPSMSECURITY!IamRole;
   copyAwsResource(w, role, "StateMachineRole", "AWS::IAM::Role");
   role.id = generatedId("iam_role", w, "states");
-  role.roleName = physicalName(w, "states-role", defaultStage());
+  role.roleName = role.physicalName;
   role.path = "/";
   role.assumeRolePolicy = serviceAssumeRolePolicy("states.amazonaws.com", w.id);
   return role;

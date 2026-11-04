@@ -86,6 +86,7 @@ operation createRequestResponseFlows() {
 operation createEventChannelsAndFlows() {
   for (e in CIMBEHAVIOR!BusinessEvent.all) {
     var service = serviceFor(e);
+    var processConsumers = processesConsumingEvent(e);
     var ch = ensureEventBusForService(service);
     var et = eventTypeFor(e);
     if (et.isDefined() and not ch.eventTypes.includes(et)) {
@@ -99,28 +100,6 @@ operation createEventChannelsAndFlows() {
     ch.encrypted = ch.encrypted or e.payload.exists(i | isSensitive(i));
     ch.replayRequired = ch.replayRequired or e.retentionRelevant or e.auditRelevant;
     ch.deadLetterRequired = true;
-
-    var topic = null;
-    if (e.externallyVisible or e.consumedByPolicies.size() + e.consumedByProcesses.size() + e.consumedByExternalSystems.size() > 1) {
-      topic = new INTEGRATION!Topic;
-      topic.id = idFor("topic", e);
-      topic.name = e.name + " Topic";
-      topic.integrationPurpose = "Publish/subscribe channel for event " + e.name;
-      topic.channelKind = PIMTYPES!ChannelKind#TOPIC;
-      topic.orderingRequirement = ch.orderingRequirement;
-      topic.deliverySemantics = ch.deliverySemantics;
-      topic.partitionKeyExpression = e.orderingKeyCandidate;
-      topic.encrypted = ch.encrypted;
-      topic.replayRequired = ch.replayRequired;
-      topic.deadLetterRequired = true;
-      topic.subscriptionMode = "filtered";
-      topic.filteringRequired = true;
-      topic.eventTypes.add(et);
-      topic.observability = createDefaultObservability(topic, "TR-140", true, e.externallyVisible);
-      topic.resilience = createDefaultResilience(topic, "TR-140", true);
-      service.channels.add(topic);
-      traceGenerated(e, topic, "TR-140", "MEDIUM");
-    }
 
     for (cmd in e.expectedByCommands) {
       var producer = commandFunction(cmd);
@@ -179,26 +158,31 @@ operation createEventChannelsAndFlows() {
         pimRoot().flows.add(extProducedFlow);
       }
     }
+    for (cmd in e.consumedByCommands) {
+      var consumer = commandFunction(cmd);
+      if (consumer.isDefined()) {
+        ch.consumers.add(consumer);
+        et.consumedBy.add(consumer);
+        consumer.subscribesTo.add(et);
+        var commandFlow = new INTEGRATION!EventFlow;
+        commandFlow.id = newId("flow_event", ch.id + "_" + consumer.id + "_" + et.id + "_command");
+        commandFlow.name = et.name + " to " + consumer.name;
+        commandFlow.source = ch;
+        commandFlow.target = consumer;
+        commandFlow.eventType = et;
+        commandFlow.channel = ch;
+        commandFlow.criticalPath = false;
+        commandFlow.containsPersonalData = et.containsPersonalData;
+        commandFlow.observability = createDefaultObservability(commandFlow, "TR-140", true, false);
+        pimRoot().flows.add(commandFlow);
+      }
+    }
     for (pol in e.consumedByPolicies) {
       var consumer = policyFunction(pol);
       if (consumer.isDefined()) {
         ch.consumers.add(consumer);
         et.consumedBy.add(consumer);
         consumer.subscribesTo.add(et);
-        if (topic.isDefined()) {
-          topic.consumers.add(consumer);
-        }
-        var trigger = new COMPUTE!Trigger;
-        trigger.id = newId("trigger_event", et.id + "_" + consumer.id);
-        trigger.name = consumer.name + " Event Trigger";
-        trigger.triggerKind = "EVENT_CHANNEL";
-        trigger.invocationMode = PIMTYPES!InvocationMode#ASYNCHRONOUS;
-        trigger.enabled = true;
-        trigger.filterExpression = et.semanticName;
-        trigger.generatedFromFlow = true;
-        trigger.source = ch;
-        trigger.resilience = createDefaultResilience(trigger, "TR-140", true);
-        consumer.triggers.add(trigger);
         var consumeFlow = new INTEGRATION!EventFlow;
         consumeFlow.id = newId("flow_event", ch.id + "_" + consumer.id + "_" + et.id);
         consumeFlow.name = et.name + " to " + consumer.name;
@@ -212,13 +196,10 @@ operation createEventChannelsAndFlows() {
         pimRoot().flows.add(consumeFlow);
       }
     }
-    for (bp in e.consumedByProcesses) {
+    for (bp in processConsumers) {
       var wf = workflowFor(bp);
       if (wf.isDefined()) {
         ch.workflowConsumers.add(wf);
-        if (topic.isDefined()) {
-          topic.workflowConsumers.add(wf);
-        }
         var triggerWf = new COMPUTE!Trigger;
         triggerWf.id = newId("trigger_event", et.id + "_" + wf.id);
         triggerWf.name = wf.name + " Event Trigger";
@@ -248,9 +229,6 @@ operation createEventChannelsAndFlows() {
       if (adapterConsumer.isDefined()) {
         ch.externalConsumers.add(adapterConsumer);
         et.consumedBy.add(adapterConsumer);
-        if (topic.isDefined()) {
-          topic.externalConsumers.add(adapterConsumer);
-        }
         var extConsumedFlow = new INTEGRATION!EventFlow;
         extConsumedFlow.id = newId("flow_event", ch.id + "_" + adapterConsumer.id + "_" + et.id);
         extConsumedFlow.name = et.name + " to " + adapterConsumer.name;
@@ -265,6 +243,18 @@ operation createEventChannelsAndFlows() {
       }
     }
   }
+}
+
+/** Returns processes linked as event consumers directly or through their declared trigger. */
+operation processesConsumingEvent(e) {
+  var consumers = Sequence{};
+  for (bp in e.consumedByProcesses) {
+    if (not consumers.includes(bp)) consumers.add(bp);
+  }
+  for (bp in CIMPROCESS!BusinessProcess.all.select(process | process.triggeringEvent = e)) {
+    if (not consumers.includes(bp)) consumers.add(bp);
+  }
+  return consumers;
 }
 
 /** Creates create topic subscriptions. */
@@ -303,32 +293,6 @@ operation createTopicSubscriptions() {
       subAdapter.rawDelivery = false;
       topic.subscriptions.add(subAdapter);
     }
-  }
-}
-
-/** Creates create policy routing rules. */
-operation createPolicyRoutingRules() {
-  for (pol in CIMPROCESS!Policy.all.select(p | p.triggeredBy.notEmpty() and (p.emitsCommands.notEmpty() or p.emitsEvents.notEmpty()))) {
-    var bus = ensureEventBusForService(serviceFor(pol));
-    var routingRule = new INTEGRATION!EventRoutingRule;
-    routingRule.id = idFor("routing", pol);
-    routingRule.name = pol.name + " Routing Rule";
-    routingRule.eventPattern = joinText(pol.triggeredBy.collect(e | e.semanticName.orDefault(e.name)), " OR ");
-    routingRule.enabled = true;
-    routingRule.inputTransformation = "provider-independent event envelope";
-    routingRule.eventTypes.addAll(pol.triggeredBy.collect(e | eventTypeFor(e)).select(e | e.isDefined()));
-    for (cmd in pol.emitsCommands) {
-      var fn = commandFunction(cmd);
-      if (fn.isDefined()) {
-        routingRule.targets.add(fn);
-      }
-    }
-    for (ev in pol.emitsEvents) {
-      routingRule.targets.add(ensureEventBusForService(serviceFor(ev)));
-    }
-    routingRule.resilience = createDefaultResilience(routingRule, "TR-100", true);
-    bus.routingRules.add(routingRule);
-    traceGenerated(pol, routingRule, "TR-100", "MEDIUM");
   }
 }
 
@@ -1293,8 +1257,7 @@ post LinkAndDerive {
   etlProfiler.mark("cim.link.eventChannelsAndFlows");
   createTopicSubscriptions();
   etlProfiler.mark("cim.link.topicSubscriptions");
-  createPolicyRoutingRules();
-  etlProfiler.mark("cim.link.policyRoutingRules");
+  etlProfiler.mark("cim.link.eventFlows");
   createExternalIntegrationFlows();
   etlProfiler.mark("cim.link.externalIntegrationFlows");
   createCapabilityDependencyArtifacts();

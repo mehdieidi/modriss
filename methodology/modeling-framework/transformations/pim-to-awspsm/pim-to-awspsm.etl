@@ -22,10 +22,14 @@ post ResolveAndValidate {
   resolveAwsRelationships();
   resolveWorkflowTaskTargets();
   etlProfiler.mark("psm.resolve.relationships");
+  resolveLambdaDeadLetterConfigs();
+  etlProfiler.mark("psm.resolve.lambdaDeadLetters");
   resolveSqsRedrivePolicies();
   etlProfiler.mark("psm.resolve.redrive");
   generateIamStatements();
   etlProfiler.mark("psm.resolve.iam");
+  normalizeIamPolicyDocuments();
+  etlProfiler.mark("psm.resolve.iamPolicyNormalization");
   placeUncontainedAwsResources();
   etlProfiler.mark("psm.resolve.placeResources");
   alignDefaultKmsKeysWithStacks();

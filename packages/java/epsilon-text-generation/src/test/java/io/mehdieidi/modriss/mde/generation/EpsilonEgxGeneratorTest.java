@@ -359,6 +359,12 @@ final class EpsilonEgxGeneratorTest {
     assertTrue(Files.isRegularFile(generatedSamTemplate(outputDirectory)));
     assertTrue(
         Files.isRegularFile(outputDirectory.resolve("generated/reports/generation-report.md")));
+    String generatedRuntimeErrors =
+        Files.readString(outputDirectory.resolve("platform/runtime/errors.go"));
+    assertTrue(
+        generatedRuntimeErrors.contains("_, ok := event[\"requestContext\"].(map[string]any)"));
+    assertTrue(generatedRuntimeErrors.contains("\treturn ok"));
+    assertFalse(generatedRuntimeErrors.contains("len(requestContext) > 0"));
     assertTrue(Files.readString(generatedSamTemplate(outputDirectory)).contains("AWS::S3::Bucket"));
     assertTrue(
         Files.readString(generatedSamTemplate(outputDirectory))
@@ -430,6 +436,74 @@ final class EpsilonEgxGeneratorTest {
     assertEquals("COGNITO_USER_POOLS", cognito.path("Type").asText());
     assertEquals("method.request.header.Authorization", cognito.path("IdentitySource").asText());
     assertTrue(cognito.path("ProviderARNs").isArray());
+    assertTrue(
+        resources.path("BroadEventRule").path("Properties").path("EventPattern").isObject(),
+        "EventBridge event patterns must remain structured CloudFormation values.");
+    assertTrue(
+        resources.path("BroadEventArchive").path("Properties").path("EventPattern").isObject(),
+        "EventBridge archive patterns must remain structured CloudFormation values.");
+    assertTrue(
+        resources.path("BroadPipe").path("Properties").path("FilterCriteria").isObject(),
+        "EventBridge pipe filters must remain structured CloudFormation values.");
+    assertTrue(
+        resources.path("BroadManagedPolicy").path("Properties").path("PolicyDocument").isObject(),
+        "IAM policy documents must remain structured CloudFormation values.");
+    assertTrue(
+        resources.path("BroadDashboard").path("Properties").path("DashboardBody").isTextual(),
+        "CloudWatch dashboard bodies must remain JSON strings as required by CloudFormation.");
+    var lambdaEnvironment =
+        resources.path("BroadFunction").path("Properties").path("Environment").path("Variables");
+    assertEquals("broad", lambdaEnvironment.path("MODE").asText());
+    assertTrue(lambdaEnvironment.path("MODE").isTextual());
+    assertEquals("true", lambdaEnvironment.path("TEST_FLAG").asText());
+    assertTrue(lambdaEnvironment.path("TEST_FLAG").isTextual());
+    assertEquals("[{\"mode\":\"safe\"}]", lambdaEnvironment.path("JSON_CONFIG").asText());
+    assertTrue(lambdaEnvironment.path("JSON_CONFIG").isTextual());
+    boolean generatedAccessDeniedMapping = false;
+    try (Stream<Path> generatedFiles = Files.walk(outputDirectory.resolve("services"))) {
+      for (Path generatedFile :
+          generatedFiles
+              .filter(Files::isRegularFile)
+              .filter(path -> path.getFileName().toString().equals("main.go"))
+              .toList()) {
+        if (Files.readString(generatedFile).contains("\"ACCESS_DENIED\": 403")) {
+          generatedAccessDeniedMapping = true;
+          break;
+        }
+      }
+    }
+    assertTrue(
+        generatedAccessDeniedMapping,
+        "API Lambda handlers must map standard application access denials to HTTP 403.");
+    Path eventPublisher = outputDirectory.resolve("platform/runtime/event-publisher.go");
+    String generatedEventPublisher = Files.readString(eventPublisher);
+    assertTrue(
+        generatedEventPublisher.contains("type ModeledEvent struct"),
+        "Generated EventBridge publishing must use the application's explicit event outputs.");
+    assertTrue(
+        generatedEventPublisher.contains("application emitted unmodeled EventBridge event"),
+        "Generated EventBridge publishing must reject event types outside the modeled bindings.");
+    assertTrue(
+        generatedEventPublisher.contains("if !hasModeledEvents"),
+        "A handler invocation with no event output must not publish every event bound to the"
+            + " function.");
+    boolean generatedHandlerUsesPublicEventOutput = false;
+    try (Stream<Path> generatedFiles = Files.walk(outputDirectory.resolve("services"))) {
+      for (Path generatedFile :
+          generatedFiles
+              .filter(Files::isRegularFile)
+              .filter(path -> path.getFileName().toString().equals("main.go"))
+              .toList()) {
+        if (Files.readString(generatedFile)
+            .contains("applicationOutput, err := eventPublisherObj.PublishModeledEvents")) {
+          generatedHandlerUsesPublicEventOutput = true;
+          break;
+        }
+      }
+    }
+    assertTrue(
+        generatedHandlerUsesPublicEventOutput,
+        "Generated handlers must return the public application result after event publication.");
     var lambdaAuth = resources.path("BroadLambdaAuthorizer").path("Properties");
     assertEquals("TOKEN", lambdaAuth.path("Type").asText());
     assertTrue(lambdaAuth.has("RestApiId"));
@@ -2922,7 +2996,11 @@ final class EpsilonEgxGeneratorTest {
       throws Exception {
     Path payloadFile = outputDirectory.resolve("localstack-lambda-payload.json");
     Path responseFile = outputDirectory.resolve("localstack-lambda-response.json");
-    Files.writeString(payloadFile, "{\"payload\":{\"source\":\"junit-localstack\"}}");
+    Files.writeString(
+        payloadFile,
+        "{\"requestContext\":{\"requestId\":\"junit-localstack\"},"
+            + "\"httpMethod\":\"POST\",\"path\":\"/test\","
+            + "\"payload\":{\"source\":\"junit-localstack\"}}");
     ProcessResult invokeResult =
         runProcessCapturing(
             processBuilder(
@@ -2963,7 +3041,15 @@ final class EpsilonEgxGeneratorTest {
     Map<?, ?> response = JSON.readValue(responseFile.toFile(), Map.class);
     assertTrue(
         response.containsKey("statusCode"),
-        () -> "Lambda response missing statusCode: " + response);
+        () ->
+            "Lambda response missing statusCode: "
+                + response
+                + "\nLambda logs:\n"
+                + lambdaLogEvents(outputDirectory, awsExecutable, environment)
+                + "\nDocker Lambda containers:\n"
+                + dockerLambdaDiagnostics()
+                + "\nLocalStack logs:\n"
+                + dockerContainerLogs(containerId));
   }
 
   /**
@@ -3873,10 +3959,17 @@ final class EpsilonEgxGeneratorTest {
 
     String handler =
         Files.readString(outputDirectory.resolve("services/orders/cmd/order-handler/main.go"));
+    String eventPublisher =
+        Files.readString(outputDirectory.resolve("platform/runtime/event-publisher.go"));
     assertTrue(handler.contains("package main"));
     assertTrue(handler.contains("lambda.Start(Handler)"));
     assertTrue(handler.contains("\"example.com/representative-psm/platform/runtime\""));
     assertTrue(handler.contains("return mapKnownError("));
+    assertTrue(handler.contains("\"ORDER_CONFLICT\": 409"));
+    assertTrue(handler.contains("409: \"ORDER_CONFLICT\""));
+    assertTrue(handler.contains("return GeneratedResult{}, err"));
+    assertTrue(eventPublisher.contains("start += 10"));
+    assertTrue(eventPublisher.contains("EventBridge allows at most 262144 bytes"));
     assertFalse(
         handler.contains(
             "return GeneratedResult{}, runtime.NewGeneratedHandlerError(\"NOT_IMPLEMENTED\""));
@@ -4163,7 +4256,9 @@ final class EpsilonEgxGeneratorTest {
     String validateModelsScript =
         Files.readString(outputDirectory.resolve("scripts/validate-models.sh"));
     assertTrue(validateModelsScript.contains("generated/reports/manual-actions.md"));
-    assertTrue(validateModelsScript.contains("NOT_IMPLEMENTED"));
+    assertTrue(validateModelsScript.contains("marker_not_implemented="));
+    assertTrue(validateModelsScript.contains("\"${source_roots[@]}\""));
+    assertFalse(validateModelsScript.contains("scripts 2>/dev/null"));
     assertTrue(validateModelsScript.contains("Required protected regions still contain"));
 
     String validateContractsScript =
@@ -5179,6 +5274,20 @@ final class EpsilonEgxGeneratorTest {
     set(env, "variableName", "MODE");
     set(env, "value", plaintextValue(metamodelResource, "value_broad_mode", "broad"));
     add(lambdaFunction, "environment", env);
+    for (String[] spec :
+        List.of(
+            new String[] {"TEST_FLAG", "true"},
+            new String[] {"JSON_CONFIG", "[{\"mode\":\"safe\"}]"})) {
+      EObject environment = create(metamodelResource, "LambdaEnvironmentVariable");
+      set(environment, "id", "env_broad_" + spec[0].toLowerCase());
+      set(environment, "name", spec[0]);
+      set(environment, "variableName", spec[0]);
+      set(
+          environment,
+          "value",
+          plaintextValue(metamodelResource, "value_broad_" + spec[0].toLowerCase(), spec[1]));
+      add(lambdaFunction, "environment", environment);
+    }
     EObject dlqConfig = create(metamodelResource, "LambdaDeadLetterConfig");
     set(dlqConfig, "id", "dlq_broad_function");
     set(dlqConfig, "name", "Broad Function DLQ");
@@ -6285,6 +6394,14 @@ final class EpsilonEgxGeneratorTest {
     set(responseModel, "contentType", "application/json");
     set(responseModel, "schemaJson", "{\"type\":\"object\"}");
 
+    EObject modeledErrorResponse = create(metamodelResource, "ApiGatewayResponseModel");
+    set(modeledErrorResponse, "id", "response_model_order_conflict");
+    set(modeledErrorResponse, "name", "Order Conflict");
+    set(modeledErrorResponse, "statusCode", "409");
+    set(modeledErrorResponse, "contentType", "application/json");
+    set(modeledErrorResponse, "schemaJson", "{\"type\":\"object\"}");
+    add(modeledErrorResponse, "errorCodes", "ORDER_CONFLICT");
+
     EObject apiRoute = create(metamodelResource, "HttpApiRoute");
     set(apiRoute, "id", "route_create_order");
     set(apiRoute, "name", "Create Order Route");
@@ -6300,6 +6417,7 @@ final class EpsilonEgxGeneratorTest {
     set(apiRoute, "integration", apiIntegration);
     add(apiRoute, "requestModels", requestModel);
     add(apiRoute, "responseModels", responseModel);
+    add(apiRoute, "responseModels", modeledErrorResponse);
 
     EObject httpApi = create(metamodelResource, "HttpApi");
     set(httpApi, "id", "api_orders");

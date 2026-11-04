@@ -15,10 +15,10 @@ WorkSequence records explicit process flow. ProcessPerformer binds a role use to
 
 | Relationship area  | Items | What it controls                                    |
 | ------------------ | ----: | --------------------------------------------------- |
-| Work sequences     |    34 | Ordering, iteration, feedback, and conditional flow |
-| Task uses          |    28 | Placement of reusable tasks in activities           |
-| Process performers |    28 | Primary and supporting role bindings                |
-| Process parameters |   141 | Input and output work-product bindings              |
+| Work sequences     |    35 | Ordering, iteration, feedback, and conditional flow |
+| Task uses          |    29 | Placement of reusable tasks in activities           |
+| Process performers |    29 | Primary and supporting role bindings                |
+| Process parameters |   147 | Input and output work-product bindings              |
 
 ## Work sequences
 
@@ -121,6 +121,12 @@ Complete the predecessor condition before treating the successor as ready.
 ### psm.ph3.st1.t1 → psm.ph3.st1.t2
 
 <small>WorkSequence: `ws.psm.ph3.st1.t1.psm.ph3.st1.t2` · finishToStart</small>
+
+Complete the predecessor condition before treating the successor as ready.
+
+### psm.ph3.st1.t2 → psm.ph3.st1.t3
+
+<small>WorkSequence: `ws.psm.ph3.st1.t2.psm.ph3.st1.t3` · finishToStart</small>
 
 Complete the predecessor condition before treating the successor as ready.
 
@@ -445,6 +451,23 @@ Repair at source resource stage; regenerate views before M2T.
 - `pp.psm.ph3.st1.t2.in.wpu.psm.ph3.st1.t2.input.psm-artifact.deployment-strategy`: **in** WorkProductUse `wpu.psm.ph3.st1.t2.input.psm-artifact.deployment-strategy`
 - `pp.psm.ph3.st1.t2.in.wpu.psm.ph3.st1.t2.input.psm-artifact.stack-scaffold`: **in** WorkProductUse `wpu.psm.ph3.st1.t2.input.psm-artifact.stack-scaffold`
 - `pp.psm.ph3.st1.t2.out.wpu.psm.ph3.st1.t2.output.psm-artifact.storage-layer`: **out** WorkProductUse `wpu.psm.ph3.st1.t2.output.psm-artifact.storage-layer`
+
+### psm.ph3.st1.t3
+
+<small>TaskUse of `task.psm.ph3.st1.t3`</small>
+
+**Process performers**
+
+- `ppf.psm.ph3.st1.t3.ru.psm.ph3.st1.cloud-platform-engineer`: primary RoleUse `ru.psm.ph3.st1.cloud-platform-engineer`
+
+**Process parameters**
+
+- `pp.psm.ph3.st1.t3.in.wpu.psm.ph3.st1.t3.input.psm-artifact.storage-layer`: **in** WorkProductUse `wpu.psm.ph3.st1.t3.input.psm-artifact.storage-layer`
+- `pp.psm.ph3.st1.t3.in.wpu.psm.ph3.st1.t3.input.psm-artifact.network-identity`: **in** WorkProductUse `wpu.psm.ph3.st1.t3.input.psm-artifact.network-identity`
+- `pp.psm.ph3.st1.t3.in.wpu.psm.ph3.st1.t3.input.psm-artifact.security-baseline`: **in** WorkProductUse `wpu.psm.ph3.st1.t3.input.psm-artifact.security-baseline`
+- `pp.psm.ph3.st1.t3.in.wpu.psm.ph3.st1.t3.input.psm-artifact.deployment-strategy`: **in** WorkProductUse `wpu.psm.ph3.st1.t3.input.psm-artifact.deployment-strategy`
+- `pp.psm.ph3.st1.t3.in.wpu.psm.ph3.st1.t3.input.psm-artifact.stack-scaffold`: **in** WorkProductUse `wpu.psm.ph3.st1.t3.input.psm-artifact.stack-scaffold`
+- `pp.psm.ph3.st1.t3.out.wpu.psm.ph3.st1.t3.output.psm-artifact.storage-layer`: **out** WorkProductUse `wpu.psm.ph3.st1.t3.output.psm-artifact.storage-layer`
 
 ### psm.ph3.st2.t1
 

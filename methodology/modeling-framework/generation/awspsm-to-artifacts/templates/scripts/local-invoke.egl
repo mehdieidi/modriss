@@ -11,9 +11,8 @@ fi
 template_path="${matching_templates[0]}"
 build_dir=".aws-sam/local-invoke-${function_logical_id}"
 sam_config_file="infrastructure/samconfig.toml"
-if [[ "$template_path" == infrastructure/units/* ]]; then sam_config_file="../../samconfig.toml"; fi
 sam build --config-file "$sam_config_file" --template-file "$template_path" --build-dir "$build_dir"
-sam local invoke "$function_logical_id" --config-file "../../infrastructure/samconfig.toml" --template "$build_dir/template.yaml" --event "$event_path"
+sam local invoke "$function_logical_id" --config-file "$sam_config_file" --template "$build_dir/template.yaml" --event "$event_path"
 
 [%=out.startPreserve("#", "", awsRoot.manualRegionId("local-invoke-customizations"), true)%]
 # Add local environment wiring here.

@@ -1,17 +1,144 @@
-[% /* Generates the shared event publisher artifact. */ %]package runtime
+[% /* Generates EventBridge publishing from the PIM-derived Lambda environment bindings. */ %]package runtime
 
-import "context"
+import (
+	"context"
+	"encoding/json"
+	"fmt"
+	"os"
+
+	"github.com/aws/aws-sdk-go-v2/aws"
+	awsconfig "github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/service/eventbridge"
+	"github.com/aws/aws-sdk-go-v2/service/eventbridge/types"
+)
 
 type EventPublisher struct {
-	Config GeneratedConfig
 	Logger Logger
 }
 
-func NewEventPublisher(configObj GeneratedConfig, loggerObj Logger) EventPublisher {
-	return EventPublisher{Config: configObj, Logger: loggerObj}
+type eventPublicationBinding struct {
+	EventBusName string `json:"eventBusName"`
+	Source       string `json:"source"`
+	DetailType   string `json:"detailType"`
 }
 
-func (publisherObj EventPublisher) PublishModeledEvents(ctx context.Context, sourceStableID string, payloadObj any) error {
-	publisherObj.Logger.Info("modeled event publication hook", map[string]any{"sourceStableId": sourceStableID})
-	return nil
+// ModeledEvent is an explicit event selected by application behavior. A
+// function's publication bindings describe allowed destinations; they do not
+// mean every bound event should be emitted on every invocation.
+type ModeledEvent struct {
+	Source     string `json:"source"`
+	DetailType string `json:"detailType"`
+	Detail     any    `json:"detail"`
+}
+
+func NewEventPublisher(_ GeneratedConfig, loggerObj Logger) EventPublisher {
+	return EventPublisher{Logger: loggerObj}
+}
+
+// PublishModeledEvents emits only the event types explicitly returned by the
+// application, using destinations generated from the modeled EventTypes and
+// EventBus memberships. It returns the public application result with internal
+// publication metadata removed.
+func (publisherObj EventPublisher) PublishModeledEvents(ctx context.Context, sourceStableID string, applicationResult map[string]any) (map[string]any, error) {
+	modeledEventsValue, hasModeledEvents := applicationResult["modeledEvents"]
+	if !hasModeledEvents {
+		return applicationResult, nil
+	}
+	publicResult := make(map[string]any, len(applicationResult)-1)
+	for key, value := range applicationResult {
+		if key != "modeledEvents" {
+			publicResult[key] = value
+		}
+	}
+	bindingText := os.Getenv("MODRISS_EVENT_PUBLICATIONS")
+	if bindingText == "" {
+		return nil, fmt.Errorf("application emitted modeled events but %s has no generated EventBridge bindings", sourceStableID)
+	}
+	var bindings []eventPublicationBinding
+	if err := json.Unmarshal([]byte(bindingText), &bindings); err != nil {
+		return nil, fmt.Errorf("decode modeled EventBridge publication bindings for %s: %w", sourceStableID, err)
+	}
+	if len(bindings) == 0 {
+		return nil, fmt.Errorf("application emitted modeled events but %s has no generated EventBridge bindings", sourceStableID)
+	}
+	eventJSON, err := json.Marshal(modeledEventsValue)
+	if err != nil {
+		return nil, fmt.Errorf("encode modeled event outputs for %s: %w", sourceStableID, err)
+	}
+	var modeledEvents []ModeledEvent
+	if err := json.Unmarshal(eventJSON, &modeledEvents); err != nil {
+		return nil, fmt.Errorf("decode modeled event outputs for %s: %w", sourceStableID, err)
+	}
+	if len(modeledEvents) == 0 {
+		return publicResult, nil
+	}
+	entries := make([]types.PutEventsRequestEntry, 0, len(modeledEvents))
+	for eventIndex, modeledEvent := range modeledEvents {
+		if modeledEvent.Source == "" || modeledEvent.DetailType == "" || modeledEvent.Detail == nil {
+			return nil, fmt.Errorf("modeled event %d for %s requires source, detail type, and detail", eventIndex, sourceStableID)
+		}
+		detailBytes, err := json.Marshal(modeledEvent.Detail)
+		if err != nil {
+			return nil, fmt.Errorf("encode modeled event %s for %s: %w", modeledEvent.DetailType, sourceStableID, err)
+		}
+		if len(detailBytes) > 256*1024 {
+			return nil, fmt.Errorf("modeled event %s for %s is %d bytes; EventBridge allows at most 262144 bytes", modeledEvent.DetailType, sourceStableID, len(detailBytes))
+		}
+		matchedBindings := 0
+		for _, binding := range bindings {
+			if binding.EventBusName == "" || binding.Source == "" || binding.DetailType == "" {
+				return nil, fmt.Errorf("incomplete modeled EventBridge binding for %s", sourceStableID)
+			}
+			if binding.Source != modeledEvent.Source || binding.DetailType != modeledEvent.DetailType {
+				continue
+			}
+			matchedBindings++
+			entries = append(entries, types.PutEventsRequestEntry{
+				EventBusName: aws.String(binding.EventBusName),
+				Source:       aws.String(binding.Source),
+				DetailType:   aws.String(binding.DetailType),
+				Detail:       aws.String(string(detailBytes)),
+			})
+		}
+		if matchedBindings == 0 {
+			return nil, fmt.Errorf("application emitted unmodeled EventBridge event %s from %s for %s", modeledEvent.DetailType, modeledEvent.Source, sourceStableID)
+		}
+	}
+	cfg, err := awsconfig.LoadDefaultConfig(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("load AWS configuration for modeled event publication: %w", err)
+	}
+	client := eventbridge.NewFromConfig(cfg, func(options *eventbridge.Options) {
+		endpoint := os.Getenv("AWS_ENDPOINT_URL_EVENTS")
+		if endpoint == "" {
+			endpoint = os.Getenv("AWS_ENDPOINT_URL")
+		}
+		if endpoint != "" {
+			options.BaseEndpoint = aws.String(endpoint)
+		}
+	})
+	for start := 0; start < len(entries); start += 10 {
+		end := start + 10
+		if end > len(entries) {
+			end = len(entries)
+		}
+		result, putErr := client.PutEvents(ctx, &eventbridge.PutEventsInput{Entries: entries[start:end]})
+		if putErr != nil {
+			return nil, fmt.Errorf("publish modeled EventBridge entries %d-%d for %s: %w", start, end-1, sourceStableID, putErr)
+		}
+		if result.FailedEntryCount > 0 {
+			for index, entry := range result.Entries {
+				if entry.ErrorCode != nil {
+					return nil, fmt.Errorf("publish modeled EventBridge entry %d for %s failed (%s): %s", start+index, sourceStableID, aws.ToString(entry.ErrorCode), aws.ToString(entry.ErrorMessage))
+				}
+			}
+			return nil, fmt.Errorf("publish %d modeled EventBridge entries for %s failed in batch %d-%d", result.FailedEntryCount, sourceStableID, start, end-1)
+		}
+	}
+	publisherObj.Logger.Info("modeled events published", map[string]any{
+		"sourceStableId": sourceStableID,
+		"eventCount":     len(modeledEvents),
+		"entryCount":     len(entries),
+	})
+	return publicResult, nil
 }

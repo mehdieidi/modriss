@@ -11,7 +11,7 @@ A RoleDefinition states a responsibility. RoleUse places it in an activity, whil
 | Product Owner           | Value, release scope, acceptance, and risk decisions                                            |             0 |                0 |         0 |
 | Delivery Lead           | Team coordination, dependencies, flow metrics, escalation, retrospectives                       |             0 |                0 |         0 |
 | Solution Architect      | PIM intent, provider-independent trade-offs, and architecture consistency                       |             0 |                0 |         0 |
-| Cloud Platform Engineer | AWS resources, IAM, networking, observability, deployment posture                               |            25 |                0 |        20 |
+| Cloud Platform Engineer | AWS resources, IAM, networking, observability, deployment posture                               |            26 |                0 |        20 |
 | Process Reviewer        | EVL gate approval, readiness sign-off                                                           |             2 |                0 |         3 |
 | Quality Engineer        | Infrastructure, contract, deployment, and operational verification evidence                     |             0 |                0 |         0 |
 | Security Engineer       | IAM, network, secrets, encryption, threat findings, and exception control                       |             0 |                0 |         0 |
@@ -110,6 +110,7 @@ The method profile should name the person or team carrying this role. Where one 
 - Configure clients, groups, and identity pools
 - Provision DynamoDB tables
 - Configure S3 buckets and policies
+- Provision relational databases and schemas
 - Create SQS queues
 - Configure SNS topics and subscriptions
 - Configure EventBridge buses and rules

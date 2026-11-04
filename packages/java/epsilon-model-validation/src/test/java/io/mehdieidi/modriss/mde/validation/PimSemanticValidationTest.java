@@ -65,6 +65,29 @@ class PimSemanticValidationTest {
   }
 
   @Test
+  void publicRouteCanOverrideApiAuthenticationDefault() throws Exception {
+    String model = Files.readString(PIM_SAMPLE);
+    String routeStart = "<routes id=\"" + ROUTE_ID + "\"";
+    int start = model.indexOf(routeStart);
+    assertTrue(start >= 0, "Expected public route fixture " + ROUTE_ID);
+    int end = model.indexOf(">", start);
+    assertTrue(end >= 0, "Expected route start tag");
+
+    String route = model.substring(start, end + 1);
+    route = route.replace("authRequired=\"true\"", "authRequired=\"false\"");
+    route = route.replace(" authorization=\"6c29c321-c461-48df-8d1e-ed27cedefb4f\"", "");
+    model = model.substring(0, start) + route + model.substring(end + 1);
+
+    Path publicOverride = writeModel("public-route-auth-override", model);
+    EvlValidationReport report = validate("public-route-auth-override", publicOverride);
+
+    assertFalse(
+        violationNames(report).contains("ProtectedRouteHasAuthorization"),
+        report.violations().toString());
+    assertFalse(report.hasMandatoryViolations(), report.violations().toString());
+  }
+
+  @Test
   void pimNegativeScenariosExerciseDocumentedSemanticRules() throws Exception {
     Set<String> covered = new LinkedHashSet<>();
 

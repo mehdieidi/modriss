@@ -162,6 +162,8 @@
           eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
       <eStructuralFeatures xsi:type="ecore:EAttribute" name="contentType" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
       <eStructuralFeatures xsi:type="ecore:EAttribute" name="schemaJson" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+      <eStructuralFeatures xsi:type="ecore:EAttribute" name="errorCodes" upperBound="-1"
+          eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
       <eStructuralFeatures xsi:type="ecore:EReference" name="schemaResource" eType="#/3/AwsResource"/>
     </eClassifiers>
     <eClassifiers xsi:type="ecore:EClass" name="ApiGatewayRequestValidator" eSuperTypes="#/3/AwsResource">
@@ -636,8 +638,8 @@
       <eStructuralFeatures xsi:type="ecore:EAttribute" name="externallyExposed" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EBooleanObject"/>
       <eStructuralFeatures xsi:type="ecore:EAttribute" name="ownsData" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EBooleanObject"/>
       <eStructuralFeatures xsi:type="ecore:EAttribute" name="boundaryType" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
-      <eStructuralFeatures xsi:type="ecore:EReference" name="resources" upperBound="-1"
-          eType="#/3/AwsResource" eOpposite="#/3/AwsResource/service"/>
+      <eStructuralFeatures xsi:type="ecore:EReference" name="resources" ordered="false"
+          upperBound="-1" eType="#/3/AwsResource" eOpposite="#/3/AwsResource/service"/>
     </eClassifiers>
     <eClassifiers xsi:type="ecore:EClass" name="AwsTag" eSuperTypes="#/14/TraceableElement">
       <eStructuralFeatures xsi:type="ecore:EAttribute" name="key" lowerBound="1" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>

@@ -28,7 +28,7 @@ func Test[%= awsFn.cfnLogicalId() %]IntegrationContract(t *testing.T) {
 	tempDir := t.TempDir()
 	payloadPath := filepath.Join(tempDir, "lambda-payload.json")
 	responsePath := filepath.Join(tempDir, "lambda-response.json")
-	if err := os.WriteFile(payloadPath, []byte(`{"payload":{"source":"generated-integration-test"}}`), 0600); err != nil {
+	if err := os.WriteFile(payloadPath, []byte(`{"requestContext":{"requestId":"generated-integration-test"},"httpMethod":"POST","path":"/integration-test","payload":{"source":"generated-integration-test"}}`), 0600); err != nil {
 		t.Fatalf("lambda invoke payload should be writable: %v", err)
 	}
 	cmd := exec.Command(

@@ -47,6 +47,14 @@ operation Any yamlScalar() : String {
   return "'" + text.replace("'", "''") + "'";
 }
 
+/** Renders a string-typed YAML scalar, preserving string values that resemble YAML types. */
+operation Any yamlStringScalar() : String {
+  if (self.isUndefined()) {
+    return "''";
+  }
+  return "'" + self.asString().replace("'", "''") + "'";
+}
+
 /** Renders yaml plain scalar. */
 operation Any yamlPlainScalar() : String {
   if (self.isUndefined()) {
@@ -362,6 +370,14 @@ operation AWSPSMCORE!ValueExpression cfnInlineYaml() : String {
   return firstText(self.expression, self.literal).yamlScalar();
 }
 
+/** Renders a ValueExpression in a CloudFormation property whose schema requires a string. */
+operation AWSPSMCORE!ValueExpression cfnStringYaml() : String {
+  if (self.sourceKind.asString() = "PLAINTEXT") {
+    return self.literal.yamlStringScalar();
+  }
+  return self.cfnInlineYaml();
+}
+
 /** Computes cfn value yaml. */
 operation AWSPSMCORE!ValueExpression cfnValueYaml(indentCount : Integer) : String {
   var kindText = self.sourceKind.asString();
@@ -437,7 +453,7 @@ operation AWSPSMCORE!NativeProperty emitNativePropertyYaml(indentCount : Integer
   if (self.format.asString() = "JSON" or self.format.asString() = "YAML" or self.format.asString() = "IAM_POLICY_JSON" or self.format.asString() = "ASL_JSON") {
     var rawText = firstText(self.value.expression, self.value.literal);
     if (rawText.isPresent()) {
-      return yamlBlock(self.propertyName, rawText, indentCount);
+      return structuredYamlProperty(self.propertyName, rawText, indentCount);
     }
   }
   return self.value.emitCfnValueProperty(self.propertyName, indentCount);

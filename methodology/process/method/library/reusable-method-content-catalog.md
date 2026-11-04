@@ -6,7 +6,7 @@
 
 ## Scope and notation
 
-The consolidated repository contains 17 RoleDefinitions, 139 TaskDefinitions, 96 WorkProductDefinitions, and 46 Guidance elements. Stable identifiers are shown because the delivery processes refer to these definitions through RoleUse, TaskUse, WorkProductUse, and ProcessParameter elements. “Provenance” identifies the source component from which an element was consolidated.
+The consolidated repository contains 17 RoleDefinitions, 140 TaskDefinitions, 96 WorkProductDefinitions, and 46 Guidance elements. Stable identifiers are shown because the delivery processes refer to these definitions through RoleUse, TaskUse, WorkProductUse, and ProcessParameter elements. “Provenance” identifies the source component from which an element was consolidated.
 
 ## Role definitions
 
@@ -1233,7 +1233,7 @@ Configure triggers and runtime. Its primary performer is `role.solution-architec
 
 **Work.**
 
-- Define Trigger elements linking functions to events and schedules.
+- Define Trigger elements linking functions or service-owned workflows to events and schedules.
 - Set runtime language and package manager per function.
 
 **Exit.** Triggers cover behavioral entry points.
@@ -1532,7 +1532,7 @@ Review and adapt PIM increment. Its primary performer is `role.process-reviewer`
 
 Indicative duration: 45m.
 
-### PSM modeling component (28 tasks)
+### PSM modeling component (29 tasks)
 
 #### Plan deployable slice (`task.psm.ph1.st0.t1`)
 
@@ -1543,6 +1543,7 @@ Plan deployable slice. Its primary performer is `role.cloud-platform-engineer`. 
 **Work.**
 
 - Select one PIM service slice or deployment unit to materialize on AWS.
+- Preserve each service's business ownership group independently of CloudFormation stack containment.
 - Record AWS account, region, stage, networking, IAM, and deployment assumptions.
 - Define the PSM EVL gate, artifact-generation readiness criteria, and review participants.
 
@@ -1744,6 +1745,22 @@ Configure S3 buckets and policies. Its primary performer is `role.cloud-platform
 - Configure encryption, lifecycle, notifications, and bucket policies.
 
 **Exit.** S3 buckets match PIM object stores.
+
+Indicative duration: 1-2h.
+
+#### Provision relational databases and schemas (`task.psm.ph3.st1.t3`)
+
+Provision relational databases and schemas. Its primary performer is `role.cloud-platform-engineer`. It consumes `psm-artifact.storage-layer`, `psm-artifact.network-identity`, `psm-artifact.security-baseline`, `psm-artifact.deployment-strategy`, `psm-artifact.stack-scaffold` and produces or updates `psm-artifact.storage-layer`.
+
+**Entry.** Identity configured.
+
+**Work.**
+
+- Create RdsDbCluster and RdsDbInstance resources for relational PIM DataStore definitions.
+- Define RdsTable, RdsColumn, and RdsIndex schema elements from PIM data models and access patterns.
+- Configure credentials, encryption, networking, backups, and database availability for the deployment slice.
+
+**Exit.** Relational database resources and schemas match PIM data models.
 
 Indicative duration: 1-2h.
 

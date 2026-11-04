@@ -9,11 +9,11 @@ A WorkProductDefinition describes maintained information or a tangible result. W
 | Work product                | Kind     | Producing tasks | Consuming tasks | Uses |
 | --------------------------- | -------- | --------------: | --------------: | ---: |
 | PSM Increment Plan          | Artifact |               1 |               7 |    8 |
-| Deployment Strategy         | Artifact |               3 |              21 |   24 |
-| SAM Stack Scaffold          | Artifact |               2 |               8 |   10 |
-| Security Baseline           | Artifact |               2 |              19 |   21 |
-| Network & Identity          | Artifact |               4 |              17 |   21 |
-| Durable Storage Layer       | Artifact |               2 |               5 |    7 |
+| Deployment Strategy         | Artifact |               3 |              22 |   25 |
+| SAM Stack Scaffold          | Artifact |               2 |               9 |   11 |
+| Security Baseline           | Artifact |               2 |              20 |   22 |
+| Network & Identity          | Artifact |               4 |              18 |   22 |
+| Durable Storage Layer       | Artifact |               3 |               6 |    9 |
 | Messaging Layer             | Artifact |               2 |               5 |    7 |
 | Event Fabric                | Artifact |               2 |               9 |   11 |
 | Lambda Compute Layer        | Artifact |               2 |               8 |   10 |
@@ -60,7 +60,7 @@ Keep the accepted revision under suitable configuration control. Record its owne
 
 ## Deployment Strategy
 
-<small>Artifact: `psm-artifact.deployment-strategy` · 24 WorkProductUse occurrences</small>
+<small>Artifact: `psm-artifact.deployment-strategy` · 25 WorkProductUse occurrences</small>
 
 Account, region, naming, tagging policies
 
@@ -84,6 +84,7 @@ Account, region, naming, tagging policies
 - Configure clients, groups, and identity pools
 - Provision DynamoDB tables
 - Configure S3 buckets and policies
+- Provision relational databases and schemas
 - Create SQS queues
 - Configure SNS topics and subscriptions
 - Configure EventBridge buses and rules
@@ -111,6 +112,7 @@ Account, region, naming, tagging policies
 - `wpu.psm.ph2.st2.t2.input.psm-artifact.deployment-strategy` as **input** in task `psm.ph2.st2.t2`
 - `wpu.psm.ph3.st1.t1.input.psm-artifact.deployment-strategy` as **input** in task `psm.ph3.st1.t1`
 - `wpu.psm.ph3.st1.t2.input.psm-artifact.deployment-strategy` as **input** in task `psm.ph3.st1.t2`
+- `wpu.psm.ph3.st1.t3.input.psm-artifact.deployment-strategy` as **input** in task `psm.ph3.st1.t3`
 - `wpu.psm.ph3.st2.t1.input.psm-artifact.deployment-strategy` as **input** in task `psm.ph3.st2.t1`
 - `wpu.psm.ph3.st2.t2.input.psm-artifact.deployment-strategy` as **input** in task `psm.ph3.st2.t2`
 - `wpu.psm.ph4.st1.t1.input.psm-artifact.deployment-strategy` as **input** in task `psm.ph4.st1.t1`
@@ -125,7 +127,7 @@ Keep the accepted revision under suitable configuration control. Record its owne
 
 ## SAM Stack Scaffold
 
-<small>Artifact: `psm-artifact.stack-scaffold` · 10 WorkProductUse occurrences</small>
+<small>Artifact: `psm-artifact.stack-scaffold` · 11 WorkProductUse occurrences</small>
 
 Stacks, globals, CFN parameters
 
@@ -142,6 +144,7 @@ Stacks, globals, CFN parameters
 - Configure VPC and subnets
 - Provision DynamoDB tables
 - Configure S3 buckets and policies
+- Provision relational databases and schemas
 - Deploy Lambda functions
 - Complete trace and readiness
 
@@ -155,6 +158,7 @@ Stacks, globals, CFN parameters
 - `wpu.psm.ph2.st1.t1.input.psm-artifact.stack-scaffold` as **input** in task `psm.ph2.st1.t1`
 - `wpu.psm.ph3.st1.t1.input.psm-artifact.stack-scaffold` as **input** in task `psm.ph3.st1.t1`
 - `wpu.psm.ph3.st1.t2.input.psm-artifact.stack-scaffold` as **input** in task `psm.ph3.st1.t2`
+- `wpu.psm.ph3.st1.t3.input.psm-artifact.stack-scaffold` as **input** in task `psm.ph3.st1.t3`
 - `wpu.psm.ph4.st2.t1.input.psm-artifact.stack-scaffold` as **input** in task `psm.ph4.st2.t1`
 - `wpu.psm.ph6.st2.t1.input.psm-artifact.stack-scaffold` as **input** in task `psm.ph6.st2.t1`
 
@@ -162,7 +166,7 @@ Keep the accepted revision under suitable configuration control. Record its owne
 
 ## Security Baseline
 
-<small>Artifact: `psm-artifact.security-baseline` · 21 WorkProductUse occurrences</small>
+<small>Artifact: `psm-artifact.security-baseline` · 22 WorkProductUse occurrences</small>
 
 IAM, KMS, secrets, SSM
 
@@ -180,6 +184,7 @@ IAM, KMS, secrets, SSM
 - Configure clients, groups, and identity pools
 - Provision DynamoDB tables
 - Configure S3 buckets and policies
+- Provision relational databases and schemas
 - Create SQS queues
 - Configure SNS topics and subscriptions
 - Configure EventBridge buses and rules
@@ -204,6 +209,7 @@ IAM, KMS, secrets, SSM
 - `wpu.psm.ph2.st2.t2.input.psm-artifact.security-baseline` as **input** in task `psm.ph2.st2.t2`
 - `wpu.psm.ph3.st1.t1.input.psm-artifact.security-baseline` as **input** in task `psm.ph3.st1.t1`
 - `wpu.psm.ph3.st1.t2.input.psm-artifact.security-baseline` as **input** in task `psm.ph3.st1.t2`
+- `wpu.psm.ph3.st1.t3.input.psm-artifact.security-baseline` as **input** in task `psm.ph3.st1.t3`
 - `wpu.psm.ph3.st2.t1.input.psm-artifact.security-baseline` as **input** in task `psm.ph3.st2.t1`
 - `wpu.psm.ph3.st2.t2.input.psm-artifact.security-baseline` as **input** in task `psm.ph3.st2.t2`
 - `wpu.psm.ph4.st1.t1.input.psm-artifact.security-baseline` as **input** in task `psm.ph4.st1.t1`
@@ -221,7 +227,7 @@ Keep the accepted revision under suitable configuration control. Record its owne
 
 ## Network & Identity
 
-<small>Artifact: `psm-artifact.network-identity` · 21 WorkProductUse occurrences</small>
+<small>Artifact: `psm-artifact.network-identity` · 22 WorkProductUse occurrences</small>
 
 VPC, Cognito resources
 
@@ -239,6 +245,7 @@ VPC, Cognito resources
 - Configure clients, groups, and identity pools
 - Provision DynamoDB tables
 - Configure S3 buckets and policies
+- Provision relational databases and schemas
 - Create SQS queues
 - Configure SNS topics and subscriptions
 - Configure EventBridge buses and rules
@@ -263,6 +270,7 @@ VPC, Cognito resources
 - `wpu.psm.ph2.st2.t2.output.psm-artifact.network-identity` as **output** in task `psm.ph2.st2.t2`
 - `wpu.psm.ph3.st1.t1.input.psm-artifact.network-identity` as **input** in task `psm.ph3.st1.t1`
 - `wpu.psm.ph3.st1.t2.input.psm-artifact.network-identity` as **input** in task `psm.ph3.st1.t2`
+- `wpu.psm.ph3.st1.t3.input.psm-artifact.network-identity` as **input** in task `psm.ph3.st1.t3`
 - `wpu.psm.ph3.st2.t1.input.psm-artifact.network-identity` as **input** in task `psm.ph3.st2.t1`
 - `wpu.psm.ph3.st2.t2.input.psm-artifact.network-identity` as **input** in task `psm.ph3.st2.t2`
 - `wpu.psm.ph4.st1.t1.input.psm-artifact.network-identity` as **input** in task `psm.ph4.st1.t1`
@@ -280,7 +288,7 @@ Keep the accepted revision under suitable configuration control. Record its owne
 
 ## Durable Storage Layer
 
-<small>Artifact: `psm-artifact.storage-layer` · 7 WorkProductUse occurrences</small>
+<small>Artifact: `psm-artifact.storage-layer` · 9 WorkProductUse occurrences</small>
 
 DynamoDB and S3 resources
 
@@ -288,10 +296,12 @@ DynamoDB and S3 resources
 
 - Provision DynamoDB tables
 - Configure S3 buckets and policies
+- Provision relational databases and schemas
 
 **Consumed by**
 
 - Configure S3 buckets and policies
+- Provision relational databases and schemas
 - Create SQS queues
 - Configure SNS topics and subscriptions
 - Create integration relationship views
@@ -302,6 +312,8 @@ DynamoDB and S3 resources
 - `wpu.psm.ph3.st1.t1.output.psm-artifact.storage-layer` as **output** in task `psm.ph3.st1.t1`
 - `wpu.psm.ph3.st1.t2.input.psm-artifact.storage-layer` as **input** in task `psm.ph3.st1.t2`
 - `wpu.psm.ph3.st1.t2.output.psm-artifact.storage-layer` as **output** in task `psm.ph3.st1.t2`
+- `wpu.psm.ph3.st1.t3.input.psm-artifact.storage-layer` as **input** in task `psm.ph3.st1.t3`
+- `wpu.psm.ph3.st1.t3.output.psm-artifact.storage-layer` as **output** in task `psm.ph3.st1.t3`
 - `wpu.psm.ph3.st2.t1.input.psm-artifact.storage-layer` as **input** in task `psm.ph3.st2.t1`
 - `wpu.psm.ph3.st2.t2.input.psm-artifact.storage-layer` as **input** in task `psm.ph3.st2.t2`
 - `wpu.psm.ph6.st1.t1.input.psm-artifact.storage-layer` as **input** in task `psm.ph6.st1.t1`

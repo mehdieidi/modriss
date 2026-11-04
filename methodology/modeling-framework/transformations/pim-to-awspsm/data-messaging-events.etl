@@ -373,14 +373,14 @@ rule Subscription2SnsSubscription
   if (hasText(s.filterExpression)) {
     sub.deliveryPolicyJson = "{ \"filterExpression\": \"" + escapeJson(s.filterExpression) + "\" }";
   }
-  if (isTrue(s.deadLetterRequired)) {
+  if (isTrue(s.deadLetterRequired) and sub.deadLetterQueue.isUndefined()) {
+    sub.deadLetterQueue = createSnsSubscriptionDlq(s);
+  }
+  if (isTrue(s.deadLetterRequired) and sub.deadLetterQueue.isUndefined()) {
     manualDecision("SNS_SUBSCRIPTION_DLQ_REQUIRED",
       "Choose a dead-letter queue for subscription " + s.name + ".",
       KERNEL!Severity#WARNING, isProductionRoot(), Sequence{s, sub},
-      "Add an SQS DLQ resource and connect it to this subscription.");
-  }
-  if (isProductionRoot() and ((sub.protocol = AWSPSMENUMS!SnsProtocol#HTTP) or (sub.protocol = AWSPSMENUMS!SnsProtocol#HTTPS)) and sub.deadLetterQueue.isUndefined()) {
-    sub.deadLetterQueue = createSnsSubscriptionDlq(s);
+      "Provide an SQS dead-letter queue supported by the selected subscription protocol.");
   }
   createTrace(s, sub, "Subscription2SnsSubscription", "HIGH", KERNEL!TraceLinkType#REALIZES);
 }
@@ -553,49 +553,71 @@ operation addDynamoIndexes(ds, t) {
   for (idx in ds.indexCandidates) {
     var keyFields = indexKeyFields(idx);
     var partitionField = fieldByStorageOrName(ds, keyFields.first());
+    var sortKeyName = idx.sortKeyField;
+    if (not hasText(sortKeyName) and keyFields.size() > 1) {
+      sortKeyName = keyFields.at(1);
+    }
+    var sortField;
+    var validIndex = partitionField.isDefined();
     if (partitionField.isUndefined()) {
       manualDecision("DYNAMO_INDEX_KEY_FIELD_REQUIRED",
         "Resolve partition key field '" + idx.partitionKeyField + "' for DynamoDB index " + firstText(idx.name, idx.id) + ".",
         KERNEL!Severity#ERROR, true, Sequence{ds, idx, t},
         "Set IndexCandidate.partitionKeyField to a DataField.name or DataField.storageName.");
     }
-    else {
+    if (hasText(sortKeyName)) {
+      sortField = fieldByStorageOrName(ds, sortKeyName);
+      if (sortField.isUndefined()) {
+        validIndex = false;
+        manualDecision("DYNAMO_INDEX_KEY_FIELD_REQUIRED",
+          "Resolve sort key field '" + sortKeyName + "' for DynamoDB index " + firstText(idx.name, idx.id) + ".",
+          KERNEL!Severity#ERROR, true, Sequence{ds, idx, t},
+          "Set IndexCandidate.sortKeyField to a DataField.name or DataField.storageName.");
+      }
+    }
+    if (validIndex) {
+      var partitionName = firstText(partitionField.storageName, partitionField.name);
+      var sortName = sortField.isDefined() ? firstText(sortField.storageName, sortField.name) : "";
+      var tableHash = t.keySchema.selectOne(key | key.keyType = AWSPSMENUMS!DynamoDbKeyType#HASH);
+      var tableRange = t.keySchema.selectOne(key | key.keyType = AWSPSMENUMS!DynamoDbKeyType#RANGE);
+      var duplicatesPrimaryKey = tableHash.isDefined() and tableHash.attributeName = partitionName and
+        ((not hasText(sortName) and tableRange.isUndefined()) or
+         (hasText(sortName) and tableRange.isDefined() and tableRange.attributeName = sortName));
+      if (not duplicatesPrimaryKey) {
       var g = new AWSPSMSTORAGE!DynamoDbGlobalSecondaryIndex;
       g.id = generatedId("dynamodb_gsi", ds, idx.name);
       g.name = firstText(idx.name, idx.indexPurpose);
       g.indexName = pascalCase(firstText(idx.name, idx.indexPurpose)) + "Gsi";
       addDynamoAttribute(t, partitionField);
-      g.keySchema.add(dynamoKey(firstText(partitionField.storageName, partitionField.name), AWSPSMENUMS!DynamoDbKeyType#HASH));
-
-      var sortKeyName = idx.sortKeyField;
-      if (not hasText(sortKeyName) and keyFields.size() > 1) {
-        sortKeyName = keyFields.at(1);
-      }
-      if (hasText(sortKeyName)) {
-        var sortField = fieldByStorageOrName(ds, sortKeyName);
-        if (sortField.isDefined()) {
-          addDynamoAttribute(t, sortField);
-          g.keySchema.add(dynamoKey(firstText(sortField.storageName, sortField.name), AWSPSMENUMS!DynamoDbKeyType#RANGE));
-        }
-        else {
-          manualDecision("DYNAMO_INDEX_KEY_FIELD_REQUIRED",
-            "Resolve sort key field '" + sortKeyName + "' for DynamoDB index " + firstText(idx.name, idx.id) + ".",
-            KERNEL!Severity#ERROR, true, Sequence{ds, idx, t},
-            "Set IndexCandidate.sortKeyField to a DataField.name or DataField.storageName.");
-        }
+      g.keySchema.add(dynamoKey(partitionName, AWSPSMENUMS!DynamoDbKeyType#HASH));
+      if (sortField.isDefined()) {
+        addDynamoAttribute(t, sortField);
+        g.keySchema.add(dynamoKey(sortName, AWSPSMENUMS!DynamoDbKeyType#RANGE));
       }
       var p = new AWSPSMSTORAGE!DynamoDbProjection;
       p.id = generatedId("dynamodb_projection", ds, idx.name);
       p.name = g.indexName + " projection";
+      var projectionAttributes = idx.projectionFields.select(fieldName |
+        fieldName <> partitionName and fieldName <> sortName and
+        not t.keySchema.exists(key | key.attributeName = fieldName));
       if (idx.projectionFields.isEmpty()) {
         p.projectionType = AWSPSMENUMS!DynamoDbProjectionType#ALL;
+      }
+      else if (projectionAttributes.isEmpty()) {
+        p.projectionType = AWSPSMENUMS!DynamoDbProjectionType#KEYS_ONLY;
       }
       else {
         p.projectionType = AWSPSMENUMS!DynamoDbProjectionType#INCLUDE;
       }
-      p.nonKeyAttributes.addAll(idx.projectionFields);
+      if (projectionAttributes.size() > 20) {
+        manualDecision("DYNAMO_INDEX_PROJECTION_LIMIT", "Reduce the INCLUDE projection to at most 20 non-key attributes for " + firstText(idx.name, idx.id) + ".",
+          KERNEL!Severity#ERROR, true, Sequence{ds, idx, t},
+          "Use ALL/KEYS_ONLY or select no more than 20 non-key projection attributes.");
+      }
+      p.nonKeyAttributes.addAll(projectionAttributes);
       g.projection = p;
       t.globalSecondaryIndexes.add(g);
+      }
     }
   }
 }
@@ -822,7 +844,15 @@ operation endpointResource(endpoint) {
   if (endpoint.isUndefined()) {
     return null;
   }
+  // Resolve the adapter first: transforming an ExternalAdapter creates its
+  // provider-specific resources (including an API Destination when applicable).
+  // Looking them up before this call made EventBridge routes capture the
+  // adapter's metadata CustomResource as their target instead of the destination.
   var eq = awsEquivalent(endpoint);
+  if (endpoint.eClass().getName() = "ExternalAdapter") {
+    var destination = AWSPSMEVENTS!EventBridgeApiDestination.all.selectOne(candidate | candidate.generatedFrom = endpoint.id);
+    if (destination.isDefined()) return destination;
+  }
   if (eq.isDefined()) {
     return eq;
   }
@@ -893,7 +923,7 @@ operation createSchedulerRole(s) {
   var role = new AWSPSMSECURITY!IamRole;
   copyAwsResource(s, role, "SchedulerRole", "AWS::IAM::Role");
   role.id = generatedId("iam_role", s, "scheduler");
-  role.roleName = physicalName(s, "scheduler-role", defaultStage());
+  role.roleName = role.physicalName;
   role.path = "/";
   role.assumeRolePolicy = serviceAssumeRolePolicy("scheduler.amazonaws.com", s.id);
   return role;

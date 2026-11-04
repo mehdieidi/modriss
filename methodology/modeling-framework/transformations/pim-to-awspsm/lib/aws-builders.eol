@@ -1015,7 +1015,8 @@ operation resolveFlows() {
     }
   }
   for (flow in INTEGRATION!EventFlow.all) {
-    if (flow.channel.isDefined() and flow.channel.eClass().getName() = "EventBus" and flow.target.isDefined()) {
+    if (flow.channel.isDefined() and flow.channel.eClass().getName() = "EventBus" and flow.target.isDefined()
+        and flow.source.isDefined() and flow.source.eClass().getName() = "EventBus") {
       var er = new AWSPSMEVENTS!EventBridgeRule;
       copyAwsResource(flow, er, "EventRule", "AWS::Events::Rule");
       er.id = generatedId("eventbridge_rule", flow, "flow");
@@ -1024,6 +1025,20 @@ operation resolveFlows() {
       er.state = "ENABLED";
       er.bus = awsEquivalent(flow.channel);
       er.targets.add(createEventBridgeTarget(flow, flow.target));
+    }
+    if (flow.channel.isDefined() and flow.channel.eClass().getName() = "EventBus" and flow.target.isDefined()
+        and flow.source.isDefined() and flow.source.eClass().getName() <> "EventBus"
+        and flow.source.eClass().getName() <> "Function") {
+      if (isProductionRoot()) {
+        manualDecision("EVENTBRIDGE_EVENT_INGRESS_REQUIRED", "Configure an authenticated PutEvents producer for " + flow.source.name + ".",
+          KERNEL!Severity#ERROR, true, Sequence{flow, flow.channel},
+          "Provision the external producer's EventBridge credentials and grant events:PutEvents to this modeled bus.");
+      }
+      else {
+        manualDecision("EVENTBRIDGE_EVENT_INGRESS_REQUIRED", "Provide a test producer for " + flow.source.name + " and publish its modeled event to the test EventBridge bus.",
+          KERNEL!Severity#WARNING, false, Sequence{flow, flow.channel},
+          "Configure the test producer credentials and grant events:PutEvents to this modeled bus before exercising inbound event routes.");
+      }
     }
     if (flow.channel.isDefined() and flow.channel.eClass().getName() = "Topic" and flow.target.isDefined() and flow.target.eClass().getName() = "Function") {
       createSnsLambdaSubscription(flow, awsEquivalent(flow.channel), awsEquivalent(flow.target));
@@ -1233,7 +1248,8 @@ operation createEventInvokeRole(origin, targetResource, action : String) {
   }
   var roleSeed = "event_invoke_" + targetSeed + "_" + action;
   role.id = generatedId("iam_role", origin, roleSeed);
-  role.roleName = physicalName(origin, "event-invoke-" + targetSeed, defaultStage());
+  role.physicalName = physicalName(origin, "event-invoke-" + targetSeed + "-" + action, defaultStage());
+  role.roleName = role.physicalName;
   role.path = "/";
   var servicePrincipal = "events.amazonaws.com";
   if (origin.isDefined() and origin.eClass().getName() = "EventBridgeSchedule") {
@@ -1373,7 +1389,13 @@ operation addSecretStatement(doc, secret) {
 
 /** Adds a statement or merges repeated generation paths into the existing statement with the same Sid. */
 operation addIamStatementMergedBySid(doc, statementObj) {
-  var existing = doc.statements.selectOne(existingObj | existingObj.sid = statementObj.sid);
+  var existing = null;
+  for (candidate in doc.statements) {
+    if (candidate.sid = statementObj.sid) {
+      existing = candidate;
+      break;
+    }
+  }
   if (existing.isUndefined()) {
     doc.statements.add(statementObj);
     return;
@@ -1390,6 +1412,52 @@ operation addIamStatementMergedBySid(doc, statementObj) {
     existing.wildcardJustification = statementObj.wildcardJustification;
   }
   delete statementObj;
+}
+
+/** Merges compatible duplicate policy statements after all generation paths have run. */
+operation normalizeIamPolicyDocuments() {
+  for (doc in AWSPSMSECURITY!IamPolicyDocument.all) {
+    var originalStatements = new Sequence;
+    originalStatements.addAll(doc.statements);
+    var retainedStatements = new Sequence;
+    for (statementObj in originalStatements) {
+      var existing = null;
+      if (hasText(statementObj.sid)) {
+        for (candidate in retainedStatements) {
+          if (candidate.sid = statementObj.sid
+              and candidate.effect = statementObj.effect
+              and candidate.principals.isEmpty()
+              and statementObj.principals.isEmpty()
+              and candidate.conditions.isEmpty()
+              and statementObj.conditions.isEmpty()
+              and candidate.notActions.isEmpty()
+              and statementObj.notActions.isEmpty()
+              and candidate.notResources.isEmpty()
+              and statementObj.notResources.isEmpty()) {
+            existing = candidate;
+            break;
+          }
+        }
+      }
+      if (existing.isUndefined()) {
+        retainedStatements.add(statementObj);
+      }
+      else {
+        for (actionText in statementObj.actions) {
+          if (not existing.actions.includes(actionText)) existing.actions.add(actionText);
+        }
+        for (resourceText in statementObj.resources) {
+          if (not existing.resources.includes(resourceText)) existing.resources.add(resourceText);
+        }
+        existing.wildcardAction = existing.wildcardAction or statementObj.wildcardAction;
+        existing.wildcardResource = existing.wildcardResource or statementObj.wildcardResource;
+        if (not hasText(existing.wildcardJustification) and hasText(statementObj.wildcardJustification)) {
+          existing.wildcardJustification = statementObj.wildcardJustification;
+        }
+        delete statementObj;
+      }
+    }
+  }
 }
 
 /** Computes if defined int. */

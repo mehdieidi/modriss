@@ -14,9 +14,8 @@ if [[ -z "$template_path" ]]; then
 fi
 build_dir=".aws-sam/local-api-$(basename "$(dirname "$template_path")")"
 sam_config_file="infrastructure/samconfig.toml"
-if [[ "$template_path" == infrastructure/units/* ]]; then sam_config_file="../../samconfig.toml"; fi
 sam build --config-file "$sam_config_file" --template-file "$template_path" --build-dir "$build_dir"
-sam local start-api --config-file "../../infrastructure/samconfig.toml" --template "$build_dir/template.yaml" --env-vars "infrastructure/environments/${stage_text}.json"
+sam local start-api --config-file "$sam_config_file" --template "$build_dir/template.yaml" --env-vars "infrastructure/environments/${stage_text}.json"
 
 [%=out.startPreserve("#", "", awsRoot.manualRegionId("local-start-api-customizations"), true)%]
 # Add local API options here.

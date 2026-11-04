@@ -1,16 +1,16 @@
 # MODRISS Process and Engineered Method
 
-The normative English full-lifecycle development process is defined in
-[`software-development-process.md`](software-development-process.md). It covers initiation,
-situational tailoring, team coordination, iterative-incremental CIM/PIM/PSM delivery, release,
-transition, operations, change propagation, and retirement. The machine-readable
-definitions below specify the modeling processes and their reusable method content
-for use within that lifecycle.
+The normative full-lifecycle development process is defined in the machine-readable
+[end-to-end process](definitions/end-to-end.json) and its [SPEM method-content
+description](method/spem/method-content.md). It covers initiation, situational tailoring,
+team coordination, iterative-incremental CIM/PIM/PSM delivery, release, transition,
+operations, change propagation, and retirement. The machine-readable definitions below
+specify the modeling processes and their reusable method content for use within that lifecycle.
 
-The method package also contains an exhaustive fictional
-[ColdChain Sentinel enactment](method/13-hypothetical-enactment-and-process-validation.md)
-with generated task, role, work-product, and G0–G8 coverage ledgers. It is an
-analytical consistency test, not empirical validation.
+The method package also contains a fictional [ColdChain Sentinel coverage
+summary](method/evaluation/coldchain-sentinel/coverage-summary.json) with generated task,
+role, work-product, and G0–G8 coverage ledgers. It is an analytical consistency test,
+not empirical validation.
 
 The public methodology guide documents the Phase 0 [serverless suitability criteria and research](../../docs/public-docs/docs/guides/serverless-suitability.md).
 The modeling chatbot can assess a project specification using the

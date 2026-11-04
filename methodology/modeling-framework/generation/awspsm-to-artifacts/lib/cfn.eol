@@ -364,7 +364,7 @@ operation AWSPSMCOMPUTE!AwsLambdaFunction emitCfnPropertiesYaml(emitCtx : Map) :
     outText = outText + spaces(6) + "Environment:\n";
     outText = outText + spaces(8) + "Variables:\n";
     for (envObj in self.environment.sortBy(envObj | envObj.variableName)) {
-      outText = outText + spaces(10) + envObj.variableName + ": " + envObj.value.cfnInlineYaml() + "\n";
+      outText = outText + spaces(10) + envObj.variableName + ": " + envObj.value.cfnStringYaml() + "\n";
     }
   }
   if (self.deadLetterConfig.isDefined()) {
@@ -485,7 +485,7 @@ operation AWSPSMCOMPUTE!LambdaEventSourceMapping emitLambdaEventSourceMappingPro
     outText = outText + spaces(8) + "- ReportBatchItemFailures\n";
   }
   if (self.filterCriteriaJson.isPresent()) {
-    outText = outText + yamlBlock("FilterCriteria", self.filterCriteriaJson, 6);
+    outText = outText + structuredYamlProperty("FilterCriteria", self.filterCriteriaJson, 6);
   }
   if (self.maximumConcurrency.isDefined()) {
     outText = outText + spaces(6) + "ScalingConfig:\n";
@@ -638,7 +638,7 @@ operation AWSPSMCOMPUTE!LambdaAlias emitCfnPropertiesYaml(emitCtx : Map) : Strin
     outText = outText + emitYamlScalarProperty("FunctionVersion", self.functionVersion, 6);
   }
   if (self.routingConfig.isPresent()) {
-    outText = outText + yamlBlock("RoutingConfig", self.routingConfig, 6);
+    outText = outText + structuredYamlProperty("RoutingConfig", self.routingConfig, 6);
   }
   return outText + self.overrides.emitNativePropertiesYaml(6);
 }
@@ -718,7 +718,7 @@ operation AWSPSMSECURITY!IamManagedPolicy emitCfnPropertiesYaml(emitCtx : Map) :
   var outText = emitYamlScalarProperty("ManagedPolicyName", firstText(self.managedPolicyName, self.physicalName), 6);
   outText = outText + emitYamlScalarProperty("Path", self.path, 6);
   if (self.rawPolicyJson.isPresent()) {
-    outText = outText + yamlBlock("PolicyDocument", self.rawPolicyJson, 6);
+    outText = outText + structuredYamlProperty("PolicyDocument", self.rawPolicyJson, 6);
   }
   else {
     outText = outText + "      PolicyDocument:\n" + self.document.emitIamPolicyDocumentYaml(8);
@@ -735,7 +735,7 @@ operation AWSPSMSECURITY!IamPolicy cfnTypeText(emitCtx : Map) : String {
 operation AWSPSMSECURITY!IamPolicy emitCfnPropertiesYaml(emitCtx : Map) : String {
   var outText = emitYamlScalarProperty("PolicyName", self.policyName, 6);
   if (self.rawPolicyJson.isPresent()) {
-    outText = outText + yamlBlock("PolicyDocument", self.rawPolicyJson, 6);
+    outText = outText + structuredYamlProperty("PolicyDocument", self.rawPolicyJson, 6);
   }
   else {
     outText = outText + "      PolicyDocument:\n" + self.document.emitIamPolicyDocumentYaml(8);
@@ -765,7 +765,7 @@ operation AWSPSMSECURITY!KmsKey emitCfnPropertiesYaml(emitCtx : Map) : String {
   outText = outText + emitYamlBooleanProperty("MultiRegion", self.multiRegion, 6);
   outText = outText + emitYamlIntegerProperty("PendingWindowInDays", self.pendingWindowInDays, 6);
   if (self.keyPolicyJson.isPresent()) {
-    outText = outText + yamlBlock("KeyPolicy", self.keyPolicyJson, 6);
+    outText = outText + structuredYamlProperty("KeyPolicy", self.keyPolicyJson, 6);
   }
   else if (self.keyPolicy.isDefined()) {
     outText = outText + "      KeyPolicy:\n" + self.keyPolicy.emitIamPolicyDocumentYaml(8);
@@ -851,7 +851,7 @@ operation AWSPSMSECURITY!SecretsManagerResourcePolicy cfnTypeText(emitCtx : Map)
 operation AWSPSMSECURITY!SecretsManagerResourcePolicy emitCfnPropertiesYaml(emitCtx : Map) : String {
   var outText = spaces(6) + "SecretId: !Ref " + self.secret.cfnLogicalId() + "\n";
   if (self.resourcePolicyJson.isPresent()) {
-    outText = outText + yamlBlock("ResourcePolicy", self.resourcePolicyJson, 6);
+    outText = outText + structuredYamlProperty("ResourcePolicy", self.resourcePolicyJson, 6);
   }
   else if (self.resourcePolicy.isDefined()) {
     outText = outText + "      ResourcePolicy:\n" + self.resourcePolicy.emitIamPolicyDocumentYaml(8);
@@ -957,7 +957,7 @@ operation AWSPSMMESSAGING!SqsQueuePolicy emitCfnPropertiesYaml(emitCtx : Map) : 
     outText = outText + spaces(8) + "- !Ref " + queueObj.cfnLogicalId() + "\n";
   }
   if (self.policyDocumentJson.isPresent()) {
-    outText = outText + yamlBlock("PolicyDocument", self.policyDocumentJson, 6);
+    outText = outText + structuredYamlProperty("PolicyDocument", self.policyDocumentJson, 6);
   }
   else if (self.policyDocument.isDefined()) {
     outText = outText + "      PolicyDocument:\n" + self.policyDocument.emitIamPolicyDocumentYaml(8);
@@ -980,10 +980,10 @@ operation AWSPSMMESSAGING!SnsTopic emitCfnPropertiesYaml(emitCtx : Map) : String
     outText = outText + spaces(6) + "KmsMasterKeyId: !Ref " + self.kmsKey.cfnLogicalId() + "\n";
   }
   if (self.dataProtectionPolicyJson.isPresent()) {
-    outText = outText + yamlBlock("DataProtectionPolicy", self.dataProtectionPolicyJson, 6);
+    outText = outText + structuredYamlProperty("DataProtectionPolicy", self.dataProtectionPolicyJson, 6);
   }
   if (self.deliveryStatusLoggingJson.isPresent()) {
-    outText = outText + yamlBlock("DeliveryStatusLogging", self.deliveryStatusLoggingJson, 6);
+    outText = outText + structuredYamlProperty("DeliveryStatusLogging", self.deliveryStatusLoggingJson, 6);
   }
   return outText + self.tags.emitTagsYaml(6) + self.overrides.emitNativePropertiesYaml(6);
 }
@@ -1039,10 +1039,10 @@ operation AWSPSMMESSAGING!SnsSubscription emitCfnPropertiesYaml(emitCtx : Map) :
     outText = outText + emitYamlScalarProperty("FilterPolicyScope", scopeText, 6);
   }
   if (self.deliveryPolicyJson.isPresent()) {
-    outText = outText + yamlBlock("DeliveryPolicy", self.deliveryPolicyJson, 6);
+    outText = outText + structuredYamlProperty("DeliveryPolicy", self.deliveryPolicyJson, 6);
   }
   if (self.replayPolicyJson.isPresent()) {
-    outText = outText + yamlBlock("ReplayPolicy", self.replayPolicyJson, 6);
+    outText = outText + structuredYamlProperty("ReplayPolicy", self.replayPolicyJson, 6);
   }
   if (self.deadLetterQueue.isDefined()) {
     outText = outText + spaces(6) + "RedrivePolicy:\n";
@@ -1063,7 +1063,7 @@ operation AWSPSMMESSAGING!SnsTopicPolicy emitCfnPropertiesYaml(emitCtx : Map) : 
     outText = outText + spaces(8) + "- !Ref " + topicObj.cfnLogicalId() + "\n";
   }
   if (self.policyDocumentJson.isPresent()) {
-    outText = outText + yamlBlock("PolicyDocument", self.policyDocumentJson, 6);
+    outText = outText + structuredYamlProperty("PolicyDocument", self.policyDocumentJson, 6);
   }
   else if (self.policyDocument.isDefined()) {
     outText = outText + "      PolicyDocument:\n" + self.policyDocument.emitIamPolicyDocumentYaml(8);
@@ -1095,7 +1095,7 @@ operation AWSPSMEVENTS!EventBridgeBusPolicy emitCfnPropertiesYaml(emitCtx : Map)
   var outText = emitYamlScalarProperty("StatementId", self.statementId, 6);
   outText = outText + spaces(6) + "EventBusName: " + self.refForResourceInSameStack(self.bus) + "\n";
   if (self.policyJson.isPresent()) {
-    outText = outText + yamlBlock("Statement", self.policyJson, 6);
+    outText = outText + structuredYamlProperty("Statement", self.policyJson, 6);
   }
   else if (self.policyDocument.isDefined() and self.policyDocument.statements.notEmpty()) {
     outText = outText + spaces(6) + "Statement:\n" + self.policyDocument.statements.first().emitIamStatementYaml(8);
@@ -1127,7 +1127,7 @@ operation AWSPSMEVENTS!EventBridgeRule emitCfnPropertiesYaml(emitCtx : Map) : St
   outText = outText + emitYamlScalarProperty("ScheduleExpression", self.scheduleExpression, 6);
   outText = outText + emitYamlScalarProperty("State", self.state, 6);
   if (self.eventPatternJson.isPresent()) {
-    outText = outText + yamlBlock("EventPattern", self.eventPatternJson, 6);
+    outText = outText + structuredYamlProperty("EventPattern", self.eventPatternJson, 6);
   }
   else if (self.eventPattern.isDefined()) {
     outText = outText + spaces(6) + "EventPattern:\n" + self.eventPattern.emitEventPatternYaml(8);
@@ -1149,7 +1149,7 @@ operation AWSPSMEVENTS!EventPattern emitEventPatternYaml(indentCount : Integer) 
   outText = outText + emitYamlScalarProperty("account", self.account, indentCount);
   outText = outText + emitYamlScalarProperty("region", self.region, indentCount);
   if (self.detailJson.isPresent()) {
-    outText = outText + yamlBlock("detail", self.detailJson, indentCount);
+    outText = outText + structuredYamlProperty("detail", self.detailJson, indentCount);
   }
   return outText;
 }
@@ -1185,7 +1185,7 @@ operation AWSPSMEVENTS!EventBridgeTarget emitEventBridgeTargetYaml(indentCount :
   if (self.inputTransformer.isDefined()) {
     outText = outText + spaces(indentCount + 2) + "InputTransformer:\n";
     if (self.inputTransformer.inputPathsMapJson.isPresent()) {
-      outText = outText + yamlBlock("InputPathsMap", self.inputTransformer.inputPathsMapJson, indentCount + 4);
+      outText = outText + structuredYamlProperty("InputPathsMap", self.inputTransformer.inputPathsMapJson, indentCount + 4);
     }
     outText = outText + emitYamlScalarProperty("InputTemplate", self.inputTransformer.inputTemplate, indentCount + 4);
   }
@@ -1207,7 +1207,7 @@ operation AWSPSMEVENTS!EventBridgeArchive emitCfnPropertiesYaml(emitCtx : Map) :
   outText = outText + emitYamlScalarProperty("ArchiveName", firstText(self.archiveName, self.physicalName), 6);
   outText = outText + emitYamlIntegerProperty("RetentionDays", self.retentionDays, 6);
   if (self.eventPatternJson.isPresent()) {
-    outText = outText + yamlBlock("EventPattern", self.eventPatternJson, 6);
+    outText = outText + structuredYamlProperty("EventPattern", self.eventPatternJson, 6);
   }
   return outText + self.tags.emitTagsYaml(6) + self.overrides.emitNativePropertiesYaml(6);
 }
@@ -1271,13 +1271,13 @@ operation AWSPSMEVENTS!EventBridgePipe emitCfnPropertiesYaml(emitCtx : Map) : St
     outText = outText + emitYamlScalarProperty("Enrichment", self.enrichmentArn, 6);
   }
   if (self.filterCriteriaJson.isPresent()) {
-    outText = outText + yamlBlock("FilterCriteria", self.filterCriteriaJson, 6);
+    outText = outText + structuredYamlProperty("FilterCriteria", self.filterCriteriaJson, 6);
   }
   if (self.sourceParametersJson.isPresent()) {
-    outText = outText + yamlBlock("SourceParameters", self.sourceParametersJson, 6);
+    outText = outText + structuredYamlProperty("SourceParameters", self.sourceParametersJson, 6);
   }
   if (self.targetParametersJson.isPresent()) {
-    outText = outText + yamlBlock("TargetParameters", self.targetParametersJson, 6);
+    outText = outText + structuredYamlProperty("TargetParameters", self.targetParametersJson, 6);
   }
   return outText + self.tags.emitTagsYaml(6) + self.overrides.emitNativePropertiesYaml(6);
 }
@@ -1386,7 +1386,7 @@ operation AWSPSMSTORAGE!DynamoDbTable emitCfnPropertiesYaml(emitCtx : Map) : Str
     outText = outText + "        Enabled: " + self.contributorInsightsEnabled.asString().toLowerCase() + "\n";
   }
   if (self.resourcePolicyJson.isPresent()) {
-    outText = outText + yamlBlock("ResourcePolicy", self.resourcePolicyJson, 6);
+    outText = outText + structuredYamlProperty("ResourcePolicy", self.resourcePolicyJson, 6);
   }
   else if (self.resourcePolicy.isDefined()) {
     outText = outText + "      ResourcePolicy:\n";
@@ -1519,13 +1519,13 @@ operation AWSPSMSTORAGE!S3Bucket emitCfnPropertiesYaml(emitCtx : Map) : String {
     outText = outText + spaces(10) + "EventBridgeEnabled: true\n";
   }
   if (self.websiteConfigurationJson.isPresent()) {
-    outText = outText + yamlBlock("WebsiteConfiguration", self.websiteConfigurationJson, 6);
+    outText = outText + structuredYamlProperty("WebsiteConfiguration", self.websiteConfigurationJson, 6);
   }
   if (self.loggingConfigurationJson.isPresent()) {
-    outText = outText + yamlBlock("LoggingConfiguration", self.loggingConfigurationJson, 6);
+    outText = outText + structuredYamlProperty("LoggingConfiguration", self.loggingConfigurationJson, 6);
   }
   if (self.replicationConfiguration.isDefined() and self.replicationConfiguration.rulesJson.isPresent()) {
-    outText = outText + yamlBlock("ReplicationConfiguration", self.replicationConfiguration.rulesJson, 6);
+    outText = outText + structuredYamlProperty("ReplicationConfiguration", self.replicationConfiguration.rulesJson, 6);
   }
   return outText + self.overrides.emitNativePropertiesYaml(6);
 }
@@ -1539,7 +1539,7 @@ operation AWSPSMSTORAGE!S3BucketPolicy cfnTypeText(emitCtx : Map) : String {
 operation AWSPSMSTORAGE!S3BucketPolicy emitCfnPropertiesYaml(emitCtx : Map) : String {
   var outText = spaces(6) + "Bucket: !Ref " + self.bucket.cfnLogicalId() + "\n";
   if (self.policyDocumentJson.isPresent()) {
-    outText = outText + yamlBlock("PolicyDocument", self.policyDocumentJson, 6);
+    outText = outText + structuredYamlProperty("PolicyDocument", self.policyDocumentJson, 6);
   }
   else if (self.policyDocument.isDefined()) {
     outText = outText + "      PolicyDocument:\n" + self.policyDocument.emitIamPolicyDocumentYaml(8);
@@ -1642,7 +1642,7 @@ operation AWSPSMAPI!ApiGatewayApi emitApiCommonPropertiesYaml(emitCtx : Map) : S
     outText = outText + spaces(8) + "DestinationArn: " + arnForResource(self.accessLogGroup) + "\n";
   }
   if (self.apiPolicyJson.isPresent()) {
-    outText = outText + yamlBlock("Policy", self.apiPolicyJson, 6);
+    outText = outText + structuredYamlProperty("Policy", self.apiPolicyJson, 6);
   }
   else if (self.apiPolicy.isDefined()) {
     outText = outText + "      Auth:\n";
@@ -1730,10 +1730,10 @@ operation AWSPSMAPI!ApiGatewayIntegration emitCfnPropertiesYaml(emitCtx : Map) :
     outText = outText + emitYamlScalarProperty("CredentialsArn", self.credentialsArn, 6);
   }
   if (self.requestTemplatesJson.isPresent()) {
-    outText = outText + yamlBlock("RequestTemplates", self.requestTemplatesJson, 6);
+    outText = outText + structuredYamlProperty("RequestTemplates", self.requestTemplatesJson, 6);
   }
   if (self.responseParametersJson.isPresent()) {
-    outText = outText + yamlBlock("ResponseParameters", self.responseParametersJson, 6);
+    outText = outText + structuredYamlProperty("ResponseParameters", self.responseParametersJson, 6);
   }
   return outText + self.overrides.emitNativePropertiesYaml(6);
 }
@@ -1772,7 +1772,7 @@ operation AWSPSMAPI!ApiGatewayRoute emitApiGatewayV2RoutePropertiesYaml(emitCtx 
   }
   outText = outText + emitYamlStringListProperty("AuthorizationScopes", self.authorizationScopes, 6);
   if (self.requestParametersJson.isPresent()) {
-    outText = outText + yamlBlock("RequestParameters", self.requestParametersJson, 6);
+    outText = outText + structuredYamlProperty("RequestParameters", self.requestParametersJson, 6);
   }
   return outText + self.overrides.emitNativePropertiesYaml(6);
 }
@@ -2151,25 +2151,25 @@ operation AWSPSMIDENTITY!CognitoUserPool emitCfnPropertiesYaml(emitCtx : Map) : 
   outText = outText + emitYamlStringListProperty("AliasAttributes", self.aliasAttributes, 6);
   outText = outText + emitYamlStringListProperty("AutoVerifiedAttributes", self.autoVerifiedAttributes, 6);
   if (self.accountRecoverySettingJson.isPresent()) {
-    outText = outText + yamlBlock("AccountRecoverySetting", self.accountRecoverySettingJson, 6);
+    outText = outText + structuredYamlProperty("AccountRecoverySetting", self.accountRecoverySettingJson, 6);
   }
   if (self.adminCreateUserConfigJson.isPresent()) {
-    outText = outText + yamlBlock("AdminCreateUserConfig", self.adminCreateUserConfigJson, 6);
+    outText = outText + structuredYamlProperty("AdminCreateUserConfig", self.adminCreateUserConfigJson, 6);
   }
   if (self.emailConfigurationJson.isPresent()) {
-    outText = outText + yamlBlock("EmailConfiguration", self.emailConfigurationJson, 6);
+    outText = outText + structuredYamlProperty("EmailConfiguration", self.emailConfigurationJson, 6);
   }
   if (self.smsConfigurationJson.isPresent()) {
-    outText = outText + yamlBlock("SmsConfiguration", self.smsConfigurationJson, 6);
+    outText = outText + structuredYamlProperty("SmsConfiguration", self.smsConfigurationJson, 6);
   }
   if (self.lambdaConfigJson.isPresent()) {
-    outText = outText + yamlBlock("LambdaConfig", self.lambdaConfigJson, 6);
+    outText = outText + structuredYamlProperty("LambdaConfig", self.lambdaConfigJson, 6);
   }
   if (self.policiesJson.isPresent()) {
     outText = outText + structuredYamlProperty("Policies", self.policiesJson, 6);
   }
   if (self.schemaJson.isPresent()) {
-    outText = outText + yamlBlock("Schema", self.schemaJson, 6);
+    outText = outText + structuredYamlProperty("Schema", self.schemaJson, 6);
   }
   if (self.deletionProtection.isDefined()) {
     var protection = "INACTIVE";
@@ -2200,7 +2200,7 @@ operation AWSPSMIDENTITY!CognitoUserPoolClient emitCfnPropertiesYaml(emitCtx : M
   outText = outText + emitYamlIntegerProperty("IdTokenValidity", self.idTokenValidity, 6);
   outText = outText + emitYamlIntegerProperty("RefreshTokenValidity", self.refreshTokenValidity, 6);
   if (self.tokenValidityUnitsJson.isPresent()) {
-    outText = outText + yamlBlock("TokenValidityUnits", self.tokenValidityUnitsJson, 6);
+    outText = outText + structuredYamlProperty("TokenValidityUnits", self.tokenValidityUnitsJson, 6);
   }
   outText = outText + emitYamlScalarProperty("PreventUserExistenceErrors", self.preventUserExistenceErrors, 6);
   return outText + self.overrides.emitNativePropertiesYaml(6);
@@ -2249,7 +2249,7 @@ operation AWSPSMIDENTITY!CognitoIdentityPool emitCfnPropertiesYaml(emitCtx : Map
   var outText = emitYamlScalarProperty("IdentityPoolName", firstText(self.identityPoolName, self.physicalName), 6);
   outText = outText + emitYamlBooleanProperty("AllowUnauthenticatedIdentities", self.allowUnauthenticatedIdentities, 6);
   if (self.cognitoIdentityProvidersJson.isPresent()) {
-    outText = outText + yamlBlock("CognitoIdentityProviders", self.cognitoIdentityProvidersJson, 6);
+    outText = outText + structuredYamlProperty("CognitoIdentityProviders", self.cognitoIdentityProvidersJson, 6);
   }
   return outText + self.tags.emitTagsYaml(6) + self.overrides.emitNativePropertiesYaml(6);
 }
@@ -2308,7 +2308,7 @@ operation AWSPSMNETWORKING!VpcEndpoint emitCfnPropertiesYaml(emitCtx : Map) : St
     }
   }
   if (self.policyDocumentJson.isPresent()) {
-    outText = outText + yamlBlock("PolicyDocument", self.policyDocumentJson, 6);
+    outText = outText + structuredYamlProperty("PolicyDocument", self.policyDocumentJson, 6);
   }
   return outText + self.tags.emitTagsYaml(6) + self.overrides.emitNativePropertiesYaml(6);
 }
@@ -2368,7 +2368,7 @@ operation AWSPSMOBSERVABILITY!CloudWatchLogGroup emitCfnPropertiesYaml(emitCtx :
     outText = outText + spaces(6) + "KmsKeyId: " + arnForResource(self.kmsKey) + "\n";
   }
   if (self.dataProtectionPolicyJson.isPresent()) {
-    outText = outText + yamlBlock("DataProtectionPolicy", self.dataProtectionPolicyJson, 6);
+    outText = outText + structuredYamlProperty("DataProtectionPolicy", self.dataProtectionPolicyJson, 6);
   }
   return outText + self.tags.emitTagsYaml(6) + self.overrides.emitNativePropertiesYaml(6);
 }
@@ -2383,7 +2383,7 @@ operation AWSPSMOBSERVABILITY!CloudWatchMetricFilter emitCfnPropertiesYaml(emitC
   var outText = spaces(6) + "LogGroupName: !Ref " + self.logGroup.cfnLogicalId() + "\n";
   outText = outText + emitYamlScalarProperty("FilterPattern", self.filterPattern, 6);
   if (self.metricTransformationsJson.isPresent()) {
-    outText = outText + yamlBlock("MetricTransformations", self.metricTransformationsJson, 6);
+    outText = outText + structuredYamlProperty("MetricTransformations", self.metricTransformationsJson, 6);
   }
   return outText + self.overrides.emitNativePropertiesYaml(6);
 }
@@ -2488,7 +2488,7 @@ operation AWSPSMWORKFLOW!StepFunctionStateMachine emitCfnPropertiesYaml(emitCtx 
     outText = outText + emitYamlScalarProperty("DefinitionUri", self.aslTemplateUri(), 6);
   }
   else if (self.definitionString.isPresent()) {
-    outText = outText + yamlBlock("Definition", self.definitionString, 6);
+    outText = outText + structuredYamlProperty("Definition", self.definitionString, 6);
   }
   if (self.aslDocument.isDefined() and self.aslDocument.states.exists(stateObj | stateObj.invokedResource.isDefined())) {
     outText = outText + spaces(6) + "DefinitionSubstitutions:\n";
@@ -2508,7 +2508,7 @@ operation AWSPSMWORKFLOW!StepFunctionStateMachine emitCfnPropertiesYaml(emitCtx 
     }
   }
   else if (self.definitionSubstitutionsJson.isPresent()) {
-    outText = outText + yamlBlock("DefinitionSubstitutions", self.definitionSubstitutionsJson, 6);
+    outText = outText + structuredYamlProperty("DefinitionSubstitutions", self.definitionSubstitutionsJson, 6);
   }
   if (self.stateMachineType.isDefined()) {
     outText = outText + emitYamlScalarProperty("Type", self.stateMachineType.asString(), 6);
@@ -2550,10 +2550,10 @@ operation AWSPSMCOMPUTE!CodeSigningConfig cfnTypeText(emitCtx : Map) : String {
 operation AWSPSMCOMPUTE!CodeSigningConfig emitCfnPropertiesYaml(emitCtx : Map) : String {
   var outText = emitYamlScalarProperty("Description", self.descriptionText, 6);
   if (self.allowedPublishers.isPresent()) {
-    outText = outText + yamlBlock("AllowedPublishers", self.allowedPublishers, 6);
+    outText = outText + structuredYamlProperty("AllowedPublishers", self.allowedPublishers, 6);
   }
   if (self.codeSigningPolicies.isPresent()) {
-    outText = outText + yamlBlock("CodeSigningPolicies", self.codeSigningPolicies, 6);
+    outText = outText + structuredYamlProperty("CodeSigningPolicies", self.codeSigningPolicies, 6);
   }
   return outText + self.tags.emitTagsYaml(6) + self.overrides.emitNativePropertiesYaml(6);
 }

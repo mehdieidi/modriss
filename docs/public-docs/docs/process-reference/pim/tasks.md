@@ -552,7 +552,7 @@ The primary performer is **Solution Architect**. The approved method profile may
 
 **How to perform the task**
 
-1. Define Trigger elements linking functions to events and schedules.
+1. Define Trigger elements linking functions or service-owned workflows to events and schedules.
 2. Set runtime language and package manager per function.
 
 **Outputs**

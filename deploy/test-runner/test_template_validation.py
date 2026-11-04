@@ -111,7 +111,7 @@ class TemplateValidationTest(unittest.TestCase):
         self.assertEqual({issue["resourceId"] for issue in issues}, {"Version", "Alias"})
         self.assertTrue(all("cannot be safely rewritten" in issue["remedy"] for issue in issues))
 
-    def test_floci_profile_omits_only_unreferenced_eventbridge_api_destinations(self):
+    def test_floci_profile_retains_eventbridge_resources_for_floci_events_api_provisioning(self):
         documents = {"template.yaml":{"Resources":{
             "Connection":{"Type":"AWS::Events::Connection", "Properties":{"Name":"unused"}},
             "Destination":{"Type":"AWS::Events::ApiDestination", "Properties":{
@@ -121,12 +121,12 @@ class TemplateValidationTest(unittest.TestCase):
 
         profile = apply_floci_test_profile(documents, "2.2.0")
 
-        self.assertEqual(set(documents["template.yaml"]["Resources"]), {"Function"})
-        self.assertEqual({item["resourceId"] for item in profile["adjustments"]}, {"Connection", "Destination"})
-        self.assertTrue(all("saved AWS artifact is unchanged" in item["effect"] for item in profile["adjustments"]))
+        self.assertEqual(set(documents["template.yaml"]["Resources"]), {"Connection", "Destination", "Function"})
+        self.assertEqual(profile["adjustments"], [])
+        self.assertIn("Floci Events API", profile["eventBridgeApiDestinations"])
         self.assertEqual(validate_emulator_compatibility(documents, "2.2.0"), [])
 
-    def test_floci_profile_preserves_and_reports_referenced_eventbridge_api_destinations(self):
+    def test_floci_profile_allows_referenced_eventbridge_resources_for_events_api_provisioning(self):
         documents = {"template.yaml":{"Resources":{
             "Connection":{"Type":"AWS::Events::Connection", "Properties":{"Name":"used"}},
             "Destination":{"Type":"AWS::Events::ApiDestination", "Properties":{
@@ -140,8 +140,76 @@ class TemplateValidationTest(unittest.TestCase):
 
         self.assertEqual(profile["adjustments"], [])
         self.assertEqual(set(documents["template.yaml"]["Resources"]), {"Connection", "Destination", "Rule"})
-        self.assertEqual({issue["resourceId"] for issue in issues}, {"Connection", "Destination"})
-        self.assertTrue(all("unchanged AWS artifact" in issue["remedy"] for issue in issues))
+        self.assertEqual(issues, [])
+
+    def test_floci_eventbridge_resources_are_provisioned_and_template_references_rewritten(self):
+        documents = {"template.yaml":{"Resources":{
+            "Connection":{"Type":"AWS::Events::Connection", "Properties":{
+                "Name":"test-connection", "AuthorizationType":"API_KEY",
+                "AuthParameters":{"ApiKeyAuthParameters":{"ApiKeyName":"token",
+                    "ApiKeyValue":"{{resolve:secretsmanager:/test/key}}"}}}},
+            "Destination":{"Type":"AWS::Events::ApiDestination", "Properties":{
+                "Name":"test-destination", "ConnectionArn":{"Fn::GetAtt":["Connection", "Arn"]},
+                "InvocationEndpoint":"http://host.docker.internal:8090", "HttpMethod":"POST"}},
+            "Rule":{"Type":"AWS::Events::Rule", "DependsOn":["Connection", "Destination"],
+                "Properties":{"Targets":[{"Arn":{"Fn::GetAtt":["Destination", "Arn"]}}]}}
+        }}}
+        worker = Worker({"accountId":"123456789012", "projectId":"project", "jobId":"job"})
+        events = MagicMock()
+        events.meta.method_to_api_mapping = {name: name for name in (
+            "create_connection", "describe_connection", "update_connection",
+            "create_api_destination", "describe_api_destination", "update_api_destination")}
+        missing = lambda operation: ClientError(
+            {"Error":{"Code":"ResourceNotFoundException", "Message":"not found"}}, operation)
+        events.describe_connection.side_effect = missing("DescribeConnection")
+        events.create_connection.return_value = {"ConnectionArn":"arn:aws:events:us-east-1:123456789012:connection/test-connection/uuid"}
+        events.describe_api_destination.side_effect = missing("DescribeApiDestination")
+        events.create_api_destination.return_value = {"ApiDestinationArn":"arn:aws:events:us-east-1:123456789012:api-destination/test-destination/uuid"}
+        worker.client = lambda service: events
+
+        adjustments = worker.materialize_floci_event_resources(documents)
+
+        resources = documents["template.yaml"]["Resources"]
+        self.assertEqual(set(resources), {"Rule"})
+        self.assertNotIn("DependsOn", resources["Rule"])
+        self.assertEqual(resources["Rule"]["Properties"]["Targets"][0]["Arn"],
+            "arn:aws:events:us-east-1:123456789012:api-destination/test-destination/uuid")
+        synthetic_auth = events.create_connection.call_args.kwargs["AuthParameters"]["ApiKeyAuthParameters"]["ApiKeyValue"]
+        self.assertTrue(synthetic_auth.startswith("modriss-test-"))
+        self.assertNotIn("/test/key", synthetic_auth)
+        self.assertEqual({item["resourceType"] for item in adjustments}, {
+            "AWS::Events::Connection", "AWS::Events::ApiDestination"})
+
+    def test_floci_eventbridge_existing_resources_use_update_api_identifiers(self):
+        connection_arn = "arn:aws:events:us-east-1:123456789012:connection/test-connection/uuid"
+        destination_arn = "arn:aws:events:us-east-1:123456789012:api-destination/test-destination/uuid"
+        documents = {"template.yaml":{"Resources":{
+            "Connection":{"Type":"AWS::Events::Connection", "Properties":{
+                "Name":"test-connection", "AuthorizationType":"API_KEY",
+                "AuthParameters":{"ApiKeyAuthParameters":{"ApiKeyName":"token",
+                    "ApiKeyValue":"{{resolve:secretsmanager:/test/key}}"}}}},
+            "Destination":{"Type":"AWS::Events::ApiDestination", "Properties":{
+                "Name":"test-destination", "ConnectionArn":{"Fn::GetAtt":["Connection", "Arn"]},
+                "InvocationEndpoint":"http://host.docker.internal:8090", "HttpMethod":"POST"}},
+        }}}
+        worker = Worker({"accountId":"123456789012", "projectId":"project", "jobId":"job"})
+        events = MagicMock()
+        events.meta.method_to_api_mapping = {name: name for name in (
+            "create_connection", "describe_connection", "update_connection",
+            "create_api_destination", "describe_api_destination", "update_api_destination")}
+        events.describe_connection.return_value = {"ConnectionArn":connection_arn}
+        events.update_connection.return_value = {"ConnectionArn":connection_arn}
+        events.describe_api_destination.return_value = {"ApiDestinationArn":destination_arn}
+        events.update_api_destination.return_value = {"ApiDestinationArn":destination_arn}
+        worker.client = lambda service: events
+
+        worker.materialize_floci_event_resources(documents)
+
+        events.update_connection.assert_called_once()
+        self.assertNotIn("ConnectionArn", events.update_connection.call_args.kwargs)
+        events.update_api_destination.assert_called_once()
+        self.assertNotIn("ApiDestinationArn", events.update_api_destination.call_args.kwargs)
+        self.assertEqual(events.update_api_destination.call_args.kwargs["ConnectionArn"], connection_arn)
 
     def test_deploy_expands_sam_without_publishing_workflow_alias_and_records_profile(self):
         source = yaml.safe_dump({
@@ -220,6 +288,25 @@ class TemplateValidationTest(unittest.TestCase):
         self.assertEqual(self.check(resource), [])
         resource["Subscription"]["Properties"]["Endpoint"] = {"Fn::Sub":"https://${AWS::Region}.example.test/events"}
         self.assertEqual(self.check(resource), [])
+
+    def test_eventbridge_rule_requires_a_structured_pattern_or_schedule(self):
+        resource = {"HeartbeatRule":{"Type":"AWS::Events::Rule","Properties":{
+            "EventPattern":"{ \"detail-type\": [ \"MachineHeartbeatReceived\" ] }",
+            "Targets":[{"Arn":{"Fn::GetAtt":["Validator","Arn"]}}]}}}
+        issues = self.check(resource)
+        self.assertEqual([issue["field"] for issue in issues], ["EventPattern"])
+        self.assertIn("structured JSON/YAML mapping", issues[0]["remedy"])
+
+        resource["HeartbeatRule"]["Properties"]["EventPattern"] = {
+            "detail-type":["MachineHeartbeatReceived"]}
+        self.assertEqual(self.check(resource), [])
+
+    def test_eventbridge_rule_rejects_missing_or_conflicting_triggers(self):
+        resource = {"HeartbeatRule":{"Type":"AWS::Events::Rule","Properties":{}}}
+        self.assertEqual(self.check(resource)[0]["field"], "EventPattern")
+        resource["HeartbeatRule"]["Properties"] = {
+            "EventPattern":{"source":["test"]}, "ScheduleExpression":"rate(5 minutes)"}
+        self.assertIn("cannot combine", self.check(resource)[0]["message"])
 
     def test_original_tags_only_authorizer_names_missing_fields(self):
         issues = self.check({"AuthenticationAuthorizer": {"Type": "AWS::ApiGateway::Authorizer",

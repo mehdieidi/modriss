@@ -156,12 +156,6 @@ operation applyFunctionPolicies(f, l) {
   if (f.observability.isDefined() and isTrue(f.observability.alarmsEnabled)) {
     createLambdaAlarm(f, l, "Errors", "Errors", 1.0d);
   }
-  if (f.resilience.isDefined() and isTrue(f.resilience.deadLetterRequired)) {
-    manualDecision("LAMBDA_DLQ_TARGET_REQUIRED",
-      "Choose Lambda dead-letter target for " + f.name + ".",
-      KERNEL!Severity#WARNING, isProductionRoot(), Sequence{f, l},
-      "Connect a PIM dead-letter channel or EventInvokeConfig destination.");
-  }
 }
 
 /** Computes apply idempotency. */
@@ -294,8 +288,48 @@ operation createLambdaAlarm(f, l, suffix : String, metric : String, threshold : 
   return a;
 }
 
-/** Creates create lambda dead letter config. */
+/** Resolves modeled Lambda dead-letter channels after their PSM resources exist. */
+operation resolveLambdaDeadLetterConfigs() {
+  for (f in COMPUTE!Function.all.select(candidate |
+      candidate.resilience.isDefined() and isTrue(candidate.resilience.deadLetterRequired))) {
+    var l = awsEquivalent(f);
+    if (l.isDefined() and l.eClass().getName() = "AwsLambdaFunction" and l.deadLetterConfig.isUndefined()) {
+      l.deadLetterConfig = createLambdaDeadLetterConfig(f);
+      if (l.deadLetterConfig.isUndefined()) {
+        manualDecision("LAMBDA_DLQ_TARGET_REQUIRED",
+          "Resolve the dead-letter target for Lambda " + f.name + ".",
+          KERNEL!Severity#ERROR, true, Sequence{f, l},
+          "Use a PIM Queue or Topic as the dead-letter channel, or leave the channel unset to generate a standard SQS target.");
+      }
+    }
+  }
+}
+
+/** Creates a Lambda dead-letter config from its modeled channel or a standard SQS target. */
 operation createLambdaDeadLetterConfig(f) {
+  var channel = null;
+  if (f.resilience.isDefined() and f.resilience.deadLetter.isDefined()) {
+    channel = f.resilience.deadLetter.deadLetterChannel;
+  }
+  if (channel.isDefined()) {
+    var target = awsEquivalent(channel);
+    if (target.isDefined() and target.eClass().getName() = "SqsQueue") {
+      var queueConfig = new AWSPSMCOMPUTE!LambdaDeadLetterConfig;
+      queueConfig.id = generatedId("lambda_dlq_config", f, "failure");
+      queueConfig.name = firstText(f.name, f.id) + " failure DLQ";
+      queueConfig.targetQueue = target;
+      return queueConfig;
+    }
+    if (target.isDefined() and target.eClass().getName() = "SnsTopic") {
+      var topicConfig = new AWSPSMCOMPUTE!LambdaDeadLetterConfig;
+      topicConfig.id = generatedId("lambda_dlq_config", f, "failure");
+      topicConfig.name = firstText(f.name, f.id) + " failure topic";
+      topicConfig.targetTopic = target;
+      return topicConfig;
+    }
+    return null;
+  }
+
   var q = new AWSPSMMESSAGING!SqsQueue;
   copyAwsResource(f, q, "LambdaDlq", "AWS::SQS::Queue");
   q.id = generatedId("sqs_queue_lambda_dlq", f, "failure");

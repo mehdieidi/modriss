@@ -2,7 +2,6 @@
 /** Initializes shared roots, lookup maps, and deduplication sets for the PIM-to-PSM run. */
 operation initialisePimToAwsPsmCaches() {
   usedAwsLogicalIds = Set{};
-  usedAwsPhysicalNames = Set{};
   cachedPimRoot = PIM!PIMModel.all.first();
   cachedAwsRoot = null;
   cachedDefaultStack = null;
@@ -19,7 +18,6 @@ operation initialisePimToAwsPsmCaches() {
   cachedAwsGeneratedResourceObjects = Set{};
   cachedGeneratedIdByKey = new Map;
   cachedNextLogicalIdIndexBySeed = new Map;
-  cachedNextPhysicalNameIndexBySeed = new Map;
   cachedDataAccessesByFunctionId = new Map;
   cachedStageStackLinks = Set{};
   cachedApiGatewayRoutesWithLambdaIntegration = Sequence{};
@@ -45,9 +43,6 @@ operation initialisePimToAwsPsmCaches() {
 
   for (resource in AWSPSMCORE!AwsResource.all.select(r | hasText(r.logicalId))) {
     usedAwsLogicalIds.add(resource.logicalId);
-  }
-  for (resource in AWSPSMCORE!AwsResource.all.select(r | hasText(r.physicalName))) {
-    usedAwsPhysicalNames.add(resource.physicalName);
   }
   if (cachedAwsTargetHadPreloadedContent) {
     for (resource in AWSPSMCORE!AwsResource.all.select(r | hasText(r.generatedFrom))) {
@@ -666,29 +661,24 @@ operation uniqueLogicalId(base : String) {
 
 /** Computes physical name. */
 operation physicalName(source, awsKind : String, stage) {
-  var prefix = "default";
-  if (stage.isDefined()) {
-    prefix = stage.stageName;
+  var stageToken = "";
+  if (stage.isDefined() and hasText(stage.stageName)) {
+    stageToken = kebab(stage.stageName);
   }
-  var name = kebab(prefix + "-" + rootName() + "-" + firstText(source.name, source.id) + "-" + awsKind);
-  var seed = name;
-  if (seed.length() > 64) {
-    seed = seed.substring(0, 64);
+  var sourceToken = kebab(firstText(source.name, source.id));
+  var kindToken = kebab(awsKind);
+  var generatedIdentity = generatedStableId("aws-physical-name", source, awsKind);
+  var stableSuffix = generatedIdentity.substring(0, 8) + generatedIdentity.substring(9, 13) + generatedIdentity.substring(14, 18) + generatedIdentity.substring(19, 23);
+  var prefix = sourceToken + "-" + kindToken;
+  if (stageToken <> "") {
+    prefix = stageToken + "-" + prefix;
   }
-  var candidate = seed;
-  var index = cachedNextPhysicalNameIndexBySeed.get(seed);
-  if (index.isUndefined()) index = 2;
-  while (usedAwsPhysicalNames.includes(candidate)) {
-    var suffix = "-" + index.asString();
-    var baseLength = 64 - suffix.length();
-    if (baseLength > seed.length()) {
-      baseLength = seed.length();
-    }
-    candidate = seed.substring(0, baseLength) + suffix;
-    index = index + 1;
+  var maximumLength = 63;
+  var maximumPrefixLength = maximumLength - stableSuffix.length() - 1;
+  if (prefix.length() > maximumPrefixLength) {
+    prefix = prefix.substring(0, maximumPrefixLength);
   }
-  cachedNextPhysicalNameIndexBySeed.put(seed, index);
-  usedAwsPhysicalNames.add(candidate);
+  var candidate = prefix + "-" + stableSuffix;
   return candidate;
 }
 

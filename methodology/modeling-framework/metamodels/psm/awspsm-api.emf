@@ -120,6 +120,7 @@ class ApiGatewayResponseModel extends kernel.TraceableElement {
 	attr String[1] statusCode;
 	attr String    contentType;
 	attr String    schemaJson;
+	attr String[*] errorCodes;
 
 	ref awspsmcore.AwsResource[?] schemaResource;
 }

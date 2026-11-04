@@ -3,8 +3,7 @@
 import "os"
 
 type GeneratedConfig struct {
-	Stage             string
-	EventBridgeBusArn string
+	Stage string
 }
 
 func LoadConfig() GeneratedConfig {
@@ -13,7 +12,6 @@ func LoadConfig() GeneratedConfig {
 		stageText = "local"
 	}
 	return GeneratedConfig{
-		Stage:             stageText,
-		EventBridgeBusArn: os.Getenv("EVENTBRIDGE_BUS_ARN"),
+		Stage: stageText,
 	}
 }

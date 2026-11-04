@@ -289,6 +289,57 @@ final class PimToAwsPsmEtlRegressionTest {
   }
 
   @Test
+  void mergesOverlappingFunctionAndDataAccessIamGrantsWithoutDuplicateSids() throws Exception {
+    Path psmMetamodel =
+        REPOSITORY_ROOT.resolve("methodology/modeling-framework/metamodels/psm/psm-combined.ecore");
+    Path pimModel =
+        REPOSITORY_ROOT.resolve(
+            ".idea/evaluation/case-studies/vending-machine-backend/models/vending-machine.refined.pim.xmi");
+    Path psmModel = tempDir.resolve("overlapping-data-access.awspsm.xmi");
+
+    assertTrue(Files.isRegularFile(pimModel), "The vending PIM regression fixture must exist.");
+    executeOrFail(PimToAwsPsmDefaults.request(REPOSITORY_ROOT, pimModel, psmModel, true, true));
+
+    EObject root = loadModel(psmMetamodel, psmModel).getContents().get(0);
+    List<EObject> policyDocuments =
+        allObjects(root).stream()
+            .filter(element -> "IamPolicyDocument".equals(element.eClass().getName()))
+            .toList();
+    assertFalse(policyDocuments.isEmpty(), "The generated PSM must contain IAM policy documents.");
+    for (EObject policyDocument : policyDocuments) {
+      List<String> sids =
+          values(policyDocument, "statements").stream()
+              .map(statement -> get(statement, "sid"))
+              .filter(sid -> sid != null && !sid.toString().isBlank())
+              .map(Object::toString)
+              .toList();
+      assertEquals(
+          sids.size(),
+          (int) sids.stream().distinct().count(),
+          "Each generated IAM policy document must contain at most one statement per Sid.");
+    }
+
+    EObject fleetAlertFunction =
+        first(
+            containedAwsResources(root),
+            "AwsLambdaFunction",
+            "Fleet alert deduplication Policy Handler");
+    EObject fleetAlertRole = reference(fleetAlertFunction, "role");
+    List<EObject> tableGrants =
+        values(fleetAlertRole, "inlinePolicies").stream()
+            .flatMap(policy -> values(reference(policy, "document"), "statements").stream())
+            .filter(
+                statement ->
+                    "AccessOperationalAlertConsistencyBoundaryStoreTable"
+                        .equals(get(statement, "sid")))
+            .toList();
+    assertEquals(1, tableGrants.size(), "Overlapping read declarations must produce one grant.");
+    assertTrue(
+        valuesAsText(tableGrants.get(0), "actions").contains("dynamodb:GetItem"),
+        "Merging duplicate grants must preserve the modeled DynamoDB read access.");
+  }
+
+  @Test
   void makesAslStateNamesUniqueWhenPimStepsShareNames() throws Exception {
     Path pimMetamodel =
         REPOSITORY_ROOT.resolve("methodology/modeling-framework/metamodels/pim/pim-combined.ecore");
@@ -358,6 +409,14 @@ final class PimToAwsPsmEtlRegressionTest {
     List<EObject> resources = containedAwsResources(root);
 
     assertEquals("AwsPsmModel", root.eClass().getName());
+    resources.stream()
+        .filter(resource -> "IamRole".equals(resource.eClass().getName()))
+        .forEach(
+            role ->
+                assertEquals(
+                    get(role, "physicalName"),
+                    get(role, "roleName"),
+                    "Generated IAM RoleName must match its canonical physical name."));
     assertEquals("per-stage", get(root, "regionStrategy"));
     assertEquals("eu-west-1", get(root, "defaultRegion"));
     assertTrue(Boolean.TRUE.equals(get(root, "productionMode")));
@@ -401,6 +460,12 @@ final class PimToAwsPsmEtlRegressionTest {
     assertEquals(2000, get(httpRoute, "timeoutInMillis"));
     assertTrue(reference(httpRoute, "integration") != null);
     assertFalse(values(httpRoute, "requestModels").isEmpty());
+    EObject conflictResponse =
+        values(httpRoute, "responseModels").stream()
+            .filter(response -> "409".equals(get(response, "statusCode")))
+            .findFirst()
+            .orElseThrow();
+    assertEquals(List.of("ORDER_CONFLICT"), values(conflictResponse, "errorCodes"));
 
     EObject restApi = first(resources, "RestApi", "Admin Orders API");
     assertTrue(Boolean.TRUE.equals(get(restApi, "apiKeyRequiredByDefault")));
@@ -417,6 +482,13 @@ final class PimToAwsPsmEtlRegressionTest {
     assertTrue(Boolean.TRUE.equals(get(table, "deletionProtectionEnabled")));
     assertEquals(2, values(table, "keySchema").size());
     assertEquals(1, values(table, "globalSecondaryIndexes").size());
+    EObject orderStatusIndex = values(table, "globalSecondaryIndexes").get(0);
+    assertEquals(
+        "KEYS_ONLY",
+        enumLabel(get(reference(orderStatusIndex, "projection"), "projectionType")),
+        "A table primary-key attribute requested in an INCLUDE projection is already projected by"
+            + " DynamoDB.");
+    assertTrue(values(reference(orderStatusIndex, "projection"), "nonKeyAttributes").isEmpty());
     assertTrue(reference(table, "streamSpecification") != null);
     assertTrue(reference(table, "backupPolicy") != null);
 
@@ -508,6 +580,16 @@ final class PimToAwsPsmEtlRegressionTest {
     assertTrue(
         values(principalRole, "inlinePolicies").stream()
             .anyMatch(p -> !values(reference(p, "document"), "statements").isEmpty()));
+    assertTrue(
+        resources.stream().noneMatch(r -> "Customer Application Role".equals(get(r, "name"))),
+        "Provider-neutral user roles must not become Lambda-trusted AWS IAM roles.");
+    assertTrue(
+        values(reference(root, "readiness"), "manualDecisions").stream()
+            .noneMatch(
+                decision ->
+                    get(decision, "question").toString().contains("Read Own Orders")
+                        && get(decision, "question").toString().contains("provider-independent")),
+        "Application authorization rules must not be reported as unresolved AWS IAM permissions.");
 
     EObject secret = first(resources, "SecretsManagerSecret", "Payments Api Key");
     assertTrue(Boolean.TRUE.equals(get(secret, "rotationRequired")));
@@ -679,6 +761,18 @@ final class PimToAwsPsmEtlRegressionTest {
             .anyMatch(r -> "AwsLambdaFunction".equals(r.eClass().getName())));
 
     EObject helperLambda = first(resources, "AwsLambdaFunction", "Helper Handler");
+    EObject helperDeadLetter = reference(helperLambda, "deadLetterConfig");
+    assertNotNull(
+        helperDeadLetter,
+        "A modeled Lambda dead-letter requirement must generate in the default non-production"
+            + " stage.");
+    assertNotNull(
+        reference(helperDeadLetter, "targetQueue"),
+        "An unbound Lambda dead-letter policy must generate a standard SQS target.");
+    assertFalse(
+        values(reference(root, "readiness"), "findings").stream()
+            .anyMatch(finding -> "LAMBDA_DLQ_TARGET_REQUIRED".equals(get(finding, "ruleId"))),
+        "Generated test-stage dead-letter targets must not remain unresolved.");
     EObject code = reference(helperLambda, "code");
     assertEquals("LambdaZipCodeConfig", code.eClass().getName());
     assertEquals("java21", get(code, "runtimeIdentifier"));
@@ -721,6 +815,18 @@ final class PimToAwsPsmEtlRegressionTest {
     assertEquals("CognitoAuthorizer", reference(cognitoRoute, "authorizer").eClass().getName());
     assertEquals(
         List.of("grants:read", "grants:write"), values(cognitoRoute, "authorizationScopes"));
+    EObject iamApi = first(resources, "HttpApi", "IAM Precedence API");
+    List<EObject> iamRoutes = values(iamApi, "routes");
+    EObject iamRoute = first(iamRoutes, "HttpApiRoute", "IAM Protected Route");
+    assertEquals("AWS_IAM", enumLabel(get(iamRoute, "authorizationType")));
+    assertTrue(
+        reference(iamRoute, "authorizer") == null,
+        "An explicit IAM scheme must take precedence over an attached identity provider.");
+    EObject publicIamRoute = first(iamRoutes, "HttpApiRoute", "Public Route Override");
+    assertEquals(
+        "NONE",
+        enumLabel(get(publicIamRoute, "authorizationType")),
+        "An explicit route-level public setting must override API-wide authentication.");
     assertDecisionRule(reference(root, "readiness"), "ROUTE_AUTHORIZATION_REFINEMENT_REQUIRED");
     EObject restJwt = first(resources, "RestApi", "REST JWT API");
     assertTrue(
@@ -743,7 +849,7 @@ final class PimToAwsPsmEtlRegressionTest {
 
     EObject ambiguousApi = first(resources, "HttpApi", "Ambiguous Auth API");
     EObject ambiguousRoute = values(ambiguousApi, "routes").get(0);
-    assertEquals("AWS_IAM", enumLabel(get(ambiguousRoute, "authorizationType")));
+    assertEquals("NONE", enumLabel(get(ambiguousRoute, "authorizationType")));
 
     EObject workflow = first(resources, "StepFunctionStateMachine", "Advanced Workflow");
     EObject asl = reference(workflow, "aslDocument");
@@ -787,6 +893,20 @@ final class PimToAwsPsmEtlRegressionTest {
     assertEquals(
         "OTHER_AWS_RESOURCE",
         enumLabel(get(reference(unresolvedSchedule, "target"), "targetKind")));
+
+    EObject eventRule = first(resources, "EventBridgeRule", "Bad Target Rule");
+    EObject apiDestinationTarget =
+        values(eventRule, "targets").stream()
+            .filter(target -> "Target HTTP Event Adapter".equals(get(target, "name")))
+            .findFirst()
+            .orElseThrow();
+    assertEquals("API_DESTINATION", enumLabel(get(apiDestinationTarget, "targetKind")));
+    assertEquals(
+        "EventBridgeApiDestination",
+        reference(apiDestinationTarget, "targetResource").eClass().getName());
+    assertNotNull(
+        reference(apiDestinationTarget, "role"),
+        "EventBridge API Destinations need a generated invoke role.");
 
     EObject externalAdapter = first(resources, "AwsNativeResource", "No Endpoint Adapter");
     assertEquals("Custom::ExternalAdapterMetadata", get(externalAdapter, "cloudFormationType"));
@@ -1101,6 +1221,20 @@ final class PimToAwsPsmEtlRegressionTest {
     set(permission, "effect", enumValue(metamodelResource, "PermissionEffect", "ALLOW"));
     add(principal, "permissions", permission);
 
+    EObject applicationRole = create(metamodelResource, "Principal");
+    base(applicationRole, "principal_customer", "Customer Application Role");
+    set(applicationRole, "principalKind", enumValue(metamodelResource, "PrincipalKind", "ROLE"));
+    EObject applicationPermission = create(metamodelResource, "Permission");
+    base(applicationPermission, "perm_read_own_orders", "Read Own Orders");
+    set(applicationPermission, "action", "read-own-orders");
+    set(applicationPermission, "resource", "orders owned by authenticated subject");
+    set(applicationPermission, "effect", enumValue(metamodelResource, "PermissionEffect", "ALLOW"));
+    set(
+        applicationPermission,
+        "actionKind",
+        enumValue(metamodelResource, "PermissionActionKind", "READ"));
+    add(applicationRole, "permissions", applicationPermission);
+
     EObject config = create(metamodelResource, "ConfigurationSet");
     base(config, "config_orders", "Orders Config");
     set(config, "scope", enumValue(metamodelResource, "ConfigScope", "APPLICATION"));
@@ -1151,6 +1285,13 @@ final class PimToAwsPsmEtlRegressionTest {
     set(publicRoute, "responseSchema", responseSchema);
     set(publicRoute, "functionIntegration", function);
     set(publicRoute, "timeout", timeout);
+    EObject conflictMapping = create(metamodelResource, "ErrorMapping");
+    base(conflictMapping, "error_order_conflict", "Order Conflict");
+    set(conflictMapping, "domainErrorCode", "ORDER_CONFLICT");
+    set(conflictMapping, "abstractStatusClass", "409_CONFLICT");
+    set(conflictMapping, "responseMessage", "The order conflicts with current state.");
+    set(conflictMapping, "errorSchema", errorSchema);
+    add(publicRoute, "errorMappings", conflictMapping);
     add(publicApi, "routes", publicRoute);
 
     EObject adminApi = create(metamodelResource, "Api");
@@ -1249,6 +1390,7 @@ final class PimToAwsPsmEtlRegressionTest {
     add(root, "externalEndpoints", endpoint);
     add(root, "identityProviders", idp);
     add(root, "principals", principal);
+    add(root, "principals", applicationRole);
     add(root, "configurations", config);
     add(root, "secrets", secret);
 
@@ -1527,6 +1669,10 @@ final class PimToAwsPsmEtlRegressionTest {
         function(metamodelResource, "fn_helper", "Helper Handler", "COMMAND_HANDLER");
     set(helperFunction, "sourceNameSuggestion", "io.modriss.Helper::handleRequest");
     set(helperFunction, "observability", observability);
+    EObject helperResilience = create(metamodelResource, "ResiliencePolicy");
+    base(helperResilience, "resilience_helper", "Helper Resilience");
+    set(helperResilience, "deadLetterRequired", true);
+    set(helperFunction, "resilience", helperResilience);
     EObject helperContract = create(metamodelResource, "FunctionContract");
     base(helperContract, "contract_helper", "Helper Contract");
     set(helperContract, "inputSchema", recursiveSchema);
@@ -1589,7 +1735,7 @@ final class PimToAwsPsmEtlRegressionTest {
         enumValue(metamodelResource, "IdentityKind", "USER_DIRECTORY"));
     EObject cognitoAuth = create(metamodelResource, "AuthPolicy");
     base(cognitoAuth, "auth_cognito_roles", "Cognito Role Auth");
-    set(cognitoAuth, "authScheme", "review-required-token");
+    set(cognitoAuth, "authScheme", "cognito");
     set(cognitoAuth, "scopesRequired", "grants:read, grants:write");
     set(cognitoAuth, "authenticationRequired", true);
     set(cognitoAuth, "identityProvider", cognitoIdentity);
@@ -1613,6 +1759,38 @@ final class PimToAwsPsmEtlRegressionTest {
     set(rolePolicy, "roleOrScopeRequired", "caseworker");
     set(cognitoRoute, "authorization", rolePolicy);
     add(cognitoApi, "routes", cognitoRoute);
+
+    EObject iamAuth = create(metamodelResource, "AuthPolicy");
+    base(iamAuth, "auth_iam_precedence", "IAM Precedence Auth");
+    set(iamAuth, "authScheme", "AWS_IAM");
+    set(iamAuth, "authenticationRequired", true);
+    set(iamAuth, "identityProvider", cognitoIdentity);
+    EObject iamApi = create(metamodelResource, "Api");
+    base(iamApi, "api_iam_precedence", "IAM Precedence API");
+    set(iamApi, "apiStyle", enumValue(metamodelResource, "ApiStyle", "RESOURCE_ORIENTED_HTTP"));
+    set(iamApi, "authRequired", true);
+    set(iamApi, "auth", iamAuth);
+    EObject iamRoute =
+        apiRoute(
+            metamodelResource,
+            "route_iam_precedence",
+            "IAM Protected Route",
+            "/iam",
+            "POST",
+            helperFunction);
+    set(iamRoute, "authRequired", true);
+    add(iamApi, "routes", iamRoute);
+    EObject publicIamRoute =
+        apiRoute(
+            metamodelResource,
+            "route_public_override",
+            "Public Route Override",
+            "/catalogue",
+            "GET",
+            helperFunction);
+    set(publicIamRoute, "authRequired", false);
+    set(publicIamRoute, "publicRoute", true);
+    add(iamApi, "routes", publicIamRoute);
 
     EObject restJwtAuth = create(metamodelResource, "AuthPolicy");
     base(restJwtAuth, "auth_rest_jwt", "REST JWT Auth");
@@ -1783,6 +1961,15 @@ final class PimToAwsPsmEtlRegressionTest {
 
     EObject adapter = create(metamodelResource, "ExternalAdapter");
     base(adapter, "adapter_no_endpoint", "No Endpoint Adapter");
+    EObject eventEndpoint = create(metamodelResource, "ExternalEndpoint");
+    base(eventEndpoint, "endpoint_event_target", "Event Target Endpoint");
+    set(eventEndpoint, "protocolFamily", "HTTPS");
+    set(eventEndpoint, "endpointUri", "https://events.example.org/v1/notify");
+    set(eventEndpoint, "credentialsRequired", false);
+    EObject eventAdapter = create(metamodelResource, "ExternalAdapter");
+    base(eventAdapter, "adapter_event_target", "HTTP Event Adapter");
+    set(eventAdapter, "endpoint", eventEndpoint);
+    add(badTargetRule, "targets", eventAdapter);
     EObject unresolvedSubscription = create(metamodelResource, "Subscription");
     base(unresolvedSubscription, "sub_unresolved_http", "Unresolved HTTP Subscription");
     set(unresolvedSubscription, "target", adapter);
@@ -1816,6 +2003,7 @@ final class PimToAwsPsmEtlRegressionTest {
     add(service, "functions", noAccessFunction);
     add(service, "apis", jwtApi);
     add(service, "apis", cognitoApi);
+    add(service, "apis", iamApi);
     add(service, "apis", restJwtApi);
     add(service, "apis", ambiguousApi);
     add(service, "stores", noModelStore);
@@ -1828,6 +2016,7 @@ final class PimToAwsPsmEtlRegressionTest {
     add(service, "workflows", unsupportedWaitWorkflow);
     add(service, "schedules", unresolvedSchedule);
     add(service, "adapters", adapter);
+    add(service, "adapters", eventAdapter);
 
     EObject root = root(metamodelResource, "pim_helper_eol_coverage", "Helper Platform");
     set(root, "implementationProfile", profile);
@@ -1835,10 +2024,13 @@ final class PimToAwsPsmEtlRegressionTest {
     add(root, "schemas", recursiveSchema);
     add(root, "schemas", eventSchema);
     add(root, "eventTypes", eventType);
+    add(root, "externalEndpoints", eventEndpoint);
     add(root, "identityProviders", idp);
     add(root, "principals", invalidPrincipal);
     add(root, "configurations", config);
+    add(root, "policies", helperResilience);
     add(root, "policies", jwtAuth);
+    add(root, "policies", iamAuth);
     add(root, "policies", cognitoAuth);
     add(root, "policies", rolePolicy);
     add(root, "identityProviders", cognitoIdentity);

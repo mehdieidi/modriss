@@ -429,7 +429,7 @@ Define functions with contracts and triggers mapped to CIM commands and events.
 
 **Steps:**
 
-1. Define Trigger elements linking functions to events and schedules.
+1. Define Trigger elements linking functions or service-owned workflows to events and schedules.
 2. Set runtime language and package manager per function.
 
 **Entry criteria:**

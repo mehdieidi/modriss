@@ -24,7 +24,7 @@ A phase establishes a significant lifecycle period and normally ends at a major 
 | Networking                    | Activity  | Network & Identity            |         2 | defined sequence |
 | Identity                      | Activity  | Network & Identity            |         2 | defined sequence |
 | Storage & Messaging           | Activity  | Process                       |         0 | defined sequence |
-| Durable Storage               | Activity  | Storage & Messaging           |         2 | defined sequence |
+| Durable Storage               | Activity  | Storage & Messaging           |         3 | defined sequence |
 | Messaging                     | Activity  | Storage & Messaging           |         2 | defined sequence |
 | Event Fabric & Compute        | Activity  | Process                       |         0 | defined sequence |
 | Event Fabric                  | Activity  | Event Fabric & Compute        |         2 | defined sequence |
@@ -204,6 +204,7 @@ Provision DynamoDB tables and S3 buckets aligned to PIM data architecture.
 
 - **Provision DynamoDB tables** (TaskUse `psm.ph3.st1.t1`)
 - **Configure S3 buckets and policies** (TaskUse `psm.ph3.st1.t2`)
+- **Provision relational databases and schemas** (TaskUse `psm.ph3.st1.t3`)
 
 ### Messaging
 

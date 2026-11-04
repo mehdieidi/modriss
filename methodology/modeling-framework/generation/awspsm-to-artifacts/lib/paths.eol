@@ -1,5 +1,6 @@
 /** Provides reusable paths operations. */
 import "naming.eol";
+import "values.eol";
 
 /** Computes source extension. */
 operation Any sourceExtension() : String {
@@ -52,6 +53,62 @@ operation AWSPSMCOMPUTE!AwsLambdaFunction serviceApplicationHandlerPath(profileM
 /** Computes a stable exported use-case entry point for a generated Lambda. */
 operation AWSPSMCOMPUTE!AwsLambdaFunction serviceApplicationHandlerName() : String {
   return "Handle" + self.cfnLogicalId();
+}
+
+/** Returns the modeled successful API status for this Lambda, or the standard success default for non-API invocations. */
+operation AWSPSMCOMPUTE!AwsLambdaFunction apiSuccessStatusCode() : String {
+  var routes = AWSPSMAPI!ApiGatewayRoute.all.select(routeObj |
+    routeObj.integration.isDefined() and routeObj.integration.lambdaTarget = self);
+  for (routeObj in routes) {
+    var successModels = routeObj.responseModels.select(modelObj | modelObj.statusCode.matches("^2[0-9]{2}$"));
+    if (successModels.notEmpty()) return successModels.first().statusCode;
+  }
+  return "200";
+}
+
+/** Renders modeled API domain-error status mappings for this function as Go source. */
+operation AWSPSMCOMPUTE!AwsLambdaFunction apiErrorStatusMap() : String {
+  var routes = AWSPSMAPI!ApiGatewayRoute.all.select(routeObj |
+    routeObj.integration.isDefined() and routeObj.integration.lambdaTarget = self);
+  var seenCodes = Set{};
+  var entries = "";
+  for (routeObj in routes) {
+    for (modelObj in routeObj.responseModels.select(modelObj | modelObj.statusCode.matches("^[45][0-9]{2}$"))) {
+      for (codeText in modelObj.errorCodes) {
+        if (codeText.isDefined() and codeText.trim().length() > 0 and not seenCodes.includes(codeText)) {
+          if (entries.length() > 0) entries = entries + ", ";
+          entries = entries + "\"" + codeText.jsonEscape() + "\": " + modelObj.statusCode;
+          seenCodes.add(codeText);
+        }
+      }
+    }
+  }
+  // API handlers can enforce modeled application roles after the gateway has accepted the
+  // request. Keep that standard authorization failure in the HTTP contract even when a route
+  // does not repeat ACCESS_DENIED in every response model.
+  if (routes.notEmpty() and not seenCodes.includes("ACCESS_DENIED")) {
+    if (entries.length() > 0) entries = entries + ", ";
+    entries = entries + "\"ACCESS_DENIED\": 403";
+  }
+  return "map[string]int{" + entries + "}";
+}
+
+/** Renders one contract-compatible fallback error code for generated runtime errors by status. */
+operation AWSPSMCOMPUTE!AwsLambdaFunction apiErrorCodeByStatusMap() : String {
+  var routes = AWSPSMAPI!ApiGatewayRoute.all.select(routeObj |
+    routeObj.integration.isDefined() and routeObj.integration.lambdaTarget = self);
+  var emittedStatuses = Set{};
+  var entries = "";
+  for (routeObj in routes) {
+    for (modelObj in routeObj.responseModels.select(modelObj | modelObj.statusCode.matches("^[45][0-9]{2}$"))) {
+      if (modelObj.errorCodes.notEmpty() and not emittedStatuses.includes(modelObj.statusCode)) {
+        if (entries.length() > 0) entries = entries + ", ";
+        entries = entries + modelObj.statusCode + ": \"" + modelObj.errorCodes.first().jsonEscape() + "\"";
+        emittedStatuses.add(modelObj.statusCode);
+      }
+    }
+  }
+  return "map[int]string{" + entries + "}";
 }
 
 /** Computes service source directory for a Lambda function. */

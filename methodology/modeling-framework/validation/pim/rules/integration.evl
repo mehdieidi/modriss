@@ -145,8 +145,8 @@ context PIM!EventBus {
 
   /** Advises that event bus should have routing rules. */
   critique EventBusShouldHaveRoutingRules {
-    check : self.routingRules.notEmpty()
-    message : "[PIM-BUS-001] EventBus '" + self.displayName() + "' has no routingRules. Suggested fix: add EventRoutingRule entries or use a simpler channel type if no routing is needed."
+    check : self.routingRules.notEmpty() or self.consumers.notEmpty() or self.workflowConsumers.notEmpty()
+    message : "[PIM-BUS-001] EventBus '" + self.displayName() + "' has no consumers or routing rules. Suggested fix: connect modeled event consumers, add EventRoutingRule entries, or use a simpler channel type if no routing is needed."
   }
 }
 

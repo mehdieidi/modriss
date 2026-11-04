@@ -544,6 +544,69 @@ class ModelServiceXmiImportTest {
     assertEquals("climate-edited", summaries.get(0).name());
   }
 
+  /**
+   * Replacing a model from XMI must not merge stale, non-visual children from its prior revision.
+   */
+  @Test
+  void importedXmiUpdateDoesNotReintroducePreviousRevisionContainments() {
+    var services = PlatformTestFixtures.createServices(tempDir);
+    var owner =
+        PlatformTestFixtures.registerOwner(
+            services, "xmi-replacement@example.com", "Owner", "XMI Replacement");
+    byte[] originalBytes = PlatformTestFixtures.awsPsmXmi();
+    var originalImport =
+        services.models().importModel(ModelLevel.PSM, "original.psm.xmi", originalBytes, "xmi");
+    ModelRecord created =
+        services
+            .models()
+            .create(
+                owner.user(),
+                ModelLevel.PSM,
+                owner.project().id(),
+                "Imported PSM",
+                originalImport.modelJson());
+
+    String revisedXmi = new String(originalBytes, StandardCharsets.UTF_8);
+    String originalTagId = "32c317f9-bfb7-4795-a276-fe772c1f0e39";
+    assertTrue(revisedXmi.contains("id=\"" + originalTagId + "\""));
+    revisedXmi =
+        revisedXmi
+            .replace("id=\"" + originalTagId + "\"", "id=\"7a16d051-cc7f-46dc-80c9-86abac38a09c\"")
+            .replaceFirst(
+                "name=\"SubmitGrantApplication Handler\"",
+                "name=\"SubmitGrantApplication Handler Revised\"");
+    var revisedImport =
+        services
+            .models()
+            .importModel(
+                ModelLevel.PSM,
+                "revised.psm.xmi",
+                revisedXmi.getBytes(StandardCharsets.UTF_8),
+                "xmi");
+    ModelRecord updated =
+        services
+            .models()
+            .update(
+                owner.user(),
+                ModelLevel.PSM,
+                created.id(),
+                created.name(),
+                revisedImport.modelJson(),
+                created.revision());
+
+    JsonNode resource =
+        findJsonObjectById(updated.modelJson(), "4b085e12-363a-4503-99bc-82bc05510faf");
+    assertNotNull(resource);
+    assertEquals(
+        1,
+        java.util.stream.StreamSupport.stream(resource.path("tags").spliterator(), false)
+            .filter(tag -> "Service".equals(tag.path("key").asText()))
+            .count());
+    assertTrue(
+        java.util.stream.StreamSupport.stream(resource.path("tags").spliterator(), false)
+            .noneMatch(tag -> originalTagId.equals(tag.path("id").asText())));
+  }
+
   @Test
   void modelEditsRegenerateTheAuthoritativeSourceXmiEvenWhenLayoutExists() {
     TestPlatformStore store = new TestPlatformStore(tempDir);
@@ -1443,5 +1506,31 @@ class ModelServiceXmiImportTest {
       </awspsm:AwsPsmModel>
     </xmi:XMI>
     """;
+  }
+
+  private JsonNode findJsonObjectById(JsonNode node, String id) {
+    if (node == null) {
+      return null;
+    }
+    if (node.isObject()) {
+      if (id.equals(node.path("id").asText())) {
+        return node;
+      }
+      var fields = node.properties().iterator();
+      while (fields.hasNext()) {
+        JsonNode found = findJsonObjectById(fields.next().getValue(), id);
+        if (found != null) {
+          return found;
+        }
+      }
+    } else if (node.isArray()) {
+      for (JsonNode item : node) {
+        JsonNode found = findJsonObjectById(item, id);
+        if (found != null) {
+          return found;
+        }
+      }
+    }
+    return null;
   }
 }

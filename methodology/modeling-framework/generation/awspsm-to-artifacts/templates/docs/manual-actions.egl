@@ -10,5 +10,18 @@ No manual actions were recorded by the generator.
 - Blocking: `[%= issueObj.get("blocking") %]`
 - Source: `[%= issueObj.get("sourceType") %]` / `[%= issueObj.get("sourceStableId") %]`
 - Message: [%= issueObj.get("message") %]
+[% if (issueObj.get("decisionState") <> null) { %]
+- Decision state: `[%= issueObj.get("decisionState") %]`
+- Decision: [%= issueObj.get("decision") %]
+- Decision owner: [%= issueObj.get("decisionOwner") %]
+- Recorded at: [%= issueObj.get("decisionRecordedAt") %]
+[% } %]
 
+[% } %]
+
+## Decision Ledger
+
+[% for (decisionRow in emitCtx.get("manualDecisionRows")) { %]
+- `[%= decisionRow.get("state") %]` `[%= decisionRow.get("code") %]` — [%= decisionRow.get("question") %]
+  [% if (decisionRow.get("decision") <> "") { %]Decision: [%= decisionRow.get("decision") %]; owner: [%= decisionRow.get("owner") %]; recorded: [%= decisionRow.get("recordedAt") %].[% } %]
 [% } %]

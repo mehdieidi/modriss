@@ -9,7 +9,9 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 import javax.xml.parsers.DocumentBuilderFactory;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -104,6 +106,32 @@ class DeterministicGeneratedIdentityIntegrationTest {
         idGeneratedFrom(renamedTarget, "ad08ea87-6316-4f38-b411-5c97247d92e1"));
   }
 
+  @Test
+  void renamingPimDomainDoesNotRenameUnchangedAwsResources() throws Exception {
+    Path source = REPOSITORY_ROOT.resolve("methodology/modeling-framework/samples/pim.xmi");
+    Path renamedSource = tempDir.resolve("renamed-domain.pim.xmi");
+    Path originalTarget = tempDir.resolve("original-domain.awspsm.xmi");
+    Path renamedTarget = tempDir.resolve("renamed-domain.awspsm.xmi");
+    Files.writeString(
+        renamedSource,
+        Files.readString(source)
+            .replace(
+                "domainName=\"Climate Relief Grants and Reimbursements\"",
+                "domainName=\"Renamed Climate Relief Domain\""));
+
+    execute(PimToAwsPsmDefaults.request(REPOSITORY_ROOT, source, originalTarget, true, true));
+    execute(PimToAwsPsmDefaults.request(REPOSITORY_ROOT, renamedSource, renamedTarget, true, true));
+
+    Map<String, String> originalNames = physicalNames(originalTarget);
+    Map<String, String> renamedNames = physicalNames(renamedTarget);
+    assertFalse(originalNames.isEmpty(), "Expected generated AWS resource names.");
+    assertEquals(
+        originalNames,
+        renamedNames,
+        "Changing the PIM domain label must not rename resources whose source elements are"
+            + " unchanged.");
+  }
+
   private void execute(EtlExecutionRequest request) throws Exception {
     EtlExecutionReport report = new EpsilonEtlExecutor().execute(request);
     assertEquals(EtlExecutionStatus.SUCCEEDED, report.status(), report.diagnostics().toString());
@@ -160,6 +188,25 @@ class DeterministicGeneratedIdentityIntegrationTest {
     String id = idGeneratedFrom(root, sourceId);
     assertNotNull(id, "Expected a generated target traced to " + sourceId);
     return id;
+  }
+
+  private Map<String, String> physicalNames(Path model) throws Exception {
+    DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+    factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
+    Element root = factory.newDocumentBuilder().parse(model.toFile()).getDocumentElement();
+    Map<String, String> names = new TreeMap<>();
+    collectPhysicalNames(root, names);
+    return names;
+  }
+
+  private void collectPhysicalNames(Element element, Map<String, String> names) {
+    if (element.hasAttribute("logicalId") && element.hasAttribute("physicalName")) {
+      String physicalName = element.getAttribute("physicalName");
+      if (!physicalName.isBlank()) names.put(element.getAttribute("logicalId"), physicalName);
+    }
+    for (Node child = element.getFirstChild(); child != null; child = child.getNextSibling()) {
+      if (child instanceof Element nested) collectPhysicalNames(nested, names);
+    }
   }
 
   private String idGeneratedFrom(Element element, String sourceId) {

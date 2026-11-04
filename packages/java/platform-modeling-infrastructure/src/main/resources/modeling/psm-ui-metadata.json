@@ -1941,7 +1941,7 @@
         "lineFields": ["clusterIdentifier", "engine", "databaseName"]
       },
       "processPhaseId": "psm.ph3",
-      "processTaskIds": ["psm.ph3.st1.t1"],
+      "processTaskIds": ["psm.ph3.st1.t3"],
       "processStageId": "psm.ph3.st1"
     },
     {
@@ -1954,14 +1954,20 @@
         "tag": "RDS",
         "shape": "resource-card",
         "lineFields": ["instanceIdentifier", "instanceClass"]
-      }
+      },
+      "processPhaseId": "psm.ph3",
+      "processStageId": "psm.ph3.st1",
+      "processTaskIds": ["psm.ph3.st1.t3"]
     },
     {
       "type": "RdsDbSubnetGroup",
       "label": "Database subnet group",
       "icon": "database",
       "color": "#7C3AED",
-      "category": "Storage View"
+      "category": "Storage View",
+      "processPhaseId": "psm.ph3",
+      "processStageId": "psm.ph3.st1",
+      "processTaskIds": ["psm.ph3.st1.t3"]
     },
     {
       "type": "RdsTable",
@@ -1971,7 +1977,14 @@
       "icon": "database",
       "color": "#7C3AED",
       "category": "Storage View",
-      "notation": { "tag": "TABLE", "shape": "resource-card", "lineFields": ["tableName"] }
+      "notation": {
+        "tag": "TABLE",
+        "shape": "resource-card",
+        "lineFields": ["tableName"]
+      },
+      "processPhaseId": "psm.ph3",
+      "processStageId": "psm.ph3.st1",
+      "processTaskIds": ["psm.ph3.st1.t3"]
     },
     {
       "type": "RdsIndex",
@@ -1985,7 +1998,10 @@
         "tag": "INDEX",
         "shape": "resource-card",
         "lineFields": ["indexName", "unique", "columnNames"]
-      }
+      },
+      "processPhaseId": "psm.ph3",
+      "processStageId": "psm.ph3.st1",
+      "processTaskIds": ["psm.ph3.st1.t3"]
     },
     {
       "type": "RdsColumn",
@@ -1999,7 +2015,10 @@
         "tag": "COLUMN",
         "shape": "resource-card",
         "lineFields": ["columnName", "sqlType", "nullable", "primaryKey"]
-      }
+      },
+      "processPhaseId": "psm.ph3",
+      "processStageId": "psm.ph3.st1",
+      "processTaskIds": ["psm.ph3.st1.t3"]
     },
     {
       "type": "DynamoDbTable",
@@ -2339,8 +2358,8 @@
         "detailFields": ["responsibility", "ownerTeam", "businessCapabilityRef", "boundaryType"]
       },
       "processPhaseId": "psm.ph1",
-      "processTaskIds": ["psm.ph1.st1.t1"],
-      "processStageId": "psm.ph1.st1"
+      "processTaskIds": ["psm.ph1.st0.t1"],
+      "processStageId": "psm.ph1.st0"
     },
     {
       "type": "AwsResource",

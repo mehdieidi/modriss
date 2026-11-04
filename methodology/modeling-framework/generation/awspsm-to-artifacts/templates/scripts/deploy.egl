@@ -18,7 +18,7 @@ case "$stage_text" in
   [%= stageObj.stageSlug() %])
 [% for (stackObj in awsRoot.stacks.select(stackObj | stageObj.deploysStacks.includes(stackObj) or stageObj.deploysStacks.isEmpty()).orderedDeploymentStacks()) { %]
     sam deploy \
-      --config-file "../../infrastructure/samconfig.toml" \
+      --config-file "[%= stackObj.samConfigPathFromTemplate() %]" \
       --template-file ".aws-sam/[%= stackObj.stackSlug() %]/template.yaml" \
       --stack-name "[%= stageObj.stackDeployName(stackObj) %]" \
       --region "[%= stageObj.region.orElseText(awsRoot.defaultRegion.orElseText("us-east-1")) %]" \

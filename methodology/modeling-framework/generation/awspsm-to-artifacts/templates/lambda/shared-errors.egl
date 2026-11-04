@@ -1,6 +1,7 @@
 [% /* Generates the shared errors artifact. */ %]package runtime
 
 import "encoding/json"
+import "errors"
 
 type GeneratedHandlerError struct {
 	Code    string
@@ -29,26 +30,24 @@ func JSONBody(value any) string {
 	return string(bodyBytes)
 }
 
-func MapKnownError(err error, correlationID string) GeneratedErrorResponse {
+func MapKnownError(err error, correlationID string, modeledStatusByCode map[string]int, modeledCodeByStatus map[int]string) GeneratedErrorResponse {
 	statusCode := 500
 	codeText := "INTERNAL_ERROR"
 	messageText := "Internal server error"
-	if generatedErr, ok := err.(GeneratedHandlerError); ok {
-		codeText = generatedErr.Code
-		messageText = generatedErr.Message
-		switch generatedErr.Code {
-		case "VALIDATION_ERROR":
-			statusCode = 400
-		case "NOT_FOUND":
-			statusCode = 404
-		case "CONFLICT":
-			statusCode = 409
-		case "UNAUTHORIZED":
-			statusCode = 401
-		case "FORBIDDEN":
-			statusCode = 403
-		case "UPSTREAM_ERROR":
-			statusCode = 503
+	var generatedErr GeneratedHandlerError
+	if errors.As(err, &generatedErr) {
+		if modeledStatus, ok := modeledStatusByCode[generatedErr.Code]; ok {
+			statusCode = modeledStatus
+			codeText = generatedErr.Code
+			messageText = generatedErr.Message
+		} else if generatedErr.Code == "VALIDATION_ERROR" {
+			// The generic request decoder can identify malformed input before application code
+			// selects a domain error. Use the API's modeled 400 contract, when one exists.
+			if modeledCode, ok := modeledCodeByStatus[400]; ok {
+				statusCode = 400
+				codeText = modeledCode
+				messageText = generatedErr.Message
+			}
 		}
 	}
 	return GeneratedErrorResponse{
@@ -64,5 +63,6 @@ func MapKnownError(err error, correlationID string) GeneratedErrorResponse {
 // IsApiGatewayEvent identifies the HTTP proxy envelope so business failures can
 // be returned as HTTP responses while workflow failures remain Lambda errors.
 func IsApiGatewayEvent(event map[string]any) bool {
-	return event["requestContext"] != nil
+	_, ok := event["requestContext"].(map[string]any)
+	return ok
 }

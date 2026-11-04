@@ -63,7 +63,7 @@ context PIM!ApiRoute {
 
   /** Checks that protected route has authorization. */
   constraint ProtectedRouteHasAuthorization {
-    guard : self.authRequired.isTrue() or self.api.authRequired.isTrue()
+    guard : self.authRequired.isTrue() or (self.api.authRequired.isTrue() and not self.publicRoute.isTrue())
     check : self.authorization.isDefined()
     message : "[PIM-ROUTE-004] Protected route '" + self.method.asString() + " " + self.pathTemplate + "' has no AuthorizationPolicy. Fix: attach authorization with ruleExpression, role/scope, allowed principals or permissions."
   }

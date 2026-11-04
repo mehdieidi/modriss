@@ -132,6 +132,53 @@ class TransformationServiceTest {
             .isEmpty());
   }
 
+  @Test
+  void synchronizesChangedGeneratedXmiWhenSourceAndSemanticJsonAreUnchanged() throws Exception {
+    PlatformTestFixtures.ServiceStack services =
+        PlatformTestFixtures.createServicesWithTransformations(tempDir);
+    PlatformTestFixtures.AuthenticatedContext context =
+        PlatformTestFixtures.registerOwner(services, "xmi-refresh@example.com", "Xmi", "Refresh");
+    ModelRecord cim = createClimateCim(services, context, "xmi-refresh-cim");
+    ModelRecord pim = services.transformations().cimToPim(context.user(), cim.id());
+    TransformationService.consumeLastSynchronization();
+    ModelRecord psm = services.transformations().pimToPsm(context.user(), pim.id());
+    TransformationService.consumeLastSynchronization();
+
+    ModelBaselineRepository baselines = new ModelBaselineRepository(services.store());
+    GeneratedBaseline before =
+        baselines
+            .get(context.project().id(), TransformationDirection.PIM_TO_AWS_PSM, pim.id())
+            .orElseThrow();
+    byte[] workingXmi = services.models().sourceXmi(psm).orElseThrow();
+    String changedXmi = new String(workingXmi, StandardCharsets.UTF_8);
+    int declarationEnd = changedXmi.indexOf("?>");
+    changedXmi =
+        declarationEnd >= 0
+            ? changedXmi.substring(0, declarationEnd + 2)
+                + "\n<!-- canonical generated XMI refresh -->\n"
+                + changedXmi.substring(declarationEnd + 2)
+            : "<!-- canonical generated XMI refresh -->\n" + changedXmi;
+
+    TransformationSynchronizationCoordinator coordinator =
+        new TransformationSynchronizationCoordinator(services.store(), services.models());
+    var synchronizedResult =
+        coordinator.synchronize(
+            context.user(),
+            pim,
+            ModelLevel.PSM,
+            psm.name(),
+            (ObjectNode) psm.modelJson().deepCopy(),
+            changedXmi.getBytes(StandardCharsets.UTF_8),
+            TransformationDirection.PIM_TO_AWS_PSM);
+
+    assertEquals(SynchronizationStatus.APPLIED, synchronizedResult.synchronization().status());
+    GeneratedBaseline after =
+        baselines
+            .get(context.project().id(), TransformationDirection.PIM_TO_AWS_PSM, pim.id())
+            .orElseThrow();
+    assertEquals(before.baselineVersion() + 1, after.baselineVersion());
+  }
+
   /** Catalog F-07: concurrent requests for one source/direction serialize to one target state. */
   @Test
   void concurrentTransformationsForOneRelationshipAreSerialized() throws Exception {

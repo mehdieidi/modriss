@@ -1586,7 +1586,7 @@
           <ownedTaskDefinitionParameter xmi:type="spem:Default_TaskDefinitionParameter" xmi:id="id_task.pim.ph3.st1.t2.in.pim-artifact.compute-catalog" direction="in" optionality="mandatory" parameterType="id_pim-artifact.compute-catalog"/>
           <ownedTaskDefinitionParameter xmi:type="spem:Default_TaskDefinitionParameter" xmi:id="id_task.pim.ph3.st1.t2.in.pim-artifact.contract-catalog" direction="in" optionality="mandatory" parameterType="id_pim-artifact.contract-catalog"/>
           <ownedTaskDefinitionParameter xmi:type="spem:Default_TaskDefinitionParameter" xmi:id="id_task.pim.ph3.st1.t2.out.pim-artifact.compute-catalog" direction="out" optionality="mandatory" parameterType="id_pim-artifact.compute-catalog"/>
-          <step xmi:type="spem:Step" xmi:id="id_task.pim.ph3.st1.t2.step.1" sectionName="Step 1" sectionDescription="Define Trigger elements linking functions to events and schedules."/>
+          <step xmi:type="spem:Step" xmi:id="id_task.pim.ph3.st1.t2.step.1" sectionName="Step 1" sectionDescription="Define Trigger elements linking functions or service-owned workflows to events and schedules."/>
           <step xmi:type="spem:Step" xmi:id="id_task.pim.ph3.st1.t2.step.2" sectionName="Step 2" sectionDescription="Set runtime language and package manager per function."/>
           <modriss:metamodelBinding metamodel="pim" classifier="Trigger" kind="EClass"/>
           <modriss:metamodelBinding metamodel="pim" classifier="RuntimeLanguage" kind="EEnum"/>
@@ -1961,8 +1961,10 @@
           <modriss:defaultPerformer roleDefinitionRef="id_role.cloud-platform-engineer" modriss:kind="primary"/>
           <ownedTaskDefinitionParameter xmi:type="spem:Default_TaskDefinitionParameter" xmi:id="id_task.psm.ph1.st0.t1.out.psm-artifact.increment-plan" direction="out" optionality="mandatory" parameterType="id_psm-artifact.increment-plan"/>
           <step xmi:type="spem:Step" xmi:id="id_task.psm.ph1.st0.t1.step.1" sectionName="Step 1" sectionDescription="Select one PIM service slice or deployment unit to materialize on AWS."/>
-          <step xmi:type="spem:Step" xmi:id="id_task.psm.ph1.st0.t1.step.2" sectionName="Step 2" sectionDescription="Record AWS account, region, stage, networking, IAM, and deployment assumptions."/>
-          <step xmi:type="spem:Step" xmi:id="id_task.psm.ph1.st0.t1.step.3" sectionName="Step 3" sectionDescription="Define the PSM EVL gate, artifact-generation readiness criteria, and review participants."/>
+          <step xmi:type="spem:Step" xmi:id="id_task.psm.ph1.st0.t1.step.2" sectionName="Step 2" sectionDescription="Preserve each service&apos;s business ownership group independently of CloudFormation stack containment."/>
+          <step xmi:type="spem:Step" xmi:id="id_task.psm.ph1.st0.t1.step.3" sectionName="Step 3" sectionDescription="Record AWS account, region, stage, networking, IAM, and deployment assumptions."/>
+          <step xmi:type="spem:Step" xmi:id="id_task.psm.ph1.st0.t1.step.4" sectionName="Step 4" sectionDescription="Define the PSM EVL gate, artifact-generation readiness criteria, and review participants."/>
+          <modriss:metamodelBinding metamodel="psm" classifier="AwsService" kind="EClass"/>
           <modriss:sourceProcess>psm</modriss:sourceProcess>
         </ownedMethodContentMember>
         <ownedMethodContentMember xmi:type="spem:TaskDefinition" xmi:id="id_task.psm.ph1.st1.t1" name="Create PSM model root" modriss:sourceId="task.psm.ph1.st1.t1">
@@ -2255,6 +2257,26 @@
           <modriss:metamodelBinding metamodel="psm" classifier="S3ReplicationDestination" kind="EClass"/>
           <modriss:metamodelBinding metamodel="psm" classifier="S3BucketPolicy" kind="EClass"/>
           <modriss:metamodelBinding metamodel="psm" classifier="S3NotificationDestination" kind="EClass"/>
+          <modriss:sourceProcess>psm</modriss:sourceProcess>
+        </ownedMethodContentMember>
+        <ownedMethodContentMember xmi:type="spem:TaskDefinition" xmi:id="id_task.psm.ph3.st1.t3" name="Provision relational databases and schemas" modriss:sourceId="task.psm.ph3.st1.t3">
+          <modriss:purpose>Provision relational databases and schemas</modriss:purpose>
+          <modriss:defaultPerformer roleDefinitionRef="id_role.cloud-platform-engineer" modriss:kind="primary"/>
+          <ownedTaskDefinitionParameter xmi:type="spem:Default_TaskDefinitionParameter" xmi:id="id_task.psm.ph3.st1.t3.in.psm-artifact.storage-layer" direction="in" optionality="mandatory" parameterType="id_psm-artifact.storage-layer"/>
+          <ownedTaskDefinitionParameter xmi:type="spem:Default_TaskDefinitionParameter" xmi:id="id_task.psm.ph3.st1.t3.in.psm-artifact.network-identity" direction="in" optionality="mandatory" parameterType="id_psm-artifact.network-identity"/>
+          <ownedTaskDefinitionParameter xmi:type="spem:Default_TaskDefinitionParameter" xmi:id="id_task.psm.ph3.st1.t3.in.psm-artifact.security-baseline" direction="in" optionality="mandatory" parameterType="id_psm-artifact.security-baseline"/>
+          <ownedTaskDefinitionParameter xmi:type="spem:Default_TaskDefinitionParameter" xmi:id="id_task.psm.ph3.st1.t3.in.psm-artifact.deployment-strategy" direction="in" optionality="mandatory" parameterType="id_psm-artifact.deployment-strategy"/>
+          <ownedTaskDefinitionParameter xmi:type="spem:Default_TaskDefinitionParameter" xmi:id="id_task.psm.ph3.st1.t3.in.psm-artifact.stack-scaffold" direction="in" optionality="mandatory" parameterType="id_psm-artifact.stack-scaffold"/>
+          <ownedTaskDefinitionParameter xmi:type="spem:Default_TaskDefinitionParameter" xmi:id="id_task.psm.ph3.st1.t3.out.psm-artifact.storage-layer" direction="out" optionality="mandatory" parameterType="id_psm-artifact.storage-layer"/>
+          <step xmi:type="spem:Step" xmi:id="id_task.psm.ph3.st1.t3.step.1" sectionName="Step 1" sectionDescription="Create RdsDbCluster and RdsDbInstance resources for relational PIM DataStore definitions."/>
+          <step xmi:type="spem:Step" xmi:id="id_task.psm.ph3.st1.t3.step.2" sectionName="Step 2" sectionDescription="Define RdsTable, RdsColumn, and RdsIndex schema elements from PIM data models and access patterns."/>
+          <step xmi:type="spem:Step" xmi:id="id_task.psm.ph3.st1.t3.step.3" sectionName="Step 3" sectionDescription="Configure credentials, encryption, networking, backups, and database availability for the deployment slice."/>
+          <modriss:metamodelBinding metamodel="psm" classifier="RdsDbCluster" kind="EClass"/>
+          <modriss:metamodelBinding metamodel="psm" classifier="RdsDbInstance" kind="EClass"/>
+          <modriss:metamodelBinding metamodel="psm" classifier="RdsDbSubnetGroup" kind="EClass"/>
+          <modriss:metamodelBinding metamodel="psm" classifier="RdsTable" kind="EClass"/>
+          <modriss:metamodelBinding metamodel="psm" classifier="RdsIndex" kind="EClass"/>
+          <modriss:metamodelBinding metamodel="psm" classifier="RdsColumn" kind="EClass"/>
           <modriss:sourceProcess>psm</modriss:sourceProcess>
         </ownedMethodContentMember>
         <ownedMethodContentMember xmi:type="spem:TaskDefinition" xmi:id="id_task.psm.ph3.st2.t1" name="Create SQS queues" modriss:sourceId="task.psm.ph3.st2.t1">
@@ -5747,6 +5769,12 @@
           <nestedBreakdownElement xmi:type="spem:WorkProductUse" xmi:id="id_wpu.psm.ph3.st1.t2.input.psm-artifact.deployment-strategy" name="wpu.psm.ph3.st1.t2.input.psm-artifact.deployment-strategy" workProduct="id_psm-artifact.deployment-strategy" modriss:activityRef="id_psm.ph3.st1" modriss:usage="input"/>
           <nestedBreakdownElement xmi:type="spem:WorkProductUse" xmi:id="id_wpu.psm.ph3.st1.t2.input.psm-artifact.stack-scaffold" name="wpu.psm.ph3.st1.t2.input.psm-artifact.stack-scaffold" workProduct="id_psm-artifact.stack-scaffold" modriss:activityRef="id_psm.ph3.st1" modriss:usage="input"/>
           <nestedBreakdownElement xmi:type="spem:WorkProductUse" xmi:id="id_wpu.psm.ph3.st1.t2.output.psm-artifact.storage-layer" name="wpu.psm.ph3.st1.t2.output.psm-artifact.storage-layer" workProduct="id_psm-artifact.storage-layer" modriss:activityRef="id_psm.ph3.st1" modriss:usage="output"/>
+          <nestedBreakdownElement xmi:type="spem:WorkProductUse" xmi:id="id_wpu.psm.ph3.st1.t3.input.psm-artifact.storage-layer" name="wpu.psm.ph3.st1.t3.input.psm-artifact.storage-layer" workProduct="id_psm-artifact.storage-layer" modriss:activityRef="id_psm.ph3.st1" modriss:usage="input"/>
+          <nestedBreakdownElement xmi:type="spem:WorkProductUse" xmi:id="id_wpu.psm.ph3.st1.t3.input.psm-artifact.network-identity" name="wpu.psm.ph3.st1.t3.input.psm-artifact.network-identity" workProduct="id_psm-artifact.network-identity" modriss:activityRef="id_psm.ph3.st1" modriss:usage="input"/>
+          <nestedBreakdownElement xmi:type="spem:WorkProductUse" xmi:id="id_wpu.psm.ph3.st1.t3.input.psm-artifact.security-baseline" name="wpu.psm.ph3.st1.t3.input.psm-artifact.security-baseline" workProduct="id_psm-artifact.security-baseline" modriss:activityRef="id_psm.ph3.st1" modriss:usage="input"/>
+          <nestedBreakdownElement xmi:type="spem:WorkProductUse" xmi:id="id_wpu.psm.ph3.st1.t3.input.psm-artifact.deployment-strategy" name="wpu.psm.ph3.st1.t3.input.psm-artifact.deployment-strategy" workProduct="id_psm-artifact.deployment-strategy" modriss:activityRef="id_psm.ph3.st1" modriss:usage="input"/>
+          <nestedBreakdownElement xmi:type="spem:WorkProductUse" xmi:id="id_wpu.psm.ph3.st1.t3.input.psm-artifact.stack-scaffold" name="wpu.psm.ph3.st1.t3.input.psm-artifact.stack-scaffold" workProduct="id_psm-artifact.stack-scaffold" modriss:activityRef="id_psm.ph3.st1" modriss:usage="input"/>
+          <nestedBreakdownElement xmi:type="spem:WorkProductUse" xmi:id="id_wpu.psm.ph3.st1.t3.output.psm-artifact.storage-layer" name="wpu.psm.ph3.st1.t3.output.psm-artifact.storage-layer" workProduct="id_psm-artifact.storage-layer" modriss:activityRef="id_psm.ph3.st1" modriss:usage="output"/>
           <nestedBreakdownElement xmi:type="spem:WorkProductUse" xmi:id="id_wpu.psm.ph3.st2.t1.input.psm-artifact.storage-layer" name="wpu.psm.ph3.st2.t1.input.psm-artifact.storage-layer" workProduct="id_psm-artifact.storage-layer" modriss:activityRef="id_psm.ph3.st2" modriss:usage="input"/>
           <nestedBreakdownElement xmi:type="spem:WorkProductUse" xmi:id="id_wpu.psm.ph3.st2.t1.input.psm-artifact.network-identity" name="wpu.psm.ph3.st2.t1.input.psm-artifact.network-identity" workProduct="id_psm-artifact.network-identity" modriss:activityRef="id_psm.ph3.st2" modriss:usage="input"/>
           <nestedBreakdownElement xmi:type="spem:WorkProductUse" xmi:id="id_wpu.psm.ph3.st2.t1.input.psm-artifact.security-baseline" name="wpu.psm.ph3.st2.t1.input.psm-artifact.security-baseline" workProduct="id_psm-artifact.security-baseline" modriss:activityRef="id_psm.ph3.st2" modriss:usage="input"/>
@@ -5948,6 +5976,15 @@
                 <ownedProcessParameter xmi:type="spem:ProcessParameter" xmi:id="id_pp.psm.ph3.st1.t2.out.wpu.psm.ph3.st1.t2.output.psm-artifact.storage-layer" direction="out" parameterType="id_wpu.psm.ph3.st1.t2.output.psm-artifact.storage-layer" modriss:optional="false"/>
               </nestedBreakdownElement>
               <nestedBreakdownElement xmi:type="spem:ProcessPerformer" xmi:id="id_ppf.psm.ph3.st1.t2.ru.psm.ph3.st1.cloud-platform-engineer" linkedTaskUse="id_psm.ph3.st1.t2" linkedRoleUse="id_ru.psm.ph3.st1.cloud-platform-engineer" modriss:kind="primary"/>
+              <nestedBreakdownElement xmi:type="spem:TaskUse" xmi:id="id_psm.ph3.st1.t3" name="psm.ph3.st1.t3" task="id_task.psm.ph3.st1.t3" modriss:sourceId="psm.ph3.st1.t3">
+                <ownedProcessParameter xmi:type="spem:ProcessParameter" xmi:id="id_pp.psm.ph3.st1.t3.in.wpu.psm.ph3.st1.t3.input.psm-artifact.storage-layer" direction="in" parameterType="id_wpu.psm.ph3.st1.t3.input.psm-artifact.storage-layer" modriss:optional="false"/>
+                <ownedProcessParameter xmi:type="spem:ProcessParameter" xmi:id="id_pp.psm.ph3.st1.t3.in.wpu.psm.ph3.st1.t3.input.psm-artifact.network-identity" direction="in" parameterType="id_wpu.psm.ph3.st1.t3.input.psm-artifact.network-identity" modriss:optional="false"/>
+                <ownedProcessParameter xmi:type="spem:ProcessParameter" xmi:id="id_pp.psm.ph3.st1.t3.in.wpu.psm.ph3.st1.t3.input.psm-artifact.security-baseline" direction="in" parameterType="id_wpu.psm.ph3.st1.t3.input.psm-artifact.security-baseline" modriss:optional="false"/>
+                <ownedProcessParameter xmi:type="spem:ProcessParameter" xmi:id="id_pp.psm.ph3.st1.t3.in.wpu.psm.ph3.st1.t3.input.psm-artifact.deployment-strategy" direction="in" parameterType="id_wpu.psm.ph3.st1.t3.input.psm-artifact.deployment-strategy" modriss:optional="false"/>
+                <ownedProcessParameter xmi:type="spem:ProcessParameter" xmi:id="id_pp.psm.ph3.st1.t3.in.wpu.psm.ph3.st1.t3.input.psm-artifact.stack-scaffold" direction="in" parameterType="id_wpu.psm.ph3.st1.t3.input.psm-artifact.stack-scaffold" modriss:optional="false"/>
+                <ownedProcessParameter xmi:type="spem:ProcessParameter" xmi:id="id_pp.psm.ph3.st1.t3.out.wpu.psm.ph3.st1.t3.output.psm-artifact.storage-layer" direction="out" parameterType="id_wpu.psm.ph3.st1.t3.output.psm-artifact.storage-layer" modriss:optional="false"/>
+              </nestedBreakdownElement>
+              <nestedBreakdownElement xmi:type="spem:ProcessPerformer" xmi:id="id_ppf.psm.ph3.st1.t3.ru.psm.ph3.st1.cloud-platform-engineer" linkedTaskUse="id_psm.ph3.st1.t3" linkedRoleUse="id_ru.psm.ph3.st1.cloud-platform-engineer" modriss:kind="primary"/>
             </nestedBreakdownElement>
             <nestedBreakdownElement xmi:type="spem:Activity" xmi:id="id_psm.ph3.st2" name="Messaging" modriss:kind="MODRISS::SubStage" modriss:sourceId="psm.ph3.st2">
               <nestedBreakdownElement xmi:type="spem:TaskUse" xmi:id="id_psm.ph3.st2.t1" name="psm.ph3.st2.t1" task="id_task.psm.ph3.st2.t1" modriss:sourceId="psm.ph3.st2.t1">
@@ -6127,6 +6164,7 @@
           <nestedBreakdownElement xmi:type="spem:WorkSequence" xmi:id="id_ws.psm.ph2.st2.t1.psm.ph2.st2.t2" predecessor="id_psm.ph2.st2.t1" successor="id_psm.ph2.st2.t2" linkKind="finishToStart" modriss:relation="task-order"/>
           <nestedBreakdownElement xmi:type="spem:WorkSequence" xmi:id="id_ws.psm.ph3.st1.psm.ph3.st2" predecessor="id_psm.ph3.st1" successor="id_psm.ph3.st2" linkKind="finishToStart" modriss:relation="activity-order"/>
           <nestedBreakdownElement xmi:type="spem:WorkSequence" xmi:id="id_ws.psm.ph3.st1.t1.psm.ph3.st1.t2" predecessor="id_psm.ph3.st1.t1" successor="id_psm.ph3.st1.t2" linkKind="finishToStart" modriss:relation="task-order"/>
+          <nestedBreakdownElement xmi:type="spem:WorkSequence" xmi:id="id_ws.psm.ph3.st1.t2.psm.ph3.st1.t3" predecessor="id_psm.ph3.st1.t2" successor="id_psm.ph3.st1.t3" linkKind="finishToStart" modriss:relation="task-order"/>
           <nestedBreakdownElement xmi:type="spem:WorkSequence" xmi:id="id_ws.psm.ph3.st2.t1.psm.ph3.st2.t2" predecessor="id_psm.ph3.st2.t1" successor="id_psm.ph3.st2.t2" linkKind="finishToStart" modriss:relation="task-order"/>
           <nestedBreakdownElement xmi:type="spem:WorkSequence" xmi:id="id_ws.psm.ph4.st1.psm.ph4.st2" predecessor="id_psm.ph4.st1" successor="id_psm.ph4.st2" linkKind="finishToStart" modriss:relation="activity-order"/>
           <nestedBreakdownElement xmi:type="spem:WorkSequence" xmi:id="id_ws.psm.ph4.st1.t1.psm.ph4.st1.t2" predecessor="id_psm.ph4.st1.t1" successor="id_psm.ph4.st1.t2" linkKind="finishToStart" modriss:relation="task-order"/>

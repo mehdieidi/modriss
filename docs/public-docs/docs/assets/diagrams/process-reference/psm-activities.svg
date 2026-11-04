@@ -24,7 +24,7 @@
 <text x="440" y="212" class="detail" text-anchor="start"><tspan x="440" dy="0">→ Network and identity resources</tspan></text>
 <g data-node="Storage &amp; Messaging" data-x="64" data-y="264" data-width="872" data-height="96"><rect x="64" y="264" width="872" height="96" rx="6" fill="#fcfbf7" stroke="#102c3a" stroke-width="1.25" /></g>
 <text x="80" y="294" class="label" text-anchor="start"><tspan x="80" dy="0">Storage &amp; Messaging</tspan></text>
-<text x="80" y="344" class="code" text-anchor="start"><tspan x="80" dy="0">psm.ph3 · 4 tasks</tspan></text>
+<text x="80" y="344" class="code" text-anchor="start"><tspan x="80" dy="0">psm.ph3 · 5 tasks</tspan></text>
 <path d="M420 276V348" stroke="#ccd2cf" />
 <text x="440" y="292" class="detail" text-anchor="start"><tspan x="440" dy="0">DynamoDB, S3, SQS and SNS</tspan></text>
 <text x="440" y="332" class="detail" text-anchor="start"><tspan x="440" dy="0">→ Durable storage and messaging resources</tspan></text>

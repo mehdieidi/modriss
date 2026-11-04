@@ -265,6 +265,12 @@ final class ModelImportExportService {
         || !hasGraphProjection(current)) {
       return currentModel;
     }
+    if (!text(current, "_sourceXmiBase64", "").isBlank()) {
+      // An XMI import is a complete semantic snapshot. Its graph is freshly projected from that
+      // snapshot and may omit non-visual containments such as tags; merging those containments
+      // from the previous revision can reintroduce stale children or duplicate natural keys.
+      return currentModel;
+    }
     Map<String, EClass> classes = eClassesByName(level);
     Set<String> previousGraphIds = graphProjectionIds(previous);
     if (previousGraphIds.isEmpty()) {

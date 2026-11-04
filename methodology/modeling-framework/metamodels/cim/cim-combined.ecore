@@ -103,6 +103,8 @@
           eType="#/1/BusinessEvent" eOpposite="#/1/BusinessEvent/expectedByCommands"/>
       <eStructuralFeatures xsi:type="ecore:EReference" name="rejectionEvents" upperBound="-1"
           eType="#/1/BusinessEvent" eOpposite="#/1/BusinessEvent/rejectedByCommands"/>
+      <eStructuralFeatures xsi:type="ecore:EReference" name="triggeredByEvents" upperBound="-1"
+          eType="#/1/BusinessEvent" eOpposite="#/1/BusinessEvent/consumedByCommands"/>
       <eStructuralFeatures xsi:type="ecore:EReference" name="possibleErrors" upperBound="-1"
           eType="#/1/BusinessError"/>
     </eClassifiers>
@@ -140,6 +142,8 @@
           upperBound="-1" eType="#/2/InformationItem"/>
       <eStructuralFeatures xsi:type="ecore:EReference" name="reads" upperBound="-1"
           eType="#/2/DomainEntity"/>
+      <eStructuralFeatures xsi:type="ecore:EReference" name="possibleErrors" upperBound="-1"
+          eType="#/1/BusinessError"/>
       <eStructuralFeatures xsi:type="ecore:EReference" name="issuedBy" upperBound="-1"
           eType="#/4/Actor" eOpposite="#/4/Actor/issuesQueries"/>
       <eStructuralFeatures xsi:type="ecore:EReference" name="targetCapability" eType="#/4/BusinessCapability"
@@ -169,6 +173,8 @@
           eType="#/1/Command" eOpposite="#/1/Command/expectedEvents"/>
       <eStructuralFeatures xsi:type="ecore:EReference" name="rejectedByCommands" upperBound="-1"
           eType="#/1/Command" eOpposite="#/1/Command/rejectionEvents"/>
+      <eStructuralFeatures xsi:type="ecore:EReference" name="consumedByCommands" upperBound="-1"
+          eType="#/1/Command" eOpposite="#/1/Command/triggeredByEvents"/>
       <eStructuralFeatures xsi:type="ecore:EReference" name="causedByExternalSystems"
           upperBound="-1" eType="#/4/ExternalSystem" eOpposite="#/4/ExternalSystem/producedEvents"/>
       <eStructuralFeatures xsi:type="ecore:EReference" name="consumedByExternalSystems"

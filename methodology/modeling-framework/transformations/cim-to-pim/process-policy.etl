@@ -783,27 +783,11 @@ rule TemporalConstraint2TimeoutPolicy
     }
   }
 
-  if (hasText(tc.deadlineExpression)) {
-    var schedule = new INTEGRATION!Schedule;
-    schedule.id = idFor("schedule", tc);
-    schedule.name = tc.name + " Schedule";
-    schedule.integrationPurpose = "Temporal trigger/review marker generated from deadline expression.";
-    schedule.scheduleExpression = tc.deadlineExpression;
-    schedule.enabled = true;
-    schedule.timeZone = "UTC";
-    var routingTarget = preferredTemporalRoutingTarget(policyTargetsForAll(tc.constrainedElements));
-    if (routingTarget.isDefined()) {
-      schedule.targets.add(routingTarget);
-    }
-    else {
-      schedule.enabled = false;
-      manualDecision("TR-130",
-        "Choose exactly one Function, Workflow, adapter, channel, or other RoutingTarget for temporal constraint '" + tc.name + "'.",
-        KERNEL!Severity#ERROR, timeout.productionRequired, Sequence{tc, schedule});
-    }
-    serviceFor(tc).schedules.add(schedule);
-    traceGenerated(tc, schedule, "TR-130", "MEDIUM");
-  }
+  // A CIM deadline describes a business/process constraint. It is not a
+  // provider schedule expression and must not be copied to EventBridge.
+  // Operational schedules are modeled explicitly as PIM Integration.Schedule
+  // elements after the constraint's trigger, recurrence, payload, and target
+  // semantics have been refined.
 
   if ((hasText(tc.deadlineExpression) or hasText(tc.durationExpression)) and timeout.timeoutSeconds = 0) {
     manualDecision("TR-130", "Translate temporal constraint '" + tc.name + "' into concrete provider-independent timeout and schedule semantics.", KERNEL!Severity#WARNING, timeout.productionRequired, Sequence{tc, timeout});

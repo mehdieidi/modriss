@@ -5,6 +5,7 @@
 - Primary language: `[%= emitCtx.primaryLanguage() %]`
 - Planned artifacts: `[%= emitCtx.get("traceRows").size() + 1 %]`
 - Manual issues: `[%= emitCtx.get("manualIssueList").size() %]`
+- Manual decisions: `[%= emitCtx.get("manualDecisionRows").size() %]`
 
 ## Artifact Kinds
 

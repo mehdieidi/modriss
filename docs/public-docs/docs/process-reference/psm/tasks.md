@@ -29,6 +29,7 @@ A TaskDefinition describes reusable work. A TaskUse places that definition insid
 | Configure clients, groups, and identity pools            | Cloud Platform Engineer |      3 |       1 |         1 |
 | Provision DynamoDB tables                                | Cloud Platform Engineer |      4 |       1 |         1 |
 | Configure S3 buckets and policies                        | Cloud Platform Engineer |      5 |       1 |         1 |
+| Provision relational databases and schemas               | Cloud Platform Engineer |      5 |       1 |         1 |
 | Create SQS queues                                        | Cloud Platform Engineer |      4 |       1 |         1 |
 | Configure SNS topics and subscriptions                   | Cloud Platform Engineer |      5 |       1 |         1 |
 | Configure EventBridge buses and rules                    | Cloud Platform Engineer |      4 |       1 |         1 |
@@ -63,8 +64,9 @@ The primary performer is **Cloud Platform Engineer**. The approved method profil
 **How to perform the task**
 
 1. Select one PIM service slice or deployment unit to materialize on AWS.
-2. Record AWS account, region, stage, networking, IAM, and deployment assumptions.
-3. Define the PSM EVL gate, artifact-generation readiness criteria, and review participants.
+2. Preserve each service's business ownership group independently of CloudFormation stack containment.
+3. Record AWS account, region, stage, networking, IAM, and deployment assumptions.
+4. Define the PSM EVL gate, artifact-generation readiness criteria, and review participants.
 
 **Outputs**
 
@@ -617,6 +619,50 @@ The primary performer is **Cloud Platform Engineer**. The approved method profil
 **Uses in this process**
 
 - `psm.ph3.st1.t2` in **Durable Storage**
+
+## Provision relational databases and schemas
+
+<small>Task definition: `task.psm.ph3.st1.t3`</small>
+
+Provision relational databases and schemas This task should be performed in the context of the current increment or operational item. Its result is reviewed through the stated exit criteria and validation rules, rather than accepted because an activity was marked complete.
+
+**Accountability and collaboration**
+
+The primary performer is **Cloud Platform Engineer**. The approved method profile may assign this responsibility to a person who holds several roles.
+
+**Inputs**
+
+- Durable Storage Layer
+- Network & Identity
+- Security Baseline
+- Deployment Strategy
+- SAM Stack Scaffold
+
+**How to perform the task**
+
+1. Create RdsDbCluster and RdsDbInstance resources for relational PIM DataStore definitions.
+2. Define RdsTable, RdsColumn, and RdsIndex schema elements from PIM data models and access patterns.
+3. Configure credentials, encryption, networking, backups, and database availability for the deployment slice.
+
+**Outputs**
+
+- Durable Storage Layer
+
+**Ready to start when**
+
+- Identity configured
+
+**Complete when**
+
+- Relational database resources and schemas match PIM data models
+
+**Checks and evidence**
+
+- Record the owner, status, decision, and evidence links.
+
+**Uses in this process**
+
+- `psm.ph3.st1.t3` in **Durable Storage**
 
 ## Create SQS queues
 

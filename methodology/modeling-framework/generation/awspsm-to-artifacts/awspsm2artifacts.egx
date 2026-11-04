@@ -23,6 +23,7 @@ pre {
 
   cachedAwsRoot = AWSPSM!AwsPsmModel.all.first();
   cachedEmitCtx = cachedAwsRoot.defaultEmitContext();
+  cachedEmitCtx.put("manualDecisionRows", cachedAwsRoot.collectManualDecisionRows());
   var issueSeq = cachedAwsRoot.collectBlockingIssues(cachedEmitCtx);
   for (issueInfo in issueSeq) {
     cachedEmitCtx.get("manualIssueList").add(issueInfo);

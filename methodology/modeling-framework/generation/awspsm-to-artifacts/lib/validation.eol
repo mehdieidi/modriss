@@ -14,12 +14,24 @@ operation AWSPSM!AwsPsmModel collectBlockingIssues(profileMap : Map) : Sequence 
   }
   if (self.readiness.isDefined()) {
     for (decisionObj in self.readiness.manualDecisions) {
-      issueSeq.add(self.issueTuple(
-        decisionObj.name.orElseText("PSM_MANUAL_DECISION"),
-        decisionObj.severity.asString(),
-        decisionObj.question,
-        decisionObj,
-        decisionObj.blocking));
+      var stateText = decisionObj.state.asString();
+      var decisionRecorded = (stateText = "ACCEPTED" or stateText = "WAIVED")
+        and decisionObj.decision.isPresent()
+        and decisionObj.decisionOwner.isPresent()
+        and decisionObj.decisionRecordedAt.isPresent();
+      if (not decisionRecorded) {
+        var decisionIssue = self.issueTuple(
+          decisionObj.name.orElseText("PSM_MANUAL_DECISION"),
+          decisionObj.severity.asString(),
+          decisionObj.question,
+          decisionObj,
+          decisionObj.blocking);
+        decisionIssue.put("decisionState", stateText);
+        decisionIssue.put("decision", decisionObj.decision.orElseText(""));
+        decisionIssue.put("decisionOwner", decisionObj.decisionOwner.orElseText(""));
+        decisionIssue.put("decisionRecordedAt", decisionObj.decisionRecordedAt.orElseText(""));
+        issueSeq.add(decisionIssue);
+      }
     }
   }
 
@@ -68,7 +80,7 @@ operation AWSPSM!AwsPsmModel collectBlockingIssues(profileMap : Map) : Sequence 
     if (routeObj.integration.isUndefined()) {
       issueSeq.add(self.issueTuple("API_ROUTE_INTEGRATION_MISSING", "BLOCKER", "API route has no integration: " + routeObj.stableKey(), routeObj, true));
     }
-    if (routeObj.authorizationType.asString() <> "NONE" and routeObj.authorizer.isUndefined()) {
+    if ((routeObj.authorizationType.asString() = "JWT" or routeObj.authorizationType.asString() = "CUSTOM") and routeObj.authorizer.isUndefined()) {
       issueSeq.add(self.issueTuple("API_ROUTE_AUTHORIZER_MISSING", "BLOCKER", "Protected API route has no authorizer: " + routeObj.stableKey(), routeObj, profileMap.get("productionMode") = true));
     }
     for (statusCodeText in routeObj.responseModels.collect(responseObj | responseObj.statusCode).asSet()) {
@@ -109,7 +121,7 @@ operation AWSPSM!AwsPsmModel collectBlockingIssues(profileMap : Map) : Sequence 
     if (scheduleObj.target.isUndefined() or scheduleObj.target.targetResource.isUndefined()) {
       issueSeq.add(self.issueTuple("EVENTBRIDGE_SCHEDULE_TARGET_MISSING", "BLOCKER", "EventBridge Scheduler schedule has no deployable target resource: " + scheduleObj.stableKey(), scheduleObj, true));
     }
-    if (not scheduleObj.scheduleExpression.startsWith("at(") and not scheduleObj.scheduleExpression.startsWith("rate(") and not scheduleObj.scheduleExpression.startsWith("cron(")) {
+    if (not scheduleObj.scheduleExpression.isPresent() or not scheduleObj.scheduleExpression.isValidAwsScheduleExpression()) {
       issueSeq.add(self.issueTuple("EVENTBRIDGE_SCHEDULE_EXPRESSION_INVALID", "BLOCKER", "EventBridge Scheduler expression must use at(...), rate(...), or cron(...): " + scheduleObj.stableKey(), scheduleObj, true));
     }
   }
@@ -221,6 +233,38 @@ operation AWSPSM!AwsPsmModel collectBlockingIssues(profileMap : Map) : Sequence 
   }
 
   return issueSeq;
+}
+
+/** Returns all readiness decisions so generated reports retain their resolution evidence. */
+operation AWSPSM!AwsPsmModel collectManualDecisionRows() : Sequence {
+  var rows = new Sequence;
+  if (self.readiness.isUndefined()) return rows;
+  for (decisionObj in self.readiness.manualDecisions) {
+    var row = new Map;
+    row.put("code", decisionObj.name.orElseText("PSM_MANUAL_DECISION"));
+    row.put("question", decisionObj.question);
+    row.put("state", decisionObj.state.asString());
+    row.put("decision", decisionObj.decision.orElseText(""));
+    row.put("owner", decisionObj.decisionOwner.orElseText(""));
+    row.put("recordedAt", decisionObj.decisionRecordedAt.orElseText(""));
+    row.put("severity", decisionObj.severity.asString());
+    row.put("blocking", decisionObj.blocking);
+    rows.add(row);
+  }
+  return rows;
+}
+
+/** Accepts only deployable AWS Scheduler expression forms with a basic syntax check. */
+operation Any isValidAwsScheduleExpression() : Boolean {
+  if (not self.isPresent()) return false;
+  var expressionText = self.asString().trim();
+  if (expressionText.matches("^rate\\(\\s*[1-9][0-9]*\\s+(minute|minutes|hour|hours|day|days)\\s*\\)$")) return true;
+  if (expressionText.matches("^at\\([0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\\)$")) return true;
+  if (expressionText.startsWith("cron(") and expressionText.endsWith(")")) {
+    var fields = expressionText.substring(5, expressionText.length() - 1).trim().split("\\s+");
+    return fields.size() = 6 and fields.forAll(fieldText | fieldText.matches("^[0-9A-Za-z*?,/#LW-]+$"));
+  }
+  return false;
 }
 
 /** Returns whether the target has a deterministic physical name from which the renderer builds a stable ARN or name. */

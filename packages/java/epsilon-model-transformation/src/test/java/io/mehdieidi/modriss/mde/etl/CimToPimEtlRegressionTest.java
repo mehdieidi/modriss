@@ -81,6 +81,20 @@ final class CimToPimEtlRegressionTest {
     Path pimModel = tempDir.resolve("order-pim.xmi");
 
     createRepresentativeCimModel(cimMetamodel, cimModel);
+    Resource cimResource = loadModel(cimMetamodel, cimModel);
+    EObject cimRoot = cimResource.getContents().get(0);
+    EObject fulfillmentProcess =
+        allObjects(cimRoot).stream()
+            .filter(element -> "process_fulfill_product".equals(get(element, "id")))
+            .findFirst()
+            .orElseThrow();
+    EObject orderPlaced =
+        allObjects(cimRoot).stream()
+            .filter(element -> "event_order_placed".equals(get(element, "id")))
+            .findFirst()
+            .orElseThrow();
+    set(fulfillmentProcess, "triggeringEvent", orderPlaced);
+    cimResource.save(null);
 
     EtlExecutionRequest request =
         new EtlExecutionRequest(
@@ -132,6 +146,64 @@ final class CimToPimEtlRegressionTest {
     assertFalse(
         serviceDeployables(root, "apis").isEmpty(), "Expected an API for user-facing behavior.");
     assertFalse(values(root, "eventTypes").isEmpty(), "Expected business event types.");
+    assertTrue(
+        allObjects(root).stream()
+            .filter(element -> "EventFlow".equals(element.eClass().getName()))
+            .anyMatch(
+                flow -> {
+                  EObject eventType = reference(flow, "eventType");
+                  EObject target = reference(flow, "target");
+                  return eventType != null
+                      && "OrderPlaced".equals(get(eventType, "semanticName"))
+                      && target != null
+                      && String.valueOf(get(target, "name")).contains("Fulfill Product");
+                }),
+        "A BusinessProcess.triggeringEvent must generate a bus-to-workflow event flow.");
+    EObject orderWorkflow =
+        allObjects(root).stream()
+            .filter(element -> "EventFlow".equals(element.eClass().getName()))
+            .filter(
+                flow -> {
+                  EObject eventType = reference(flow, "eventType");
+                  EObject target = reference(flow, "target");
+                  return eventType != null
+                      && "OrderPlaced".equals(get(eventType, "semanticName"))
+                      && target != null
+                      && String.valueOf(get(target, "name")).contains("Fulfill Product");
+                })
+            .map(flow -> reference(flow, "target"))
+            .findFirst()
+            .orElseThrow(() -> new AssertionError("Missing order workflow event flow."));
+    assertTrue(
+        values(root, "services").stream()
+            .anyMatch(
+                service ->
+                    values(service, "triggers").stream()
+                        .anyMatch(
+                            trigger ->
+                                "Trigger".equals(trigger.eClass().getName())
+                                    && reference(trigger, "startsWorkflow") == orderWorkflow
+                                    && reference(trigger, "function") == null)),
+        "Workflow event triggers must be owned by a service and must not target an arbitrary"
+            + " function.");
+    assertTrue(
+        allObjects(root).stream()
+            .filter(element -> "EventFlow".equals(element.eClass().getName()))
+            .anyMatch(
+                flow -> {
+                  EObject eventType = reference(flow, "eventType");
+                  EObject target = reference(flow, "target");
+                  return eventType != null
+                      && "OrderCancelled".equals(get(eventType, "semanticName"))
+                      && target != null
+                      && "command_place_order".equals(get(target, "businessOperationRef"));
+                }),
+        "A BusinessEvent.consumedByCommands link must generate a bus-to-command event flow.");
+    assertTrue(
+        allObjects(root).stream()
+            .noneMatch(element -> "EventRoutingRule".equals(element.eClass().getName())),
+        "Policy handlers must be routed through their event flows without duplicate routing"
+            + " rules.");
     assertFalse(serviceDeployables(root, "stores").isEmpty(), "Expected aggregate data stores.");
     assertFalse(values(root, "deploymentUnits").isEmpty(), "Expected deployment units.");
 
@@ -971,6 +1043,22 @@ final class CimToPimEtlRegressionTest {
     add(event, "payload", total);
     add(event, "affects", entity);
 
+    EObject consumedEvent = create(metamodelResource, "BusinessEvent");
+    set(consumedEvent, "id", "event_order_cancelled");
+    set(consumedEvent, "name", "Order Cancelled");
+    set(consumedEvent, "semanticName", "OrderCancelled");
+    set(consumedEvent, "occurredInPastTenseName", "OrderCancelled");
+    set(
+        consumedEvent,
+        "eventTimeSemantics",
+        enumValue(metamodelResource, "EventTimeSemantics", "BUSINESS_TIME"));
+    set(consumedEvent, "externallyVisible", false);
+    set(consumedEvent, "auditRelevant", true);
+    set(consumedEvent, "retentionRelevant", true);
+    set(consumedEvent, "orderingKeyCandidate", "customerId");
+    add(consumedEvent, "payload", orderId);
+    add(consumedEvent, "affects", entity);
+
     EObject command = create(metamodelResource, "Command");
     set(command, "id", "command_place_order");
     set(command, "name", "Place Order");
@@ -993,6 +1081,7 @@ final class CimToPimEtlRegressionTest {
     add(command, "input", cartId);
     add(command, "input", requestIdempotencyKey);
     add(command, "expectedEvents", event);
+    add(command, "triggeredByEvents", consumedEvent);
 
     EObject query = create(metamodelResource, "Query");
     set(query, "id", "query_order_status");
@@ -1007,6 +1096,26 @@ final class CimToPimEtlRegressionTest {
     add(query, "input", orderId);
     add(query, "output", status);
     add(query, "reads", entity);
+
+    EObject processStart = create(metamodelResource, "StartStep");
+    set(processStart, "id", "process_order_fulfillment_start");
+    set(processStart, "name", "Order fulfillment starts");
+    set(processStart, "orderIndex", 0);
+    EObject processEnd = create(metamodelResource, "EndStep");
+    set(processEnd, "id", "process_order_fulfillment_end");
+    set(processEnd, "name", "Order fulfillment ends");
+    set(processEnd, "orderIndex", 1);
+    EObject process = create(metamodelResource, "BusinessProcess");
+    set(process, "id", "process_fulfill_product");
+    set(process, "name", "Fulfill Product");
+    set(process, "processKind", enumValue(metamodelResource, "ProcessKind", "LONG_RUNNING"));
+    set(process, "criticality", enumValue(metamodelResource, "CapabilityCriticality", "CORE"));
+    set(process, "businessTriggerDescription", "A newly placed order requires fulfillment.");
+    set(process, "longRunning", true);
+    set(process, "completionCriterion", "The order reaches a terminal outcome.");
+    set(process, "owningCapability", capability);
+    add(process, "steps", processStart);
+    add(process, "steps", processEnd);
 
     EObject model = create(metamodelResource, "CIMModel");
     set(model, "id", "cim_order_model");
@@ -1025,8 +1134,10 @@ final class CimToPimEtlRegressionTest {
     add(model, "entities", entity);
     add(model, "aggregates", aggregate);
     add(model, "events", event);
+    add(model, "events", consumedEvent);
     add(model, "commands", command);
     add(model, "queries", query);
+    add(model, "processes", process);
 
     Resource modelResource = resourceSet.createResource(URI.createFileURI(modelFile.toString()));
     modelResource.getContents().add(model);
