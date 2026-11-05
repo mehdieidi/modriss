@@ -1054,13 +1054,15 @@ class Worker:
                     time.sleep(1)
         elif kind == "AWS::DynamoDB::Table":
             if action == "scan":
-                result = self.call("dynamodb", "scan", TableName=physical, Limit=100,
+                page_size = max(1, min(100, int(data.get("limit", 25))))
+                result = self.call("dynamodb", "scan", TableName=physical, Limit=page_size,
                                    **({"ExclusiveStartKey": data["cursor"]} if data.get("cursor") else {}))
             elif action == "put":
                 result = self.call("dynamodb", "put_item", TableName=physical, Item=data["item"])
         elif kind == "AWS::S3::Bucket":
             if action == "list":
-                result = self.call("s3", "list_objects_v2", Bucket=physical, MaxKeys=100,
+                page_size = max(1, min(100, int(data.get("limit", 25))))
+                result = self.call("s3", "list_objects_v2", Bucket=physical, MaxKeys=page_size,
                                    Prefix=data.get("prefix", ""),
                                    **({"ContinuationToken": data["cursor"]} if data.get("cursor") else {}))
             elif action == "get":

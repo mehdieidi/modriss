@@ -4,7 +4,7 @@ export function resourceGroup(resource) {
   if (type === "AWS::Lambda::Function") return "Functions";
   if (type.includes("StepFunctions::StateMachine")) return "Workflows";
   if (/DynamoDB::Table|S3::Bucket|RDS::DBCluster|RDS::DBInstance/.test(type)) return "Storage";
-  if (/SQS::Queue|SNS::Topic|Events::EventBus/.test(type)) return "Events";
+  if (/SQS::Queue|SNS::Topic|Events::EventBus|Events::Rule/.test(type)) return "Events";
   if (type === "AWS::Logs::LogGroup") return "Logs";
   if (type === "Script") return "Scripts";
   return "Infrastructure";
@@ -171,6 +171,191 @@ export function workflowStates(events) {
   return states;
 }
 
+const parseDocument = (value) => {
+  if (typeof value !== "string") return value;
+  try {
+    return JSON.parse(value);
+  } catch {
+    return null;
+  }
+};
+
+export function openApiDocument(resource = {}) {
+  const properties = resource.properties || resource.Properties || {};
+  return (
+    parseDocument(properties.Body) ||
+    parseDocument(properties.DefinitionBody) ||
+    parseDocument(properties.ApiDefinition) ||
+    null
+  );
+}
+
+export function exampleFromSchema(schema, document, seen = new Set(), depth = 0) {
+  if (!schema || typeof schema !== "object" || depth > 8) return {};
+  if (Array.isArray(schema.oneOf) || Array.isArray(schema.anyOf))
+    return exampleFromSchema((schema.oneOf || schema.anyOf)[0], document, seen, depth + 1);
+  if (Array.isArray(schema.allOf)) {
+    const parts = schema.allOf.map((part) => exampleFromSchema(part, document, seen, depth + 1));
+    return Object.assign({}, ...parts.filter((part) => part && typeof part === "object" && !Array.isArray(part)));
+  }
+  if (Object.prototype.hasOwnProperty.call(schema, "example")) return schema.example;
+  if (Object.prototype.hasOwnProperty.call(schema, "default")) return schema.default;
+  if (Array.isArray(schema.enum) && schema.enum.length) return schema.enum[0];
+  if (schema.$ref) {
+    const name = schema.$ref.split("/").pop();
+    if (!name || seen.has(name)) return {};
+    const definitions = document?.components?.schemas || document?.definitions || {};
+    const resolved = definitions[name];
+    return resolved ? exampleFromSchema(resolved, document, new Set([...seen, name]), depth + 1) : {};
+  }
+  const type = (Array.isArray(schema.type) ? schema.type.find((value) => value !== "null") : schema.type) || (schema.properties ? "object" : schema.items ? "array" : "object");
+  if (type === "object") {
+    const properties = schema.properties || {};
+    return Object.fromEntries(
+      Object.entries(properties).map(([key, value]) => [
+        key,
+        exampleFromSchema(value, document, seen, depth + 1),
+      ]),
+    );
+  }
+  if (type === "array") return [exampleFromSchema(schema.items || {}, document, seen, depth + 1)];
+  if (type === "integer" || type === "number") {
+    const value = schema.minimum ?? 1;
+    return schema.maximum != null && value > schema.maximum ? schema.maximum : value;
+  }
+  if (type === "boolean") return true;
+  if (type === "string") {
+    if (schema.format === "date-time") return "2026-11-05T12:00:00Z";
+    if (schema.format === "date") return "2026-11-05";
+    if (schema.format === "email") return "user@example.com";
+    if (schema.format === "uuid") return "123e4567-e89b-12d3-a456-426614174000";
+    if (schema.format === "uri" || schema.format === "url") return "https://example.com/resource";
+    const length = Math.max(1, Math.min(128, schema.minLength || Math.min(7, schema.maxLength || 7)));
+    return "e".repeat(length);
+  }
+  return null;
+}
+
+const httpMethods = new Set(["get", "post", "put", "patch", "delete", "head", "options"]);
+
+function operationForRoute(resource, route) {
+  const document = openApiDocument(resource);
+  if (!document || !route) return null;
+  const normalizedPath = route.path.replace(/\{[^}]+\}/g, (parameter) => parameter);
+  const pathItem = document.paths?.[normalizedPath];
+  const method = route.method.toLowerCase();
+  if (pathItem && httpMethods.has(method) && pathItem[method])
+    return {
+      ...pathItem[method],
+      parameters: [...(pathItem.parameters || []), ...(pathItem[method].parameters || [])],
+    };
+  if (method === "any" || method === "$default") {
+    const entry = Object.entries(document.paths || {}).find(([, value]) =>
+      Object.keys(value || {}).some((key) => httpMethods.has(key)),
+    );
+    if (entry) {
+      const verb = Object.keys(entry[1]).find((key) => httpMethods.has(key));
+      return {
+        ...entry[1][verb],
+        parameters: [...(entry[1].parameters || []), ...(entry[1][verb].parameters || [])],
+      };
+    }
+  }
+  return null;
+}
+
+export function apiOperations(resource = {}) {
+  const document = openApiDocument(resource);
+  if (!document?.paths)
+    return (resource.routes || []).map((route, index) => ({
+      ...route,
+      index,
+      operation: null,
+      summary: "API operation",
+    }));
+  return (resource.routes || []).map((route, index) => {
+    const operation = operationForRoute(resource, route);
+    const documentedPath =
+      ["ANY", "$default"].includes(route.method)
+        ? Object.entries(document.paths).find(([, pathItem]) =>
+            Object.keys(pathItem || {}).some((key) => httpMethods.has(key)),
+          )?.[0]
+        : null;
+    return {
+      ...route,
+      path: documentedPath || route.path,
+      index,
+      operation,
+      summary: operation?.summary || operation?.operationId || "API operation",
+    };
+  });
+}
+
+export function apiRequestExample(resource = {}, route = resource.routes?.[0]) {
+  const operation = operationForRoute(resource, route);
+  const document = openApiDocument(resource);
+  const documentedPath =
+    ["ANY", "$default"].includes(route?.method) && document?.paths
+      ? Object.entries(document.paths).find(([, pathItem]) =>
+          Object.keys(pathItem || {}).some((key) => httpMethods.has(key)),
+        )?.[0]
+      : null;
+  const input = {
+    method: ["ANY", "$default"].includes(route?.method) ? "GET" : route?.method || "GET",
+    path: documentedPath || route?.path || "/",
+    stage: resource.stages?.[0] || "Prod",
+    query: {},
+    headers: {},
+    body: null,
+  };
+  const parameters = [...(operation?.parameters || []), ...(operation?.requestBody?.parameters || [])];
+  for (const parameter of parameters) {
+    const value = parameter.example ?? exampleFromSchema(parameter.schema || {}, openApiDocument(resource));
+    const scalar = Array.isArray(value) ? value.join(",") : value && typeof value === "object" ? JSON.stringify(value) : String(value);
+    if (parameter.in === "query") input.query[parameter.name] = scalar;
+    if (parameter.in === "header") input.headers[parameter.name] = scalar;
+    if (parameter.in === "cookie") input.headers.Cookie = `${input.headers.Cookie ? `${input.headers.Cookie}; ` : ""}${parameter.name}=${scalar}`;
+    if (parameter.in === "path") input.path = input.path.replace(`{${parameter.name}}`, scalar);
+  }
+  const content = operation?.requestBody?.content || {};
+  const bodyParameter = operation?.parameters?.find((parameter) => parameter.in === "body");
+  const bodySchema = content["application/json"]?.schema || Object.values(content)[0]?.schema || bodyParameter?.schema;
+  const bodyContent = content["application/json"] || Object.values(content)[0];
+  if (bodyContent?.example !== undefined) input.body = bodyContent.example;
+  else if (bodyContent?.examples && Object.keys(bodyContent.examples).length)
+    input.body = Object.values(bodyContent.examples)[0].value ?? null;
+  else if (bodySchema) input.body = exampleFromSchema(bodySchema, openApiDocument(resource));
+  else if (bodyParameter) input.body = exampleFromSchema(bodyParameter.schema || {}, openApiDocument(resource));
+  else if (["POST", "PUT", "PATCH"].includes(input.method)) input.body = {};
+  const security = operation?.security ?? document?.security ?? [];
+  for (const requirement of security.slice(0, 1)) {
+    for (const name of Object.keys(requirement)) {
+      const scheme = document?.components?.securitySchemes?.[name] || document?.securityDefinitions?.[name];
+      if (scheme?.type === "http" && scheme.scheme === "bearer") input.headers.Authorization = "Bearer <access-token>";
+      else if (scheme?.type === "http" && scheme.scheme === "basic") input.headers.Authorization = "Basic <base64-credentials>";
+      else if (scheme?.type === "oauth2" || scheme?.type === "openIdConnect") input.headers.Authorization = "Bearer <access-token>";
+      else if (scheme?.type === "apiKey" && scheme.in === "header")
+        input.headers[scheme.name] = scheme.name.toLowerCase() === "authorization" ? "Bearer <access-token>" : "<api-key>";
+      else if (scheme?.type === "apiKey" && scheme.in === "query") input.query[scheme.name] = "<api-key>";
+      else if (scheme?.type === "apiKey" && scheme.in === "cookie") input.headers.Cookie = `${input.headers.Cookie ? `${input.headers.Cookie}; ` : ""}${scheme.name}=<api-key>`;
+    }
+  }
+  return input;
+}
+
+function dynamoItemExample(resource) {
+  const properties = resource.properties || resource.Properties || {};
+  const attributes = new Map((properties.AttributeDefinitions || []).map((entry) => [entry.AttributeName, entry.AttributeType]));
+  const keys = properties.KeySchema || [{ AttributeName: "id", KeyType: "HASH" }];
+  const item = {};
+  for (const key of keys) {
+    const name = key.AttributeName;
+    const type = attributes.get(name) || "S";
+    item[name] = type === "N" ? { N: "1" } : type === "B" ? { B: "ZXhhbXBsZQ==" } : { S: "example-1" };
+  }
+  return item;
+}
+
 export function initialInput(action, resource = {}) {
   if (action === "query") {
     const table = resource.database?.tables?.[0]?.name;
@@ -178,16 +363,42 @@ export function initialInput(action, resource = {}) {
   }
   if (action === "commit-transaction" || action === "rollback-transaction") return {transactionId:"paste-the-begin-transaction-result"};
   if (action === "run") return { args: [], env: {} };
-  if (action === "aws-api") return resource.sdk?.example || { operation: "", parameters: {} };
-  if (action === "request") return {
-    method: resource.routes?.[0]?.method === "ANY" ? "GET" : resource.routes?.[0]?.method || "GET",
-    path: resource.routes?.[0]?.path || "/", stage: resource.stages?.[0] || "Prod",
-    query: {}, headers: {}, body: null,
-  };
-  if (action === "put" && resource.ResourceType === "AWS::DynamoDB::Table") return { item: { id: { S: "example-1" } } };
+  if (action === "aws-api") {
+    const example = resource.sdk?.example;
+    return example?.operation
+      ? example
+      : { operation: resource.sdk?.operations?.[0] || "", parameters: example?.parameters || {} };
+  }
+  if (action === "request") return apiRequestExample(resource);
+  if (action === "put" && resource.ResourceType === "AWS::DynamoDB::Table") return { item: dynamoItemExample(resource) };
   if (action === "put") return { key: "example.json", body: "{\"message\":\"Hello\"}", contentType: "application/json" };
   if (action === "get") return { key: "example.json" };
   if (action === "list") return { prefix: "" };
-  if (["invoke", "start", "send", "publish"].includes(action)) return { payload: {} };
+  if (action === "invoke")
+    return {
+      payload: {
+        version: "2.0",
+        routeKey: "$default",
+        rawPath: "/",
+        headers: {},
+        requestContext: { http: { method: "POST", path: "/", protocol: "HTTP/1.1" } },
+        body: "{}",
+        isBase64Encoded: false,
+      },
+    };
+  if (action === "start") return { payload: { id: "example-1", source: "modriss.test", detail: {} } };
+  if (action === "send") {
+    const input = { payload: { id: "example-1", type: "example.created", occurredAt: "2026-11-05T12:00:00Z", data: {} } };
+    if ((resource.properties || resource.Properties || {}).FifoQueue || resource.PhysicalResourceId?.endsWith(".fifo")) input.groupId = "modriss";
+    return input;
+  }
+  if (action === "publish" && resource.ResourceType === "AWS::Events::EventBus")
+    return {
+      source: "modriss.test",
+      detailType: "ExampleEvent",
+      payload: { id: "example-1", type: "example.created", occurredAt: "2026-11-05T12:00:00Z", data: {} },
+    };
+  if (action === "publish")
+    return { payload: { id: "example-1", type: "example.created", occurredAt: "2026-11-05T12:00:00Z", data: {} } };
   return {};
 }
