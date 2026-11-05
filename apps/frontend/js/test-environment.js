@@ -48,6 +48,29 @@ const environmentReady = () => {
 };
 const json = (value) => JSON.stringify(value, null, 2);
 const pretty = (value) => (typeof value === "string" ? value : json(value));
+function expandEmbeddedJson(value, depth = 0) {
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    if (depth < 4 && (trimmed.startsWith("{") || trimmed.startsWith("["))) {
+      try {
+        return expandEmbeddedJson(JSON.parse(trimmed), depth + 1);
+      } catch {
+        // Keep ordinary text and malformed JSON as received.
+      }
+    }
+    return value;
+  }
+  if (Array.isArray(value)) return value.map((item) => expandEmbeddedJson(item, depth));
+  if (value && typeof value === "object")
+    return Object.fromEntries(
+      Object.entries(value).map(([key, item]) => [key, expandEmbeddedJson(item, depth)]),
+    );
+  return value;
+}
+const responseOutput = (value) => {
+  const expanded = expandEmbeddedJson(value);
+  return typeof expanded === "string" ? expanded : json(expanded);
+};
 const stamp = (value) => (value ? new Date(value).toLocaleString() : "");
 const badge = (status) =>
   `<span class="te-badge te-${h(String(status || "ready").toLowerCase())}">${h(status || "Ready")}</span>`;
@@ -571,7 +594,7 @@ function dataView(result) {
     return `<div class="te-object-list">${result.Contents.map((object) => `<button type="button" data-object="${h(object.Key)}"><span>▤ ${h(object.Key)}</span><small>${object.Size} bytes</small></button>`).join("") || "<p>Bucket is empty.</p>"}</div><pre>${h(json(result))}</pre>`;
   if (Array.isArray(result.executions))
     return `<div class="te-object-list">${result.executions.map((execution) => `<button type="button" data-execution="${h(execution.executionArn)}"><span>${h(execution.name)}</span>${badge(execution.status)}</button>`).join("") || "<p>No workflow executions.</p>"}</div><pre>${h(json(result))}</pre>`;
-  return `<pre tabindex="0">${h(pretty(result))}</pre>`;
+  return `<pre tabindex="0">${h(responseOutput(result))}</pre>`;
 }
 
 async function submit(payload) {
