@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { beforeEach, test } from "node:test";
 
 globalThis.window = { location: { origin: "http://localhost" }, addEventListener() {} };
-globalThis.document = { getElementById: () => null, addEventListener() {} };
+globalThis.document = { getElementById: () => null, querySelector: () => null, addEventListener() {} };
 
 const { state } = await import("../js/state.js");
 const { ensureViewContent, installGraphAndViews, refreshViewContent, selectElementIdsForView, selectRelationshipIdsForView } = await import("../js/graph-store.js");
@@ -104,7 +104,7 @@ test("view identity wins over a shared viewpoint and supports legacy kind matchi
 test("refreshing the active configured view preserves hidden elements and explicit pins", () => {
   const saved = savedView({
     pinnedElementIds: ["requirement"],
-    hidden: { elementIds: ["actor"], relationshipIds: [] },
+    hidden: { elementIds: ["actor"], relationshipIds: [], elementTypes: [] },
   });
   const { graph, views } = installGraphAndViews("cim", {
     name: "Example", eClass: "Model", activeViewId: saved.id,

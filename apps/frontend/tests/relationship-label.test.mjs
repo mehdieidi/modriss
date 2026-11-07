@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { beforeEach, test } from "node:test";
 
 globalThis.window = { location: { origin: "http://localhost" } };
-globalThis.document = { getElementById: () => null };
+globalThis.document = { getElementById: () => null, querySelector: () => null };
 
 const { state } = await import("../js/state.js");
 const { initializeModelingRuntimeState } = await import("../js/modeling-config-data.js");

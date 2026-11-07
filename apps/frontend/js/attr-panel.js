@@ -129,6 +129,28 @@ function isHiddenAttributeKey(key) {
   );
 }
 
+function skipRuntimeInspectorField(key, definition) {
+  if (!SKIP_ATTR_KEYS.has(key)) {
+    return false;
+  }
+  // Name and label are handled by the inspector's identity control.
+  if (key === "name" || key === "label") {
+    return true;
+  }
+  const isSemanticAttribute = safeArray(definition?.attributes).some(
+    (attribute) => attribute?.name === key,
+  );
+  if (isSemanticAttribute) {
+    return false;
+  }
+  const reference = safeArray(definition?.references).find((item) => item?.name === key);
+  // Containment references have their own child editor below the regular fields.
+  if (reference?.containment) {
+    return true;
+  }
+  return !reference;
+}
+
 function isInspectorHiddenRelationshipKind(kind) {
   const configuredTraceKind = String(
     modelingLevelConfig(state.activeType).relationshipSemantics?.traceKind || "",
@@ -490,7 +512,11 @@ function renderRootModelFields(root, definition) {
   rendered.add("id");
   rootEditableFields(definition).forEach((field) => {
     const key = field.name;
-    if (rendered.has(key) || SKIP_ATTR_KEYS.has(key) || isHiddenAttributeKey(key)) {
+    if (
+      rendered.has(key) ||
+      skipRuntimeInspectorField(key, definition) ||
+      isHiddenAttributeKey(key)
+    ) {
       return;
     }
     rendered.add(key);
@@ -502,7 +528,7 @@ function renderRootModelFields(root, definition) {
     if (
       rendered.has(key) ||
       ROOT_SKIP_ATTR_KEYS.has(key) ||
-      SKIP_ATTR_KEYS.has(key) ||
+      skipRuntimeInspectorField(key, definition) ||
       isHiddenAttributeKey(key) ||
       Array.isArray(value) ||
       (value && typeof value === "object")
@@ -556,7 +582,12 @@ function renderConfiguredAttributeFields(node, meta, definition) {
   const impliedFields = new Set(Object.keys(impliedEnumValues(node.type, definition)));
   configuredFields.forEach((field) => {
     const key = field?.name;
-    if (!key || rendered.has(key) || SKIP_ATTR_KEYS.has(key) || isHiddenAttributeKey(key)) {
+    if (
+      !key ||
+      rendered.has(key) ||
+      skipRuntimeInspectorField(key, definition) ||
+      isHiddenAttributeKey(key)
+    ) {
       return;
     }
     if (impliedFields.has(key)) {
@@ -581,7 +612,11 @@ function renderConfiguredAttributeFields(node, meta, definition) {
   });
 
   Object.entries(meta).forEach(([key, value]) => {
-    if (rendered.has(key) || SKIP_ATTR_KEYS.has(key) || isHiddenAttributeKey(key)) {
+    if (
+      rendered.has(key) ||
+      skipRuntimeInspectorField(key, definition) ||
+      isHiddenAttributeKey(key)
+    ) {
       return;
     }
     rendered.add(key);
@@ -673,7 +708,12 @@ function _renderRelationshipAttributeFields(node, meta, definition) {
   const impliedFields = new Set(Object.keys(impliedEnumValues(node.type, definition)));
   configuredFields.forEach((field) => {
     const key = field?.name;
-    if (!key || rendered.has(key) || SKIP_ATTR_KEYS.has(key) || isHiddenAttributeKey(key)) {
+    if (
+      !key ||
+      rendered.has(key) ||
+      skipRuntimeInspectorField(key, definition) ||
+      isHiddenAttributeKey(key)
+    ) {
       return;
     }
     if (impliedFields.has(key)) {
@@ -688,7 +728,11 @@ function _renderRelationshipAttributeFields(node, meta, definition) {
   });
 
   Object.entries(meta).forEach(([key, value]) => {
-    if (rendered.has(key) || SKIP_ATTR_KEYS.has(key) || isHiddenAttributeKey(key)) {
+    if (
+      rendered.has(key) ||
+      skipRuntimeInspectorField(key, definition) ||
+      isHiddenAttributeKey(key)
+    ) {
       return;
     }
     rendered.add(key);
@@ -740,7 +784,12 @@ function _renderPlatformAttributeFields(node, meta, definition) {
   const impliedFields = new Set(Object.keys(impliedEnumValues(node.type, definition)));
   configuredFields.forEach((field) => {
     const key = field?.name;
-    if (!key || rendered.has(key) || SKIP_ATTR_KEYS.has(key) || isHiddenAttributeKey(key)) {
+    if (
+      !key ||
+      rendered.has(key) ||
+      skipRuntimeInspectorField(key, definition) ||
+      isHiddenAttributeKey(key)
+    ) {
       return;
     }
     if (impliedFields.has(key)) {
@@ -753,7 +802,11 @@ function _renderPlatformAttributeFields(node, meta, definition) {
   });
 
   Object.entries(meta).forEach(([key, value]) => {
-    if (rendered.has(key) || SKIP_ATTR_KEYS.has(key) || isHiddenAttributeKey(key)) {
+    if (
+      rendered.has(key) ||
+      skipRuntimeInspectorField(key, definition) ||
+      isHiddenAttributeKey(key)
+    ) {
       return;
     }
     rendered.add(key);

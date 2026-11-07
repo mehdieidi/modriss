@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 
 globalThis.window = { location: { origin: "http://localhost" }, addEventListener() {}, dispatchEvent() {} };
-globalThis.document = { getElementById: () => null, addEventListener() {} };
+globalThis.document = { getElementById: () => null, querySelector: () => null, addEventListener() {} };
 
 const { state } = await import("../js/state.js");
 const { applyModelingRuntimeConfig } = await import("../js/config.js");

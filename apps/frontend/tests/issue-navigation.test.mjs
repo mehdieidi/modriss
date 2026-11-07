@@ -5,7 +5,7 @@ globalThis.window = {
   location: { origin: "http://localhost" },
   addEventListener() {}, dispatchEvent() {}, setTimeout: () => 0,
 };
-globalThis.document = { getElementById: () => null, addEventListener() {} };
+globalThis.document = { getElementById: () => null, querySelector: () => null, addEventListener() {} };
 
 const { state } = await import("../js/state.js");
 const { activateIssueTarget } = await import("../js/issue-navigation.js");

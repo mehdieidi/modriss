@@ -22,6 +22,7 @@ globalThis.window = {
 };
 globalThis.document = {
   getElementById: (id) => elements.get(id) || null,
+  querySelector: () => null,
   addEventListener() {}, createElement: element,
 };
 const { state } = await import("../js/state.js");

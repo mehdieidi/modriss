@@ -2,16 +2,35 @@ import assert from "node:assert/strict";
 import { beforeEach, test } from "node:test";
 
 function domElement() {
+  const classes = new Set();
+  const children = [];
   return {
+    children,
     dataset: {},
-    classList: { add() {}, remove() {}, toggle() {} },
-    setAttribute() {}, addEventListener() {}, append() {}, appendChild() {},
+    style: {},
+    classList: {
+      add(...names) { names.forEach((name) => classes.add(name)); },
+      remove(...names) { names.forEach((name) => classes.delete(name)); },
+      toggle(name, force) {
+        if (force === undefined ? !classes.has(name) : force) classes.add(name);
+        else classes.delete(name);
+      },
+      contains(name) { return classes.has(name); },
+    },
+    setAttribute() {}, addEventListener() {},
+    append(...items) { items.forEach((item) => this.appendChild(item)); },
+    appendChild(item) { children.push(item); return item; },
+    querySelectorAll() { return []; }, querySelector() { return null; },
+    set innerHTML(value) { this._innerHTML = value; if (value === "") children.length = 0; },
+    get innerHTML() { return this._innerHTML || ""; },
+    remove() {},
   };
 }
 
 globalThis.window = {
   location: { origin: "http://localhost" },
   addEventListener() {}, dispatchEvent() {}, setTimeout: () => 0,
+  matchMedia: () => ({ matches: false }),
 };
 globalThis.document = {
   getElementById: () => null,
@@ -24,7 +43,7 @@ globalThis.document = {
 
 const { state } = await import("../js/state.js");
 const { el } = await import("../js/dom.js");
-const { applyAttributePanel } = await import("../js/attr-panel.js");
+const { applyAttributePanel, openAttributePanel } = await import("../js/attr-panel.js");
 const { initializeModelingRuntimeState } = await import("../js/modeling-config-data.js");
 
 beforeEach(() => {
@@ -108,3 +127,53 @@ for (const target of ["element", "root", "connection"]) {
     });
   }
 }
+
+test("renders semantic PSM status in the attribute inspector", () => {
+  const config = {
+    levelOrder: ["psm"],
+    levels: {
+      psm: {
+        apiType: "PSM",
+        rootTemplate: { eClass: "AwsPsmModel" },
+        elements: [
+          { type: "AwsPsmModel" },
+          {
+            type: "S3LifecycleRule",
+            attributes: [
+              { name: "status", fieldType: "text", required: true },
+              { name: "ruleId", fieldType: "text", required: true },
+            ],
+          },
+        ],
+      },
+    },
+  };
+  state.activeType = "psm";
+  state.modelingConfig.config = config;
+  initializeModelingRuntimeState(config);
+  const element = { eClass: "S3LifecycleRule", id: "rule-1", status: "Enabled", ruleId: "expire" };
+  const node = { id: element.id, type: element.eClass, label: "expire", meta: element, x: 0, y: 0 };
+  state.nodesById.set(node.id, node);
+  state.graph.elementsById.set(node.id, element);
+  state.diagram.nodes = [node];
+
+  Object.assign(el, {
+    attrPanelBody: domElement(),
+    attrPanelType: domElement(),
+    attrPanelTitle: domElement(),
+    attrPanelApplyBtn: domElement(),
+    attrPanelDeleteBtn: domElement(),
+    attributePanel: domElement(),
+    workspace: domElement(),
+  });
+
+  openAttributePanel(node.id);
+
+  const attrKeys = [];
+  const visit = (elementNode) => {
+    if (elementNode?.dataset?.attrKey) attrKeys.push(elementNode.dataset.attrKey);
+    (elementNode?.children || []).forEach(visit);
+  };
+  visit(el.attrPanelBody);
+  assert.ok(attrKeys.includes("status"), "the Ecore status attribute should be editable");
+});

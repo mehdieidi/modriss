@@ -6,6 +6,7 @@ globalThis.window = {
 };
 globalThis.document = {
   getElementById: () => null,
+  querySelector: () => null,
 };
 
 const { buildModelPatch } = await import("../js/model-patch.js");

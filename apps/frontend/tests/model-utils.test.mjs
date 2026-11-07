@@ -6,6 +6,7 @@ globalThis.window = {
 };
 globalThis.document = {
   getElementById: () => null,
+  querySelector: () => null,
 };
 
 const { state } = await import("../js/state.js");
@@ -17,12 +18,13 @@ const {
 const {
   relationshipSemanticCopy,
   semanticGraphHasChanges,
+  stripRuntimeFields,
 } = await import("../js/model-utils.js");
 const {
   serializeGraphAndViewsInto,
   serializeGraphAndViewsIntoAsync,
 } = await import("../js/graph-store.js");
-const { buildSaveRootFromBase } = await import("../js/diagram.js");
+const { buildSaveRootFromBase, getDefaultNode } = await import("../js/diagram.js");
 
 const modelingConfig = {
   levelOrder: ["pim"],
@@ -302,6 +304,283 @@ test("projects a contained transition to an edge without losing its terminal end
       { source: "command-1", target: "end-1" },
     ],
   );
+});
+
+test("preserves semantic ProcessTransition labels when an unrelated process edit rebuilds the root", async () => {
+  const cimLevel = {
+    apiType: "CIM",
+    rootTemplate: { eClass: "CIMModel" },
+    relationshipSemantics: { containmentKind: "CONTAINS", containmentKinds: ["CONTAINS"] },
+    workbench: { defaultViewDefinitionId: "main" },
+    viewDefinitions: [{ id: "main", viewType: "main" }],
+    elements: [
+      {
+        type: "CIMModel",
+        references: [{ name: "processes", targetType: "BusinessProcess", containment: true, many: true }],
+      },
+      {
+        type: "BusinessProcess",
+        attributes: [{ name: "businessTriggerDescription" }, { name: "completionCriterion" }],
+        references: [
+          { name: "steps", targetType: "ProcessStep", containment: true, many: true },
+          { name: "transitions", targetType: "ProcessTransition", containment: true, many: true },
+          { name: "triggeringActor", targetType: "Actor" },
+        ],
+      },
+      { type: "Actor" },
+      { type: "ProcessStep" },
+      { type: "StartStep", supertypes: ["ProcessStep"] },
+      { type: "DecisionStep", supertypes: ["ProcessStep"] },
+      { type: "EndStep", supertypes: ["ProcessStep"] },
+      {
+        type: "ProcessTransition",
+        attributes: [{ name: "label" }, { name: "conditionExpression" }],
+        relationshipElement: true,
+        containedOnly: true,
+        primitive: "control-flow-edge",
+        references: [
+          { name: "source", targetType: "ProcessStep" },
+          { name: "target", targetType: "ProcessStep" },
+        ],
+      },
+    ],
+    semanticEdgeObjectRules: [
+      {
+        eClass: "ProcessTransition",
+        matchKinds: ["TRANSITION"],
+        sourceType: "ProcessStep",
+        targetType: "ProcessStep",
+        rootFeature: "transitions",
+        sourceFeature: "source",
+        targetFeature: "target",
+      },
+    ],
+  };
+  const config = { levelOrder: ["cim"], levels: { cim: cimLevel } };
+  state.modelingConfig.config = config;
+  initializeModelingRuntimeState(config);
+  state.activeType = "cim";
+
+  const model = {
+    eClass: "CIMModel",
+    processes: [
+      {
+        eClass: "BusinessProcess",
+        id: "process-trigger-edit",
+        name: "Process with a descriptive trigger",
+        businessTriggerDescription: "A verified customer request arrives.",
+        completionCriterion: "The outcome and its durable obligations are committed.",
+        triggeringActor: "actor-customer",
+        steps: [
+          { eClass: "StartStep", id: "process-trigger-start", stepKind: "START" },
+          { eClass: "DecisionStep", id: "process-trigger-decision", stepKind: "DECISION" },
+          { eClass: "EndStep", id: "process-trigger-end", stepKind: "END" },
+        ],
+        transitions: [
+          {
+            eClass: "ProcessTransition",
+            id: "process-trigger-transition",
+            name: "Verified customer cancellation",
+            label: "Verified customer cancellation",
+            source: "process-trigger-decision",
+            target: "process-trigger-end",
+          },
+        ],
+      },
+    ],
+    graph: { elements: [], relationships: [] },
+  };
+  const { installGraphAndViews } = await import("../js/graph-store.js");
+  installGraphAndViews("cim", model, "process-trigger-edit", {
+    skipFragments: true,
+    skipClientLayout: true,
+  });
+
+  const process = state.graph.elementsById.get("process-trigger-edit");
+  process.triggeringActor = null;
+  assert.equal(semanticGraphHasChanges("cim", model, state.graph), true);
+  assert.equal(
+    stripRuntimeFields("cim", state.graph.relationshipsById.get("process-trigger-transition")).label,
+    "Verified customer cancellation",
+  );
+  assert.equal(
+    stripRuntimeFields("cim", { eClass: "DecisionStep", label: "Presentation-only label" }).label,
+    undefined,
+  );
+
+  const saved = structuredClone(model);
+  await serializeGraphAndViewsIntoAsync(saved, { syncView: false });
+
+  const savedProcess = saved.processes[0];
+  assert.equal(savedProcess.triggeringActor, null);
+  assert.equal(
+    savedProcess.businessTriggerDescription,
+    "A verified customer request arrives.",
+  );
+  assert.equal(
+    savedProcess.completionCriterion,
+    "The outcome and its durable obligations are committed.",
+  );
+  assert.equal(savedProcess.transitions[0].label, "Verified customer cancellation");
+});
+
+test("preserves Ecore features that share runtime field names across CIM, PIM, and PSM", async () => {
+  const config = {
+    levelOrder: ["cim", "pim", "psm"],
+    levels: {
+      cim: {
+        apiType: "CIM",
+        rootTemplate: { eClass: "CIMModel" },
+        elements: [
+          { type: "Requirement", attributes: [{ name: "sourceType" }] },
+          { type: "DataClassification", attributes: [{ name: "kind" }] },
+          { type: "RequirementRelationship", attributes: [{ name: "kind" }] },
+        ],
+      },
+      pim: {
+        apiType: "PIM",
+        rootTemplate: { eClass: "PIMModel" },
+        elements: [{ type: "PimThing" }],
+      },
+      psm: {
+        apiType: "PSM",
+        rootTemplate: { eClass: "AwsPsmModel" },
+        relationshipSemantics: { containmentKind: "CONTAINS", containmentKinds: ["CONTAINS"] },
+        workbench: { defaultViewDefinitionId: "main" },
+        viewDefinitions: [{ id: "main", viewType: "main" }],
+        elements: [
+          {
+            type: "AwsPsmModel",
+            references: [{ name: "resources", targetType: "S3Bucket", containment: true, many: true }],
+          },
+          {
+            type: "S3Bucket",
+            attributes: [{ name: "bucketName" }],
+            references: [
+              { name: "tags", targetType: "AwsTag", containment: true, many: true },
+              { name: "lifecycle", targetType: "S3LifecycleConfiguration", containment: true, many: false },
+              { name: "replication", targetType: "S3ReplicationConfiguration", containment: true, many: false },
+            ],
+          },
+          { type: "AwsTag", attributes: [{ name: "key" }, { name: "value" }] },
+          {
+            type: "S3LifecycleConfiguration",
+            references: [{ name: "rules", targetType: "S3LifecycleRule", containment: true, many: true }],
+          },
+          { type: "S3LifecycleRule", attributes: [{ name: "status" }, { name: "ruleId" }] },
+          {
+            type: "S3LifecycleFilter",
+            references: [{ name: "tags", targetType: "S3TagFilter", containment: true, many: true }],
+          },
+          { type: "S3TagFilter" },
+          {
+            type: "S3ReplicationConfiguration",
+            references: [{ name: "rules", targetType: "S3ReplicationRule", containment: true, many: true }],
+          },
+          { type: "S3ReplicationRule", attributes: [{ name: "ruleId" }, { name: "status" }] },
+        ],
+      },
+    },
+  };
+  state.modelingConfig.config = config;
+  applyModelingRuntimeConfig(config);
+  initializeModelingRuntimeState(config);
+  state.activeType = "psm";
+
+  assert.equal(
+    stripRuntimeFields("cim", { eClass: "Requirement", sourceType: "REGULATION" }).sourceType,
+    "REGULATION",
+  );
+  assert.equal(
+    stripRuntimeFields("cim", { eClass: "DataClassification", kind: "PERSONAL" }).kind,
+    "PERSONAL",
+  );
+  assert.equal(
+    stripRuntimeFields("cim", { eClass: "RequirementRelationship", kind: "REFINES" }).kind,
+    "REFINES",
+  );
+  assert.equal(
+    stripRuntimeFields("pim", { eClass: "PimThing", status: "DRAFT", tags: ["visual"] }).status,
+    undefined,
+  );
+  assert.deepEqual(
+    stripRuntimeFields("psm", { eClass: "S3Bucket", tags: [{ id: "tag-1", key: "Environment" }] })
+      .tags,
+    [{ id: "tag-1", key: "Environment" }],
+  );
+  assert.equal(
+    stripRuntimeFields("psm", { eClass: "S3LifecycleRule", status: "Enabled" }).status,
+    "Enabled",
+  );
+  assert.deepEqual(
+    stripRuntimeFields("psm", { eClass: "S3LifecycleFilter", tags: [{ id: "filter-1" }] }).tags,
+    [{ id: "filter-1" }],
+  );
+  assert.deepEqual(
+    getDefaultNode("psm", "S3Bucket", 0, 0).meta.tags,
+    [],
+    "a newly created semantic multi-reference should default to an empty collection",
+  );
+  assert.notEqual(
+    getDefaultNode("psm", "S3ReplicationRule", 0, 0).meta.status,
+    "DRAFT",
+    "the runtime status default must not replace a semantic status default",
+  );
+
+  const model = {
+    eClass: "AwsPsmModel",
+    resources: [
+      {
+        eClass: "S3Bucket",
+        id: "bucket-1",
+        bucketName: "original-bucket",
+        tags: [{ eClass: "AwsTag", id: "tag-1", key: "Environment", value: "test" }],
+        lifecycle: {
+          eClass: "S3LifecycleConfiguration",
+          id: "lifecycle-1",
+          rules: [
+            {
+              eClass: "S3LifecycleRule",
+              id: "lifecycle-rule-1",
+              ruleId: "expire-test-data",
+              status: "Enabled",
+            },
+          ],
+        },
+        replication: {
+          eClass: "S3ReplicationConfiguration",
+          id: "replication-1",
+          rules: [
+            { eClass: "S3ReplicationRule", id: "replication-rule-1", ruleId: "replicate" },
+          ],
+        },
+      },
+    ],
+  };
+  const { installGraphAndViews } = await import("../js/graph-store.js");
+  installGraphAndViews("psm", model, "psm-collision-test", {
+    skipFragments: true,
+    skipClientLayout: true,
+  });
+  assert.equal(
+    state.graph.elementsById.get("replication-rule-1").status,
+    undefined,
+    "an absent semantic status must not be populated by the runtime DRAFT default",
+  );
+  await serializeGraphAndViewsIntoAsync(model, { syncView: false });
+
+  installGraphAndViews("psm", model, "psm-collision-test", {
+    skipFragments: true,
+    skipClientLayout: true,
+  });
+  state.graph.elementsById.get("bucket-1").bucketName = "edited-bucket";
+  const saved = structuredClone(model);
+  await serializeGraphAndViewsIntoAsync(saved, { syncView: false });
+
+  assert.equal(saved.resources[0].bucketName, "edited-bucket");
+  assert.deepEqual(saved.resources[0].tags, model.resources[0].tags);
+  assert.equal(saved.resources[0].lifecycle.rules[0].status, "Enabled");
+  assert.equal("status" in saved.resources[0].replication.rules[0], false);
 });
 
 test("preserves semantic root assumptions when the graph projection is empty", () => {

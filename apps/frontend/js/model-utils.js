@@ -625,10 +625,13 @@ function readonlyReferenceNames(typeKey, type) {
 export function stripRuntimeFields(typeKey, element) {
   const copy = clone(element) || {};
   const type = modelTypeOf(copy);
-  const semanticKindAttribute = safeArray(definitionForType(typeKey, type)?.attributes).some(
-    (attribute) => attribute?.name === "kind",
+  const definition = definitionForType(typeKey, type);
+  const semanticFeatures = new Set(
+    [...safeArray(definition?.attributes), ...safeArray(definition?.references)]
+      .map((feature) => String(feature?.name || ""))
+      .filter(Boolean),
   );
-  [
+  const runtimeFields = [
     "x",
     "y",
     "label",
@@ -645,10 +648,9 @@ export function stripRuntimeFields(typeKey, element) {
     "semanticTargetElementId",
     "semanticDirection",
     "rootFeature",
-  ].forEach((key) => delete copy[key]);
-  if (!semanticKindAttribute) {
-    delete copy.kind;
-  }
+    "kind",
+  ];
+  runtimeFields.filter((key) => !semanticFeatures.has(key)).forEach((key) => delete copy[key]);
   readonlyReferenceNames(typeKey, type).forEach((key) => delete copy[key]);
   delete copy.__ownerId;
   delete copy.__containmentFeature;

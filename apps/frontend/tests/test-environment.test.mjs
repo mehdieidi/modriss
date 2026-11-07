@@ -39,7 +39,9 @@ test("workflow status derives from observed events and retains exact state input
 
 test("HTTP defaults use a real deployed route and stage, and data writes have appropriate inputs", () => {
   assert.deepEqual(initialInput("request", {routes:[{method:"POST",path:"/orders"}],stages:["test"]}),
-    {method:"POST",path:"/orders",stage:"test",query:{},headers:{},body:null});
+    {method:"POST",path:"/orders",stage:"test",query:{},headers:{},body:{}});
+  assert.deepEqual(initialInput("request", {routes:[{method:"GET",path:"/orders"}],stages:["test"]}),
+    {method:"GET",path:"/orders",stage:"test",query:{},headers:{},body:null});
   assert.ok(initialInput("put", {ResourceType:"AWS::DynamoDB::Table"}).item.id.S);
   assert.ok(initialInput("put", {ResourceType:"AWS::S3::Bucket"}).key);
 });

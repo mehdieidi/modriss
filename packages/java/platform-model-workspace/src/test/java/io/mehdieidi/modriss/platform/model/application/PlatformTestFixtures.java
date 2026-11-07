@@ -17,6 +17,10 @@ final class PlatformTestFixtures {
       loadBytes(REPOSITORY_ROOT.resolve("methodology/modeling-framework/samples/cim.xmi"));
   private static final byte[] AWS_PSM_XMI =
       loadBytes(REPOSITORY_ROOT.resolve("methodology/modeling-framework/samples/psm.xmi"));
+  private static final byte[] VENDING_MACHINE_CIM_XMI =
+      loadBytes(
+          REPOSITORY_ROOT.resolve(
+              ".idea/evaluation/case-studies/vending-machine-backend/models/vending-machine.cim.xmi"));
 
   private PlatformTestFixtures() {}
 
@@ -26,6 +30,10 @@ final class PlatformTestFixtures {
 
   static byte[] awsPsmXmi() {
     return AWS_PSM_XMI.clone();
+  }
+
+  static byte[] vendingMachineCimXmi() {
+    return VENDING_MACHINE_CIM_XMI.clone();
   }
 
   static ServiceStack createServices(Path tempDir) {

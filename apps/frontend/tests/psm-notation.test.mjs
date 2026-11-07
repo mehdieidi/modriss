@@ -3,7 +3,7 @@ import { test } from "node:test";
 import { defaultPsmNotation, inferPsmLevel, fieldKey } from "../js/psm-notation.js";
 
 globalThis.window = { location: { origin: "http://localhost" }, addEventListener() {} };
-globalThis.document = { getElementById: () => null, addEventListener() {} };
+globalThis.document = { getElementById: () => null, querySelector: () => null, addEventListener() {} };
 const { state } = await import("../js/state.js");
 const { initializeModelingRuntimeState, modelingPalette, modelingLegalKinds } = await import("../js/modeling-config-data.js");
 const { installGraphAndViews, serializeGraphAndViewsInto } = await import("../js/graph-store.js");

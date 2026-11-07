@@ -3,7 +3,7 @@ import { beforeEach, test } from "node:test";
 import { readFileSync } from "node:fs";
 
 globalThis.window = { location: { origin: "http://localhost" }, addEventListener() {} };
-globalThis.document = { getElementById: () => null, addEventListener() {} };
+globalThis.document = { getElementById: () => null, querySelector: () => null, addEventListener() {} };
 
 const { state } = await import("../js/state.js");
 const {

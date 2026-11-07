@@ -104,7 +104,8 @@ function applyDefinitionDefaults(meta, definition) {
     if (!field?.name || field.readonly) {
       continue;
     }
-    meta[field.name] = cloneDefault(field.defaultValue ?? impliedValues[field.name] ?? null);
+    const fallback = field.many ? [] : null;
+    meta[field.name] = cloneDefault(field.defaultValue ?? impliedValues[field.name] ?? fallback);
   }
 }
 

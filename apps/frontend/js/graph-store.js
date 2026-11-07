@@ -29,6 +29,7 @@ import {
   modelTypeMatches,
   semanticObjectById,
   semanticObjectId,
+  stripRuntimeFields,
 } from "./model-utils.js";
 
 const viewNodeIndexes = new WeakMap();
@@ -459,18 +460,33 @@ function relationshipIdentity(typeKey, relationship, index) {
   )}-${sanitizeIdPart(target)}`;
 }
 
-function normalizeElement(element, _index) {
+function normalizeElement(element, _index, typeKey = state.activeType) {
   const id = String(element?.id || genId("node")).trim();
   const normalized = {
     eClass: semanticType(element),
     id,
     name: semanticLabel(element),
     label: semanticLabel(element),
-    status: "DRAFT",
-    tags: [],
     ...clone(element),
     id,
   };
+  let semanticFeatures = new Set();
+  try {
+    const definition = modelingElementDefinition(typeKey, normalized.eClass);
+    semanticFeatures = new Set(
+      [...safeArray(definition?.attributes), ...safeArray(definition?.references)].map(
+        (feature) => feature?.name,
+      ),
+    );
+  } catch {
+    // Preserve the legacy presentation defaults if the level metadata is unavailable.
+  }
+  if (!semanticFeatures.has("status")) {
+    normalized.status ??= "DRAFT";
+  }
+  if (!semanticFeatures.has("tags")) {
+    normalized.tags ??= [];
+  }
   // Older UI metadata assigned 0 to optional EIntegerObject orderIndex fields. Treat that
   // generated placeholder as unset when loading, while preserving explicit positive indexes.
   if (normalized.orderIndex === 0) {
@@ -1167,7 +1183,7 @@ function indexRelationshipContents(graph, typeKey) {
     );
   });
   contained.forEach((element, index) => {
-    const normalized = normalizeElement(element, index);
+    const normalized = normalizeElement(element, index, typeKey);
     graph.elementsById.set(normalized.id, normalized);
   });
   graph.relationshipsById.forEach((relationship) => {
@@ -1194,7 +1210,7 @@ function buildGraph(typeKey, modelJson) {
   const allowedTypes = configuredElementTypes(typeKey);
 
   elementRecords(modelJson, typeKey).forEach((element, index) => {
-    const normalized = normalizeElement(element, index);
+    const normalized = normalizeElement(element, index, typeKey);
     if (isRootScopeElement(typeKey, normalized)) {
       return;
     }
@@ -2945,7 +2961,7 @@ function buildGraphFromSnapshot(snapshot, typeKey = state.activeType) {
   const graph = createEmptyGraph();
   const allowedTypes = configuredElementTypes(typeKey);
   safeArray(snapshot?.elements).forEach((element, index) => {
-    const normalized = normalizeElement(element, index);
+    const normalized = normalizeElement(element, index, typeKey);
     if (isRootScopeElement(typeKey, normalized)) {
       return;
     }
@@ -3102,13 +3118,17 @@ export function syncActiveViewFromVisibleGraph({ rebuildIndexes = true } = {}) {
   safeArray(state.diagram.nodes).forEach((node) => {
     const element =
       state.graph.elementsById.get(node.id) ||
-      normalizeElement({
-        ...node.meta,
-        id: node.id,
-        eClass: node.type,
-        name: node.label,
-        label: node.label,
-      });
+      normalizeElement(
+        {
+          ...node.meta,
+          id: node.id,
+          eClass: node.type,
+          name: node.label,
+          label: node.label,
+        },
+        undefined,
+        state.activeType,
+      );
     element.eClass = node.type || element.eClass;
     element.name = node.label || element.name;
     element.label = node.label || element.label;
@@ -3271,45 +3291,6 @@ export async function serializeGraphAndViewsIntoAsync(
   return root;
 }
 
-function stripConfiguredRuntimeFields(element, typeKey) {
-  const copyElement = clone(element) || {};
-  const type = semanticType(copyElement);
-  [
-    "x",
-    "y",
-    "label",
-    "status",
-    "tags",
-    "visualOnly",
-    "bundle",
-    "countsByKind",
-    "underlyingRelationshipIds",
-    "sourceType",
-    "targetType",
-    "semanticFeature",
-    "semanticSourceElementId",
-    "semanticTargetElementId",
-    "semanticDirection",
-    "rootFeature",
-  ].forEach((key) => delete copyElement[key]);
-  const semanticKindAttribute = safeArray(
-    modelingElementDefinition(typeKey, type)?.attributes,
-  ).some((attribute) => attribute?.name === "kind");
-  if (!semanticKindAttribute) {
-    delete copyElement.kind;
-  }
-  try {
-    (modelingElementDefinition(typeKey, type)?.references || [])
-      .filter((reference) => reference?.readonly)
-      .forEach((reference) => delete copyElement[reference.name]);
-  } catch {
-    // keep best-effort serialization when config is unavailable
-  }
-  delete copyElement.__ownerId;
-  delete copyElement.__containmentFeature;
-  return copyElement;
-}
-
 function elementMatchesAnyType(typeKey, element, types) {
   return safeArray(types).some((type) => {
     try {
@@ -3364,7 +3345,7 @@ function attachConfiguredContainments(
       );
     }
     const copies = children.map((child) => {
-      const childCopy = stripConfiguredRuntimeFields(child, typeKey);
+      const childCopy = stripRuntimeFields(typeKey, child);
       attachConfiguredContainments(childCopy, child, elements, typeKey, visited);
       return childCopy;
     });
@@ -3391,7 +3372,7 @@ function _populateConfiguredRootContainments(typeKey, root, graph) {
       (element) => !element.__ownerId && elementMatchesAnyType(typeKey, element, entry.types),
     );
     const copies = owned.map((element) => {
-      const copyElement = stripConfiguredRuntimeFields(element, typeKey);
+      const copyElement = stripRuntimeFields(typeKey, element);
       attachConfiguredContainments(copyElement, element, elements, typeKey);
       return copyElement;
     });
@@ -3403,15 +3384,19 @@ export function addNodeToGraphAndActiveView(node) {
   if (!node?.id) {
     return;
   }
-  const element = normalizeElement({
-    ...node.meta,
-    id: node.id,
-    eClass: node.type,
-    name: node.label,
-    label: node.label,
-    x: node.x,
-    y: node.y,
-  });
+  const element = normalizeElement(
+    {
+      ...node.meta,
+      id: node.id,
+      eClass: node.type,
+      name: node.label,
+      label: node.label,
+      x: node.x,
+      y: node.y,
+    },
+    undefined,
+    state.activeType,
+  );
   state.graph.elementsById.set(node.id, element);
   const owner = semanticObjectById(state.graph, element.__ownerId);
   if (owner && element.__containmentFeature) {
@@ -3731,13 +3716,17 @@ function materializeSemanticEdgeObject(edge, relationship) {
       matchesSemanticType(element, spec.ownerType, state.activeType),
     );
     if (!typedOwner) {
-      typedOwner = normalizeElement({
-        id: genId(),
-        eClass: spec.ownerType,
-        name:
-          modelingElementDefinition(state.activeType, spec.ownerType)?.displayName ||
-          spec.ownerType,
-      });
+      typedOwner = normalizeElement(
+        {
+          id: genId(),
+          eClass: spec.ownerType,
+          name:
+            modelingElementDefinition(state.activeType, spec.ownerType)?.displayName ||
+            spec.ownerType,
+        },
+        undefined,
+        state.activeType,
+      );
       state.graph.elementsById.set(typedOwner.id, typedOwner);
     }
     materialized.__ownerId = typedOwner.id;
