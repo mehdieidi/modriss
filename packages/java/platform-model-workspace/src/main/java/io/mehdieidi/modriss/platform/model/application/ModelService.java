@@ -714,7 +714,7 @@ public final class ModelService {
   /**
    * Applies patch operations only when the normalized result is structurally valid for the active
    * Ecore metamodel. This path is intended for assistant checkpoints and deliberately does not run
-   * EVL semantic validation.
+   * EVL semantic validation or interactive editor deletion cleanup.
    *
    * @param user requesting user
    * @param level model level
@@ -773,19 +773,22 @@ public final class ModelService {
             semanticChanged =
                 !importExport.semanticModelEquals(existing.modelJson(), normalizedModel);
           }
-          java.util.Set<String> deletedSemanticIds =
-              new java.util.HashSet<>(importExport.semanticIds(level, existing.modelJson()));
-          deletedSemanticIds.removeAll(importExport.semanticIds(level, normalizedModel));
-          if (!deletedSemanticIds.isEmpty()) {
-            deletedSemanticIds.addAll(
-                importExport.removedReferenceTargets(level, existing.modelJson(), normalizedModel));
-            deletedSemanticIds.addAll(
-                importExport.generatedObjectsEmptiedByReferenceRemoval(
-                    level, existing.modelJson(), normalizedModel));
-            deletedSemanticIds.addAll(
-                importExport.removedGeneratedSources(level, existing.modelJson(), normalizedModel));
-          }
-          if (semanticChanged) {
+          // Assistant checkpoints must preserve the explicit patch. Editor cleanup checks endpoints
+          // against this model's IDs, so valid cross-model trace links can look dangling. Validate
+          // the assistant result structurally below without inferring additional deletions.
+          if (!requireStructuralValidity && semanticChanged) {
+            java.util.Set<String> deletedSemanticIds =
+                new java.util.HashSet<>(importExport.semanticIds(level, existing.modelJson()));
+            deletedSemanticIds.removeAll(importExport.semanticIds(level, normalizedModel));
+            if (!deletedSemanticIds.isEmpty()) {
+              deletedSemanticIds.addAll(
+                  importExport.removedReferenceTargets(level, existing.modelJson(), normalizedModel));
+              deletedSemanticIds.addAll(
+                  importExport.generatedObjectsEmptiedByReferenceRemoval(
+                      level, existing.modelJson(), normalizedModel));
+              deletedSemanticIds.addAll(
+                  importExport.removedGeneratedSources(level, existing.modelJson(), normalizedModel));
+            }
             normalizedModel =
                 deletedSemanticIds.isEmpty()
                     ? importExport.removeDanglingReferences(level, normalizedModel)

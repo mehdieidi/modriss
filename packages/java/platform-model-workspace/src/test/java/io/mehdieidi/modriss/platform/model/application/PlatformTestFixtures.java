@@ -15,6 +15,8 @@ final class PlatformTestFixtures {
   private static final Path REPOSITORY_ROOT = findRepositoryRoot();
   private static final byte[] CLIMATE_CIM_XMI =
       loadBytes(REPOSITORY_ROOT.resolve("methodology/modeling-framework/samples/cim.xmi"));
+  private static final byte[] CLIMATE_PIM_XMI =
+      loadBytes(REPOSITORY_ROOT.resolve("methodology/modeling-framework/samples/pim.xmi"));
   private static final byte[] AWS_PSM_XMI =
       loadBytes(REPOSITORY_ROOT.resolve("methodology/modeling-framework/samples/psm.xmi"));
   private static final byte[] VENDING_MACHINE_CIM_XMI =
@@ -26,6 +28,10 @@ final class PlatformTestFixtures {
 
   static byte[] climateCimXmi() {
     return CLIMATE_CIM_XMI.clone();
+  }
+
+  static byte[] climatePimXmi() {
+    return CLIMATE_PIM_XMI.clone();
   }
 
   static byte[] awsPsmXmi() {
