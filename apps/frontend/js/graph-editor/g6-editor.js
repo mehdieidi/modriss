@@ -1,5 +1,6 @@
 import { state } from "../state.js";
 import { el } from "../dom.js";
+import { waitForAnimationFrame } from "../utils.js";
 import { isModelingLevel, modelingPlaceholderIcon } from "../modeling-config-data.js";
 import { getCanvasFitArea } from "../canvas-viewport-fit.js";
 import { mapDiagramToG6, mapEdgeToG6, mapNodeToG6 } from "./g6-mapper.js";
@@ -1470,10 +1471,7 @@ async function panGraphBy(dx, dy) {
 }
 
 function waitForViewportFrame() {
-  if (typeof window === "undefined" || typeof window.requestAnimationFrame !== "function") {
-    return Promise.resolve();
-  }
-  return new Promise((resolve) => window.requestAnimationFrame(resolve));
+  return waitForAnimationFrame();
 }
 
 function canvasPointToViewport(x, y) {

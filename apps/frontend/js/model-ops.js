@@ -18,7 +18,14 @@ import {
 import { flushCurrentModelPatch, prepareModelForSave } from "./model-patch.js";
 import { setBusy, setError, setStatus } from "./status.js";
 import { formatUserError } from "./errors.js";
-import { emptyDiagram, genId, scheduleIdleTask, stringifyJsonAsync, yieldToMain } from "./utils.js";
+import {
+  emptyDiagram,
+  genId,
+  scheduleIdleTask,
+  stringifyJsonAsync,
+  waitForAnimationFrame,
+  yieldToMain,
+} from "./utils.js";
 import { serializeModel } from "./diagram.js";
 import {
   activeView,
@@ -682,20 +689,12 @@ async function updateExistingModelWithPayload(payload) {
 }
 
 function waitForSaveIndicatorPaint() {
-  if (typeof window === "undefined" || typeof window.requestAnimationFrame !== "function") {
-    return Promise.resolve();
-  }
-  return new Promise((resolve) => {
-    window.requestAnimationFrame(() => window.setTimeout(resolve, 0));
-  });
+  return yieldToMain();
 }
 
 async function waitForCanvasPaint(frames = 2) {
-  if (typeof window === "undefined" || typeof window.requestAnimationFrame !== "function") {
-    return;
-  }
   for (let index = 0; index < frames; index += 1) {
-    await new Promise((resolve) => window.requestAnimationFrame(resolve));
+    await waitForAnimationFrame();
   }
 }
 

@@ -405,6 +405,27 @@ public class ChatbotController {
       throw new PlatformException(404, "Assistant turn not found.");
     var workflow = turns.workflow(turnId).orElse(null);
     int repairAttempts = Math.max(0, turns.validationAttempts(turnId).size() - 1);
+    Instant startedAt = turn.acceptedAt();
+    Instant completedAt = null;
+    if (turn.terminal()) {
+      // Use durable event times so background tabs and disconnected clients report the
+      // actual work duration. A manual resume starts a new interval on the same turn.
+      var events = turns.events(turnId, 0);
+      startedAt =
+          events.stream()
+              .filter(event -> "turn.resumed".equals(event.type()))
+              .map(AssistantTurn.Event::occurredAt)
+              .max(Instant::compareTo)
+              .orElse(startedAt);
+      Instant runStartedAt = startedAt;
+      completedAt =
+          events.stream()
+              .filter(event -> "turn.completed".equals(event.type()))
+              .map(AssistantTurn.Event::occurredAt)
+              .filter(time -> !time.isBefore(runStartedAt))
+              .max(Instant::compareTo)
+              .orElse(null);
+    }
     return new TurnStatusResponse(
         turn.id(),
         turn.state(),
@@ -448,7 +469,9 @@ public class ChatbotController {
             .map(
                 item ->
                     new WorkItemResponse(item.id(), item.ordinal(), item.label(), item.status()))
-            .toList());
+            .toList(),
+        startedAt.toString(),
+        completedAt == null ? null : completedAt.toString());
   }
 
   @PostMapping("/api/chatbot/turns/{turnId}/cancel")
@@ -1059,7 +1082,9 @@ public class ChatbotController {
       String workflowKind,
       String phase,
       String currentWorkItemId,
-      List<WorkItemResponse> workItems) {}
+      List<WorkItemResponse> workItems,
+      String startedAt,
+      String completedAt) {}
 
   public record WorkItemResponse(String id, int ordinal, String label, String status) {}
 

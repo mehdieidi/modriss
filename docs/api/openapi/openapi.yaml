@@ -4108,6 +4108,14 @@ components:
           type: string
         state:
           $ref: "#/components/schemas/AssistantTurnState"
+        startedAt:
+          type: string
+          format: date-time
+          description: Acceptance time; terminal snapshots use the latest manual resume time if present.
+        completedAt:
+          type: [string, "null"]
+          format: date-time
+          description: Durable completion event time for this run, independent of client delivery or rendering.
         modelId:
           type: string
         revision:

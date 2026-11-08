@@ -1,6 +1,7 @@
 package io.mehdieidi.modriss.backend.api;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -8,12 +9,20 @@ import static org.mockito.Mockito.when;
 import io.mehdieidi.modriss.backend.assistant.AssistantRealtimeHub;
 import io.mehdieidi.modriss.backend.upload.UploadService;
 import io.mehdieidi.modriss.platform.assistant.application.AgenticAssistantFacade;
+import io.mehdieidi.modriss.platform.assistant.turn.AssistantTurn;
+import io.mehdieidi.modriss.platform.assistant.turn.AssistantTurnStore;
 import io.mehdieidi.modriss.platform.identity.domain.UserRecord;
+import io.mehdieidi.modriss.platform.kernel.ModelLevel;
 import io.mehdieidi.modriss.platform.kernel.PlatformException;
 import io.mehdieidi.modriss.platform.project.application.ProjectService;
 import java.time.Instant;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -29,6 +38,73 @@ class ChatbotControllerTest {
   @Mock private ProjectService projects;
 
   @Mock private UploadService uploads;
+
+  @ParameterizedTest
+  @ValueSource(booleans = {false, true})
+  void turnStatusReportsDurableTimingForTheCurrentRun(boolean resumed) {
+    var turns = org.mockito.Mockito.mock(AssistantTurnStore.class);
+    var user =
+        new UserRecord(
+            "user-1",
+            "assistant@example.test",
+            "Assistant",
+            "hash",
+            "salt",
+            Instant.EPOCH,
+            Instant.EPOCH);
+    when(auth.user("token")).thenReturn(user);
+    Instant start = resumed ? Instant.EPOCH.plusSeconds(100) : Instant.EPOCH;
+    Instant end = start.plusSeconds(12);
+    var events = new java.util.ArrayList<AssistantTurn.Event>();
+    if (resumed) {
+      events.add(
+          new AssistantTurn.Event(
+              1, "turn", 1, "turn.completed", Instant.EPOCH.plusSeconds(10), Map.of()));
+      events.add(new AssistantTurn.Event(2, "turn", 2, "turn.resumed", start, Map.of()));
+    }
+    events.add(new AssistantTurn.Event(3, "turn", 3, "turn.completed", end, Map.of()));
+    events.add(new AssistantTurn.Event(4, "turn", 4, "turn.audit", end.plusSeconds(50), Map.of()));
+    when(turns.events("turn", 0)).thenReturn(events);
+    var controller = new ChatbotController(assistant, realtime, auth, projects, uploads, turns);
+    for (var state : AssistantTurn.State.values()) {
+      when(turns.find("turn")).thenReturn(Optional.of(timedTurn(user.id(), state)));
+      var response = controller.turn("token", "turn");
+      assertEquals((state.terminal() ? start : Instant.EPOCH).toString(), response.startedAt());
+      if (state.terminal()) assertEquals(end.toString(), response.completedAt());
+      else
+        assertNull(response.completedAt(), "Running turns must ignore previous completion events");
+    }
+  }
+
+  private AssistantTurn timedTurn(String userId, AssistantTurn.State state) {
+    return new AssistantTurn(
+        "turn",
+        "thread",
+        userId,
+        "project",
+        ModelLevel.CIM,
+        "model",
+        1L,
+        "key",
+        "Update the model",
+        null,
+        List.of(),
+        state,
+        Instant.EPOCH,
+        Instant.EPOCH.plusSeconds(300),
+        null,
+        null,
+        false,
+        2L,
+        0,
+        0,
+        null,
+        null,
+        "Done",
+        1,
+        100,
+        20);
+  }
 
   @Test
   void confirmationKeepsTheStoredProposalAndItsRevision() {

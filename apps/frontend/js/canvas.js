@@ -3,7 +3,7 @@ import { isAssistantModelLocked, ASSISTANT_MODEL_LOCK_EVENT } from "./assistant-
 import { state } from "./state.js";
 import { edgeLabel as configuredEdgeLabel } from "./relationship-label.js";
 import { el } from "./dom.js";
-import { escapeHtml, genId } from "./utils.js";
+import { escapeHtml, genId, waitForAnimationFrame } from "./utils.js";
 import { ensureReadableLayout } from "./layout-engine.js";
 import { getDefaultNode, legalKinds, legalKindsBetween, saveStoredEdgeLayout } from "./diagram.js";
 import {
@@ -1502,11 +1502,8 @@ function applyViewportFit({ fit = false } = {}) {
 }
 
 async function waitForViewportPaint(frames = 2) {
-  if (typeof window === "undefined" || typeof window.requestAnimationFrame !== "function") {
-    return;
-  }
   for (let index = 0; index < frames; index += 1) {
-    await new Promise((resolve) => window.requestAnimationFrame(resolve));
+    await waitForAnimationFrame();
   }
 }
 

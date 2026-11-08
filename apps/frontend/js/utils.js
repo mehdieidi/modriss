@@ -142,15 +142,34 @@ export function autoLayout(nodes, connections = []) {
   return nodes;
 }
 
-/** Yields to the browser so long synchronous work does not freeze the UI. */
-export function yieldToMain() {
+/** Allows a paint when visible, without blocking work on a suspended animation frame. */
+export function waitForAnimationFrame() {
+  const doc = globalThis.document;
+  if (doc?.hidden || typeof globalThis.requestAnimationFrame !== "function") {
+    return Promise.resolve();
+  }
   return new Promise((resolve) => {
-    if (typeof globalThis.requestAnimationFrame === "function") {
-      globalThis.requestAnimationFrame(() => globalThis.setTimeout(resolve, 0));
-      return;
-    }
-    globalThis.setTimeout(resolve, 0);
+    let frameId;
+    const finish = () => {
+      globalThis.clearTimeout(timeoutId);
+      globalThis.cancelAnimationFrame?.(frameId);
+      doc?.removeEventListener("visibilitychange", onVisibilityChange);
+      resolve();
+    };
+    const onVisibilityChange = () => {
+      if (doc.hidden) finish();
+    };
+    // Occluded windows can stop receiving frames without a visibility event.
+    const timeoutId = globalThis.setTimeout(finish, 100);
+    doc?.addEventListener("visibilitychange", onVisibilityChange);
+    frameId = globalThis.requestAnimationFrame(finish);
   });
+}
+
+/** Yields to the browser so long synchronous work does not freeze the UI. */
+export async function yieldToMain() {
+  await waitForAnimationFrame();
+  await new Promise((resolve) => globalThis.setTimeout(resolve, 0));
 }
 
 /** JSON.stringify after yielding so huge payloads do not block the click handler. */

@@ -165,6 +165,8 @@ let chatActivityHistory = [];
 let activeThinkingEl = null;
 let thinkingSteps = [];
 let thinkingStartTime = 0;
+let thinkingServerStartTime = null;
+let thinkingDurationMs = null;
 let thinkingTimerInterval = null;
 let thinkingProgress = null;
 let activeTurnCanceling = false;
@@ -474,7 +476,7 @@ function formatLiveElapsedTime(totalSeconds) {
 }
 
 function updateThinkingElapsedTime() {
-  const elapsed = Math.max(0, (Date.now() - thinkingStartTime) / 1000);
+  const elapsed = Math.max(0, (thinkingDurationMs ?? Date.now() - thinkingStartTime) / 1000);
   const timer = activeThinkingEl?.querySelector(".chat-thinking-elapsed");
   if (!timer) return;
   timer.textContent = formatLiveElapsedTime(elapsed);
@@ -491,6 +493,20 @@ function stopThinkingElapsedTimer() {
     clearInterval(thinkingTimerInterval);
     thinkingTimerInterval = null;
   }
+}
+
+function completeThinkingElapsedTimer(completedAt = null, startedAt = thinkingServerStartTime) {
+  const start = Date.parse(startedAt);
+  const end = Date.parse(completedAt);
+  if (Number.isFinite(start) && Number.isFinite(end) && end >= start) {
+    // Both timestamps come from the server, so client clock skew and delayed delivery
+    // cannot inflate the duration. A later status snapshot can refine an SSE fallback.
+    thinkingDurationMs = end - start;
+  } else if (thinkingDurationMs === null) {
+    thinkingDurationMs = Math.max(0, Date.now() - thinkingStartTime);
+  }
+  stopThinkingElapsedTimer();
+  updateThinkingElapsedTime();
 }
 
 function ensureThinkingStream(initialMessage = null, stage = "PLANNING", anchorMessage = null) {
@@ -549,7 +565,7 @@ function ensureThinkingStream(initialMessage = null, stage = "PLANNING", anchorM
       thinkingStartTime = Date.now();
     }
     updateThinkingElapsedTime();
-    if (thinkingTimerInterval === null) {
+    if (thinkingTimerInterval === null && thinkingDurationMs === null) {
       thinkingTimerInterval = setInterval(updateThinkingElapsedTime, 1000);
     }
   }
@@ -604,9 +620,14 @@ function finalizeThinkingStream() {
   if (!activeThinkingEl) {
     return;
   }
-  const durationSec = Math.max(1, Math.round((Date.now() - thinkingStartTime) / 1000));
+  const durationSec = Math.max(
+    1,
+    Math.round((thinkingDurationMs ?? Date.now() - thinkingStartTime) / 1000),
+  );
   stopThinkingElapsedTimer();
   thinkingStartTime = 0;
+  thinkingServerStartTime = null;
+  thinkingDurationMs = null;
   const minutes = Math.floor(durationSec / 60);
   const seconds = durationSec % 60;
   const durationLabel = minutes ? `${minutes}m${seconds ? ` ${seconds}s` : ""}` : `${seconds}s`;
@@ -642,6 +663,8 @@ function clearThinkingStream() {
   activeThinkingEl = null;
   thinkingSteps = [];
   thinkingStartTime = 0;
+  thinkingServerStartTime = null;
+  thinkingDurationMs = null;
   chatActivityHistory = [];
   thinkingProgress = null;
   activeTurnCanceling = false;
@@ -680,6 +703,7 @@ const DURABLE_TERMINAL_STATES = new Set([
 
 function streamDurableTurnEvents(turnId, typeKey, eventCursor = 0) {
   const controller = new AbortController();
+  const generation = chatGeneration;
   void fetch(
     apiUrl(`/chatbot/turns/${turnId}/events?eventCursor=${encodeURIComponent(eventCursor)}`),
     {
@@ -699,7 +723,8 @@ function streamDurableTurnEvents(turnId, typeKey, eventCursor = 0) {
         const frames = buffer.split("\n\n");
         buffer = frames.pop() || "";
         for (const frame of frames) {
-          if (controller.signal.aborted) return;
+          if (controller.signal.aborted || generation !== chatGeneration || activeTurnId !== turnId)
+            return;
           const eventName = frame.match(/^event:\s*(.+)$/m)?.[1];
           const raw = frame.match(/^data:\s*(.+)$/m)?.[1];
           if (!eventName || !raw) continue;
@@ -779,6 +804,7 @@ function streamDurableTurnEvents(turnId, typeKey, eventCursor = 0) {
                 });
               }
             } else if (eventName === "turn.completed") {
+              completeThinkingElapsedTimer(event.occurredAt);
               updateThinkingStatus(
                 event?.payload?.message || "Assistant turn completed.",
                 "COMPLETED",
@@ -813,11 +839,13 @@ async function waitForDurableTurn(turnId, typeKey, eventCursor = 0) {
         continue;
       }
       if (generation !== chatGeneration) return null;
+      if (latest?.startedAt) thinkingServerStartTime = latest.startedAt;
       renderDurableRun(latest);
       const stateName = String(latest?.state || "");
       const progress = durableProgressForTurn(latest);
       updateThinkingStatus(progress.message, progress.stage, progress.progress);
       if (DURABLE_TERMINAL_STATES.has(stateName)) {
+        completeThinkingElapsedTimer(latest?.completedAt, latest?.startedAt);
         events.abort();
         try {
           if (latest?.modelId) await applyAssistantModelResponse(typeKey, latest);
@@ -2256,6 +2284,7 @@ export async function sendChatMessage() {
         return;
       }
       applyHttpActivity(response);
+      completeThinkingElapsedTimer(response?.completedAt, response?.startedAt);
       appendAssistantDeduped(response.assistantMessage || "Done");
       await applyAssistantModelResponse(state.activeType, response, requestedModelId);
       endChatActivity(null, response?.workflowState || null);

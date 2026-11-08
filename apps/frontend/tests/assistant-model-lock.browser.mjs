@@ -93,7 +93,8 @@ const server = createServer(async (request, response) => {
         return;
       } else if (url.pathname === "/api/chatbot/turns/turn") {
         if (failPoll) { failPoll = false; response.writeHead(503).end('{"message":"Disconnected"}'); return; }
-        body = { turnId: "turn", state: terminal ? terminalState : "RUNNING", modelId: "model", revision: 2, finalMessage: "Done" };
+        body = { turnId: "turn", state: terminal ? terminalState : "RUNNING", modelId: "model", revision: 2, finalMessage: "Done",
+          startedAt: "2026-01-01T00:00:00Z", completedAt: terminal ? "2026-01-01T00:00:12Z" : null };
       } else if (url.pathname.endsWith("/editing-lock")) {
         if (failLockCheck) { failLockCheck = false; response.writeHead(503).end('{"message":"Disconnected"}'); return; }
         body = { locked: remoteLocked };
@@ -113,7 +114,7 @@ const server = createServer(async (request, response) => {
     }
     const path = resolve(root, `.${url.pathname}`);
     if (!path.startsWith(`${root}\\`) && !path.startsWith(`${root}/`)) { response.writeHead(403).end(); return; }
-    response.setHeader("Content-Type", ({ ".js": "text/javascript", ".css": "text/css", ".svg": "image/svg+xml" })[extname(path)] || "application/octet-stream");
+    response.setHeader("Content-Type", ({ ".js": "text/javascript", ".mjs": "text/javascript", ".css": "text/css", ".svg": "image/svg+xml" })[extname(path)] || "application/octet-stream");
     let content = await readFile(path);
     if (url.pathname === "/js/chat.js") {
       content = content.toString().replace(
@@ -134,9 +135,19 @@ try {
   const page = await browser.newPage();
   const errors = [];
   page.on("pageerror", (error) => errors.push(error.message));
+  const loadFailures = [];
+  page.on("console", (message) => {
+    if (message.type() === "error") loadFailures.push(message.text());
+  });
+  page.on("requestfailed", (request) => loadFailures.push(`${request.url()}: ${request.failure()?.errorText}`));
+  page.on("response", (response) => {
+    if (response.status() >= 400 && !response.url().includes("/api/")) {
+      loadFailures.push(`${response.status()} ${response.url()}`);
+    }
+  });
   await page.goto(`http://127.0.0.1:${server.address().port}`);
   await page.waitForFunction(() => window.lockTestReady, null, { timeout: 15000 })
-    .catch((error) => { throw new Error(`${error.message}\n${errors.join("\n")}`); });
+    .catch((error) => { throw new Error(`${error.message}\n${[...errors, ...loadFailures].join("\n")}`); });
   await page.evaluate(() => window.startRequest());
   await page.waitForFunction(() => window.testState.assistantModelLocked);
   await page.waitForFunction(() => window.testState.modelRevision === 2);
@@ -169,8 +180,19 @@ try {
   assert.equal(finalRefreshRequested, true);
   assert.equal(await page.evaluate(() => window.testState.assistantModelLocked), true);
   assert.equal(await page.locator("#saveModelBtn").isDisabled(), true);
+  assert.equal(await page.locator(".chat-thinking-elapsed").textContent(), "12s",
+    "Delayed status delivery must use server duration, even with a different client clock");
+  await page.waitForTimeout(1100);
+  assert.equal(await page.locator(".chat-thinking-elapsed").textContent(), "12s",
+    "Canvas refresh must not extend the completed turn's timer");
+  // Model an occluded window whose animation frames stop without a visibility event.
+  // Completion must progress without bringing the window back to the foreground.
+  await page.evaluate(() => {
+    window.savedRequestAnimationFrame = window.requestAnimationFrame;
+    window.requestAnimationFrame = () => 0;
+  });
   finishRefresh();
-  await page.waitForFunction(() => window.requestDone && !window.testState.assistantModelLocked, null, { timeout: 10000 })
+  await page.waitForFunction(() => window.requestDone && !window.testState.assistantModelLocked, null, { timeout: 10000, polling: 100 })
     .catch(async (error) => { throw new Error(`${error.message}\n${JSON.stringify(await page.evaluate(() => ({ error: window.testRefreshError, done: window.requestDone, locked: window.testState.assistantModelLocked, revision: window.testState.modelRevision, name: window.testState.baseModel.name, status: document.getElementById('chatMessages').textContent }))) }\n${errors.join("\n")}`); });
   assert.equal(await page.evaluate(() => window.testState.baseModel.name), "Assistant result");
   assert.equal(await page.evaluate(() => window.testState.diagram.nodes.length), 0);
@@ -178,6 +200,8 @@ try {
   assert.equal(await page.locator("#saveModelBtn").isDisabled(), false);
   assert.equal(await page.locator("#mobileDockSaveBtn").isDisabled(), false);
   assert.equal(await page.evaluate(() => document.getElementById("canvasViewport").inert), false);
+  assert.equal(await page.locator(".chat-thinking-summary").textContent(), "Worked for 12s");
+  await page.evaluate(() => { window.requestAnimationFrame = window.savedRequestAnimationFrame; });
 
   terminal = false;
   await page.evaluate(() => window.startRequest());
