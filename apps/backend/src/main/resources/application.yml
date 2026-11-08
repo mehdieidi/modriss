@@ -46,7 +46,9 @@ spring:
       mail.smtp.writetimeout: 5000
   flyway:
     enabled: true
-    ignore-migration-patterns: "*:missing"
+    # Preserve Flyway's default for databases ahead of this checkout, and tolerate
+    # intentionally squashed migrations that are no longer present locally.
+    ignore-migration-patterns: "*:future,*:missing"
     locations:
       - classpath:db/migration
       - classpath:db/assistant-migration
