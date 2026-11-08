@@ -5,6 +5,7 @@ import io.mehdieidi.modriss.platform.identity.domain.UserRecord;
 import io.mehdieidi.modriss.platform.project.application.ProjectService;
 import io.mehdieidi.modriss.platform.project.domain.ProjectRecord;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
@@ -20,9 +21,7 @@ final class PlatformTestFixtures {
   private static final byte[] AWS_PSM_XMI =
       loadBytes(REPOSITORY_ROOT.resolve("methodology/modeling-framework/samples/psm.xmi"));
   private static final byte[] VENDING_MACHINE_CIM_XMI =
-      loadBytes(
-          REPOSITORY_ROOT.resolve(
-              ".idea/evaluation/case-studies/vending-machine-backend/models/vending-machine.cim.xmi"));
+      loadResource("/fixtures/vending-machine.cim.xmi");
 
   private PlatformTestFixtures() {}
 
@@ -75,6 +74,17 @@ final class PlatformTestFixtures {
       return Files.readAllBytes(path);
     } catch (IOException ex) {
       throw new IllegalStateException("Could not load test fixture: " + path, ex);
+    }
+  }
+
+  private static byte[] loadResource(String resourcePath) {
+    try (InputStream stream = PlatformTestFixtures.class.getResourceAsStream(resourcePath)) {
+      if (stream == null) {
+        throw new IllegalStateException("Missing test fixture resource: " + resourcePath);
+      }
+      return stream.readAllBytes();
+    } catch (IOException ex) {
+      throw new IllegalStateException("Could not load test fixture resource: " + resourcePath, ex);
     }
   }
 
