@@ -427,13 +427,12 @@ public final class ArtifactService {
     Set<String> extensionDirectories = new LinkedHashSet<>(generatedDirectories);
     extensionDirectories.addAll(existingDirectories);
     directories = normalizeDirectories(directories, files.keySet());
-    for (String manifestPath : generatedPaths) {
-      if (isGenerationManifest(manifestPath)
-          && !java.util.Objects.equals(
-              artifact.files().get(manifestPath), files.get(manifestPath))) {
-        throw new PlatformException(
-            400, "Artifact ZIP cannot modify the generator trace manifest.");
-      }
+    // The archive contains editable sources, not authoritative generation metadata. A ZIP
+    // refined from another generation can have a different source hash, IDs, or checksums.
+    // Keep this artifact's trace and ownership metadata instead of trusting the uploaded trace
+    // or rejecting otherwise compatible sources because the trace differs.
+    for (Map.Entry<String, String> entry : artifact.files().entrySet()) {
+      if (isGenerationManifest(entry.getKey())) files.put(entry.getKey(), entry.getValue());
     }
     for (String directory :
         directories.stream().sorted(java.util.Comparator.comparingInt(String::length)).toList()) {

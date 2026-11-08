@@ -19,6 +19,8 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.zip.ZipInputStream;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import tools.jackson.databind.ObjectMapper;
 
 class ArtifactServiceTest {
@@ -258,6 +260,82 @@ class ArtifactServiceTest {
                         Set.of("manual", "generated/trace")))
             .status());
     assertFalse(imported.files().isEmpty());
+  }
+
+  @ParameterizedTest
+  @ValueSource(booleans = {false, true})
+  void importsSourcesFromAnotherGenerationWhilePreservingTrustedTrace(boolean legacyMetadata) {
+    InMemoryPlatformStore store = new InMemoryPlatformStore();
+    AuthService auth = new AuthService(store, Duration.ofHours(1));
+    ProjectService projects = new ProjectService(store, auth);
+    ArtifactService artifacts = new ArtifactService(store, projects);
+    var user = auth.register("trace@example.com", "correct horse", "Editor").user();
+    var project = projects.create(user, "Project", "");
+    String tracePath = "generated/trace/artifact-trace.json";
+    String savedTrace =
+        "{\"sourceModelHash\":\"current-model\",\"artifacts\":[{\"path\":\"src/generated.go\","
+            + "\"sourceElementIds\":[\"current-id\"],\"generatedChecksum\":\"original\"}]}";
+    String uploadedTrace =
+        "{\"sourceModelHash\":\"refined-model\",\"artifacts\":[{\"path\":\"untrusted.go\","
+            + "\"sourceElementIds\":[\"other-id\"],\"generatedChecksum\":\"refined\"}]}";
+    var metadata = store.objectMapper().createObjectNode();
+    metadata.put("sourceModelId", "current-psm");
+    metadata.put("sourceModelHash", "current-model");
+    metadata.putObject("traceability").putArray("current-id").add("src/generated.go");
+    if (!legacyMetadata) {
+      var rules = metadata.putObject("generationRules");
+      rules.put("src/generated.go", "ExampleGenerator");
+      rules.put(tracePath, "TraceGenerator");
+    }
+    var artifact =
+        artifacts.create(
+            user,
+            project.id(),
+            "artifact",
+            metadata,
+            Map.of("src/generated.go", "generated", tracePath, savedTrace));
+    if (!legacyMetadata)
+      artifacts.createFile(user, artifact.id(), "src/removed.txt", "removed on import");
+
+    var imported =
+        artifacts.importProjectArchive(
+            user,
+            artifact.id(),
+            Map.of(
+                "local-project/src/generated.go",
+                "developer-refined source",
+                "local-project/" + tracePath,
+                uploadedTrace,
+                "local-project/src/manual/notes.md",
+                "user-owned"),
+            Set.of("local-project/src/empty"));
+
+    assertEquals("developer-refined source", imported.files().get("src/generated.go"));
+    assertEquals(savedTrace, imported.files().get(tracePath));
+    assertEquals("user-owned", imported.files().get("src/manual/notes.md"));
+    assertFalse(imported.files().containsKey("src/removed.txt"));
+    assertEquals(
+        artifact.modelJson().path("sourceModelId"), imported.modelJson().path("sourceModelId"));
+    assertEquals(
+        artifact.modelJson().path("sourceModelHash"), imported.modelJson().path("sourceModelHash"));
+    assertEquals(
+        artifact.modelJson().path("traceability"), imported.modelJson().path("traceability"));
+    assertEquals(
+        artifact.modelJson().path("generationRules"), imported.modelJson().path("generationRules"));
+    assertEquals(imported, artifacts.get(user, artifact.id()));
+
+    var failure =
+        assertThrows(
+            PlatformException.class,
+            () ->
+                artifacts.importProjectArchive(
+                    user, artifact.id(), Map.of(tracePath, uploadedTrace), Set.of()));
+    assertEquals(400, failure.status());
+    assertTrue(failure.getMessage().contains("src/generated.go"));
+    assertEquals(imported, artifacts.get(user, artifact.id()));
+    assertThrows(
+        PlatformException.class,
+        () -> artifacts.updateFile(user, artifact.id(), tracePath, uploadedTrace));
   }
 
   private static final class InMemoryPlatformStore implements PlatformStore {

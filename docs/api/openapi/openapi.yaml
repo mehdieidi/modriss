@@ -1357,7 +1357,7 @@ paths:
     post:
       tags: [Artifacts]
       summary: Import a locally refined artifact ZIP
-      description: Replaces current files after verifying that every generator-owned output remains present, additions stay within approved project extension directories, and the generator trace manifest is unchanged. Accepts UTF-8 text and explicitly saved empty folders; rejects unsafe or binary entries.
+      description: Replaces current files after verifying that every generator-owned output remains present and additions stay within approved project extension directories. Preserves the saved generator trace manifest and ownership metadata, ignoring uploaded trace contents. Accepts UTF-8 text and explicitly saved empty folders; rejects unsafe or binary entries.
       requestBody:
         required: true
         content:

@@ -27,6 +27,7 @@ import java.nio.file.Path;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -746,6 +747,70 @@ class TransformationServiceTest {
     assertTrue(
         regenerated.modelJson().path("directories").toString().contains(serviceInternalDirectory),
         "Regeneration must preserve user-created folders.");
+  }
+
+  @Test
+  void importsRefinedArtifactSourcesAcrossGeneratedAndImportedPsm() throws Exception {
+    var services = PlatformTestFixtures.createServicesWithTransformations(tempDir);
+    var context =
+        PlatformTestFixtures.registerOwner(services, "archive@example.com", "Editor", "Archive");
+    var cim = createClimateCim(services, context, "archive-cim");
+    var pim = services.transformations().cimToPim(context.user(), cim.id());
+    var generatedPsm = services.transformations().pimToPsm(context.user(), pim.id());
+    var generatedArtifact =
+        services.transformations().psmToArtifact(context.user(), generatedPsm.id());
+
+    // An exported/refined XMI can describe the same outputs with different serialization bytes.
+    String refinedXmi =
+        new String(services.models().sourceXmi(generatedPsm).orElseThrow(), StandardCharsets.UTF_8)
+            + "\n<!-- Refined AWS model -->\n";
+    var imported =
+        services
+            .models()
+            .importModel(
+                ModelLevel.PSM,
+                "refined-psm.xmi",
+                refinedXmi.getBytes(StandardCharsets.UTF_8),
+                "xmi");
+    var importedPsm =
+        services
+            .models()
+            .create(
+                context.user(),
+                ModelLevel.PSM,
+                context.project().id(),
+                "refined-psm",
+                imported.modelJson());
+    var refinedArtifact =
+        services.transformations().psmToArtifact(context.user(), importedPsm.id());
+    String tracePath = "generated/trace/artifact-trace.json";
+    assertNotEquals(
+        generatedArtifact.files().get(tracePath), refinedArtifact.files().get(tracePath));
+    assertEquals(generatedArtifact.files().keySet(), refinedArtifact.files().keySet());
+
+    String notesPath = "manual/notes.md";
+    var archiveFiles = new LinkedHashMap<String, String>();
+    refinedArtifact
+        .files()
+        .forEach((path, content) -> archiveFiles.put("project/" + path, content));
+    archiveFiles.put("project/" + notesPath, "Developer-owned source notes");
+    for (var artifact : List.of(generatedArtifact, refinedArtifact)) {
+      var result =
+          services
+              .artifacts()
+              .importProjectArchive(
+                  context.user(), artifact.id(), archiveFiles, Set.of("project/manual/empty"));
+      assertEquals(artifact.files().get(tracePath), result.files().get(tracePath));
+      assertEquals(
+          artifact.modelJson().path("traceability"), result.modelJson().path("traceability"));
+      assertEquals(
+          artifact.modelJson().path("generationRules"), result.modelJson().path("generationRules"));
+      assertEquals("Developer-owned source notes", result.files().get(notesPath));
+      assertEquals(refinedArtifact.files().get("README.md"), result.files().get("README.md"));
+    }
+    var regenerated = services.transformations().psmToArtifact(context.user(), generatedPsm.id());
+    assertEquals("Developer-owned source notes", regenerated.files().get(notesPath));
+    assertEquals(generatedArtifact.files().get(tracePath), regenerated.files().get(tracePath));
   }
 
   @Test

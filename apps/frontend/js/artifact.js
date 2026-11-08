@@ -1464,7 +1464,7 @@ export async function importArtifactArchive(file) {
   const confirmed = await confirmAction({
     title: "Import artifact ZIP?",
     message:
-      "Import this ZIP as the current artifact project? Files missing from the ZIP will be removed, and all generated files must be present.",
+      "Import this ZIP as the current artifact project? Files missing from the ZIP will be removed, and all generated files must be present. The current generator trace manifest will be kept.",
     confirmLabel: "Import ZIP",
   });
   if (!confirmed) {

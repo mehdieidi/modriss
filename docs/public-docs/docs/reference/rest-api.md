@@ -150,10 +150,11 @@ raw generated XMI, never to merged Working.
 `/api/artifact` supports project-scoped listing, artifact retrieval, file reads and edits, creating
 files and folders, renaming user-owned files and folders, ZIP import, and ZIP download. Empty
 folders appear in the editor and survive ZIP round trips. Imported archives must retain every
-current generator-owned file, keep the trace manifest intact, and place new files below the project
-root or a generator-approved extension directory. Unsafe paths, binary files, and unsupported
-additions are rejected. Files added outside generator-owned paths and their folders survive later
-PSM-to-artifact regeneration.
+current generator-owned file and place new files below the project root or a generator-approved
+extension directory. Unsafe paths, binary files, and unsupported additions are rejected.
+The saved generator trace manifest and ownership metadata are preserved;
+uploaded trace contents do not replace them. Files added outside generator-owned paths and their
+folders survive later PSM-to-artifact regeneration.
 
 ### Modeling and Layout
 
