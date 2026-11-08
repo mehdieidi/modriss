@@ -34,7 +34,8 @@ class ModelServiceAssistantPatchTest {
     var links = created.modelJson().path("traceModel").path("links");
     assertFalse(links.isEmpty(), "The fixture must contain cross-model trace links");
     assertTrue(
-        links.valueStream()
+        links
+            .valueStream()
             .anyMatch(link -> !before.containsKey(link.path("sourceElementId").asText())),
         "At least one trace endpoint must belong to another model");
     var validation = models.validateStructural(ModelLevel.PIM, created.modelJson());

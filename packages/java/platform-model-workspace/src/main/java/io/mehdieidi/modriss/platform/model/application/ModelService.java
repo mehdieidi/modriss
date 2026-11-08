@@ -782,12 +782,14 @@ public final class ModelService {
             deletedSemanticIds.removeAll(importExport.semanticIds(level, normalizedModel));
             if (!deletedSemanticIds.isEmpty()) {
               deletedSemanticIds.addAll(
-                  importExport.removedReferenceTargets(level, existing.modelJson(), normalizedModel));
+                  importExport.removedReferenceTargets(
+                      level, existing.modelJson(), normalizedModel));
               deletedSemanticIds.addAll(
                   importExport.generatedObjectsEmptiedByReferenceRemoval(
                       level, existing.modelJson(), normalizedModel));
               deletedSemanticIds.addAll(
-                  importExport.removedGeneratedSources(level, existing.modelJson(), normalizedModel));
+                  importExport.removedGeneratedSources(
+                      level, existing.modelJson(), normalizedModel));
             }
             normalizedModel =
                 deletedSemanticIds.isEmpty()
