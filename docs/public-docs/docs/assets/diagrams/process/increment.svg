@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg style="background: #fff" xmlns="http://www.w3.org/2000/svg" width="1200" height="624" viewBox="0 0 1200 624" role="img" aria-labelledby="modriss-increment-title modriss-increment-desc" id="modriss-increment-root">
+      <title id="modriss-increment-title">MODRISS model-driven increment</title>
+      <desc id="modriss-increment-desc">One capability slice moves through reviewed CIM, PIM and PSM models, transformation, generation, implementation, testing and G5 acceptance, with feedback to the owning source and a next-slice loop.</desc>
+      <defs>
+      <style>#modriss-increment-root { color: #000; font-family: Arial, Helvetica, sans-serif; }
+      #modriss-increment-root .diagram-container { overflow-x: auto; }
+      #modriss-increment-root .step { fill: #fff; stroke: #000; stroke-width: 1.8; }
+      #modriss-increment-root .gate-badge { fill: #fff; stroke: #000; stroke-width: 1.2; }
+      #modriss-increment-root .edge { fill: none; stroke: #000; stroke-width: 1.8; stroke-linejoin: round; marker-end: url(#modriss-increment-arrow); }
+      #modriss-increment-root .feedback { stroke-dasharray: 6 4; }
+      #modriss-increment-root .label-mask { fill: #fff; }
+      #modriss-increment-root text { fill: #000; font-family: Arial, Helvetica, sans-serif; }
+      #modriss-increment-root .model-name { font-size: 24px; font-weight: 700; }
+      #modriss-increment-root .node-name { font-size: 20px; font-weight: 600; }
+      #modriss-increment-root .role, #modriss-increment-root .output, #modriss-increment-root .tool { font-size: 16px; }
+      #modriss-increment-root .output { font-style: italic; }
+      #modriss-increment-root .gate { font-size: 14px; font-weight: 600; }
+      #modriss-increment-root .arrow-label { font-size: 16px; font-weight: 600; }
+      @media print {
+#modriss-increment-root .diagram-container { overflow-x: visible; }
+}</style>
+        <marker id="modriss-increment-arrow" viewBox="0 0 10 8" refX="9" refY="4" markerWidth="10" markerHeight="8" markerUnits="userSpaceOnUse" orient="auto">
+          <path d="M 0 0 L 10 4 L 0 8 Z" fill="#000" />
+        </marker>
+      </defs>
+
+      <g data-layer="connections">
+        <path class="edge" data-from="frame" data-to="cim" d="M 264 220 H 328" />
+        <path class="edge" data-from="cim" data-to="pim" data-tool="ETL" d="M 536 220 H 600" />
+        <path class="edge" data-from="pim" data-to="psm" data-tool="ETL" d="M 808 220 H 872" />
+        <path class="edge" data-from="psm" data-to="generate" d="M 984 292 V 408" />
+        <path class="edge" data-from="generate" data-to="complete" d="M 872 476 H 808" />
+        <path class="edge" data-from="complete" data-to="review" d="M 600 476 H 504" />
+        <path class="edge" data-from="review" data-to="accepted" data-outcome="accepted" d="M 360 476 H 264" />
+        <path class="edge feedback" data-from="accepted" data-to="frame" data-relation="next-slice" d="M 80 476 H 48 Q 40 476 40 468 V 228 Q 40 220 48 220 H 80" />
+        <path class="edge feedback" data-from="pim" data-to="cim" data-relation="domain-gap" d="M 648 148 V 116 Q 648 108 640 108 H 440 Q 432 108 432 116 V 148" />
+        <path class="edge feedback" data-from="psm" data-to="pim" data-relation="architecture-gap" d="M 984 148 V 80 Q 984 72 976 72 H 712 Q 704 72 704 80 V 148" />
+        <path class="edge feedback" data-from="complete" data-to="psm" data-relation="model-gap" d="M 704 408 V 360 Q 704 352 712 352 H 952 Q 960 352 960 344 V 292" />
+        <path class="edge feedback" data-from="review" data-to="complete" data-outcome="rework" d="M 432 548 V 572 Q 432 580 440 580 H 696 Q 704 580 704 572 V 544" />
+      </g>
+
+      <g data-layer="connection-labels">
+        <rect class="label-mask" x="550" y="188" width="36" height="24" />
+        <text class="arrow-label" x="568" y="206" text-anchor="middle">ETL</text>
+        <rect class="label-mask" x="822" y="188" width="36" height="24" />
+        <text class="arrow-label" x="840" y="206" text-anchor="middle">ETL</text>
+        <rect class="label-mask" x="482" y="76" width="116" height="24" />
+        <text class="arrow-label" x="540" y="94" text-anchor="middle">DOMAIN GAP</text>
+        <rect class="label-mask" x="784" y="40" width="120" height="24" />
+        <text class="arrow-label" x="844" y="58" text-anchor="middle">ARCH. GAP</text>
+        <rect class="label-mask" x="778" y="320" width="108" height="24" />
+        <text class="arrow-label" x="832" y="338" text-anchor="middle">MODEL GAP</text>
+        <rect class="label-mask" x="274" y="444" width="76" height="24" />
+        <text class="arrow-label" x="312" y="462" text-anchor="middle">ACCEPT</text>
+        <rect class="label-mask" x="524" y="548" width="88" height="24" />
+        <text class="arrow-label" x="568" y="566" text-anchor="middle">REWORK</text>
+        <rect class="label-mask" x="50" y="336" width="108" height="24" />
+        <text class="arrow-label" x="104" y="354" text-anchor="middle">NEXT SLICE</text>
+      </g>
+
+      <g data-node="frame">
+        <rect class="step" x="80" y="148" width="184" height="144" rx="4" />
+        <text class="node-name" x="100" y="184">Frame</text>
+        <text class="node-name" x="100" y="208">increment</text>
+        <text class="role" x="100" y="244">Product owner</text>
+        <text class="output" x="100" y="272">Scope &amp; criteria</text>
+      </g>
+
+      <g data-node="cim">
+        <rect class="step" x="328" y="148" width="208" height="144" rx="4" />
+        <rect class="gate-badge" x="488" y="160" width="32" height="24" rx="2" />
+        <text class="gate" x="504" y="177" text-anchor="middle">G2</text>
+        <text class="model-name" x="348" y="180">CIM</text>
+        <text class="node-name" x="348" y="208">Domain modeling</text>
+        <text class="role" x="348" y="244">Business modeler</text>
+        <text class="output" x="348" y="272">Accepted CIM</text>
+      </g>
+
+      <g data-node="pim">
+        <rect class="step" x="600" y="148" width="208" height="144" rx="4" />
+        <rect class="gate-badge" x="760" y="160" width="32" height="24" rx="2" />
+        <text class="gate" x="776" y="177" text-anchor="middle">G3</text>
+        <text class="model-name" x="620" y="180">PIM</text>
+        <text class="node-name" x="620" y="208">Serverless design</text>
+        <text class="role" x="620" y="244">Solution architect</text>
+        <text class="output" x="620" y="272">Accepted PIM</text>
+      </g>
+
+      <g data-node="psm">
+        <rect class="step" x="872" y="148" width="224" height="144" rx="4" />
+        <rect class="gate-badge" x="1048" y="160" width="32" height="24" rx="2" />
+        <text class="gate" x="1064" y="177" text-anchor="middle">G4</text>
+        <text class="model-name" x="892" y="180">PSM</text>
+        <text class="node-name" x="892" y="208">Cloud realization</text>
+        <text class="role" x="892" y="244">Cloud engineer</text>
+        <text class="output" x="892" y="272">Accepted PSM</text>
+      </g>
+
+      <g data-node="generate">
+        <rect class="step" x="872" y="408" width="224" height="136" rx="4" />
+        <text class="node-name" x="892" y="442">Generate</text>
+        <text class="tool" x="892" y="470">EGL / EGX</text>
+        <text class="role" x="892" y="498">Cloud engineer</text>
+        <text class="output" x="892" y="526">Artifact baseline</text>
+      </g>
+
+      <g data-node="complete">
+        <rect class="step" x="600" y="408" width="208" height="136" rx="4" />
+        <text class="node-name" x="620" y="442">Complete &amp; test</text>
+        <text class="tool" x="620" y="470">Logic · integration</text>
+        <text class="role" x="620" y="498">App · QA · security</text>
+        <text class="output" x="620" y="526">Code &amp; test evidence</text>
+      </g>
+
+      <g data-node="review">
+        <path class="step" d="M 432 404 L 504 476 L 432 548 L 360 476 Z" />
+        <text class="model-name" x="432" y="470" text-anchor="middle">G5</text>
+        <text class="node-name" x="432" y="496" text-anchor="middle">Accept?</text>
+      </g>
+
+      <g data-node="accepted">
+        <rect class="step" x="80" y="420" width="184" height="112" rx="20" />
+        <text class="node-name" x="172" y="454" text-anchor="middle">Accepted</text>
+        <text class="node-name" x="172" y="478" text-anchor="middle">increment</text>
+        <text class="output" x="172" y="510" text-anchor="middle">To release assembly</text>
+      </g>
+    </svg>

@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg style="background: #fff" xmlns="http://www.w3.org/2000/svg" width="1224" height="472" viewBox="0 0 1224 472" role="img" aria-labelledby="modriss-lifecycle-title modriss-lifecycle-desc" id="modriss-lifecycle-root">
+      <title id="modriss-lifecycle-title">MODRISS lifecycle</title>
+      <desc id="modriss-lifecycle-desc">Three sequential development phases contain repeated increments and releases, while concurrent operations starts at G7 and contributes shutdown evidence to shared G8 closure.</desc>
+      <defs>
+      <style>#modriss-lifecycle-root { color: #000; font-family: Arial, Helvetica, sans-serif; }
+      #modriss-lifecycle-root .diagram-container { overflow-x: auto; }
+      #modriss-lifecycle-root .phase { fill: #fff; stroke: #000; stroke-width: 1.8; }
+      #modriss-lifecycle-root .active { fill: #fff; stroke: #000; stroke-width: 2.4; }
+      #modriss-lifecycle-root .step { fill: #fff; stroke: #000; stroke-width: 1.6; }
+      #modriss-lifecycle-root .edge { fill: none; stroke: #000; stroke-width: 1.8; stroke-linejoin: round; marker-end: url(#modriss-lifecycle-arrow); }
+      #modriss-lifecycle-root .feedback { stroke-dasharray: 6 4; }
+      #modriss-lifecycle-root .label-mask { fill: #fff; }
+      #modriss-lifecycle-root text { fill: #000; font-family: Arial, Helvetica, sans-serif; }
+      #modriss-lifecycle-root .phase-name { font-size: 20px; font-weight: 700; }
+      #modriss-lifecycle-root .node-name { font-size: 22px; font-weight: 600; }
+      #modriss-lifecycle-root .step-name { font-size: 20px; font-weight: 600; }
+      #modriss-lifecycle-root .gate { font-size: 16px; }
+      #modriss-lifecycle-root .arrow-label { font-size: 16px; font-weight: 600; }
+      @media print {
+#modriss-lifecycle-root .diagram-container { overflow-x: visible; }
+}</style>
+        <marker id="modriss-lifecycle-arrow" viewBox="0 0 10 8" refX="9" refY="4" markerWidth="10" markerHeight="8" markerUnits="userSpaceOnUse" orient="auto">
+          <path d="M 0 0 L 10 4 L 0 8 Z" fill="#000" />
+        </marker>
+      </defs>
+
+      <!-- Containment identifies the one-time active phase; only its work repeats. -->
+      <rect class="active" data-zone="phase-1" x="272" y="40" width="528" height="224" rx="4" />
+
+      <g data-layer="connections">
+        <path class="edge" data-from="phase-0" data-to="phase-1" d="M 224 152 H 272" />
+        <path class="edge" data-from="phase-1" data-to="phase-2" d="M 800 152 H 848" />
+        <path class="edge" data-from="increment" data-to="release" d="M 508 152 H 564" />
+        <path class="edge feedback" data-from="release" data-to="increment" data-relation="next-release" d="M 668 200 V 224 Q 668 232 660 232 H 408 Q 400 232 400 224 V 200" />
+        <path class="edge" data-from="release" data-to="operations" data-relation="G7-handover" d="M 776 176 H 812 Q 820 176 820 184 V 328" />
+        <path class="edge feedback" data-from="operations" data-to="increment" data-relation="product-change" d="M 360 328 V 200" />
+        <path class="edge" data-from="phase-2" data-to="closure" data-relation="retirement-evidence" d="M 1048 152 H 1132 Q 1140 152 1140 160 V 340" />
+        <path class="edge" data-from="operations" data-to="closure" data-relation="shutdown-evidence" d="M 1048 380 H 1100" />
+      </g>
+
+      <g data-layer="connection-labels">
+        <rect class="label-mask" x="472" y="204" width="124" height="20" />
+        <text class="arrow-label" x="534" y="220" text-anchor="middle">NEXT RELEASE</text>
+        <rect class="label-mask" x="272" y="276" width="80" height="24" />
+        <text class="arrow-label" x="316" y="294" text-anchor="middle">CHANGE</text>
+        <rect class="label-mask" x="830" y="276" width="112" height="24" />
+        <text class="arrow-label" x="886" y="294" text-anchor="middle">HANDOVER</text>
+      </g>
+
+      <g data-node="phase-0">
+        <rect class="phase" x="40" y="40" width="184" height="224" rx="4" />
+        <text class="phase-name" x="60" y="76">Phase 0</text>
+        <text class="node-name" x="60" y="124">Inception &amp;</text>
+        <text class="node-name" x="60" y="152">tailoring</text>
+        <text class="gate" x="60" y="228">G0 · G1</text>
+      </g>
+
+      <text class="phase-name" x="296" y="76">Phase 1 · Active product</text>
+      <g data-node="increment">
+        <rect class="step" x="296" y="104" width="212" height="96" rx="4" />
+        <text class="step-name" x="402" y="132" text-anchor="middle">Model-driven</text>
+        <text class="step-name" x="402" y="156" text-anchor="middle">increment</text>
+        <text class="gate" x="402" y="184" text-anchor="middle">G2–G5</text>
+      </g>
+      <g data-node="release">
+        <rect class="step" x="564" y="104" width="212" height="96" rx="4" />
+        <text class="step-name" x="670" y="132" text-anchor="middle">Qualify, promote</text>
+        <text class="step-name" x="670" y="156" text-anchor="middle">&amp; hand over</text>
+        <text class="gate" x="670" y="184" text-anchor="middle">G6–G7</text>
+      </g>
+
+      <g data-node="phase-2">
+        <rect class="phase" x="848" y="40" width="200" height="224" rx="4" />
+        <text class="phase-name" x="868" y="76">Phase 2</text>
+        <text class="node-name" x="868" y="124">Retire, migrate</text>
+        <text class="node-name" x="868" y="152">&amp; close</text>
+      </g>
+
+      <g data-node="operations">
+        <rect class="phase" x="272" y="328" width="776" height="104" rx="4" />
+        <text class="node-name" x="296" y="372">Operations &amp; maintenance</text>
+        <text class="gate" x="296" y="404">Kanban · live releases</text>
+      </g>
+
+      <g data-node="closure">
+        <path class="phase" d="M 1140 340 L 1180 380 L 1140 420 L 1100 380 Z" />
+        <text class="phase-name" x="1140" y="376" text-anchor="middle">G8</text>
+        <text class="gate" x="1140" y="396" text-anchor="middle">Close</text>
+      </g>
+    </svg>

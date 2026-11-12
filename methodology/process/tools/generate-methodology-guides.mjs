@@ -177,6 +177,10 @@ function renderCatalog(process) {
 function patchGuide(level, catalog) {
   const guidePath = path.join(GUIDES, GUIDE_MAP[level]);
   let content = fs.readFileSync(guidePath, "utf8");
+  if (content.includes("<!-- Process documentation is maintained by hand. -->")) {
+    console.log(`Keeping manually maintained process guide: ${guidePath}`);
+    return;
+  }
   const start = "<!-- TASK-CATALOG:START -->";
   const end = "<!-- TASK-CATALOG:END -->";
   const startIdx = content.indexOf(start);

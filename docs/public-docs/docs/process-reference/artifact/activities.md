@@ -1,252 +1,57 @@
-# Generated-artifact readiness: phases and activities
+<!-- Process documentation is maintained by hand. -->
 
-This page documents the **SPEM process-structure Activity, Phase, and TaskUse** elements used by the Generated-artifact readiness process. It is generated from the canonical executable definition, so the names and identifiers match the API and process interface. The explanation adds practical teaching around the normative data.
+# Implementation and release
 
-A phase establishes a significant lifecycle period and normally ends at a major checkpoint. An activity groups related work within a phase or process component. A TaskUse places reusable task guidance into that process context. Entry and exit conditions describe evidence states; they are not calendar dates.
+This work turns the accepted cloud design into tested software and then prepares a specific version for use. The team completes an increment before deciding which accepted increments will form a release.
 
-<figure class="doc-diagram">
-  <a class="doc-diagram__link" href="../../../assets/diagrams/process-reference/artifact-activities.svg" aria-label="Open full-size diagram: ARTIFACT activity and evidence flow">
-    <img src="../../../assets/diagrams/process-reference/artifact-activities.svg" alt="Inspect &amp; Baseline Generated Project leads to Harden Environment &amp; Delivery Configuration leads to Verify Release Candidate leads to Approve Release &amp; Operational Handover; feedback returns to affected source activities before readiness is reconsidered." loading="lazy" />
-  </a>
-  <figcaption>Four readiness stages turn generated output into a verified handover package. Findings reopen the affected source and readiness work.</figcaption>
-</figure>
+## Generate and record the project
 
-## Summary
+The cloud platform engineer selects the accepted PSM version, generator, templates and environment profile. Epsilon's EGX coordinates generation, and EGL templates produce the files.
 
-| Phase or activity                           | SPEM type | Contained by                                | Task uses | Execution        |
-| ------------------------------------------- | --------- | ------------------------------------------- | --------: | ---------------- |
-| Inspect & Baseline Generated Project        | Activity  | Process                                     |         0 | defined sequence |
-| Inventory Generated Output                  | Activity  | Inspect & Baseline Generated Project        |         2 | defined sequence |
-| Classify Refinements                        | Activity  | Inspect & Baseline Generated Project        |         2 | defined sequence |
-| Harden Environment & Delivery Configuration | Activity  | Process                                     |         0 | defined sequence |
-| Externalize Environment Configuration       | Activity  | Harden Environment & Delivery Configuration |         2 | defined sequence |
-| Harden Delivery Automation                  | Activity  | Harden Environment & Delivery Configuration |         2 | defined sequence |
-| Verify Release Candidate                    | Activity  | Process                                     |         0 | defined sequence |
-| Build & Static Verification                 | Activity  | Verify Release Candidate                    |         2 | defined sequence |
-| Deploy & Exercise Non-Production            | Activity  | Verify Release Candidate                    |         2 | defined sequence |
-| Approve Release & Operational Handover      | Activity  | Process                                     |         0 | defined sequence |
-| Plan Release & Recovery                     | Activity  | Approve Release & Operational Handover      |         2 | defined sequence |
-| Handover & Post-Deployment Validation       | Activity  | Approve Release & Operational Handover      |         2 | defined sequence |
+In the built-in AWS path, outputs include infrastructure definitions, Go code scaffolding, contracts, tests, automation and documentation according to the modeled elements. Record the origin of the output and any manual work still required.
 
-## Detailed activities
+The application engineer checks the generated structure against the increment scope. The release engineer records this initial project in version control with its model and generator versions. Resource and permission problems return to cloud design; template defects go to the generator owner.
 
-## Inspect & Baseline Generated Project
+## Complete application code and delivery configuration
 
-<small>Activity · MODRISS::Stage: `artifact.ph1`</small>
+The application engineer implements business logic, adapters and extension points. Respect the ownership of generated files: some belong to the generator, some have protected regions and some are created only on the first generation. Reconcile manual infrastructure changes with the maintained model.
 
-Turn the PSM-generated project into a traceable, reviewed, version-controlled release baseline and identify model changes that must return to PSM.
+The cloud platform engineer supplies environment values and references. The security engineer reviews secrets, encryption and permissions, including the separation of deployment permissions from application runtime permissions.
 
-**Entry conditions**
+The release engineer prepares a repeatable build, package, check and deployment pipeline. Record tool and dependency versions that affect the result.
 
-- Artifacts were generated from an approved PSM
-- A target repository and release owner are available
+## Test and accept the increment at G5
 
-**Exit conditions**
+The application and quality engineers run the unit, contract and component tests needed for the increment. Results identify the tested code and inputs. Fix defects and integrate the changes in the shared repository.
 
-- Generated files are inventoried and committed
-- Implementation gaps are classified as artifact refinements or PSM feedback
+At G5, the product owner reviews acceptance criteria with quality, security and service responsibilities represented. The review considers build and test results, security findings, cost, operational readiness and open manual actions. It can accept, rework or defer the increment.
 
-**Participating roles**
+Successful generation or one working function is insufficient evidence that the business behavior is correct. An accepted increment is ready for selection in a release.
 
-- Application Engineer
+## Prepare a release
 
-### Inventory Generated Output
+The release engineer combines one or more accepted increments and checks that their versions and dependencies are compatible. The release candidate identifies the exact code, configuration, data schema and dependencies being reviewed.
 
-<small>Activity · MODRISS::SubStage: `artifact.ph1.st1` · contained by **Inspect & Baseline Generated Project**</small>
+Build and deploy that candidate in a suitable non-production environment. The quality engineer and relevant specialists run integration and acceptance tests, plus security, performance and recovery tests according to risk. Check logs, metrics, traces and alerts. Record the environment's limits so reviewers can judge what the results establish.
 
-Understand exactly what was generated and how it maps to the intended deployment.
+Return each finding to its responsible source. Application logic defects go to code; resource or contract defects go to the model that owns the decision. Repeat the checks affected by the correction. Reusing earlier evidence requires an impact review. An accepted exception records its authority, reason, expiry and review owner.
 
-**Participating roles**
+## Authorize the release at G6
 
-- Application Engineer
-- Release Engineer
+Prepare the deployment sequence, stop conditions, recovery plan, stakeholder communication and response coverage. The product owner and service owner review the exact candidate and current evidence, then authorize or reject release.
 
-**Task uses in this activity**
+Before any users are exposed to the new version, identify the deployment operator and service owner responsible for responding. For the first release, recovery cannot assume a previous version exists. It must also address stopping new work and handling effects already created in external systems.
 
-- **Review project structure and generated templates** (TaskUse `artifact.ph1.st1.t1`)
-- **Establish source-control and release baseline** (TaskUse `artifact.ph1.st1.t2`)
+## Deploy and hand over at G7
 
-### Classify Refinements
+The release engineer promotes the authorized candidate through the agreed environments. Compare each step with the acceptance limits. Stop or recover when those limits are exceeded.
 
-<small>Activity · MODRISS::SubStage: `artifact.ph1.st2` · contained by **Inspect & Baseline Generated Project**</small>
+The service owner checks dashboards, alerts, runbooks, recovery access and support responsibilities. G7 accepts the running version and its operational commitments. Until then, the deployment operator and named service owner retain response responsibility.
 
-Keep architecture changes in the model and implementation-specific refinements in the project.
+The first G7 acceptance starts the [Operations and Maintenance process](../operations-maintenance.md). Later handovers update the running service while that process continues.
 
-**Participating roles**
+## Review the release outcome
 
-- Cloud Platform Engineer
-- Application Engineer
+The product owner compares business results, service behavior and cost per unit of value with the release assumptions. Gaps become future work and inform priorities and cost estimates.
 
-**Task uses in this activity**
-
-- **Route structural gaps back to the PSM** (TaskUse `artifact.ph1.st2.t1`)
-- **Complete repository hygiene** (TaskUse `artifact.ph1.st2.t2`)
-
-## Harden Environment & Delivery Configuration
-
-<small>Activity · MODRISS::Stage: `artifact.ph2`</small>
-
-Make the generated project safe and repeatable across target environments without embedding secrets or account-specific assumptions.
-
-**Entry conditions**
-
-- Generated baseline is version-controlled
-- Target environments and account ownership are known
-
-**Exit conditions**
-
-- Environment contract, least-privilege access, and CI/CD configuration are reviewed
-
-**Participating roles**
-
-- Cloud Platform Engineer
-
-### Externalize Environment Configuration
-
-<small>Activity · MODRISS::SubStage: `artifact.ph2.st1` · contained by **Harden Environment & Delivery Configuration**</small>
-
-Separate deploy-time configuration and secret references from source and templates.
-
-**Participating roles**
-
-- Cloud Platform Engineer
-- Security Engineer
-
-**Task uses in this activity**
-
-- **Define parameter and environment contract** (TaskUse `artifact.ph2.st1.t1`)
-- **Configure secret references and encryption** (TaskUse `artifact.ph2.st1.t2`)
-
-### Harden Delivery Automation
-
-<small>Activity · MODRISS::SubStage: `artifact.ph2.st2` · contained by **Harden Environment & Delivery Configuration**</small>
-
-Create a controlled path for building and deploying the exact release candidate.
-
-**Participating roles**
-
-- Release Engineer
-- Security Engineer
-
-**Task uses in this activity**
-
-- **Review IAM and deployment permissions** (TaskUse `artifact.ph2.st2.t1`)
-- **Implement repeatable build and deployment pipeline** (TaskUse `artifact.ph2.st2.t2`)
-
-## Verify Release Candidate
-
-<small>Activity · MODRISS::Stage: `artifact.ph3`</small>
-
-Prove that the exact release candidate is buildable, secure, functional, observable, and deployable before production approval.
-
-**Entry conditions**
-
-- Pipeline and environment contract are available
-- Release candidate is versioned
-
-**Exit conditions**
-
-- Required verification evidence is attached to the release candidate
-- Defects are resolved or explicitly accepted
-
-**Participating roles**
-
-- Quality Engineer
-
-### Build & Static Verification
-
-<small>Activity · MODRISS::SubStage: `artifact.ph3.st1` · contained by **Verify Release Candidate**</small>
-
-Check packaging, template validity, dependencies, and security posture.
-
-**Participating roles**
-
-- Quality Engineer
-- Security Engineer
-
-**Task uses in this activity**
-
-- **Run reproducible build and infrastructure validation** (TaskUse `artifact.ph3.st1.t1`)
-- **Assess dependencies and security findings** (TaskUse `artifact.ph3.st1.t2`)
-
-### Deploy & Exercise Non-Production
-
-<small>Activity · MODRISS::SubStage: `artifact.ph3.st2` · contained by **Verify Release Candidate**</small>
-
-Demonstrate the release candidate in a production-like environment.
-
-**Participating roles**
-
-- Quality Engineer
-- Cloud Platform Engineer
-
-**Task uses in this activity**
-
-- **Deploy to staging and execute acceptance tests** (TaskUse `artifact.ph3.st2.t1`)
-- **Verify observability and operational signals** (TaskUse `artifact.ph3.st2.t2`)
-
-## Approve Release & Operational Handover
-
-<small>Activity · MODRISS::Stage: `artifact.ph4`</small>
-
-Prepare a controlled production release with recovery, ownership, communications, and post-deployment verification defined.
-
-**Entry conditions**
-
-- Verification evidence is complete
-- Production deployment window and approvers are known
-
-**Exit conditions**
-
-- Deployment package is approved, recoverable, and handed to operations
-
-**Participating roles**
-
-- Release Engineer
-
-### Plan Release & Recovery
-
-<small>Activity · MODRISS::SubStage: `artifact.ph4.st1` · contained by **Approve Release & Operational Handover**</small>
-
-Make production deployment and failure recovery deliberate and executable.
-
-**Participating roles**
-
-- Release Engineer
-- Service Owner
-
-**Task uses in this activity**
-
-- **Create release, rollback, and communication plan** (TaskUse `artifact.ph4.st1.t1`)
-- **Obtain production readiness approval** (TaskUse `artifact.ph4.st1.t2`)
-
-### Handover & Post-Deployment Validation
-
-<small>Activity · MODRISS::SubStage: `artifact.ph4.st2` · contained by **Approve Release & Operational Handover**</small>
-
-Ensure the service can be supported after deployment and verify production health immediately after release.
-
-**Participating roles**
-
-- Service Owner
-- Release Engineer
-
-**Task uses in this activity**
-
-- **Complete operations handover** (TaskUse `artifact.ph4.st2.t1`)
-- **Execute production validation and close release** (TaskUse `artifact.ph4.st2.t2`)
-
-## References
-
-These sources explain the standards and practices on which the process structure is based. They are foundations for tailoring and professional judgement, rather than substitutes for project evidence.
-
-- [OMG Software & Systems Process Engineering Meta-Model (SPEM) 2.0](https://www.omg.org/spec/SPEM/2.0/PDF/)
-- [ISO/IEC/IEEE 12207:2026, software life cycle processes](https://www.iso.org/standard/90219.html)
-- [ISO/IEC/IEEE 15288:2023, system life cycle processes](https://www.iso.org/standard/81702.html)
-- [SWEBOK Guide, version 4.0a](https://ieeecs-media.computer.org/media/education/swebok/swebok-v4.pdf)
-- [Agile Manifesto principles](https://agilemanifesto.org/principles)
-- [The Kanban Guide](https://kanbanguides.org/the-kanban-guide/)
-- [FinOps Framework](https://www.finops.org/framework/)
-- [AWS Well-Architected Serverless Applications Lens](https://docs.aws.amazon.com/wellarchitected/latest/serverless-applications-lens/welcome.html)
-- [Brinkkemper, Method engineering](<https://doi.org/10.1016/S0950-5849(95)01059-9>)
-- [Asadi, Esfahani, and Ramsin, Process patterns for MDA-based software development](https://mason.gmu.edu/~nesfaha2/Publications/SERA2010.pdf)
+Keep the candidate, test evidence, deployment record, recovery plan and handover record connected. A change to an input that affects those results reopens the relevant review. The next increment and release continue within Phase 1.

@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg style="background: #fff" xmlns="http://www.w3.org/2000/svg" width="1200" height="744" viewBox="0 0 1200 744" role="img" aria-labelledby="modriss-operations-kanban-title modriss-operations-kanban-desc" id="modriss-operations-kanban-root">
+<title id="modriss-operations-kanban-title">Operations and maintenance Kanban board</title>
+<desc id="modriss-operations-kanban-desc">An illustrative five-state board shows service work items, start and finish boundaries, three started but unfinished items including one blocked item, WIP limits, pull policies and a service level expectation.</desc>
+  <defs>
+      <style>#modriss-operations-kanban-root { color: #000; font-family: Arial, Helvetica, sans-serif; }
+      #modriss-operations-kanban-root .diagram-container { width: 100%; overflow-x: auto; }
+      #modriss-operations-kanban-root text { fill: #000; font-family: Arial, Helvetica, sans-serif; }
+      #modriss-operations-kanban-root .board { fill: #fff; stroke: #000; stroke-width: 1.8; }
+      #modriss-operations-kanban-root .card { fill: #fff; stroke: #000; stroke-width: 1.2; }
+      #modriss-operations-kanban-root .rule { stroke: #000; stroke-width: 1.2; }
+      #modriss-operations-kanban-root .boundary { stroke: #000; stroke-width: 2.4; }
+      #modriss-operations-kanban-root .blocked { stroke-width: 2; stroke-dasharray: 5 4; }
+      #modriss-operations-kanban-root .heading { font-size: 20px; font-weight: 600; }
+      #modriss-operations-kanban-root .card-name { font-size: 18px; font-weight: 600; }
+      #modriss-operations-kanban-root .detail, #modriss-operations-kanban-root .policy { font-size: 16px; }
+      #modriss-operations-kanban-root .output { font-size: 16px; font-style: italic; }
+      @media print {
+#modriss-operations-kanban-root .diagram-container { overflow-x: visible; }
+}</style>
+  </defs>
+<text class="detail" x="40" y="40">Illustrative snapshot</text>
+<text class="heading" x="488" y="64" text-anchor="middle">Start</text>
+<text class="detail" x="712" y="40" text-anchor="middle">Started, not finished: WIP = 3</text>
+<text class="heading" x="936" y="64" text-anchor="middle">Finish</text>
+<rect class="board" x="40" y="88" width="1120" height="468" />
+<line class="rule" x1="40" y1="168" x2="1160" y2="168" />
+<line class="rule" x1="264" y1="88" x2="264" y2="556" />
+<line class="boundary" x1="488" y1="88" x2="488" y2="556" />
+<line class="rule" x1="712" y1="88" x2="712" y2="556" />
+<line class="boundary" x1="936" y1="88" x2="936" y2="556" />
+<g data-column="requested" data-count="2">
+  <text class="heading" x="56" y="120">Requested</text>
+  <text class="detail" x="56" y="148">2 items</text>
+  <g data-item="OPS-21">
+    <rect class="card" x="56" y="188" width="192" height="104" rx="4" />
+    <text class="card-name" x="72" y="216">Investigate cost</text>
+    <text class="card-name" x="72" y="240">increase</text>
+    <text class="detail" x="72" y="272">OPS-21 · Cost analyst</text>
+  </g>
+  <g data-item="MNT-22">
+    <rect class="card" x="56" y="308" width="192" height="104" rx="4" />
+    <text class="card-name" x="72" y="336">Assess runtime</text>
+    <text class="card-name" x="72" y="360">deprecation</text>
+    <text class="detail" x="72" y="392">MNT-22 · Cloud eng.</text>
+  </g>
+</g>
+<g data-column="ready" data-count="2">
+  <text class="heading" x="280" y="120">Ready</text>
+  <text class="detail" x="280" y="148">2 items · not started</text>
+  <g data-item="OPS-18">
+    <rect class="card" x="280" y="188" width="192" height="104" rx="4" />
+    <text class="card-name" x="296" y="216">Test backup</text>
+    <text class="card-name" x="296" y="240">restoration</text>
+    <text class="detail" x="296" y="272">OPS-18 · Cloud eng.</text>
+  </g>
+  <g data-item="MNT-19">
+    <rect class="card" x="280" y="308" width="192" height="104" rx="4" />
+    <text class="card-name" x="296" y="336">Correct retry</text>
+    <text class="card-name" x="296" y="360">policy in PIM</text>
+    <text class="detail" x="296" y="392">MNT-19 · Architect</text>
+  </g>
+</g>
+<g data-column="in-progress" data-count="2" data-wip-limit="3">
+  <text class="heading" x="504" y="120">In progress</text>
+  <text class="detail" x="504" y="148">WIP 2 / 3</text>
+  <g data-item="INC-16">
+    <rect class="card" x="504" y="188" width="192" height="104" rx="4" />
+    <text class="card-name" x="520" y="216">Restore event</text>
+    <text class="card-name" x="520" y="240">processing</text>
+    <text class="detail" x="520" y="272">INC-16 · Service owner</text>
+  </g>
+  <g data-item="MNT-17" data-state="blocked">
+    <rect class="card blocked" x="504" y="308" width="192" height="136" rx="4" />
+    <text class="card-name" x="520" y="336">Update runtime</text>
+    <text class="card-name" x="520" y="360">mapping in PSM</text>
+    <text class="detail" x="520" y="392">MNT-17 · Cloud eng.</text>
+    <text class="detail" x="520" y="424">Blocked: provider fix</text>
+  </g>
+</g>
+<g data-column="verification" data-count="1" data-wip-limit="2">
+  <text class="heading" x="728" y="120">Verification</text>
+  <text class="detail" x="728" y="148">WIP 1 / 2</text>
+  <g data-item="MNT-14">
+    <rect class="card" x="728" y="188" width="192" height="104" rx="4" />
+    <text class="card-name" x="744" y="216">Verify duplicate</text>
+    <text class="card-name" x="744" y="240">event correction</text>
+    <text class="detail" x="744" y="272">MNT-14 · QA eng.</text>
+  </g>
+</g>
+<g data-column="done" data-count="2">
+  <text class="heading" x="952" y="120">Done</text>
+  <text class="detail" x="952" y="148">2 items · finished</text>
+  <g data-item="OPS-11">
+    <rect class="card" x="952" y="188" width="192" height="104" rx="4" />
+    <text class="card-name" x="968" y="216">Restore backup</text>
+    <text class="card-name" x="968" y="240">in recovery test</text>
+    <text class="detail" x="968" y="272">OPS-11 · Cloud eng.</text>
+  </g>
+  <g data-item="MNT-12">
+    <rect class="card" x="952" y="308" width="192" height="104" rx="4" />
+    <text class="card-name" x="968" y="336">Release access</text>
+    <text class="card-name" x="968" y="360">policy correction</text>
+    <text class="detail" x="968" y="392">MNT-12 · Security eng.</text>
+  </g>
+  <text class="output" x="952" y="528">Archive after review</text>
+</g>
+<text class="policy" x="40" y="596">Ready: outcome, owner and dependencies are known. Pull only when the next state has capacity.</text>
+<text class="policy" x="40" y="624">Blocked items remain in their current state and count toward its WIP limit.</text>
+<text class="policy" x="40" y="652">Done: outcome verified; temporary emergency changes removed or reconciled with the owning source.</text>
+<text class="policy" x="40" y="680">SLE (illustrative): 85% of started items finish within 5 days, measured from Start to Finish.</text>
+<text class="policy" x="40" y="708">Work items, counts, WIP limits and SLE are examples; project policies set the operational values.</text>
+</svg>

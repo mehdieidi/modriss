@@ -9,6 +9,11 @@ import { generatePublicProcessDiagrams, processFigure } from "./lib/public-proce
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../..");
 const DEFINITIONS = path.join(ROOT, "methodology/process/definitions");
 const OUTPUT = path.join(ROOT, "docs/public-docs/docs/process-reference");
+const publicGuide = path.join(OUTPUT, "development-delivery.md");
+if (fs.existsSync(publicGuide) && fs.readFileSync(publicGuide, "utf8").includes("<!-- Process documentation is maintained by hand. -->")) {
+  console.log("Public process documentation is maintained by hand. Skipping legacy catalogs and diagrams.");
+  process.exit(0);
+}
 const levels = ["end-to-end", "cim", "pim", "psm", "artifact"];
 const definitions = Object.fromEntries(levels.map((level) => [
   level,

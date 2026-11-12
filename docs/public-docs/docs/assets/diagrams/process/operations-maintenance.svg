@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg style="background: #fff" xmlns="http://www.w3.org/2000/svg" width="1200" height="1040" viewBox="0 0 1200 1040" role="img" aria-labelledby="modriss-operations-maintenance-title modriss-operations-maintenance-desc" id="modriss-operations-maintenance-root">
+<title id="modriss-operations-maintenance-title">Operations and maintenance process</title>
+<desc id="modriss-operations-maintenance-desc">After G7 handover, service demand is prepared and pulled into operational action, source-controlled change or a planned release, with verification, rework and continuing observation until retirement and G8 closure.</desc>
+<defs>
+      <style>#modriss-operations-maintenance-root { color: #000; font-family: Arial, Helvetica, sans-serif; }
+      #modriss-operations-maintenance-root .diagram-container { width: 100%; overflow-x: auto; }
+      #modriss-operations-maintenance-root .step { fill: #fff; stroke: #000; stroke-width: 1.8; }
+      #modriss-operations-maintenance-root .edge { fill: none; stroke: #000; stroke-width: 1.8; stroke-linejoin: round; marker-end: url(#modriss-operations-maintenance-arrow); }
+      #modriss-operations-maintenance-root .feedback { stroke-dasharray: 6 4; }
+      #modriss-operations-maintenance-root .label-mask { fill: #fff; }
+      #modriss-operations-maintenance-root text { fill: #000; font-family: Arial, Helvetica, sans-serif; }
+      #modriss-operations-maintenance-root .node-name { font-size: 20px; font-weight: 600; }
+      #modriss-operations-maintenance-root .role, #modriss-operations-maintenance-root .detail, #modriss-operations-maintenance-root .output { font-size: 16px; }
+      #modriss-operations-maintenance-root .output { font-style: italic; }
+      #modriss-operations-maintenance-root .arrow-label { font-size: 16px; font-weight: 600; }
+      @media print {
+#modriss-operations-maintenance-root .diagram-container { overflow-x: visible; }
+}</style><marker id="modriss-operations-maintenance-arrow" viewBox="0 0 10 8" refX="9" refY="4" markerWidth="10" markerHeight="8" markerUnits="userSpaceOnUse" orient="auto"><path d="M 0 0 L 10 4 L 0 8 Z" fill="#000" /></marker></defs>
+<text class="detail" x="40" y="36">Entry: first G7 operational handover. Observation continues while work items are being handled.</text>
+<g data-layer="connections">
+  <path class="edge" data-from="observe" data-to="prepare" d="M 304 128 H 448" />
+  <path class="edge" data-from="prepare" data-to="route" d="M 600 192 V 248" />
+  <path class="edge" data-from="route" data-to="operate" data-outcome="operational" d="M 528 320 H 192 Q 184 320 184 328 V 416" />
+  <path class="edge" data-from="route" data-to="change" data-outcome="software-change" d="M 600 392 V 416" />
+  <path class="edge" data-from="route" data-to="planned" data-outcome="planned-release" d="M 672 320 H 1024 Q 1032 320 1032 328 V 416" />
+  <path class="edge" data-from="planned" data-to="change" data-relation="scheduled-work" d="M 912 472 H 752" />
+  <path class="edge" data-from="operate" data-to="verify" d="M 184 544 V 668 Q 184 676 192 676 H 448" />
+  <path class="edge" data-from="change" data-to="verify" d="M 600 568 V 624" />
+  <path class="edge" data-from="verify" data-to="accept" d="M 600 728 V 752" />
+  <path class="edge" data-from="accept" data-to="done" data-outcome="yes" d="M 664 816 H 912" />
+  <path class="edge feedback" data-from="accept" data-to="prepare" data-outcome="no" d="M 600 880 V 920 Q 600 928 608 928 H 1024 Q 1032 912 1040 928 H 1168 Q 1176 928 1176 920 V 168 Q 1176 160 1168 160 H 752" />
+  <path class="edge feedback" data-from="done" data-to="observe" data-relation="service-feedback" d="M 1032 864 V 968 Q 1032 976 1024 976 H 32 Q 24 976 24 968 V 152 Q 24 144 32 144 H 40" />
+</g>
+<g data-layer="connection-labels">
+  <rect class="label-mask" x="316" y="96" width="120" height="24" /><text class="arrow-label" x="376" y="114" text-anchor="middle">DEMAND</text>
+  <rect class="label-mask" x="308" y="288" width="128" height="24" /><text class="arrow-label" x="372" y="306" text-anchor="middle">OPERATIONAL</text>
+  <rect class="label-mask" x="616" y="364" width="88" height="24" /><text class="arrow-label" x="660" y="382" text-anchor="middle">CHANGE</text>
+  <rect class="label-mask" x="792" y="288" width="128" height="24" /><text class="arrow-label" x="856" y="306" text-anchor="middle">PLAN RELEASE</text>
+  <rect class="label-mask" x="764" y="440" width="136" height="24" /><text class="arrow-label" x="832" y="458" text-anchor="middle">SCHEDULED</text>
+  <rect class="label-mask" x="748" y="784" width="80" height="24" /><text class="arrow-label" x="788" y="802" text-anchor="middle">YES</text>
+  <rect class="label-mask" x="664" y="896" width="144" height="24" /><text class="arrow-label" x="736" y="914" text-anchor="middle">NO · REASSESS</text>
+  <rect class="label-mask" x="320" y="944" width="256" height="24" /><text class="arrow-label" x="448" y="962" text-anchor="middle">SERVICE FEEDBACK</text>
+</g>
+<g data-node="observe">
+  <rect class="step" x="40" y="64" width="264" height="128" rx="4" />
+  <text class="node-name" x="60" y="96">Operate &amp; observe</text>
+  <text class="role" x="60" y="124">Service owner · QA · security</text>
+  <text class="detail" x="60" y="152">Service targets · incidents · cost</text>
+  <text class="output" x="60" y="176">Service evidence</text>
+</g>
+<g data-node="prepare">
+  <rect class="step" x="448" y="64" width="304" height="128" rx="4" />
+  <text class="node-name" x="468" y="96">Register, assess &amp; prepare</text>
+  <text class="role" x="468" y="124">Service owner · delivery lead</text>
+  <text class="detail" x="468" y="152">Impact · urgency · dependencies</text>
+  <text class="output" x="468" y="176">Ready item &amp; expected outcome</text>
+</g>
+<g data-node="route">
+  <path class="step" d="M 600 248 L 672 320 L 600 392 L 528 320 Z" />
+  <text class="node-name" x="600" y="316" text-anchor="middle">Select</text>
+  <text class="node-name" x="600" y="340" text-anchor="middle">route</text>
+</g>
+<g data-node="operate">
+  <rect class="step" x="40" y="416" width="288" height="128" rx="4" />
+  <text class="node-name" x="60" y="448">Perform operational action</text>
+  <text class="role" x="60" y="476">Service owner · cloud engineer</text>
+  <text class="detail" x="60" y="504">Runbook · incident stabilization</text>
+  <text class="output" x="60" y="528">Action &amp; recovery evidence</text>
+</g>
+<g data-node="change">
+  <rect class="step" x="448" y="416" width="304" height="152" rx="4" />
+  <text class="node-name" x="468" y="448">Change the owning source</text>
+  <text class="detail" x="468" y="476">CIM / PIM / PSM / generator</text>
+  <text class="detail" x="468" y="500">Code / release pipeline</text>
+  <text class="detail" x="468" y="528">Regenerate as needed · test · release</text>
+  <text class="output" x="468" y="552">Deployed change &amp; G7 handover</text>
+</g>
+<g data-node="planned">
+  <rect class="step" x="912" y="416" width="248" height="128" rx="4" />
+  <text class="node-name" x="932" y="448">Queue for release</text>
+  <text class="role" x="932" y="476">Product owner · delivery lead</text>
+  <text class="detail" x="932" y="504">Link to release backlog</text>
+  <text class="output" x="932" y="528">Service item remains open</text>
+</g>
+<g data-node="verify">
+  <rect class="step" x="448" y="624" width="304" height="104" rx="4" />
+  <text class="node-name" x="468" y="656">Verify outcome &amp; reconcile</text>
+  <text class="role" x="468" y="684">Service owner · QA · source owner</text>
+  <text class="output" x="468" y="712">Evidence &amp; reconciled baseline</text>
+</g>
+<g data-node="accept">
+  <path class="step" d="M 600 752 L 664 816 L 600 880 L 536 816 Z" />
+  <text class="node-name" x="600" y="812" text-anchor="middle">Verified?</text>
+  <text class="detail" x="600" y="836" text-anchor="middle">Reconciled?</text>
+</g>
+<g data-node="done">
+  <rect class="step" x="912" y="768" width="248" height="96" rx="20" />
+  <text class="node-name" x="1036" y="800" text-anchor="middle">Close work item</text>
+  <text class="output" x="1036" y="828" text-anchor="middle">Record evidence &amp; follow-up</text>
+  <text class="detail" x="1036" y="852" text-anchor="middle">Service operation continues</text>
+</g>
+<text class="detail" x="40" y="1016">Process exit: safe service shutdown during retirement; no live release; shared G8 closure.</text>
+</svg>

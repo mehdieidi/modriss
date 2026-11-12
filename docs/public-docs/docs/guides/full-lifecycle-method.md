@@ -1,178 +1,60 @@
-# Full-Lifecycle Development Process
+<!-- Process documentation is maintained by hand. -->
 
-The MODRISS methodology comprises a development process and a modeling framework. This guide documents the process component. It organizes work across CIM, PIM, and PSM modeling, artifact production, release, operations, change, and retirement. The modeling framework defines the languages and technical facilities used by that work.
+# Development process
 
-The maintained process is described in [`methodology/process/software-development-process.md`](https://github.com/mehdieidi/modriss/blob/main/methodology/process/software-development-process.md). The machine-readable definitions are in [`methodology/process/definitions/`](https://github.com/mehdieidi/modriss/tree/main/methodology/process/definitions). Those sources define the roles, work products, dependencies, and conditions used by the process.
+MODRISS is a research methodology for model-driven serverless software development. It combines a development process with a modeling framework. The framework provides the modeling languages, transformations and code generation tools. The process explains when to use them, who does the work and how the team reviews the result.
 
-For operational use, continue with the complete [Development and Delivery reference](../process-reference/development-delivery.md), the [Operations and Maintenance reference](../process-reference/operations-maintenance.md), and the [reusable method-content catalogs](../process-reference/index.md). These pages give detailed instructions, responsibilities, inputs, outputs, review conditions, guidance, and gates for every canonical process item.
+The work starts with a product idea and continues through development, release, operation and retirement. Teams adapt the depth of each activity to their project's risks, constraints and available skills.
 
-## Two coordinated lifecycle processes
+## Two processes across the product lifecycle
 
-<figure class="doc-diagram">
-  <a class="doc-diagram__link" href="../../assets/diagrams/modriss-lifecycle-manuscript.svg" aria-label="Open the full-size MODRISS lifecycle diagram">
-    <img src="../../assets/diagrams/modriss-lifecycle-manuscript.svg" alt="Development and Delivery proceeds through sequential phases while an ongoing Operations and Maintenance Kanban process sustains live releases; DevOps coordination connects them." />
-  </a>
-  <figcaption>Sequential development phases and the concurrent Operations and Maintenance process.</figcaption>
-</figure>
+Development and Delivery has three phases. Each phase occurs once in the product's life. Within the active product phase, the team repeats development and release activities as the product grows.
 
-The integrated lifecycle contains two cooperating processes. Development and
-Delivery has three one-time sequential phases. Operations and Maintenance is
-a distinct concurrent process: it starts at the
-first G7 handover, continues while any release is live, and ends at G8.
-
-| One-time phase                                   | Work and expected evidence                                                                                                                                                                                  |
-| ------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **0. Inception, tailoring, and organization**    | Compare alternatives and serverless suitability; establish cost/risk assumptions and G0; agree outcomes, the first slice, a method profile, ownership, and quality/security/operations baselines before G1. |
-| **1. Active product construction and evolution** | Repeat model-driven increment, release qualification, progressive promotion, handover, and outcome-review activities while the product remains active.                                                      |
-| **2. Retire, migrate, and close**                | Authorize retirement, communicate with users, migrate or dispose of data, reconcile retained records, close integrations/access, decommission infrastructure, verify cost cessation, and retain knowledge.  |
-
-For the Phase 0 assessment, use the [serverless suitability criteria](serverless-suitability.md).
-They cover workload fit, deployment constraints and the boundary between the
-MODRISS models and separately delivered components in a hybrid architecture.
-
-The continuous-delivery cycle repeats activities _inside Phase 1_; no phase
-repeats. Phase 2 begins only after an explicit retirement decision. Operations
-and Maintenance coexists with active-product delivery and continues through
-retirement until no live release remains. The two processes do not feed into
-one another through a retirement activity edge. Instead, Phase 2 owns product
-retirement and Operations owns live-service shutdown; both must satisfy the
-shared G8 closure criteria before the lifecycle is closed.
-
-SPEM defines a Phase as a significant period ending at a major checkpoint and
-provides `isOngoing` and `isEventDriven` for continuous and occurrence-triggered
-work. RUP separates sequential phases from their contained iterations. DAD
-distinguishes phase-oriented projects from continuous-delivery product teams,
-where transition becomes a delivery activity rather than a recurring phase
-([IBM](https://www.ibm.com/docs/en/rational-clearquest/10.0.8?topic=settings-project-planning);
-[PMI](https://www.pmi.org/disciplined-agile/lifecycle)). ISO/IEC/IEEE 12207 also distinguishes development, operation,
-maintenance, and disposal processes and permits concurrent application. DevOps
-connects the two control systems through shared ownership, CI/CD, operational
-readiness, telemetry, change routing, and learning. The teams keep their own
-work controls instead of treating both systems as one phase.
-
-## Two connected ways of controlling work
-
-MODRISS does not pretend that all maintenance can be scheduled. Planned product
-work is committed at release and increment horizons. Production demand is
-visualized when it appears and managed through a Kanban service-delivery system
-with Requested, Ready, In Progress, Verify, and Done states; explicit
-start/finish points; WIP controls; classes of service; service-level
-expectations; replenishment and review cadences; and flow measures. The
-[Kanban Guide](https://kanbanguides.org/the-kanban-guide/)
-provides the minimum pull-system semantics used here.
-
-Every operational item records its maintenance purpose (corrective, preventive,
-adaptive, additive, or perfective), whether an emergency restoration is still
-temporary, and its class of service (expedite, fixed-date, standard, or
-risk-reduction. This follows
-the maintenance distinctions in [SWEBOK v4.0a](https://ieeecs-media.computer.org/media/education/swebok/swebok-v4.pdf).
-
-An item has three legitimate destinations:
-
-1. finish as operations-only/runbook work with evidence;
-2. take the shortest safe path through the affected CIM, PIM, PSM, generator,
-   code, and release activities; or
-3. be explicitly committed to a planned release backlog.
-
-Done closes an individual operational item after its outcome and evidence have
-been verified; it does not end the Operations and Maintenance process. Changes
-requiring delivery return through the affected activities and release controls,
-then rejoin operations at G7 handover. The service continues through retirement
-until shared G8 closure is accepted and no live release remains.
-
-Emergency restoration may use the expedite policy, but temporary downstream
-changes remain open until permanent correction or reconciliation with the
-authoritative model, generator, code, configuration, or runbook source.
+Operations and Maintenance starts when the first release receives operational acceptance at G7. It runs alongside later development and continues through retirement until the service has shut down safely and both processes have met the G8 closure conditions.
 
 <figure class="doc-diagram">
-  <a class="doc-diagram__link" href="../../assets/diagrams/modriss-operational-flow.svg" aria-label="Open the full-size MODRISS Kanban service-delivery board">
-    <img src="../../assets/diagrams/modriss-operational-flow.svg" alt="A five-column Kanban board manages service work through Requested, Ready, In Progress, Verify, and Done, with three lifecycle dispositions." />
+  <a class="doc-diagram__link" href="../../assets/diagrams/process/lifecycle.svg" aria-label="Open the product lifecycle diagram">
+    <img src="../../assets/diagrams/process/lifecycle.svg" alt="Three sequential development phases, with repeated increments and releases inside Phase 1. Operations starts at G7 and contributes to shared closure at G8." />
   </a>
-  <figcaption>The Operations and Maintenance Kanban system runs alongside planned development and releases.</figcaption>
+  <figcaption>Development and Delivery and the concurrent Operations and Maintenance process. Dashed arrows show feedback and repeated work.</figcaption>
 </figure>
 
-## Capability-increment process
+| Phase                                       | Purpose                                                                             | Main result                                                       |
+| ------------------------------------------- | ----------------------------------------------------------------------------------- | ----------------------------------------------------------------- |
+| 0. Inception, tailoring and organization    | Define the product, compare implementation options and prepare the method and team. | An agreed starting point for the first increment, accepted at G1. |
+| 1. Active product development and evolution | Build, review and release useful increments of the product.                         | Accepted increments and releases with operational support.        |
+| 2. Retirement, migration and closure        | End or replace the product and settle its remaining obligations.                    | Safe shutdown and joint closure at G8.                            |
 
-Phase 1 contains a repeatable engine for one capability slice. The slice should be small enough to review and test, while still producing a useful outcome.
+## From a business need to working software
 
-<figure class="doc-diagram">
-  <a class="doc-diagram__link" href="../../assets/diagrams/modriss-model-driven-engine.svg" aria-label="Open the full-size capability-increment process diagram">
-    <img src="../../assets/diagrams/modriss-model-driven-engine.svg" alt="The delivery engine frames an increment, models it in CIM, transforms and refines it through PIM and PSM, generates artifacts, and reviews readiness." />
-  </a>
-  <figcaption>One capability increment moves through the model-driven delivery engine.</figcaption>
-</figure>
+During Phase 1, the team selects a small part of a capability with a result that people can review. For example, an increment might let a user submit and track a request.
 
-For each increment, the engine frames the scope and acceptance evidence, runs the CIM process, transforms CIM to PIM, refines PIM, transforms PIM to PSM, refines PSM, generates an artifact baseline, and reviews readiness. After acceptance, the team can start another increment or leave the engine to assemble a release.
+The team describes the increment at three modeling levels:
 
-Each accepted or reworked increment also reviews outcome, flow, rework, trace,
-cost, and method-friction evidence. The tailored profile receives an owned
-improvement decision or a reasoned no-op; this adaptation is an activity within
-Phase 1, not another lifecycle phase.
+- The Computation-Independent Model (CIM) records business goals, concepts, rules and behavior.
+- The Platform-Independent Model (PIM) describes the serverless architecture without choosing a cloud provider.
+- The Platform-Specific Model (PSM) defines resources and configuration for the chosen provider.
 
-The sequence provides a shared flow for people and models. It does not require every specialist to work in isolation. Teams can proceed in parallel when scope and dependencies allow it. They record ownership and revision decisions so downstream work does not silently rely on an unresolved upstream assumption.
+Transformations create drafts of the next model. The person responsible for that level reviews the mappings, resolves open decisions and completes the design. Code generation then creates a project that engineers complete and test.
 
-Feedback follows the earliest model that owns the change. A missing business concept returns from PIM work to CIM. An AWS constraint may require a PIM change. A generated artifact issue may require a PSM or generator correction. The team records the reason and affected revisions, then regenerates downstream outputs as needed.
+An accepted increment can join other accepted increments in a release. Increment acceptance at G5, release authorization at G6 and operational acceptance at G7 are separate decisions. Each reviews a different result and its supporting evidence.
 
-## Release and operational change
+## Feedback from the running service
 
-An accepted increment is a candidate for later release assembly. The release decision reviews the exact model and artifact revisions, verification results, security findings, rollback and recovery plans, operational readiness, and required approvals. Promotion proceeds through environments with stop and rollback thresholds. Handover includes dashboards, alerts, runbooks, support ownership, recovery access, and post-deployment checks.
+Operations staff monitor service health, incidents, usage and cost. Some work ends after an operational action, such as following a recovery procedure. Other work requires a model or code change, or joins a planned release.
 
-Operational findings enter a change workflow. Product and requirement changes return to CIM. Service, contract, or architecture changes return to PIM. Provider and resource changes return to PSM. Implementation, pipeline, and environment changes go to the artifact or release process; operational control and support changes go to their operations work products. The change then moves forward through the affected transformations and receives new evidence.
+Changes return to the source responsible for the decision. A business rule belongs in CIM, an architecture decision in PIM and a cloud resource setting in PSM. The team updates and checks the affected outputs before releasing the change. Temporary emergency changes remain open until they are removed or reconciled with the maintained source.
 
-<details>
-  <summary>Open the compatibility copy of the lifecycle map</summary>
-  <figure class="doc-diagram">
-    <a class="doc-diagram__link" href="../../assets/diagrams/modriss-lifecycle-2.svg" aria-label="Open the compatibility copy of the full-size lifecycle diagram">
-      <img src="../../assets/diagrams/modriss-lifecycle-2.svg" alt="Compatibility copy of the lifecycle map showing sequential Development and Delivery phases coordinated with ongoing Operations and Maintenance." />
-    </a>
-  </figure>
-</details>
+## Responsibilities and reviews
 
-## Tailoring, roles, and evidence
+Role names describe responsibilities. A small team can assign several roles to one person, while a larger team can share a role. The project method profile records assignments, review authority and the evidence needed to accept work.
 
-The process is tailored to the project's criticality, regulation, novelty, uncertainty, team structure, and delivery constraints. A versioned method profile records selected, combined, delegated, and omitted activities with their rationale and compensating evidence. Role names describe responsibilities. A small team can assign several roles to one person, while a large team can distribute a role across people. Each model scope still needs a clear owner and integration path.
+A decision gate reviews a defined scope and specific versions of its inputs and outputs. It can accept the work, request rework, defer it or stop it. Completing a checklist does not replace that decision.
 
-A process run records its product goal, scope, method profile, teams, active phase, owner, state, evidence, blockers, decisions, dependencies, and acceptance. A checklist helps people navigate a task. The run record connects that work to model revisions, transformation reports, validation results, release decisions, and operational evidence.
+Risk management, quality, security, cost control, configuration management and team coordination continue throughout the lifecycle. Records can live in models, repositories or tracking tools. Each record does not need its own document.
 
-The definitions support states such as `not-started`, `in-progress`, `blocked`, `ready-for-review`, `accepted`, `rework`, and `deferred`. Useful measures include increment flow time, rework, trace coverage, blocking findings, manual-decision closure, dependency age, release frequency, and escaped defects. Completed tasks alone do not establish that a gate has passed.
+## Follow the process
 
-## Validation boundary
+Start with [project inception](../process-reference/development-delivery.md) and the [serverless suitability assessment](serverless-suitability.md). During active development, follow the [increment workflow](end-to-end-modeling-methodology.md) and [implementation and release activities](../process-reference/artifact/activities.md).
 
-Assistant-generated actions, patches, proposals, checkpoints, and model outputs are gated only by structural Ecore/EMF conformance through `ModelService.validateStructural(...)`. EVL semantic validation belongs to an explicit user/model validation workflow outside assistant apply, repair, and commit paths.
-
-## Process foundations
-
-The process documentation follows OMG SPEM 2.0 in distinguishing reusable method content, such as roles, tasks, work products, and guidance, from the process activities that use it. Its lifecycle scope is informed by ISO/IEC/IEEE 12207 and ISO/IEC/IEEE 15288. Situational method engineering informs how method content is selected and tailored for a project. Agile principles and Scrum inform inspection, adaptation, small increments, and ownership. The Kanban Guide supplies the Definition of Workflow, WIP, SLE, and flow measures; Disciplined Agile supplies the contextual iteration/flow choice and value-stream guidance. SWEBOK and ISO/IEC/IEEE 14764 supply maintenance concepts. MDE process-pattern research informs model refinement, transformation, traceability, human review, and feedback between levels. AWS Serverless Lens guidance informs serverless operations, observability, reversibility, and progressive deployment.
-
-These references provide a basis for the structure. They do not establish that one activity sequence or metric is right for every project. Teams should review their process tailoring against project evidence.
-
-- [OMG SPEM 2.0](https://www.omg.org/spec/SPEM/2.0/PDF/)
-- [ISO/IEC/IEEE 12207:2026](https://www.iso.org/standard/90219.html)
-- [ISO/IEC/IEEE 15288:2023](https://www.iso.org/standard/81702.html)
-- [Brinkkemper, “Method engineering”](<https://doi.org/10.1016/S0950-5849(95)01059-9>)
-- [Brinkkemper, Saeki, and Harmsen, “Assembly techniques for method engineering”](https://www.sciencedirect.com/science/article/pii/S0306437999000162)
-- [Asadi, Esfahani, and Ramsin, “Process patterns for MDA-based software development”](https://mason.gmu.edu/~nesfaha2/Publications/SERA2010.pdf)
-- [Agile Manifesto principles](https://agilemanifesto.org/principles)
-- [The 2020 Scrum Guide](https://scrumguides.org/scrum-guide.html)
-- [The Kanban Guide (2025)](https://kanbanguides.org/the-kanban-guide/)
-- [PMI Disciplined Agile: Starting With Iterations or Flow](https://www.pmi.org/disciplined-agile/starting-with-iterations-or-flow)
-- [PMI Disciplined Agile: Designing the Kanban Board](https://www.pmi.org/disciplined-agile/designing-the-kanban-board)
-- [PMI Disciplined DevOps](https://www.pmi.org/disciplined-agile/process/disciplined-devops)
-- [Ahmad et al. (2018), _Kanban in software engineering_](https://doi.org/10.1016/j.jss.2017.11.045)
-- [ISO/IEC/IEEE 14764:2022 Software maintenance](https://www.iso.org/standard/80710.html)
-- [FinOps Framework](https://www.finops.org/framework/)
-- [FinOps planning and estimating](https://www.finops.org/framework/capabilities/planning-estimating/)
-- [AWS Serverless Lens: expenditure and usage awareness](https://docs.aws.amazon.com/wellarchitected/latest/serverless-applications-lens/expenditure-and-usage-awareness.html)
-- [NIST SP 800-88 Rev. 1 media sanitization](https://www.nist.gov/publications/nist-special-publication-800-88-revision-1-guidelines-media-sanitization)
-
-## Enactment-derived handoff controls
-
-G6 assigns promotion and service response ownership before first production
-exposure, including first-release recovery without a previous baseline. Gate
-evidence must match current inputs; changed dependencies, conflicts and expired
-exceptions reopen affected review. Persistent model-owned configuration follows
-its MDE/release path. G8 allows retained archives only with verified receiving
-custody, access control, funded cost, expiry and deletion ownership. These are
-specified controls; practitioner effectiveness has not been established.
-
-See [Enactment and critical evaluation](process-evaluation.md).
+The [operations](../process-reference/operations-maintenance.md) and [retirement](../process-reference/retirement.md) pages cover the running service and the end of its life. Shared guidance explains [roles](../process-reference/roles.md), [decision gates](../process-reference/gates.md) and [ongoing activities](../process-reference/ongoing-activities.md).

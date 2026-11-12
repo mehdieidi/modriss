@@ -3,6 +3,8 @@ site_url: https://docs.modriss.site
 site_description: Technical documentation for MODRISS, an academic research project on model-driven serverless software development
 repo_name: modriss
 repo_url: https://github.com/mehdieidi/modriss
+hooks:
+  - hooks/process_redirects.py
 theme:
   name: material
   logo: assets/modriss-logo.svg
@@ -27,6 +29,7 @@ theme:
       accent: teal
 extra_css:
   - stylesheets/extra.css
+  - stylesheets/process.css
 extra_javascript:
   - javascripts/doc-image-viewer.js
 markdown_extensions:
@@ -51,66 +54,22 @@ nav:
           - Quickstart: getting-started/quickstart.md
           - Local development: getting-started/local-development.md
   - Development process:
-      - Full-lifecycle development process: guides/full-lifecycle-method.md
-      - Serverless suitability analysis: guides/serverless-suitability.md
-      - Enactment and critical evaluation: guides/process-evaluation.md
-      - Capability-increment process: guides/end-to-end-modeling-methodology.md
-      - CIM modeling process: guides/cim-modeling-methodology.md
-      - PIM modeling process: guides/pim-modeling-methodology.md
-      - PSM modeling process: guides/psm-modeling-methodology.md
-      - Complete process reference:
-          - Overview: process-reference/index.md
-          - SPEM structure: process-reference/spem-structure.md
-          - Development and Delivery:
-              - Process overview: process-reference/development-delivery.md
-              - Phases and activities: process-reference/development-delivery/activities.md
-              - Tasks: process-reference/development-delivery/tasks.md
-              - Roles: process-reference/development-delivery/roles.md
-              - Work products: process-reference/development-delivery/work-products.md
-              - Flow and bindings: process-reference/development-delivery/relationships.md
-              - Guidance: process-reference/development-delivery/guidance.md
-              - Gates and milestones: process-reference/development-delivery/gates.md
-          - Operations and Maintenance:
-              - Process overview: process-reference/operations-maintenance.md
-              - Activities: process-reference/operations-maintenance/activities.md
-              - Tasks: process-reference/operations-maintenance/tasks.md
-              - Roles: process-reference/operations-maintenance/roles.md
-              - Work products: process-reference/operations-maintenance/work-products.md
-              - Flow and bindings: process-reference/operations-maintenance/relationships.md
-              - Guidance: process-reference/operations-maintenance/guidance.md
-              - Gates and milestones: process-reference/operations-maintenance/gates.md
-          - CIM modeling process:
-              - Phases and activities: process-reference/cim/activities.md
-              - Tasks: process-reference/cim/tasks.md
-              - Roles: process-reference/cim/roles.md
-              - Work products: process-reference/cim/work-products.md
-              - Flow and bindings: process-reference/cim/relationships.md
-              - Guidance: process-reference/cim/guidance.md
-              - Gate: process-reference/cim/gates.md
-          - PIM modeling process:
-              - Phases and activities: process-reference/pim/activities.md
-              - Tasks: process-reference/pim/tasks.md
-              - Roles: process-reference/pim/roles.md
-              - Work products: process-reference/pim/work-products.md
-              - Flow and bindings: process-reference/pim/relationships.md
-              - Guidance: process-reference/pim/guidance.md
-              - Gate: process-reference/pim/gates.md
-          - PSM modeling process:
-              - Phases and activities: process-reference/psm/activities.md
-              - Tasks: process-reference/psm/tasks.md
-              - Roles: process-reference/psm/roles.md
-              - Work products: process-reference/psm/work-products.md
-              - Flow and bindings: process-reference/psm/relationships.md
-              - Guidance: process-reference/psm/guidance.md
-              - Gate: process-reference/psm/gates.md
-          - Generated-artifact readiness:
-              - Phases and activities: process-reference/artifact/activities.md
-              - Tasks: process-reference/artifact/tasks.md
-              - Roles: process-reference/artifact/roles.md
-              - Work products: process-reference/artifact/work-products.md
-              - Flow and bindings: process-reference/artifact/relationships.md
-              - Guidance: process-reference/artifact/guidance.md
-              - Gates and milestones: process-reference/artifact/gates.md
+      - Overview: guides/full-lifecycle-method.md
+      - "Phase 0: Inception":
+          - Prepare the project: process-reference/development-delivery.md
+          - Serverless suitability: guides/serverless-suitability.md
+      - "Phase 1: Active product development":
+          - Build an increment: guides/end-to-end-modeling-methodology.md
+          - Domain modeling (CIM): guides/cim-modeling-methodology.md
+          - Serverless architecture (PIM): guides/pim-modeling-methodology.md
+          - Cloud design (PSM): guides/psm-modeling-methodology.md
+          - Implementation and release: process-reference/artifact/activities.md
+      - "Phase 2: Retirement": process-reference/retirement.md
+      - Operations and Maintenance: process-reference/operations-maintenance.md
+      - Roles: process-reference/roles.md
+      - Decision gates: process-reference/gates.md
+      - Ongoing activities: process-reference/ongoing-activities.md
+      - Process evaluation: guides/process-evaluation.md
   - Modeling framework:
       - Concepts:
           - Model-driven engineering: concepts/model-driven-engineering.md

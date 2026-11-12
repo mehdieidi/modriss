@@ -1,46 +1,23 @@
-# Process enactment and evaluation
+<!-- Process documentation is maintained by hand. -->
 
-The process has been examined using fictional projects and repository checks.
-These expose defects in method definitions and handoffs; they do not establish
-that a company can use the methodology effectively without assistance.
+# Evaluating the process
 
-The analytical walkthrough follows a hypothetical six-person service team
-across 30 grouped task-use steps: inception, CIM/PIM/PSM decisions, application
-completion, release, concurrent operations, change and retirement. It records
-requirements, role assignments, proposed model elements, failure cases and
-acceptance evidence. Application tests and cloud releases are hypothetical,
-not measured outcomes. The [case verification record](https://github.com/mehdieidi/modriss/blob/main/methodology/process/method/evaluation/enactment-case/verification.md)
-describes the available evidence and its limits.
+The process definition describes how MODRISS is intended to be used. A definition of activities and work products cannot, by itself, show that the method is effective in practice.
 
-![Evidence-bearing handoff with acceptance and rework paths](../assets/diagrams/modriss-evidence-handoff.svg)
+## Follow a project from start to finish
 
-The method specifies these process controls:
+An evaluation should follow actual work through domain modeling, architecture, cloud design, implementation, release and operations. Record learning time, modeling effort, manual code completion, rework, review effort, cost and operational outcomes.
 
-- Assign response coverage and recovery before the first production traffic;
-  the first release cannot restore a nonexistent previous baseline.
-- Reject stale evidence and expired exceptions; reuse unaffected evidence only
-  after impact review.
-- Route persistent configuration changes through their authoritative model,
-  including small PSM-owned alarm changes.
-- Permit retirement with retained archives only after verified custody,
-  controlled access, funding, expiry and deletion ownership are accepted.
-- Label generated task inventories as plans, not execution evidence.
+Keep planned, simulated and observed evidence distinct. A planned test is not a test result, and a simulated deployment does not establish production behavior.
 
-The [revised Eidi assessment](https://github.com/mehdieidi/modriss/blob/main/methodology/process/method/07-evaluation.md)
-covers 78 criterion rows: 20 general, 24 model-driven and 34 serverless, counting
-tracing and logging separately as in the paper's results table. It preserves
-the original criterion types, separates specified method from repository
-support, and explains partial or absent capabilities. No aggregate maturity
-score or productivity claim is made.
+## Compare effort and outcomes
 
-The largest unresolved questions concern learning effort, evidence/review
-overhead, manual application logic, fault testing, AWS dependence, reverse
-engineering and runtime-to-model feedback. Independent practitioner cases,
-actual project artifacts and comparative outcome measures are the next step.
-The case verification record states exactly which repository checks were run
-and their limits.
+Use a baseline method and comparable work to assess the effect of MODRISS. Independent review of decisions helps test whether the evidence supports the claimed result.
 
-Assistant-generated model changes are gated only by structural Ecore/EMF
-conformance through `ModelService.validateStructural(...)`. EVL semantic
-validation remains an explicit user/model workflow outside assistant apply,
-repair and commit.
+The review should consider where the method helps and where it adds effort. Relevant questions include how much modeling and code completion are needed, how often changes require rework, and whether release and operational decisions have sufficient evidence.
+
+## Use findings to improve the method
+
+Connect each proposed improvement to an observed problem. Assign an owner, define the expected result and set a review date. Improvements may change the method profile, guidance, tools, tests or coordination between teams.
+
+Keep conclusions within the limits of the available evidence. Claims about productivity, quality or operational benefit require measured results and an appropriate comparison.
