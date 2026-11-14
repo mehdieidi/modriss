@@ -54,9 +54,6 @@ export function IncrementDiagram() {
         </g>
       </svg>
     </div>
-    <figcaption className="increment-caption">
-      <span>A model-driven increment</span>
-      <span className="increment-legend"><span><i aria-hidden="true" />Delivery flow</span><span><i className="increment-key-feedback" aria-hidden="true" />Feedback / iteration</span><span><b>G2–G5</b> Decision gates</span></span>
-    </figcaption>
+    <div className="increment-legend" aria-label="Diagram legend"><span><i aria-hidden="true" />Delivery flow</span><span><i className="increment-key-feedback" aria-hidden="true" />Feedback / iteration</span><span><b>G2–G5</b> Decision gates</span></div>
   </figure>
 }

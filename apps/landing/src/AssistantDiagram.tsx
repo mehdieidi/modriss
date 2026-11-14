@@ -180,13 +180,8 @@ function Architecture({ compact = false }: { compact?: boolean }) {
 
 /** Source-to-figure mapping: docs/internal/ai/landing-assistant-diagram.md. */
 export function AssistantDiagram() {
-  return <figure className="assistant-figure" aria-labelledby="assistant-map-title">
-    <div className="assistant-map-heading">
-      <div><span>CIM &amp; PIM · implemented architecture</span><h3 id="assistant-map-title">The conversational modeling loop</h3></div>
-      <div className="assistant-scope-tag">Human intent → model change</div>
-    </div>
+  return <figure className="assistant-figure" aria-label="MODRISS conversational modeling loop">
     <Architecture />
     <Architecture compact />
-    <figcaption><span>Figure 3.</span> Generation and editing share a private draft and structural gate; explanation is read-only. Repair is bounded; checkpoints are atomic and reversible. EVL semantic validation remains a separate, explicit user workflow.</figcaption>
   </figure>
 }

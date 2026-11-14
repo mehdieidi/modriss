@@ -108,7 +108,7 @@ function App() {
 
     <header className="hero">
       <div className="hero-copy">
-        <h1>A model-driven methodology for <i>serverless software development</i></h1>
+        <h1>AI-assisted model-driven methodology for <i>serverless software development</i></h1>
         <p className="lede">MODRISS is an ongoing academic research project on how serverless software development can be supported through an explicit process, domain-specific modeling languages, model transformations, and code generation. It also explores LLM-assisted modeling for creating, explaining, and modifying models. The work is conducted at the Methodology Engineering Laboratory, Sharif University of Technology.</p>
         <div className="hero-actions">
           <a className="button primary" href={appUrl}>Open the Modeling Workbench <Icon name="arrow" size={17} /></a>
@@ -218,7 +218,6 @@ function App() {
       </div>
       <figure className="workspace-shot">
         <img src={workspaceScreenshot} alt="MODRISS browser-based CIM modeling workbench with a visual process model, modeling palette, lifecycle actions, and conversational assistant." />
-        <figcaption><span>Figure 2.</span> The MODRISS modeling workbench, showing the CIM editor and the LLM-based modeling assistant.</figcaption>
       </figure>
     </section>
 

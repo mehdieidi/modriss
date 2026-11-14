@@ -162,7 +162,7 @@ button {
   min-width: 0;
   max-width: 850px;
   margin: 25px 0 29px;
-  font: 400 clamp(52px, 5.8vw, 82px) / 1.01 var(--serif);
+  font: 400 clamp(52px, 5.8vw, 70px) / 1.01 var(--serif);
   letter-spacing: -0.045em;
 }
 .hero h1 i {
@@ -187,11 +187,7 @@ button {
 .framework-copy > p,
 .framework-list p,
 .process-summary p,
-.process-map-heading p,
-.process-figure figcaption,
 .prototype-heading > p,
-.workspace-shot figcaption,
-.assistant-figure figcaption,
 .abstract > p,
 .status-section p {
   text-align: justify;
@@ -590,30 +586,6 @@ button {
   background: var(--white);
   border: 1px solid var(--line);
 }
-.process-map-heading {
-  display: grid;
-  grid-template-columns: 1fr 0.55fr;
-  align-items: end;
-  gap: 60px;
-  padding-bottom: 25px;
-  border-bottom: 1px solid var(--line);
-}
-.process-map-heading span {
-  color: var(--copper);
-  font-size: 9px;
-  font-weight: 700;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-}
-.process-map-heading h3 {
-  margin: 8px 0 0;
-  font: 400 29px var(--serif);
-}
-.process-map-heading p {
-  margin: 0;
-  color: var(--muted);
-  font-size: 11px;
-}
 .prototype {
   padding: 116px max(32px, calc((100% - 1320px) / 2));
   background: var(--teal-dark);
@@ -643,7 +615,7 @@ button {
 .workspace-shot::before {
   content: "";
   position: absolute;
-  inset: -16px 22px 38px -16px;
+  inset: -16px 22px 16px -16px;
   border: 1px solid rgba(255, 255, 255, 0.25);
   pointer-events: none;
 }
@@ -653,14 +625,6 @@ button {
   position: relative;
   border: 1px solid #aec9c6;
   box-shadow: 0 25px 55px rgba(0, 0, 0, 0.24);
-}
-.workspace-shot figcaption {
-  margin-top: 17px;
-  color: #aec9c6;
-  font-size: 11px;
-}
-.workspace-shot figcaption span {
-  color: var(--white);
 }
 
 .assistant-title {
@@ -694,30 +658,6 @@ button {
   border: 1px solid var(--line);
   background: var(--white);
 }
-.assistant-map-heading {
-  display: flex;
-  align-items: end;
-  justify-content: space-between;
-  gap: 24px;
-  padding-bottom: 24px;
-  border-bottom: 1px solid var(--line);
-}
-.assistant-map-heading span {
-  color: var(--copper);
-  font-size: 9px;
-  font-weight: 700;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-}
-.assistant-map-heading h3 {
-  margin: 8px 0 0;
-  font: 400 29px var(--serif);
-}
-.assistant-scope-tag {
-  padding-bottom: 3px;
-  color: var(--muted);
-  font-size: 11px;
-}
 .assistant-diagram {
   --ad-panel: #eef5f2;
   --ad-border: #91bbb5;
@@ -725,7 +665,7 @@ button {
   display: block;
   width: 100%;
   height: auto;
-  margin: 24px 0 0;
+  margin: 0;
   overflow: visible;
   font-family: var(--sans);
 }
@@ -892,34 +832,9 @@ button {
 .assistant-diagram-mobile {
   display: none;
 }
-.process-figure figcaption,
-.assistant-figure figcaption {
-  padding-top: 20px;
-  border-top: 1px solid var(--line);
-  color: var(--ink-soft);
-  font-size: 12px;
-  line-height: 1.75;
-}
-.process-figure figcaption {
-  margin-top: 24px;
-}
-.process-figure figcaption span,
-.assistant-figure figcaption span {
-  color: var(--ink);
-  font-weight: 600;
-}
 @media (max-width: 760px) {
   .assistant-figure {
     padding: 20px 16px;
-  }
-  .assistant-map-heading {
-    display: block;
-  }
-  .assistant-map-heading h3 {
-    font-size: 27px;
-  }
-  .assistant-scope-tag {
-    display: none;
   }
   .assistant-diagram-wide {
     display: none;
@@ -927,7 +842,7 @@ button {
   .assistant-diagram-mobile {
     display: block;
     max-width: 420px;
-    margin: 28px auto 0;
+    margin: 0 auto;
   }
   .assistant-diagram-mobile .ad-label {
     font-size: 23px;
@@ -1326,13 +1241,6 @@ footer > p {
     margin-top: 50px;
     padding: 18px;
   }
-  .process-map-heading {
-    grid-template-columns: 1fr;
-    gap: 16px;
-  }
-  .process-map-heading h3 {
-    font-size: 25px;
-  }
   .prototype-heading {
     margin-bottom: 42px;
   }
@@ -1341,9 +1249,6 @@ footer > p {
   }
   .workspace-shot::before {
     display: none;
-  }
-  .workspace-shot figcaption {
-    width: 87%;
   }
   .assistant-title {
     grid-template-columns: 1fr;

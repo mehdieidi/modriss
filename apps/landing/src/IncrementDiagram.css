@@ -104,34 +104,23 @@
   font-weight: 500;
 }
 
-.increment-caption {
+.increment-legend {
   padding: 20px 0;
   display: flex;
   align-items: center;
-  justify-content: space-between;
   flex-wrap: wrap;
-  gap: 16px 24px;
+  gap: 12px 24px;
   border-top: 1px solid var(--line);
   color: var(--muted);
   font-size: 11px;
   line-height: 1.6;
 }
 
-.increment-caption > span:first-child {
-  color: var(--teal-dark);
-  font-weight: 600;
-}
-
-.increment-legend,
 .increment-legend > span {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
   gap: 8px;
-}
-
-.increment-legend {
-  gap: 12px 24px;
 }
 
 .increment-legend i {
@@ -185,7 +174,7 @@
     border-bottom: 0;
   }
 
-  .increment-caption {
+  .increment-legend {
     align-items: flex-start;
   }
 }

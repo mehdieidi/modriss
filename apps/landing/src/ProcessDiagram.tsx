@@ -21,11 +21,7 @@ export function ProcessDiagram() {
     return () => observer.disconnect()
   }, [])
 
-  return <figure className="process-figure pd-figure" aria-labelledby="process-map-title">
-    <div className="process-map-heading">
-      <div><span>Integrated lifecycle</span><h3 id="process-map-title">From inception to retirement</h3></div>
-      <p>Three product phases. Iterative development and release. Ongoing maintenance.</p>
-    </div>
+  return <figure className="process-figure pd-figure" aria-label="MODRISS development process">
     <div className="pd-graph" ref={container} data-layout={layout.kind}>
       <svg className={`pd-drawing pd-layout-${layout.kind}`} viewBox={`0 0 ${layout.width} ${layout.height}`} width={layout.width} height={layout.height} role="img" aria-labelledby={`${prefix}-title ${prefix}-desc`}>
         <title id={`${prefix}-title`}>MODRISS development process</title>
@@ -64,6 +60,5 @@ export function ProcessDiagram() {
     <div className="pd-legend" aria-label="Diagram legend">
       <span><i className="pd-key-flow" aria-hidden="true" />Control flow</span><span><i className="pd-key-feedback" aria-hidden="true" />Rework / feedback</span><span><i className="pd-key-activity" aria-hidden="true" />Activity</span><span><i className="pd-key-phase" aria-hidden="true" />Phase</span><span><i className="pd-key-gate" aria-hidden="true">G</i>Decision gate</span>
     </div>
-    <figcaption><span>Figure 1.</span> The MODRISS process: inception, iterative–incremental development and release, retirement, and ongoing maintenance. Solid arrows show control flow; dashed arrows show rework and feedback.</figcaption>
   </figure>
 }

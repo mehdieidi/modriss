@@ -1,11 +1,7 @@
-.pd-figure .process-map-heading p,
-.process-figure.pd-figure > figcaption {
-  text-align: left;
-}
 .pd-graph {
   width: 100%;
   min-width: 0;
-  margin: 24px auto 0;
+  margin: 0 auto;
 }
 .pd-graph .pd-drawing {
   display: block;
