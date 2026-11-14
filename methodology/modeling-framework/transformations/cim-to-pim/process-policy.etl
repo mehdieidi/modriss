@@ -1,11 +1,9 @@
-/** Maps process policy model elements and supporting relationships. */
 import "lib/common.eol";
 import "lib/mapping.eol";
 import "lib/trace-readiness.eol";
 import "lib/pim-builders.eol";
 import "lib/resolution.eol";
 
-/** Returns whether the receiver should generate workflow. */
 operation shouldGenerateWorkflow(bp : CIMPROCESS!BusinessProcess) {
   return isTrue(bp.longRunning) or isTrue(bp.humanApprovalPossible) or isTrue(bp.compensationExpected) or
     bp.processKind.asString() = "LONG_RUNNING" or bp.processKind.asString() = "HUMAN_INVOLVED" or
@@ -14,7 +12,6 @@ operation shouldGenerateWorkflow(bp : CIMPROCESS!BusinessProcess) {
     (cimRoot().transformationProfile.isDefined() and cimRoot().transformationProfile.preferProcessAsWorkflowCandidate);
 }
 
-/** Computes workflow step for. */
 operation workflowStepFor(step : CIMPROCESS!ProcessStep) {
   if (step.isKindOf(CIMPROCESS!StartStep)) {
     return cachedEquivalent(step, "StartStep2WorkflowStartStep");
@@ -31,7 +28,6 @@ operation workflowStepFor(step : CIMPROCESS!ProcessStep) {
   return cachedEquivalent(step, "ProcessStep2WorkflowTaskStep");
 }
 
-/** Computes first integer text. */
 operation firstIntegerText(value) {
   var text = asText(value);
   var digits = "";
@@ -51,7 +47,6 @@ operation firstIntegerText(value) {
   return digits;
 }
 
-/** Computes seconds from duration expression. */
 operation secondsFromDurationExpression(value) {
   if (not hasText(value)) {
     return 0;
@@ -68,7 +63,6 @@ operation secondsFromDurationExpression(value) {
   return amount;
 }
 
-/** Computes clone kernel expression. */
 operation cloneKernelExpression(expr, prefix : String, seed) {
   if (expr.isUndefined()) {
     return null;
@@ -84,7 +78,6 @@ operation cloneKernelExpression(expr, prefix : String, seed) {
   return cloned;
 }
 
-/** Computes clone condition expression. */
 operation cloneConditionExpression(condition : CIMBEHAVIOR!Condition, prefix : String, seed) {
   if (condition.isUndefined() or condition.expressionModel.isUndefined()) {
     return null;
@@ -92,7 +85,6 @@ operation cloneConditionExpression(condition : CIMBEHAVIOR!Condition, prefix : S
   return cloneKernelExpression(condition.expressionModel, prefix, seed);
 }
 
-/** Creates create policy context schema. */
 operation createPolicyContextSchema(pol : CIMPROCESS!Policy) {
   var schema = new CONTRACTS!Schema;
   schema.id = newId("schema_policy_context", pol.id);
@@ -110,7 +102,6 @@ operation createPolicyContextSchema(pol : CIMPROCESS!Policy) {
   return schema;
 }
 
-/** Creates create human task input schema. */
 operation createHumanTaskInputSchema(step : CIMPROCESS!HumanTaskStep) {
   var schema = new CONTRACTS!Schema;
   schema.id = newId("schema_human_task_req", step.id);
@@ -129,7 +120,6 @@ operation createHumanTaskInputSchema(step : CIMPROCESS!HumanTaskStep) {
   return schema;
 }
 
-/** Creates create human task output schema. */
 operation createHumanTaskOutputSchema(step : CIMPROCESS!HumanTaskStep) {
   var schema = new CONTRACTS!Schema;
   schema.id = newId("schema_human_task_res", step.id);
@@ -148,7 +138,6 @@ operation createHumanTaskOutputSchema(step : CIMPROCESS!HumanTaskStep) {
   return schema;
 }
 
-/** Transforms Policy elements into Policy Handler Function elements. */
 rule Policy2PolicyHandlerFunction
   transform pol : CIMPROCESS!Policy
   to fn : COMPUTE!Function {
@@ -223,7 +212,6 @@ rule Policy2PolicyHandlerFunction
   traceGenerated(pol, fn, "TR-100", "MEDIUM");
 }
 
-/** Transforms Policy elements into Architecture Policy elements. */
 rule Policy2ArchitecturePolicy
   transform pol : CIMPROCESS!Policy
   to p : POLICY!CompliancePolicy {
@@ -239,7 +227,6 @@ rule Policy2ArchitecturePolicy
   traceGenerated(pol, p, "TR-100", "MEDIUM");
 }
 
-/** Transforms Decision Table elements into Choice Logic elements. */
 rule DecisionTable2ChoiceLogic
   transform dt : CIMPROCESS!DecisionTable
   to fn : COMPUTE!Function {
@@ -316,7 +303,6 @@ rule DecisionTable2ChoiceLogic
   }
 }
 
-/** Transforms Decision Table elements into Decision Model elements. */
 rule DecisionTable2DecisionModel
   transform dt : CIMPROCESS!DecisionTable
   to dm : POLICY!DecisionModel {
@@ -375,7 +361,6 @@ rule DecisionTable2DecisionModel
   }
 }
 
-/** Transforms Business Process elements into Workflow elements. */
 rule BusinessProcess2Workflow
   transform bp : CIMPROCESS!BusinessProcess
   to wf : WORKFLOW!Workflow {
@@ -402,7 +387,6 @@ rule BusinessProcess2Workflow
 }
 
 @greedy
-/** Transforms Start Step elements into Workflow Start Step elements. */
 rule StartStep2WorkflowStartStep
   transform s : CIMPROCESS!StartStep
   to ws : WORKFLOW!StartStep {
@@ -417,7 +401,6 @@ rule StartStep2WorkflowStartStep
 }
 
 @greedy
-/** Transforms End Step elements into Workflow Success End Step elements. */
 rule EndStep2WorkflowSuccessEndStep
   transform s : CIMPROCESS!EndStep
   to ws : WORKFLOW!SuccessEndStep {
@@ -432,7 +415,6 @@ rule EndStep2WorkflowSuccessEndStep
 }
 
 @greedy
-/** Transforms Decision Step elements into Workflow Choice Step elements. */
 rule DecisionStep2WorkflowChoiceStep
   transform s : CIMPROCESS!DecisionStep
   to ws : WORKFLOW!ChoiceStep {
@@ -458,7 +440,6 @@ rule DecisionStep2WorkflowChoiceStep
 }
 
 @greedy
-/** Transforms Wait-like Step elements into Workflow Wait Step elements. */
 rule WaitLikeStep2WorkflowWaitStep
   transform s : CIMPROCESS!ProcessStep
   to ws : WORKFLOW!WaitStep {
@@ -482,7 +463,6 @@ rule WaitLikeStep2WorkflowWaitStep
 }
 
 @greedy
-/** Transforms executable Process Step elements into Workflow Task Step elements. */
 rule ProcessStep2WorkflowTaskStep
   transform s : CIMPROCESS!ProcessStep
   to ws : WORKFLOW!TaskStep {
@@ -548,7 +528,6 @@ rule ProcessStep2WorkflowTaskStep
   traceGenerated(s, ws, "TR-120", "HIGH");
 }
 
-/** Transforms Process Transition elements into Workflow Transition elements. */
 rule ProcessTransition2WorkflowTransition
   transform t : CIMPROCESS!ProcessTransition
   to wt : WORKFLOW!WorkflowTransition {
@@ -660,7 +639,6 @@ post AttachWorkflowDetails {
   etlProfiler.mark("cim.workflowDetails.end");
 }
 
-/** Transforms Exception Scenario elements into Error Handler elements. */
 rule ExceptionScenario2ErrorHandler
   transform ex : CIMPROCESS!ExceptionScenario
   to eh : WORKFLOW!ErrorHandler {
@@ -677,7 +655,6 @@ rule ExceptionScenario2ErrorHandler
   traceGenerated(ex, eh, "TR-130", "MEDIUM");
 }
 
-/** Transforms Security Constraint elements into Security Policies elements. */
 rule SecurityConstraint2SecurityPolicies
   transform sc : CIMGOV!SecurityConstraint
   to sec : SECURITY!SecurityPolicy,
@@ -756,7 +733,6 @@ rule SecurityConstraint2SecurityPolicies
   }
 }
 
-/** Transforms Temporal Constraint elements into Timeout Policy elements. */
 rule TemporalConstraint2TimeoutPolicy
   transform tc : CIMPROCESS!TemporalConstraint
   to timeout : POLICY!TimeoutPolicy {
@@ -795,7 +771,6 @@ rule TemporalConstraint2TimeoutPolicy
   }
 }
 
-/** Creates an ordering policy only when the source constraint defines ordering. */
 rule TemporalConstraint2OrderingPolicy
   transform tc : CIMPROCESS!TemporalConstraint
   to ordering : POLICY!OrderingPolicy {
@@ -815,7 +790,6 @@ rule TemporalConstraint2OrderingPolicy
   manualDecision("TR-130", "Confirm ordering semantics and idempotency strategy for temporal constraint '" + tc.name + "'.", KERNEL!Severity#WARNING, ordering.strictOrderingRequired, Sequence{tc, ordering});
 }
 
-/** Computes preferred temporal routing target. */
 operation preferredTemporalRoutingTarget(targets) {
   var routingTargets = Sequence{};
   for (target in targets.select(t | t.isKindOf(KERNEL!RoutingTarget))) {
@@ -837,7 +811,6 @@ operation preferredTemporalRoutingTarget(targets) {
   return null;
 }
 
-/** Transforms Availability Reliability Nfr elements into Resilience Policy elements. */
 rule AvailabilityReliabilityNfr2ResiliencePolicy
   transform nfr : CIMGOV!NonFunctionalRequirement
   to pol : POLICY!ResiliencePolicy,
@@ -879,7 +852,6 @@ rule AvailabilityReliabilityNfr2ResiliencePolicy
   traceGenerated(nfr, backup, "TR-060", "MEDIUM");
 }
 
-/** Transforms Performance Nfr elements into Timeout Policy elements. */
 rule PerformanceNfr2TimeoutPolicy
   transform nfr : CIMGOV!NonFunctionalRequirement
   to pol : POLICY!TimeoutPolicy,
@@ -939,7 +911,6 @@ rule PerformanceNfr2TimeoutPolicy
   manualDecision("TR-060", "Translate performance/scalability NFR '" + nfr.name + "' into concrete timeout, concurrency, cache, and rate-limit values.", KERNEL!Severity#WARNING, nfr.productionBlocking, Sequence{nfr, pol, concurrency, cache, rateLimit});
 }
 
-/** Transforms Audi elements into perability Nfr2 Observability elements. */
 rule AuditOperabilityNfr2Observability
   transform nfr : CIMGOV!NonFunctionalRequirement
   to pol : POLICY!ObservabilityConfig {
@@ -1004,7 +975,6 @@ rule AuditOperabilityNfr2Observability
   traceGenerated(nfr, pol, "TR-060", "MEDIUM");
 }
 
-/** Transforms Cost Nfr elements into Cost Policy elements. */
 rule CostNfr2CostPolicy
   transform nfr : CIMGOV!NonFunctionalRequirement
   to pol : POLICY!CostPolicy {
@@ -1024,7 +994,6 @@ rule CostNfr2CostPolicy
   traceGenerated(nfr, pol, "TR-060", "MEDIUM");
 }
 
-/** Transforms Data Quality Nfr elements into Schema Constraint And Readiness elements. */
 rule DataQualityNfr2SchemaConstraintAndReadiness
   transform nfr : CIMGOV!NonFunctionalRequirement
   to pol : POLICY!DataQualityPolicy {
@@ -1048,7 +1017,6 @@ rule DataQualityNfr2SchemaConstraintAndReadiness
     "Data quality NFR has a measurable fit criterion.", "Define validation rules or measurable data quality thresholds.", Sequence{nfr, pol});
 }
 
-/** Transforms Generic Compliance Nfr elements into Compliance Policy elements. */
 rule GenericComplianceNfr2CompliancePolicy
   transform nfr : CIMGOV!NonFunctionalRequirement
   to pol : POLICY!CompliancePolicy {

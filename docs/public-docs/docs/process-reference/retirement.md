@@ -1,8 +1,8 @@
 <!-- Process documentation is maintained by hand. -->
 
-# Phase 2: Retirement, migration and closure
+# Phase 3: Retirement, migration and closure
 
-Phase 2 ends the product's service or transfers it to a replacement. Entry requires an authorized retirement decision and an agreed disposition for development and release work already in progress. Operations continues through migration until the service can shut down safely.
+Phase 3 ends the product's service or transfers it to a replacement. Entry requires an authorized retirement decision and an agreed disposition for development and release work already in progress. Operations continues through migration until the service can shut down safely.
 
 Inputs include the retirement decision, running versions, release and operations records, assets and data, retention obligations, costs and remaining risks.
 

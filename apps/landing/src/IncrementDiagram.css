@@ -1,0 +1,191 @@
+.increment-figure {
+  margin: 0;
+  padding: 24px 20px 0;
+  border: 1px solid var(--line);
+  background: var(--paper);
+}
+
+.increment-graph {
+  width: 100%;
+  min-width: 0;
+}
+
+.increment-drawing {
+  display: block;
+  width: 100%;
+  height: auto;
+  font-family: var(--sans);
+}
+
+.increment-graph[data-layout="tablet"] .increment-drawing {
+  max-width: 780px;
+  margin-inline: auto;
+}
+
+.increment-graph[data-layout="phone"] .increment-drawing {
+  max-width: 340px;
+  margin-inline: auto;
+}
+
+.increment-edge,
+.increment-arrowhead,
+.increment-feedback-head {
+  fill: none;
+  stroke: var(--ink-soft);
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.increment-feedback,
+.increment-feedback-head {
+  stroke: var(--teal-dark);
+}
+
+.increment-feedback {
+  stroke-dasharray: 5 5;
+}
+
+.increment-edge-label rect {
+  fill: var(--paper);
+}
+
+.increment-edge-label text {
+  fill: var(--ink-soft);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.increment-node > rect {
+  fill: var(--white);
+  stroke: var(--muted);
+  stroke-width: 1.2;
+}
+
+.increment-node-artifacts > rect {
+  fill: var(--teal-pale);
+  stroke: var(--teal-dark);
+}
+
+.increment-node-name {
+  fill: var(--ink);
+  font: 400 23px var(--serif);
+}
+
+.increment-tag {
+  fill: var(--teal-dark);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+}
+
+.increment-owner {
+  fill: var(--muted);
+  font-size: 14px;
+}
+
+.increment-gate-badge rect,
+.increment-decision path {
+  fill: var(--paper);
+  stroke: var(--muted);
+  stroke-width: 1.2;
+}
+
+.increment-gate-badge text {
+  fill: var(--ink-soft);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.increment-decision text {
+  fill: var(--ink);
+  font-size: 16px;
+  font-weight: 500;
+}
+
+.increment-caption {
+  padding: 20px 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px 24px;
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.6;
+}
+
+.increment-caption > span:first-child {
+  color: var(--teal-dark);
+  font-weight: 600;
+}
+
+.increment-legend,
+.increment-legend > span {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.increment-legend {
+  gap: 12px 24px;
+}
+
+.increment-legend i {
+  display: inline-block;
+  width: 24px;
+  border-top: 1.6px solid var(--ink-soft);
+}
+
+.increment-legend i.increment-key-feedback {
+  border-top: 1.6px dashed var(--teal-dark);
+}
+
+.increment-legend b {
+  color: var(--ink-soft);
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.increment-graph[data-layout="phone"] .increment-edge-label text {
+  font-size: 11px;
+}
+
+.increment-graph[data-layout="tablet"] .increment-owner {
+  font-size: 15px;
+}
+
+.increment-graph[data-layout="phone"] .increment-owner {
+  font-size: 12px;
+}
+
+.increment-graph[data-layout="phone"] .increment-node-name {
+  font-size: 18px;
+}
+
+.increment-graph[data-layout="phone"] .increment-tag {
+  font-size: 10px;
+}
+
+.increment-graph[data-layout="phone"] .increment-gate-badge text {
+  font-size: 11px;
+}
+
+.increment-graph[data-layout="phone"] .increment-decision text {
+  font-size: 14px;
+}
+
+@media (max-width: 760px) {
+  .increment-figure {
+    padding: 16px 0 0;
+    border-inline: 0;
+    border-bottom: 0;
+  }
+
+  .increment-caption {
+    align-items: flex-start;
+  }
+}

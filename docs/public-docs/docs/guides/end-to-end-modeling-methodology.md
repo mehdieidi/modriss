@@ -2,7 +2,7 @@
 
 # Building a product increment
 
-An increment is a limited part of a capability that the team can follow from business need to tested implementation. This work repeats inside Phase 1, the active product phase. Existing models, code and operational findings become inputs to later increments.
+An increment is a limited part of a capability that the team can follow from business need to tested implementation. This work repeats inside Phase 2, the active product phase. Existing models, code and operational findings become inputs to later increments.
 
 ## Plan the increment
 
@@ -14,9 +14,9 @@ The scope should produce a result that people can assess, such as submitting and
 
 <figure class="doc-diagram">
   <a class="doc-diagram__link" href="../../assets/diagrams/process/increment.svg" aria-label="Open the product increment diagram">
-    <img src="../../assets/diagrams/process/increment.svg" alt="Increment planning leads through CIM, PIM and PSM reviews at G2, G3 and G4, then generation, implementation and testing, and increment acceptance at G5." />
+    <img src="../../assets/diagrams/process/increment.svg" alt="The product owner plans an increment. The business modeler develops CIM at G2; the solutions architect refines PIM at G3; the cloud engineer refines PSM at G4. ETL connects the model levels and EGX/EGL generates artifacts. The software engineer completes and tests them. G5 accepts the increment for release assembly or requests rework. Domain, architecture and model gaps return to their owning level; the next slice returns to planning." />
   </a>
-  <figcaption>One product increment. Model transformations produce drafts for review. Dashed arrows show rework and the next increment.</figcaption>
+  <figcaption>One product increment, with responsibilities and decision gates. ETL refines CIM to PIM and PIM to PSM; EGX/EGL generates artifacts. G5 accepts tested work for release assembly or returns it for rework. Dashed arrows route domain, architecture and model gaps to their owning level and start the next slice.</figcaption>
 </figure>
 
 | Activity                                                                                | Main responsibility                                                | Result                                           |

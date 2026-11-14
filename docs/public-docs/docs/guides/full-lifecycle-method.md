@@ -13,21 +13,21 @@ Development and Delivery has three phases. Each phase occurs once in the product
 Operations and Maintenance starts when the first release receives operational acceptance at G7. It runs alongside later development and continues through retirement until the service has shut down safely and both processes have met the G8 closure conditions.
 
 <figure class="doc-diagram">
-  <a class="doc-diagram__link" href="../../assets/diagrams/process/lifecycle.svg" aria-label="Open the product lifecycle diagram">
-    <img src="../../assets/diagrams/process/lifecycle.svg" alt="Three sequential development phases, with repeated increments and releases inside Phase 1. Operations starts at G7 and contributes to shared closure at G8." />
+  <a class="doc-diagram__link" href="../../assets/diagrams/process/process.svg" aria-label="Open the product lifecycle diagram">
+    <img src="../../assets/diagrams/process/process.svg" alt="Phase 1: Inception (G0–G1). Phase 2: Active Product Development contains iterative analysis, architecture and cloud design, implementation (G2–G5), and release (G6–G7). Phase 3: Retirement ends at G8. Ongoing maintenance observes the service, classifies work and manages Kanban flow." />
   </a>
-  <figcaption>Development and Delivery and the concurrent Operations and Maintenance process. Dashed arrows show feedback and repeated work.</figcaption>
+  <figcaption>The MODRISS process: inception, iterative–incremental development and release, retirement, and ongoing maintenance. Solid arrows show control flow; dashed arrows show rework and feedback. Project, people, risk, quality and cost management span the lifecycle.</figcaption>
 </figure>
 
 | Phase                                       | Purpose                                                                             | Main result                                                       |
 | ------------------------------------------- | ----------------------------------------------------------------------------------- | ----------------------------------------------------------------- |
-| 0. Inception, tailoring and organization    | Define the product, compare implementation options and prepare the method and team. | An agreed starting point for the first increment, accepted at G1. |
-| 1. Active product development and evolution | Build, review and release useful increments of the product.                         | Accepted increments and releases with operational support.        |
-| 2. Retirement, migration and closure        | End or replace the product and settle its remaining obligations.                    | Safe shutdown and joint closure at G8.                            |
+| 1. Inception, tailoring and organization    | Define the product, compare implementation options and prepare the method and team. | An agreed starting point for the first increment, accepted at G1. |
+| 2. Active product development and evolution | Build, review and release useful increments of the product.                         | Accepted increments and releases with operational support.        |
+| 3. Retirement, migration and closure        | End or replace the product and settle its remaining obligations.                    | Safe shutdown and joint closure at G8.                            |
 
 ## From a business need to working software
 
-During Phase 1, the team selects a small part of a capability with a result that people can review. For example, an increment might let a user submit and track a request.
+During Phase 2, the team selects a small part of a capability with a result that people can review. For example, an increment might let a user submit and track a request.
 
 The team describes the increment at three modeling levels:
 

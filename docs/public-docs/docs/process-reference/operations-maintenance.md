@@ -4,6 +4,8 @@
 
 Operations and Maintenance keeps the accepted service running and manages incidents, changes and improvements. It starts with the first operational acceptance at G7. Development of later versions can continue at the same time.
 
+The [process overview](../guides/full-lifecycle-method.md#two-processes-across-the-product-lifecycle) shows the maintenance sequence: Operate & Observe, Register & Classify Work, and Manage Flow (Kanban). Classified changes feed back into active product development.
+
 The inputs are the running version, handover package, service objectives, monitoring data, incident and release records, and change requests. The process produces service and cost evidence, work items, incident records, change impact assessments and released improvements.
 
 ## Observe the service and prepare work
@@ -18,14 +20,7 @@ Before an item is ready to start, clarify its expected result, dependencies and 
 
 Work moves through Requested, Ready, In progress, Verification and Done. The team pulls an item when there is capacity to do it. The board policy defines start and finish points, work-in-progress limits, service classes, expected completion time and emergency handling.
 
-<figure class="doc-diagram">
-  <a class="doc-diagram__link" href="../../assets/diagrams/process/operations-kanban.svg" aria-label="Open the example operations Kanban board">
-    <img src="../../assets/diagrams/process/operations-kanban.svg" alt="Example board with Requested, Ready, In progress, Verification and Done columns. Two items are in progress, including a blocked item, and one is in verification." loading="lazy" />
-  </a>
-  <figcaption>An example board. Start is entry to In progress; finish is entry to Done. Cards, counts, limits and the completion-time expectation are illustrative, not research measurements.</figcaption>
-</figure>
-
-A blocked item stays in its current state and counts toward the work-in-progress limit. In this example, two items are in progress and one is in verification, so total work in progress is three. Ready is a queue before work starts.
+A blocked item stays in its current state and counts toward the work-in-progress limit. Ready is a queue before work starts.
 
 The delivery lead and service owner review ready work, aging items, blockers and emergencies. They make capacity changes visible so that operational demand and planned development can be considered together.
 
@@ -38,13 +33,6 @@ Restoring service does not remove the need for a permanent correction. Keep unde
 ## Choose the route for each item
 
 An item can be resolved by an operational action, follow the necessary software change and release activities, or join a planned release backlog.
-
-<figure class="doc-diagram">
-  <a class="doc-diagram__link" href="../../assets/diagrams/process/operations-maintenance.svg" aria-label="Open the operations and maintenance workflow">
-    <img src="../../assets/diagrams/process/operations-maintenance.svg" alt="A prepared work item follows an operational action, a source change and release, or a planned release queue. The outcome is verified before the item closes; failed verification returns it for assessment." loading="lazy" />
-  </a>
-  <figcaption>Work-item routes and review. Queuing an item for release leaves it open. Closing an item does not end service operation.</figcaption>
-</figure>
 
 The delivery lead and source owner use trace links to find where a change should begin:
 

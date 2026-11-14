@@ -43,14 +43,21 @@ more detail. Paths in this list are relative to the repository root:
 - `docs/api/openapi/openapi.yaml` is the checked-in API contract.
 - `docs/diagrams/` contains architecture diagrams and the source for the modeling-path SVG.
 - `docs/thesis/modriss-process-chapter.deljouyi-style.fa.md` defines the public development-process content.
-- `docs/thesis/figures/` contains the chapter diagrams used in the process guides.
+- `methodology/process/method/diagrams/process.svg` and `increment.svg` are the current process diagrams used in the public guides.
 
-The modeling-path SVG is copied into `docs/public-docs/docs/assets/diagrams/`. The process guides
-use copies of the chapter's lifecycle, increment, Kanban and operations workflow SVGs under
-`docs/public-docs/docs/assets/diagrams/process/`, with the `modriss-` filename prefix removed.
-Refresh these copies when their source diagrams change.
-The public SVG copies add a white background so the chapter's black text stays readable in both themes.
-The Kanban copy also defines the card fill and border so its text remains visible.
+The modeling-path SVG is copied into `docs/public-docs/docs/assets/diagrams/`. The process overview
+and increment guide use `process.svg` and `increment.svg` from
+`methodology/process/method/diagrams/`, copied without modification to
+`docs/public-docs/docs/assets/diagrams/process/`. Refresh both copies when their sources change.
+The supplied diagrams define their own background and adaptive foreground colors for theme support.
+The landing page redraws the process as native React/SVG in
+`apps/landing/src/ProcessDiagram.tsx`, using the graph and independently authored layout in
+`apps/landing/src/process-diagram-model.ts`. The source SVG is a content reference, not a runtime
+asset. Keep the 34 activities, nine gates, nested groups and 54 directed relationships aligned
+when the process changes. `process-diagram-layout.ts` automatically reflows the complete diagram
+for its available width. Phone layouts stack the groups vertically and reroute their connections;
+the figure has no viewer controls or internal scrolling.
+Phase numbering follows the diagrams: 1. Inception, 2. Active Product Development, 3. Retirement.
 
 The public process pages are maintained by hand from the thesis chapter. Keep the explanation
 focused on phases, activities, responsibilities, inputs, outputs and reviews. The legacy

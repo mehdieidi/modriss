@@ -1,8 +1,8 @@
 <!-- Process documentation is maintained by hand. -->
 
-# Phase 0: Inception, tailoring and organization
+# Phase 1: Inception, tailoring and organization
 
-Phase 0 turns a problem, opportunity or required change into an agreed basis for development. It starts with a named sponsor and enough context to examine what the product should achieve.
+Phase 1 turns a problem, opportunity or required change into an agreed basis for development. It starts with a named sponsor and enough context to examine what the product should achieve.
 
 The inputs include stakeholder expectations, existing knowledge of the organization and known constraints. These may initially come from conversations and existing systems rather than formal documents.
 

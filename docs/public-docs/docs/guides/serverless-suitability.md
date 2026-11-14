@@ -2,7 +2,7 @@
 
 # Serverless suitability
 
-During Phase 0, the solution architect compares serverless, hybrid and non-serverless options for the proposed product. The assessment uses the product charter, requirements, expected workload and known constraints. Its findings support the sponsor's G0 decision.
+During Phase 1, the solution architect compares serverless, hybrid and non-serverless options for the proposed product. The assessment uses the product charter, requirements, expected workload and known constraints. Its findings support the sponsor's G0 decision.
 
 Assess architectural suitability separately from MODRISS support. A design can be a reasonable serverless choice while still needing a metamodel, transformation or generator that the selected provider package does not supply.
 

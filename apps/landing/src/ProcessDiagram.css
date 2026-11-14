@@ -1,0 +1,205 @@
+.pd-figure .process-map-heading p,
+.process-figure.pd-figure > figcaption {
+  text-align: left;
+}
+.pd-graph {
+  width: 100%;
+  min-width: 0;
+  margin: 24px auto 0;
+}
+.pd-graph .pd-drawing {
+  display: block;
+  width: 100%;
+  height: auto;
+  margin-inline: auto;
+  font-family: var(--sans);
+}
+.pd-graph[data-layout="medium"] .pd-drawing {
+  max-width: 900px;
+}
+.pd-graph[data-layout="compact"] .pd-drawing {
+  width: clamp(220px, 70%, 320px);
+  max-width: 100%;
+}
+.pd-paper,
+.pd-zone-frame,
+.pd-repeat-frame {
+  fill: var(--white);
+}
+.pd-zone-frame,
+.pd-repeat-frame {
+  stroke: var(--line);
+  stroke-width: 1.5px;
+}
+.pd-zone-phase > .pd-zone-frame {
+  fill: var(--paper);
+  stroke: var(--muted);
+}
+.pd-zone-active > .pd-zone-frame {
+  fill: #edf3ef;
+  stroke: var(--teal);
+  stroke-width: 2px;
+}
+.pd-zone-design > .pd-zone-frame {
+  fill: var(--paper);
+}
+.pd-zone-maintenance > .pd-zone-frame {
+  fill: #f7eee8;
+  stroke: var(--copper);
+}
+.pd-tag {
+  fill: var(--muted);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+}
+.pd-zone-title {
+  fill: var(--ink);
+  font-size: 18px;
+  font-weight: 600;
+}
+.pd-zone-phase .pd-zone-title,
+.pd-zone-active .pd-zone-title,
+.pd-zone-maintenance .pd-zone-title {
+  font-family: var(--serif);
+  font-size: 24px;
+  font-weight: 400;
+}
+.pd-zone-active .pd-zone-title {
+  fill: var(--teal-dark);
+}
+.pd-zone-iteration .pd-zone-title {
+  fill: var(--teal-dark);
+  font-family: var(--serif);
+  font-size: 18px;
+  font-style: italic;
+  font-weight: 400;
+}
+.pd-node rect {
+  fill: var(--white);
+  stroke: var(--muted);
+  stroke-width: 1.5px;
+}
+.pd-node-name {
+  fill: var(--ink);
+  font-family: var(--sans);
+  font-size: 16px;
+  font-weight: 500;
+}
+.pd-gate rect {
+  fill: var(--paper-deep);
+}
+.pd-gate .pd-node-name {
+  font-size: 14px;
+  font-weight: 600;
+}
+.pd-node-focal rect {
+  fill: var(--teal-dark);
+  stroke: var(--teal-dark);
+}
+.pd-node-focal .pd-node-name {
+  fill: var(--white);
+}
+.pd-edge-halo {
+  fill: none;
+  stroke: var(--white);
+  stroke-width: 6px;
+}
+.pd-edge {
+  fill: none;
+  stroke: var(--muted);
+  stroke-width: 1.5px;
+}
+.pd-edge-feedback {
+  stroke: #99502c;
+  stroke-dasharray: 5 4;
+}
+.pd-arrow-head {
+  fill: var(--muted);
+}
+.pd-feedback-head {
+  fill: #99502c;
+}
+.pd-layout-compact .pd-node-name {
+  font-size: 11px;
+}
+.pd-layout-compact .pd-gate .pd-node-name {
+  font-size: 9px;
+}
+.pd-layout-compact .pd-tag {
+  font-size: 7.5px;
+  letter-spacing: 0.75px;
+}
+.pd-layout-compact .pd-zone-title,
+.pd-layout-compact .pd-zone-iteration .pd-zone-title {
+  font-size: 12px;
+}
+.pd-layout-compact .pd-zone-phase .pd-zone-title,
+.pd-layout-compact .pd-zone-active .pd-zone-title,
+.pd-layout-compact .pd-zone-maintenance .pd-zone-title {
+  font-size: 15px;
+}
+.pd-disciplines {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 8px 20px;
+  margin-top: 24px;
+  padding: 16px;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  background: var(--paper);
+  color: var(--ink-soft);
+  font-size: 12px;
+  line-height: 1.7;
+}
+.pd-disciplines b {
+  color: var(--teal-dark);
+}
+.pd-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 24px;
+  margin-top: 16px;
+  color: var(--ink-soft);
+  font-size: 11px;
+}
+.pd-legend > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.pd-key-flow,
+.pd-key-feedback {
+  width: 22px;
+  border-top: 1.5px solid var(--muted);
+}
+.pd-key-feedback {
+  border-top: 1.5px dashed #99502c;
+}
+.pd-key-gate {
+  padding: 2px 4px;
+  border: 1px solid var(--muted);
+  background: var(--paper-deep);
+  font-style: normal;
+}
+.pd-key-activity,
+.pd-key-phase {
+  width: 22px;
+  height: 14px;
+  border: 1px solid var(--muted);
+  border-radius: 2px;
+}
+.pd-key-phase {
+  border-radius: 5px;
+  background: var(--paper);
+}
+@media (max-width: 760px) {
+  .process-section .pd-figure {
+    padding: 12px;
+  }
+  .pd-disciplines {
+    padding: 12px;
+  }
+}

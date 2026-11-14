@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { createRoot } from 'react-dom/client'
 import { AssistantDiagram } from './AssistantDiagram'
+import { ProcessDiagram } from './ProcessDiagram'
+import { IncrementDiagram } from './IncrementDiagram'
 import workspaceScreenshot from './assets/modriss-workspace.png'
 import modrissFavicon from './assets/modriss-favicon.svg'
 import modrissLogoBlack from './assets/modriss-logo.svg'
@@ -172,15 +174,7 @@ function App() {
         <h2 id="pipeline-title">From domain knowledge to serverless artifacts</h2>
         <p>The current framework organizes models at three abstraction levels. Transformations provide a systematic refinement path, while modelers review and complete decisions at every level.</p>
       </div>
-      <div className="pipeline">
-        <article><span>01 · CIM</span><h3>Problem domain</h3><p>Capabilities, actors, concepts, events, processes, policies, governance, and requirements without a software or cloud commitment.</p><small>Computation-Independent Model</small></article>
-        <i><Icon name="arrow" /></i>
-        <article><span>02 · PIM</span><h3>Serverless architecture</h3><p>Services, functions, contracts, data, events, workflows, integrations, security, policies, and deployment concerns.</p><small>Platform-Independent Model</small></article>
-        <i><Icon name="arrow" /></i>
-        <article><span>03 · PSM</span><h3>Cloud provider ecosystem</h3><p>Use the built-in AWS language or add a provider's PSM metamodel and Epsilon scripts. Derive separate provider models from the same PIM.</p><small>Platform-Specific Model</small></article>
-        <i><Icon name="arrow" /></i>
-        <article className="artefact"><span>04 · M2T</span><h3>Generated artifacts</h3><p>Each provider's generator defines its project outputs. The built-in AWS generator produces infrastructure, Go handlers, contracts, tests, automation, and documentation.</p><small>Engineering project baseline</small></article>
-      </div>
+      <IncrementDiagram />
       <p className="pipeline-note"><Icon name="transform" size={18} /> ETL supports model-to-model refinement. EGX and EGL coordinate model-to-text generation. Semantic EVL checks remain explicit user-initiated validation activities.</p>
     </section>
 
@@ -205,146 +199,13 @@ function App() {
           <h2 id="process-title">A development process for engineering and evolving software in the serverless paradigm</h2>
         </div>
         <div className="process-summary">
-          <p>Development and Delivery has three one-time phases: inception and tailoring, active product development, and retirement. During the active phase, teams build vertical CIM–PIM–PSM increments and release them while Operations and Maintenance sustains the live service. DevOps connects delivery and operations through evidence, telemetry, controlled change, and learning.</p>
+          <p>The process has three phases: inception, active product development, and retirement. During active development, teams plan increments, model the domain, design the serverless architecture and cloud resources, and generate, complete, and test code. Accepted increments form releases while ongoing maintenance sustains the live service.</p>
           <p>Each handoff names its evidence and decision owner. Release responsibility starts before the first production traffic; retirement closes the live service while retained records move to accepted, funded custody.</p>
           <a className="text-link" href={processDocsUrl}>Study the full lifecycle process <Icon name="arrow" size={15} /></a>
         </div>
       </div>
 
-      <figure className="process-figure" aria-labelledby="process-map-title">
-        <div className="process-map-heading">
-          <div><span>Integrated lifecycle</span><h3 id="process-map-title">Two processes, one product lifecycle</h3></div>
-          <p>Development delivers releases while operations sustains the live baseline.</p>
-        </div>
-
-        <div className="process-lane-heading development-lane-heading">
-          <span>Process A</span>
-          <b>Development &amp; Delivery</b>
-          <small>Phase 0 <i aria-hidden="true">→</i> Phase 1 <i aria-hidden="true">→</i> Phase 2</small>
-        </div>
-
-        <div className="lifecycle-cycle" aria-label="Development and Delivery proceeds through three sequential, one-time phases">
-          <article className="lifecycle-boundary lifecycle-start">
-            <span>Phase 0 · once</span>
-            <h4>Assess, authorize &amp; tailor</h4>
-            <small>G0 · G1</small>
-          </article>
-
-          <i className="lifecycle-flow" aria-hidden="true">→</i>
-
-          <div className="active-lifecycle-stack">
-            <section className="active-lifecycle" aria-label="One-time active product phase containing repeatable delivery activities">
-              <header className="active-lifecycle-heading">
-                <div><span>Phase 1 · once</span><b>Active product life</b></div>
-                <small>Activities and iterations repeat · phases do not</small>
-              </header>
-
-              <div className="release-cycle">
-                <section className="increment-zone">
-                  <header><span>Iteration</span><b>1+ increments</b></header>
-                  <div className="increment-stack">
-                    <div className="increment-card-back increment-card-back-far" aria-hidden="true" />
-                    <div className="increment-card-back increment-card-back-near" aria-hidden="true" />
-                    <article className="increment-card">
-                      <div><b>Increment k</b><span>one valuable slice</span></div>
-                      <ol aria-label="Model-driven path through one increment"><li>CIM</li><li>PIM</li><li>PSM</li><li>Artifacts</li></ol>
-                      <small><span aria-hidden="true">↻</span> review · rework · accept</small>
-                    </article>
-                  </div>
-                  <div className="increment-gates">G2 → G5</div>
-                </section>
-
-                <i className="cycle-flow" aria-hidden="true">→</i>
-
-                <article className="release-node">
-                  <span>Release activities</span>
-                  <h4>Qualify, promote &amp; hand over</h4>
-                  <div><b>Candidate</b><i aria-hidden="true">→</i><b>Promote</b></div>
-                  <small>G6 · G7</small>
-                </article>
-
-              </div>
-
-              <div className="release-learning-loop" aria-label="Release learning loop: review release evidence, adapt the backlog, and begin the next release iteration">
-                <span>Release learning loop</span>
-                <ol>
-                  <li><b>G7 evidence</b></li>
-                  <li><b>Review outcomes</b></li>
-                  <li><b>Adapt backlog</b></li>
-                  <li><strong><i aria-hidden="true">↺</i> Next iteration</strong></li>
-                </ol>
-              </div>
-            </section>
-          </div>
-
-          <i className="lifecycle-flow lifecycle-exit-flow" aria-hidden="true">→</i>
-
-          <article className="lifecycle-boundary lifecycle-end">
-            <span>Phase 2 · once authorized</span>
-            <h4>Retire, verify &amp; close</h4>
-            <small>G8</small>
-          </article>
-        </div>
-
-        <div className="process-coupling" aria-label="DevOps interface between the processes: operational feedback returns to active product development and the G7 release enters operations">
-          <div className="coupling-heading"><b>DevOps interface</b><span>shared automation + evidence</span></div>
-          <svg className="coupling-lines" viewBox="0 0 1000 76" preserveAspectRatio="none" aria-hidden="true">
-            <defs>
-              <marker id="coupling-coral-arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><path d="M0 0 8 3 0 6Z" /></marker>
-              <marker id="coupling-teal-arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><path d="M0 0 8 3 0 6Z" /></marker>
-            </defs>
-            <path className="coupling-path coupling-path-feedback" d="M280 76 V0" markerEnd="url(#coupling-teal-arrow)" />
-            <path className="coupling-path coupling-path-handover" d="M680 0 V76" markerEnd="url(#coupling-coral-arrow)" />
-          </svg>
-          <div className="coupling-channel coupling-feedback">
-            <span data-short="Feedback"><i aria-hidden="true">↑</i> Feedback + change</span>
-          </div>
-          <div className="coupling-channel coupling-handover">
-            <span data-short="G7 release"><i aria-hidden="true">↓</i> G7 release</span>
-          </div>
-        </div>
-
-        <article className="operations-process" aria-label="Distinct concurrent Operations and Maintenance process with Kanban pull flow">
-          <header>
-            <span>Process B · concurrent · not a phase</span>
-            <h4>Operations &amp; Maintenance</h4>
-            <div className="live-baseline"><span><i aria-hidden="true" />Live baseline</span><small>First G7 <i aria-hidden="true">→</i> shared G8 closure</small></div>
-          </header>
-          <div className="operations-mechanism">
-            <div className="kanban-label"><b>Kanban pull</b><span>WIP + SLE</span></div>
-            <ol className="kanban-mini" aria-label="Requested, Ready, Doing, Verify, Done">
-              <li><span>Requested</span></li>
-              <li><span>Ready</span></li>
-              <li><span>Doing</span><small>2/2</small></li>
-              <li><span>Verify</span><small>1/2</small></li>
-              <li><span>Done</span></li>
-            </ol>
-            <div className="operations-routes" aria-label="At replenishment, classify each service item for one of three destinations">
-              <div className="route-decision">
-                <span>At replenishment</span>
-                <b>Classify service item</b>
-              </div>
-              <svg className="route-fork" viewBox="0 0 52 128" preserveAspectRatio="none" aria-hidden="true">
-                <defs>
-                  <marker id="route-fork-arrow" markerWidth="7" markerHeight="6" refX="6" refY="3" orient="auto"><path d="M0 0 7 3 0 6Z" /></marker>
-                </defs>
-                <path d="M0 64 H14" />
-                <path d="M14 64 V22 Q14 16 20 16 H50" markerEnd="url(#route-fork-arrow)" />
-                <path d="M14 64 H50" markerEnd="url(#route-fork-arrow)" />
-                <path d="M14 64 V106 Q14 112 20 112 H50" markerEnd="url(#route-fork-arrow)" />
-              </svg>
-              <div className="route-outcomes">
-                <article><i aria-hidden="true">↺</i><div><b>Resolve in operations</b><small>Runbook + evidence</small></div></article>
-                <article><i aria-hidden="true">↑</i><div><b>Return to MDE flow</b><small>Earliest owning source</small></div></article>
-                <article><i aria-hidden="true">↗</i><div><b>Commit to planned release</b><small>Release backlog</small></div></article>
-              </div>
-            </div>
-          </div>
-        </article>
-
-        <div className="discipline-rail"><b>Continuous disciplines</b><span>Management · risk · quality · security · change · traceability · FinOps · learning</span></div>
-        <figcaption><span>Figure 1.</span> The MODRISS development process, connecting Development &amp; Delivery with Operations &amp; Maintenance across the product lifecycle.</figcaption>
-      </figure>
+      <ProcessDiagram />
     </section>
 
     <section className="prototype" id="prototype">

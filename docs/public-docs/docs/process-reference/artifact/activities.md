@@ -54,4 +54,4 @@ The first G7 acceptance starts the [Operations and Maintenance process](../opera
 
 The product owner compares business results, service behavior and cost per unit of value with the release assumptions. Gaps become future work and inform priorities and cost estimates.
 
-Keep the candidate, test evidence, deployment record, recovery plan and handover record connected. A change to an input that affects those results reopens the relevant review. The next increment and release continue within Phase 1.
+Keep the candidate, test evidence, deployment record, recovery plan and handover record connected. A change to an input that affects those results reopens the relevant review. The next increment and release continue within Phase 2.

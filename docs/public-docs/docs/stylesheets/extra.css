@@ -578,19 +578,26 @@ button {
   cursor: zoom-in;
 }
 
-.doc-diagram figcaption {
-  padding: 0.8rem 0.85rem 0.35rem;
+.md-typeset figure.doc-diagram > figcaption {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: none;
+  margin: 0.75rem 0 0;
+  padding: 0.65rem 0.2rem 0.15rem;
+  border-top: 1px solid var(--doc-line);
   color: var(--doc-muted);
-  font-size: 0.82rem;
+  font-size: 0.68rem;
   font-style: normal;
   line-height: 1.6;
+  text-align: left !important;
+  text-justify: auto;
 }
 
 .doc-diagram figcaption::after {
   display: block;
-  margin-top: 0.2rem;
+  margin-top: 0.3rem;
   content: "Select the diagram to view it at full size.";
-  font-size: 0.72rem;
+  font-size: 0.62rem;
 }
 
 .doc-image-viewer {

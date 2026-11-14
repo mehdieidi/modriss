@@ -55,16 +55,16 @@ nav:
           - Local development: getting-started/local-development.md
   - Development process:
       - Overview: guides/full-lifecycle-method.md
-      - "Phase 0: Inception":
+      - "Phase 1: Inception":
           - Prepare the project: process-reference/development-delivery.md
           - Serverless suitability: guides/serverless-suitability.md
-      - "Phase 1: Active product development":
+      - "Phase 2: Active product development":
           - Build an increment: guides/end-to-end-modeling-methodology.md
           - Domain modeling (CIM): guides/cim-modeling-methodology.md
           - Serverless architecture (PIM): guides/pim-modeling-methodology.md
           - Cloud design (PSM): guides/psm-modeling-methodology.md
           - Implementation and release: process-reference/artifact/activities.md
-      - "Phase 2: Retirement": process-reference/retirement.md
+      - "Phase 3: Retirement": process-reference/retirement.md
       - Operations and Maintenance: process-reference/operations-maintenance.md
       - Roles: process-reference/roles.md
       - Decision gates: process-reference/gates.md
