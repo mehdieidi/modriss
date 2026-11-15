@@ -175,7 +175,6 @@ function App() {
         <p>The current framework organizes models at three abstraction levels. Transformations provide a systematic refinement path, while modelers review and complete decisions at every level.</p>
       </div>
       <IncrementDiagram />
-      <p className="pipeline-note"><Icon name="transform" size={18} /> ETL supports model-to-model refinement. EGX and EGL coordinate model-to-text generation. Semantic EVL checks remain explicit user-initiated validation activities.</p>
     </section>
 
     <section className="framework" id="framework">

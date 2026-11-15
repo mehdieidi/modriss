@@ -47,7 +47,7 @@ function label(text: string, x: number, y: number, width: number) {
 
 // New coordinates and routes for each presentation; the same directed graph in all three.
 export function incrementLayoutForWidth(availableWidth: number): IncrementLayout {
-  if (availableWidth >= 1000) return {
+  if (availableWidth >= 900) return {
     kind: 'wide', width: 1120, height: 500,
     nodes: [node('plan', 16, 80, 224), node('cim', 304, 80, 224), node('pim', 592, 80, 224), node('psm', 880, 80, 224), node('artifacts', 880, 320, 224), node('release', 392, 320, 224)],
     gate: { x: 752, y: 394, radius: 32 },

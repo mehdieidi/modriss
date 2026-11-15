@@ -653,10 +653,11 @@ button {
   gap: 75px;
 }
 .assistant-figure {
-  margin: 48px 0 0;
+  max-width: 1000px;
+  margin: 48px auto 0;
   padding: 32px;
   border: 1px solid var(--line);
-  background: var(--white);
+  background: var(--paper);
 }
 .assistant-diagram {
   --ad-panel: #eef5f2;
