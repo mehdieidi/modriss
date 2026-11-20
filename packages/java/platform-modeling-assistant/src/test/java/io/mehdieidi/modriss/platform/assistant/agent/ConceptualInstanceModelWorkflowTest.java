@@ -64,6 +64,90 @@ class ConceptualInstanceModelWorkflowTest {
   }
 
   @Test
+  void repairsRootObligationAndCompilesTheExactLlmContainment() throws Exception {
+    var provider =
+        new ScriptedAssistantModelProvider(
+            List.of(
+                ScriptedAssistantModelProvider.reply(
+                    """
+{"obligations":[{"id":"OBL-1","obligation":"Create a catalog taxonomy","importance":"MANDATORY","minimumEvidenceObjects":1,"sourceUnitIds":[],"expectedEClasses":["CIMModel"]}]}
+"""),
+                ScriptedAssistantModelProvider.reply(
+                    """
+{"obligations":[{"id":"OBL-1","obligation":"Represent the category hierarchy","importance":"MANDATORY","minimumEvidenceObjects":1,"sourceUnitIds":[],"expectedEClasses":["DomainRelationship"]}]}
+"""),
+                ScriptedAssistantModelProvider.reply(
+                    """
+                    {"types":["DomainRelationship","ValueObject"]}
+                    """),
+                ScriptedAssistantModelProvider.reply(
+                    """
+{"objects":[
+  {"instanceId":"category","type":"ValueObject","purpose":"Catalog category","ownerInstanceId":"rootId","containment":"valueObjects","plannedReferences":[],"slice":1},
+  {"instanceId":"hierarchy","type":"DomainRelationship","purpose":"Category hierarchy","ownerInstanceId":"rootId","containment":"relationships","plannedReferences":[
+    {"feature":"source","targetId":"category"},{"feature":"target","targetId":"category"},
+    {"feature":"sourceMultiplicity","targetId":"parent-count"},{"feature":"targetMultiplicity","targetId":"child-count"}],"obligationIds":["OBL-1"],"slice":1},
+  {"instanceId":"parent-count","type":"Multiplicity","purpose":"Zero or one parent","ownerInstanceId":"hierarchy","containment":"sourceMultiplicity","plannedReferences":[],"slice":1},
+  {"instanceId":"child-count","type":"Multiplicity","purpose":"Zero or more children","ownerInstanceId":"hierarchy","containment":"targetMultiplicity","plannedReferences":[],"slice":1}
+]}
+"""),
+                ScriptedAssistantModelProvider.reply(
+                    """
+{
+  "category":{"type":"ValueObject","attributes":[{"attributeName":"name","value":"Category"}],"associations":{"compositions":[],"references":[]}},
+  "hierarchy":{"type":"DomainRelationship","attributes":[{"attributeName":"name","value":"Category hierarchy"}],"associations":{"compositions":[],"references":[]}},
+  "parent-count":{"type":"Multiplicity","attributes":[{"attributeName":"lowerBound","value":0},{"attributeName":"upperBound","value":1}],"associations":{"compositions":[],"references":[]}},
+  "child-count":{"type":"Multiplicity","attributes":[{"attributeName":"lowerBound","value":0},{"attributeName":"unbounded","value":true}],"associations":{"compositions":[],"references":[]}}
+}
+""")));
+    AiProperties properties = properties();
+    when(properties.model()).thenReturn("Gemma-4-31B-IT");
+    when(properties.llmReviewEnabled()).thenReturn(false);
+    var knowledge = new MetamodelKnowledgeService(new AssistantMetamodelSchemaService());
+    var store = mock(AssistantTurnStore.class);
+    var workflow =
+        new ConceptualInstanceModelWorkflow(
+            provider, new MetamodelGuideGenerator(knowledge), contracts, properties, store);
+    ModelService models = mock(ModelService.class);
+    when(models.validateStructural(
+            org.mockito.ArgumentMatchers.any(),
+            org.mockito.ArgumentMatchers.any(tools.jackson.databind.JsonNode.class)))
+        .thenReturn(new ModelService.ValidationResult(true, List.of()));
+    var workspace =
+        new ModelWorkspace(
+            ModelLevel.CIM, "model", 1, emptyCim(), new AssistantPatchCompiler(), null);
+
+    var result =
+        workflow.run(
+            "session",
+            ModelLevel.CIM,
+            "Create a catalog taxonomy",
+            workspace,
+            new AgentModelTools(contracts, models).scoped(ModelLevel.CIM, workspace),
+            false);
+
+    assertTrue(provider.prompts().get(1).user().contains("existing model container CIMModel"));
+    assertEquals("conceptual_instance_slice", provider.prompts().get(4).requiredTool());
+    assertEquals(4, result.commandBatch().creates().size());
+    assertTrue(
+        result.commandBatch().creates().stream()
+            .anyMatch(
+                create ->
+                    create.clientRef().equals("parent-count")
+                        && create.owner().equals("hierarchy")
+                        && create.reference().equals("sourceMultiplicity")));
+    assertTrue(
+        result.commandBatch().creates().stream()
+            .anyMatch(
+                create ->
+                    create.clientRef().equals("child-count")
+                        && create.owner().equals("hierarchy")
+                        && create.reference().equals("targetMultiplicity")));
+    assertEquals(2, result.commandBatch().connections().size());
+    assertEquals(0, provider.remainingSteps());
+  }
+
+  @Test
   void preservesEveryLlmBlueprintSourceAllocationWhenASliceOmitsEvidence() throws Exception {
     var provider =
         new ScriptedAssistantModelProvider(
@@ -1405,8 +1489,8 @@ class ConceptualInstanceModelWorkflowTest {
     assertEquals("conceptual_blueprint_patch", provider.prompts().get(2).requiredTool());
     assertTrue(
         correctionPrompt.contains(
-            "add that owner's exact persisted-ID blueprint record and include task-new in its"
-                + " referenceTargets"));
+            "add that owner's exact persisted-ID blueprint record so generation can write"
+                + " the parent-side steps containment"));
     assertEquals(0, provider.remainingSteps());
   }
 

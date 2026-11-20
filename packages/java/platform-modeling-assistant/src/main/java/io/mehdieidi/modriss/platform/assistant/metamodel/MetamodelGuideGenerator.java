@@ -57,6 +57,7 @@ public final class MetamodelGuideGenerator {
   public String index(ModelLevel level) {
     return knowledge.typeContracts(level).stream()
         .filter(TypeContract::creatable)
+        .filter(type -> !knowledge.rootType(level).equals(type.eClass()))
         .map(TypeContract::eClass)
         .sorted()
         .collect(Collectors.joining(", ", level.name() + " types: ", ""));

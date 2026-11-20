@@ -20,8 +20,19 @@ class DurableAssistantModeTest {
 
   @Test
   void automaticallyRecoversProviderFailureOnFirstPersistedConceptualSlice() {
-    assertTrue(DurableAssistantTurnWorker.shouldAutomaticallyRecover(false, false, true, 502));
-    assertTrue(DurableAssistantTurnWorker.shouldAutomaticallyRecover(false, false, true, 422));
+    assertTrue(
+        DurableAssistantTurnWorker.shouldAutomaticallyRecover(false, false, true, true, 502));
+    assertTrue(
+        DurableAssistantTurnWorker.shouldAutomaticallyRecover(false, false, true, true, 422));
+  }
+
+  @Test
+  void doesNotRestartExhaustedBlueprintRepairFromTheSameLedger() {
+    assertEquals(
+        false,
+        DurableAssistantTurnWorker.shouldAutomaticallyRecover(false, false, true, false, 422));
+    assertTrue(
+        DurableAssistantTurnWorker.shouldAutomaticallyRecover(false, false, true, false, 502));
   }
 
   @Test
@@ -42,9 +53,11 @@ class DurableAssistantModeTest {
   @Test
   void doesNotReplayNonRecoverableFailureWithoutConceptualProgress() {
     assertEquals(
-        false, DurableAssistantTurnWorker.shouldAutomaticallyRecover(false, false, true, 400));
+        false,
+        DurableAssistantTurnWorker.shouldAutomaticallyRecover(false, false, true, true, 400));
     assertEquals(
-        false, DurableAssistantTurnWorker.shouldAutomaticallyRecover(false, false, false, 502));
+        false,
+        DurableAssistantTurnWorker.shouldAutomaticallyRecover(false, false, false, false, 502));
   }
 
   @Test

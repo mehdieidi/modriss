@@ -678,11 +678,18 @@ public final class DurableAssistantTurnWorker {
                 .map(AssistantTurnStore.Workflow::plan)
                 .filter(DurableAssistantTurnWorker::isDurablePlan)
                 .isPresent();
+        boolean hasValidatedBlueprint =
+            progressiveWorkflow
+                .filter(item -> "CONCEPTUAL_GENERATION".equals(item.workflowKind()))
+                .map(AssistantTurnStore.Workflow::plan)
+                .filter(plan -> plan.path("blueprint").isObject())
+                .isPresent();
         if (automaticContinuationEnabled
             && shouldAutomaticallyRecover(
                 turnFailure.progressiveRecovery(),
                 hasDurableConceptualProgress,
                 hasDurableConceptualPlan,
+                hasValidatedBlueprint,
                 ex.status())
             && !turns.cancellationRequested(turn.id())
             && Instant.now().isBefore(turn.deadlineAt())
@@ -1062,18 +1069,20 @@ public final class DurableAssistantTurnWorker {
       boolean progressiveRecovery,
       boolean hasDurableConceptualProgress,
       boolean hasDurableConceptualPlan,
+      boolean hasValidatedBlueprint,
       int failureStatus) {
-    // A provider/protocol failure can happen on the first conceptual slice, before any generated
-    // payload exists. The obligation ledger, selected types, and blueprint are already durable at
-    // that point, so a bounded resume is safe and avoids discarding minutes of valid LLM work.
-    boolean resumableFirstSliceFailure =
+    // A saved ledger can resume after a provider outage. A 422 before blueprint acceptance
+    // has already exhausted its local repair budget, and resuming would restart that budget.
+    boolean resumableProviderFailure =
         hasDurableConceptualPlan
-            && (failureStatus == 422
-                || failureStatus == 500
+            && (failureStatus == 500
                 || failureStatus == 502
                 || failureStatus == 503
                 || failureStatus == 504);
-    return progressiveRecovery || hasDurableConceptualProgress || resumableFirstSliceFailure;
+    return progressiveRecovery
+        || hasDurableConceptualProgress
+        || resumableProviderFailure
+        || (hasValidatedBlueprint && failureStatus == 422);
   }
 
   static boolean isOpenProviderCircuit(int status, String message) {
