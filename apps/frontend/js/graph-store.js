@@ -311,12 +311,12 @@ function normalizedSemanticId(type, index, owner = null) {
   return `${ownerPrefix}${sanitizeIdPart(type || "element")}-${index + 1}`;
 }
 
-function normalizeConfiguredSemanticElement(typeKey, raw, fallbackType, index, owner = null) {
+function normalizeConfiguredSemanticElement(raw, fallbackType, index, owner = null) {
   if (!raw || typeof raw !== "object") {
     return null;
   }
   const type = String(raw.eClass || raw.type || fallbackType || "");
-  if (!type || relationshipElementTypes(typeKey).has(type)) {
+  if (!type) {
     return null;
   }
   const id = String(raw.id || normalizedSemanticId(type, index, owner));
@@ -358,7 +358,6 @@ function collectConfiguredNestedElements(typeKey, parent, result, seen) {
         return;
       }
       const child = normalizeConfiguredSemanticElement(
-        typeKey,
         raw,
         raw.eClass || raw.type || entry.types?.[0],
         index,
@@ -367,8 +366,6 @@ function collectConfiguredNestedElements(typeKey, parent, result, seen) {
           feature: entry.feature,
         },
       );
-      // Edge objects stay in the relationship index, but their contained children
-      // participate in the semantic graph just like children of node containers.
       if (!child) {
         collectConfiguredNestedElements(typeKey, raw, result, seen);
         return;
@@ -397,7 +394,6 @@ function semanticElementsFromConfiguredRoot(typeKey, modelJson) {
         return;
       }
       const element = normalizeConfiguredSemanticElement(
-        typeKey,
         raw,
         raw.eClass || raw.type || entry.types?.[0],
         index,
@@ -1247,17 +1243,34 @@ function buildGraph(typeKey, modelJson) {
   // Index those declared children too, so an occupied slot always has an editable child.
   indexRelationshipContents(graph, typeKey);
 
+  safeArray(modelJson?.graph?.traceLinks || modelJson?.traceLinks).forEach((traceLink, index) => {
+    const id = String(traceLink?.id || `trace-${index + 1}`);
+    graph.traceLinksById.set(id, { ...clone(traceLink), id });
+  });
+
   if (isModelingLevel(typeKey)) {
+    // An EObject can have a valid Ecore containment even when it has no drawable edge.
+    // Keep it in the element index unless a semantic edge actually represents it.
+    const edgeTypes = relationshipElementTypes(typeKey);
+    for (const relationship of graph.relationshipsById.values()) {
+      if (relationship.visualOnly || relationship.containment) continue;
+      const id = semanticObjectId(relationship);
+      const element = graph.elementsById.get(id);
+      if (element && edgeTypes.has(semanticType(element))) graph.elementsById.delete(id);
+    }
+    for (const [id, traceLink] of graph.traceLinksById) {
+      const element = graph.elementsById.get(id);
+      if (element && semanticType(element) === "TraceLink") {
+        graph.traceLinksById.set(id, { ...traceLink, ...element });
+        graph.elementsById.delete(id);
+      }
+    }
     synthesizeContainmentRelationships(graph, typeKey);
     synthesizeSemanticRefRelationships(graph, typeKey);
   }
 
   rebuildGraphIndexes(graph, typeKey);
 
-  safeArray(modelJson?.graph?.traceLinks || modelJson?.traceLinks).forEach((traceLink, index) => {
-    const id = String(traceLink?.id || `trace-${index + 1}`);
-    graph.traceLinksById.set(id, { ...clone(traceLink), id });
-  });
   safeArray(modelJson?.graph?.assumptions || modelJson?.assumptions).forEach(
     (assumption, index) => {
       const id = String(assumption?.id || `assumption-${index + 1}`);

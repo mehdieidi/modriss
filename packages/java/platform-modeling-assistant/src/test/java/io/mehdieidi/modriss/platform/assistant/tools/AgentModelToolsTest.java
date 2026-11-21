@@ -26,6 +26,38 @@ class AgentModelToolsTest {
 
   private final ObjectMapper mapper = new ObjectMapper();
 
+  @Test
+  void singleElementInspectionKeepsAttributesWithoutSendingContainedModel() {
+    var model = mapper.createObjectNode();
+    model.put("id", "root");
+    model.put("eClass", "CIMModel");
+    model.put("domainName", "Equipment lending");
+    var items = model.putArray("informationItems");
+    for (int index = 0; index < 60; index++) {
+      var item = items.addObject();
+      item.put("id", "item-" + index);
+      item.put("eClass", "InformationItem");
+      item.put("name", "Information item " + index);
+      item.put("description", "Saved detail. ".repeat(400));
+    }
+    AgentModelTools tools = cimTools();
+    tools.bind(
+        ModelLevel.CIM,
+        new ModelWorkspace(ModelLevel.CIM, "m", 1, model, new AssistantPatchCompiler(), null));
+
+    var root = tools.inspectElement("rootId");
+    assertEquals("Equipment lending", root.path("attributes").path("domainName").asText());
+    assertTrue(root.toString().length() < 1000);
+    var page =
+        tools.inspectModel(
+            new AgentModelTools.InspectionSelector(
+                List.of(), List.of(), List.of("root"), null, 0, 100));
+    assertEquals(60, page.path("total").asInt());
+    assertEquals(1, page.path("nextPage").asInt());
+    assertEquals(25, page.path("elements").size());
+    assertTrue(page.toString().length() < 10_500);
+  }
+
   @org.junit.jupiter.params.ParameterizedTest
   @org.junit.jupiter.params.provider.ValueSource(booleans = {false, true})
   void requiredDeletionIsRejectedBeforeConfirmationOrMutation(boolean confirmed) throws Exception {

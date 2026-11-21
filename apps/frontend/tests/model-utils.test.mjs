@@ -816,6 +816,74 @@ test("preserves non-diagram nested containments after an unrelated generated PIM
   assert.equal(saved.services[0].workflows[0].executionSemantics, "manually refined");
 });
 
+test("preserves a function-owned trigger whose target is implicit in Ecore containment", async () => {
+  const config = {
+    levelOrder: ["pim"],
+    levels: {
+      pim: {
+        apiType: "PIM",
+        rootTemplate: { eClass: "PIMModel" },
+        workbench: { defaultViewDefinitionId: "main" },
+        viewDefinitions: [{ id: "main", viewType: "main" }],
+        relationshipSemantics: { containmentKind: "CONTAINS", containmentKinds: ["CONTAINS"] },
+        elements: [
+          {
+            type: "PIMModel",
+            references: [
+              { name: "functions", targetType: "Function", containment: true, many: true },
+              { name: "routes", targetType: "ApiRoute", containment: true, many: true },
+            ],
+          },
+          {
+            type: "Function",
+            references: [{ name: "triggers", targetType: "Trigger", containment: true, many: true }],
+          },
+          { type: "ApiRoute" },
+          {
+            type: "Trigger",
+            references: [
+              { name: "source", targetType: "ApiRoute" },
+              { name: "function", targetType: "Function", readonly: true },
+            ],
+          },
+        ],
+        semanticEdgeObjectRules: [
+          {
+            eClass: "Trigger",
+            defaultKind: "INVOKES",
+            sourceFeature: "source",
+            targetFeatures: ["startsWorkflow"],
+          },
+        ],
+      },
+    },
+  };
+  state.modelingConfig.config = config;
+  initializeModelingRuntimeState(config);
+  state.activeType = "pim";
+  const trigger = { id: "trigger-1", eClass: "Trigger", name: "Route trigger", source: "route-1" };
+  const model = {
+    eClass: "PIMModel",
+    functions: [{ id: "function-1", eClass: "Function", triggers: [trigger] }],
+    routes: [{ id: "route-1", eClass: "ApiRoute" }],
+  };
+  const { installGraphAndViews } = await import("../js/graph-store.js");
+  installGraphAndViews("pim", model, "imported-model", { skipClientLayout: true });
+  assert.equal(state.graph.elementsById.get(trigger.id).__ownerId, "function-1");
+  assert.equal(state.graph.relationshipsById.has(trigger.id), false);
+
+  const saved = await serializeGraphAndViewsIntoAsync(structuredClone(model), { syncView: false });
+  assert.deepEqual(saved.functions[0].triggers, [trigger]);
+  const renamed = state.graph.elementsById.get(trigger.id);
+  renamed.name = "Renamed route trigger";
+  const updated = serializeGraphAndViewsInto(structuredClone(saved), { syncView: false });
+  assert.equal(updated.functions[0].triggers[0].name, renamed.name);
+
+  state.graph.elementsById.delete(trigger.id);
+  const removed = serializeGraphAndViewsInto(structuredClone(updated), { syncView: false });
+  assert.deepEqual(removed.functions[0].triggers, []);
+});
+
 test("emits one required PSM policy statement when it also has a relationship projection", async () => {
   const psmLevel = {
     apiType: "PSM",

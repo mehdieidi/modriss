@@ -2,6 +2,7 @@ package io.mehdieidi.modriss.platform.assistant.agent;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.doAnswer;
@@ -425,7 +426,55 @@ class ConceptualInstanceModelWorkflowTest {
   }
 
   @Test
-  void acceptsObligationEvidenceRelationshipsToPersistedTargets() throws Exception {
+  void stopsBeforeGenerationWhenTheSavedModelCannotBeExportedForStructuralValidation()
+      throws Exception {
+    var provider = new ScriptedAssistantModelProvider(List.of());
+    var models = mock(ModelService.class);
+    var initial = existingCim();
+    when(models.validateStructural(ModelLevel.CIM, initial))
+        .thenReturn(
+            new ModelService.ValidationResult(
+                false,
+                List.of(
+                    new ModelService.ValidationIssue(
+                        "ERROR",
+                        "XmiExport",
+                        "MODEL",
+                        "Export failed",
+                        "A saved reference has no target.",
+                        null,
+                        null,
+                        null,
+                        -1,
+                        -1))));
+    var workspace =
+        new ModelWorkspace(ModelLevel.CIM, "model", 1, initial, new AssistantPatchCompiler(), null);
+    var knowledge = new MetamodelKnowledgeService(new AssistantMetamodelSchemaService());
+    var workflow =
+        new ConceptualInstanceModelWorkflow(
+            provider, new MetamodelGuideGenerator(knowledge), contracts, properties());
+
+    var failure =
+        assertThrows(
+            AgentTurnLoop.TurnExecutionException.class,
+            () ->
+                workflow.run(
+                    "session",
+                    ModelLevel.CIM,
+                    "Add a capability",
+                    workspace,
+                    new AgentModelTools(contracts, models).scoped(ModelLevel.CIM, workspace),
+                    false));
+
+    assertTrue(failure.invalidPersistedModel());
+    assertTrue(failure.getMessage().contains("A saved reference has no target."));
+    assertFalse(failure.progressiveRecovery());
+    assertTrue(provider.prompts().isEmpty());
+    assertEquals(initial, workspace.snapshot());
+  }
+
+  @Test
+  void extendsALargePersistedModelWithBoundedPromptsAndExactReuseIds() throws Exception {
     var provider =
         new ScriptedAssistantModelProvider(
             List.of(
@@ -436,7 +485,7 @@ class ConceptualInstanceModelWorkflowTest {
                 ScriptedAssistantModelProvider.reply("{\"types\":[\"CompensationPolicy\"]}"),
                 ScriptedAssistantModelProvider.reply(
                     """
-{"types":["CompensationPolicy"],"objects":[{"instanceId":"compensation-new","type":"CompensationPolicy","purpose":"Compensate through the existing order service","ownerInstanceId":"rootId","containment":"policies","referenceTargets":["service-existing"],"obligationIds":["OBL-1"],"sourceUnitIds":[],"slice":1}]}
+{"types":["CompensationPolicy"],"objects":[{"instanceId":"compensation-new","type":"CompensationPolicy","purpose":"Compensate through the existing order service","ownerInstanceId":"persisted-pim-root","containment":"policies","referenceTargets":["service-existing"],"obligationIds":["OBL-1"],"sourceUnitIds":[],"slice":1}]}
 """),
                 ScriptedAssistantModelProvider.reply("{\"acceptable\":true,\"findings\":[]}"),
                 ScriptedAssistantModelProvider.reply(
@@ -451,16 +500,27 @@ class ConceptualInstanceModelWorkflowTest {
     when(store.workflow("turn-persisted-evidence")).thenReturn(Optional.empty());
     when(store.workItems("turn-persisted-evidence")).thenReturn(List.of());
     AiProperties properties = properties();
+    when(properties.maxPromptTokens()).thenReturn(24_000);
     ModelService models = mock(ModelService.class);
     when(models.validateStructural(
             org.mockito.ArgumentMatchers.any(),
             org.mockito.ArgumentMatchers.any(tools.jackson.databind.JsonNode.class)))
         .thenReturn(new ModelService.ValidationResult(true, List.of()));
-    var current =
-        mapper.readTree(
-            """
-{"id":"root","eClass":"PIMModel","modelLevel":"PIM","services":[{"id":"service-existing","eClass":"ServerlessService","name":"Orders"}],"diagram":{"elements":[],"relationships":[]}}
-""");
+    var current = mapper.createObjectNode();
+    current.put("id", "persisted-pim-root");
+    current.put("eClass", "PIMModel");
+    var schemas = current.putArray("schemas");
+    for (int index = 0; index < 2_000; index++) {
+      var schema = schemas.addObject();
+      schema.put("id", "schema-" + index);
+      schema.put("eClass", "Schema");
+      schema.put("name", "Schema " + index);
+      schema.put("description", "Large saved schema documentation. ".repeat(40));
+    }
+    var service = current.putArray("services").addObject();
+    service.put("id", "service-existing");
+    service.put("eClass", "ServerlessService");
+    service.put("name", "Orders");
     var workspace =
         new ModelWorkspace(ModelLevel.PIM, "model", 1, current, new AssistantPatchCompiler(), null);
     var workflow =
@@ -485,8 +545,19 @@ class ConceptualInstanceModelWorkflowTest {
                     false));
 
     assertEquals(1, result.commandBatch().creates().size());
+    assertEquals("rootId", result.commandBatch().creates().get(0).owner());
     assertEquals(1, result.commandBatch().connections().size());
     assertEquals("service-existing", result.commandBatch().connections().get(0).target());
+    assertEquals(schemas, workspace.snapshot().path("schemas"));
+    assertEquals(service, workspace.snapshot().path("services").get(0));
+    for (int step : List.of(2, 3, 4, 5)) {
+      var prompt = provider.prompts().get(step);
+      assertTrue(prompt.user().contains("\"id\":\"service-existing\""));
+      assertTrue(prompt.user().contains("\"omittedElements\":"));
+      assertTrue(prompt.user().length() + prompt.system().length() < 50_000);
+      assertFalse(prompt.user().contains("Large saved schema documentation."));
+      assertFalse(prompt.user().contains("persisted-pim-root"));
+    }
     assertEquals(0, provider.remainingSteps());
   }
 
@@ -1447,7 +1518,11 @@ class ConceptualInstanceModelWorkflowTest {
                     """
 {"removeObjectIds":[],"upsertObjects":[{"instanceId":"workflow-existing","type":"Workflow","purpose":"Existing order workflow that will own the cancellation task","ownerInstanceId":"service-existing","containment":"workflows","referenceTargets":["task-new"],"sourceUnitIds":[],"slice":1}]}
 """),
-                ScriptedAssistantModelProvider.failure(new PlatformException(502, "stop"))));
+                ScriptedAssistantModelProvider.reply(
+                    """
+{"task-new":{"type":"TaskStep","attributes":[{"attributeName":"name","value":"Cancel order"}],"associations":{"compositions":[],"references":[]}},
+"workflow-existing":{"type":"Workflow","attributes":[],"associations":{"compositions":[],"references":[]}}}
+""")));
     AiProperties properties = mock(AiProperties.class);
     when(properties.maxProviderCallsPerTurn()).thenReturn(10);
     when(properties.maxProviderCallsSourceTurn()).thenReturn(10);
@@ -1469,21 +1544,19 @@ class ConceptualInstanceModelWorkflowTest {
     var current =
         mapper.readTree(
             """
-{"id":"root","eClass":"PIMModel","modelLevel":"PIM","services":[{"id":"service-existing","eClass":"ServerlessService","name":"Orders"}],"workflows":[{"id":"workflow-existing","eClass":"Workflow","name":"Orders workflow"}],"diagram":{"elements":[],"relationships":[]}}
+{"id":"root","eClass":"PIMModel","modelLevel":"PIM","services":[{"id":"service-existing","eClass":"ServerlessService","name":"Orders","workflows":[{"id":"workflow-existing","eClass":"Workflow","name":"Orders workflow","workflowKind":"ORCHESTRATION","steps":[{"id":"start-existing","eClass":"StartStep","name":"Start order"}]}]}],"diagram":{"elements":[],"relationships":[]}}
 """);
     var workspace =
         new ModelWorkspace(ModelLevel.PIM, "model", 1, current, new AssistantPatchCompiler(), null);
 
-    assertThrows(
-        AgentTurnLoop.TurnExecutionException.class,
-        () ->
-            workflow.run(
-                "session",
-                ModelLevel.PIM,
-                "Add a cancellation task to the existing workflow",
-                workspace,
-                new AgentModelTools(contracts, models).scoped(ModelLevel.PIM, workspace),
-                false));
+    var result =
+        workflow.run(
+            "session",
+            ModelLevel.PIM,
+            "Add a cancellation task to the existing workflow",
+            workspace,
+            new AgentModelTools(contracts, models).scoped(ModelLevel.PIM, workspace),
+            false);
 
     String correctionPrompt = provider.prompts().get(2).user();
     assertEquals("conceptual_blueprint_patch", provider.prompts().get(2).requiredTool());
@@ -1491,6 +1564,12 @@ class ConceptualInstanceModelWorkflowTest {
         correctionPrompt.contains(
             "add that owner's exact persisted-ID blueprint record so generation can write"
                 + " the parent-side steps containment"));
+    assertEquals("workflow-existing", result.commandBatch().creates().get(0).owner());
+    assertTrue(result.commandBatch().updates().isEmpty());
+    var savedWorkflow = workspace.snapshot().path("services").path(0).path("workflows").path(0);
+    assertEquals("ORCHESTRATION", savedWorkflow.path("workflowKind").asText());
+    assertEquals("start-existing", savedWorkflow.path("steps").path(0).path("id").asText());
+    assertEquals(2, savedWorkflow.path("steps").size());
     assertEquals(0, provider.remainingSteps());
   }
 

@@ -252,6 +252,9 @@ public final class ConceptualInstanceModelWorkflow {
     try {
       try {
         JsonNode current = workspace.snapshot();
+        if (hasPersistedElements(current)) {
+          preflightPersistedModel(tools);
+        }
         ObligationLedger obligations = restoredObligations(durableTurnId, level, request);
         if (obligations == null && turns != null) {
           obligations = planObligations(level, request, current, audit, maxCalls);
@@ -372,6 +375,28 @@ public final class ConceptualInstanceModelWorkflow {
       }
     } finally {
       if (ownsProviderBudget) ProviderCallBudget.clear();
+    }
+  }
+
+  private void preflightPersistedModel(AgentModelTools tools) {
+    ModelService.ValidationResult validation = tools.validateModel();
+    if (validation == null || validation.valid()) return;
+    validation.issues().stream()
+        .filter(issue -> "ERROR".equals(issue.severity()) && "XmiExport".equals(issue.constraint()))
+        .findFirst()
+        .ifPresent(
+            issue -> {
+              throw new InvalidPersistedModelException(issue.guidance());
+            });
+  }
+
+  static final class InvalidPersistedModelException extends PlatformException {
+    private InvalidPersistedModelException(String detail) {
+      super(
+          422,
+          "The saved model already has structural errors and could not be opened for generation. "
+              + "Restore the model from a valid revision or reimport the original XMI. "
+              + (detail == null ? "" : detail));
     }
   }
 
@@ -600,8 +625,8 @@ public final class ConceptualInstanceModelWorkflow {
             + concreteRequiredOptionsGuide(level, focusedContracts)
             + "\n\nCURRENT MODEL TYPES:\n"
             + currentTypes(current)
-            + "\n\nCURRENT PERSISTED ELEMENT INDEX (reuse exact IDs; do not duplicate):\n"
-            + currentElementIndex(current)
+            + "\n\nCURRENT PERSISTED ELEMENT INDEX (focused; reuse exact IDs):\n"
+            + persistedContext(level, current, selectedTypes, Set.of())
             + "\n\nREQUEST AND SOURCE SPECIFICATION:\n"
             + (request == null ? "" : request)
             + "\n\nMANDATORY REQUIREMENT OBLIGATION LEDGER:\n"
@@ -671,12 +696,28 @@ public final class ConceptualInstanceModelWorkflow {
         Map<String, String> persistedTypes = currentElementTypes(current);
         blueprint =
             Blueprint.parse(
-                mapper, candidateJson.toString(), contracts, level, persistedTypes.keySet());
+                mapper,
+                candidateJson.toString(),
+                contracts,
+                level,
+                persistedTypes.keySet(),
+                current.path("id").asText(""));
         blueprint = canonicalBlueprint(level, blueprint, persistedTypes);
         candidateJson = blueprint.json();
-        Set<String> outsideFocus = new LinkedHashSet<>(blueprint.types());
-        outsideFocus.removeAll(focusedTypes);
-        outsideFocus.removeAll(concreteRequiredOptions);
+        // Existing owners or targets may participate without being in the list of new EClasses.
+        Set<String> outsideFocus = new LinkedHashSet<>();
+        for (BlueprintObject object : blueprint.objects()) {
+          String savedType = persistedTypes.get(object.instanceId());
+          if (savedType != null && !savedType.equals(object.type())) {
+            throw new PlatformException(
+                422, "Existing instance " + object.instanceId() + " has exact EClass " + savedType);
+          }
+          if (savedType == null
+              && !focusedTypes.contains(object.type())
+              && !concreteRequiredOptions.contains(object.type())) {
+            outsideFocus.add(object.type());
+          }
+        }
         if (!outsideFocus.isEmpty()) {
           throw new PlatformException(
               422,
@@ -828,8 +869,9 @@ public final class ConceptualInstanceModelWorkflow {
             + concreteRequiredOptionsGuide(level, focusedContracts)
             + "\n\nREQUEST AND SOURCE SPECIFICATION:\n"
             + (request == null ? "" : request)
-            + "\n\nCURRENT PERSISTED ELEMENT INDEX (reuse exact IDs; do not duplicate):\n"
-            + currentElementIndex(current)
+            + "\n\nCURRENT PERSISTED ELEMENT INDEX (focused; reuse exact IDs):\n"
+            + persistedContext(
+                level, current, focusedTypes, blueprintIds(candidate.path("objects")))
             + "\n\nOBLIGATION LEDGER:\n"
             + obligations.json()
             + "\n\nAVAILABLE SOURCE UNIT IDS: "
@@ -974,8 +1016,8 @@ public final class ConceptualInstanceModelWorkflow {
             + concreteRequiredOptionsGuide(
                 level,
                 contracts.requiredContainmentClosure(level, new ArrayList<>(blueprint.types())))
-            + "\n\nCURRENT PERSISTED ELEMENT INDEX (reuse exact IDs; do not duplicate):\n"
-            + currentElementIndex(current)
+            + "\n\nCURRENT PERSISTED ELEMENT INDEX (focused; reuse exact IDs):\n"
+            + persistedContext(level, current, blueprint)
             + "\n\nCANDIDATE BLUEPRINT:\n"
             + blueprint.json()
             + "\n\nReturn {acceptable,findings:[{missingConcept,reason,recommendedCorrection}]}."
@@ -1350,6 +1392,8 @@ public final class ConceptualInstanceModelWorkflow {
                   + reference.name());
         }
       }
+      // Updates and new relationships are applied over the full existing element in the workspace.
+      if (persistedTypes.containsKey(object.instanceId())) continue;
       for (ReferenceContract required :
           objectType.references().stream()
               .filter(ReferenceContract::required)
@@ -1445,6 +1489,7 @@ public final class ConceptualInstanceModelWorkflow {
               persistedTypes.entrySet().stream()
                   .filter(entry -> contracts.assignable(level, entry.getValue(), expected))
                   .map(Map.Entry::getKey)
+                  .limit(8)
                   .toList();
           if (!ids.isEmpty()) compatiblePersistedIds.put(expected, ids);
         }
@@ -1457,7 +1502,7 @@ public final class ConceptualInstanceModelWorkflow {
                 + missingExpectedTypes
                 + (compatiblePersistedIds.isEmpty()
                     ? ""
-                    : "; compatible persisted IDs are "
+                    : "; example compatible persisted IDs are "
                         + compatiblePersistedIds
                         + ". Add an exact-ID blueprint record with the obligation allocation; a"
                         + " reference target alone is not allocated evidence"));
@@ -1526,7 +1571,7 @@ public final class ConceptualInstanceModelWorkflow {
               + "\n\nSTABLE INSTANCE BLUEPRINT:\n"
               + compactBlueprint(blueprint)
               + "\n\nCURRENT PERSISTED MODEL:\n"
-              + compactSnapshot(current)
+              + persistedContext(level, current, blueprint)
               + "\n\nREQUEST AND SOURCE SPECIFICATION:\n"
               + (request == null ? "" : request)
               + "\n\nEXACT SOURCE-UNIT ALLOWLIST FOR SOURCE_GROUNDED EVIDENCE: "
@@ -1535,11 +1580,13 @@ public final class ConceptualInstanceModelWorkflow {
               + " evidence item must use INFERRED with an explicit assumption."
               + "\n\nGENERATE ONLY THESE INSTANCE IDS: "
               + ids
-              + ". Return exactly those keys with every required attribute and at most 8 meaningful"
+              + ". Return exactly those keys with every required attribute for new objects and"
+              + " only intended changes for persisted objects. Use at most 8 meaningful"
               + " writable attributes per object; do not enumerate absent, blank, or decorative"
               + " optional attributes. Include complete real compositions, references, and"
               + " evidence. Every writable reference marked [required] in the authoritative"
-              + " contracts must be supplied unless it is already recorded in the blueprint."
+              + " contracts for new objects must be supplied unless it is already recorded"
+              + " in the blueprint."
               + " The backend carries over child placements and plannedReferences exactly as"
               + " declared in the blueprint. Supply any other intended associations and do not"
               + " contradict the plan."
@@ -1737,6 +1784,7 @@ public final class ConceptualInstanceModelWorkflow {
               + parsed.objects.keySet()
               + ".");
     }
+    Set<String> persistedIds = currentElementTypes(current).keySet();
     for (BlueprintObject object : slice) {
       JsonNode value = parsed.objects.get(object.instanceId());
       if (!value.path("type").isTextual() || !object.type().equals(value.path("type").asText())) {
@@ -1753,13 +1801,18 @@ public final class ConceptualInstanceModelWorkflow {
       normalizeAssociationBuckets(level, object.type(), value);
       completePlannedContainments(object, value, blueprint);
       completePlannedReferences(level, object, value, current, blueprint);
-      completeUnambiguousRequiredAssociations(level, object, value, current, blueprint);
+      boolean existing = persistedIds.contains(object.instanceId());
+      if (!existing) {
+        completeUnambiguousRequiredAssociations(level, object, value, current, blueprint);
+      }
       completeBlueprintSourceEvidence(object, value);
       // Canonicalize redundant target metadata before required-reference checks consume it.
       validateAssociations(level, object, value, current, blueprint);
       validateCompleteObject(object.instanceId(), value);
-      validateRequiredAttributes(level, object.instanceId(), object.type(), value);
-      validateRequiredReferences(level, object.instanceId(), object.type(), value);
+      if (!existing) {
+        validateRequiredAttributes(level, object.instanceId(), object.type(), value);
+        validateRequiredReferences(level, object.instanceId(), object.type(), value);
+      }
       validateSourceEvidence(object.instanceId(), value, allowedSourceUnitIds);
       if (generated.containsKey(object.instanceId())) {
         throw new PlatformException(
@@ -2369,7 +2422,7 @@ public final class ConceptualInstanceModelWorkflow {
             + "\n\nPLANNED OBLIGATION ALLOCATIONS:\n"
             + compactObligationAllocations(blueprint)
             + "\n\nCURRENT PERSISTED ELEMENT INDEX:\n"
-            + currentElementIndex(current)
+            + persistedContext(level, current, blueprint)
             + "\n\nACTUAL STAGED MODEL EVIDENCE:\n"
             + compactGenerated(generated)
             + "\n\nReturn {acceptable,coverage:[{obligationId,state,evidenceObjectIds,"
@@ -2515,7 +2568,7 @@ public final class ConceptualInstanceModelWorkflow {
             + "\n\nREJECTED REVIEW VERDICT:\n"
             + verdict
             + "\n\nCURRENT PERSISTED ELEMENT INDEX:\n"
-            + currentElementIndex(current)
+            + persistedContext(level, current, blueprint)
             + "\n\nFOCUSED METAMODEL:\n"
             + sliceMetamodel(level, affectedObjects, blueprint)
             + "\n\nALLOWED TARGET IDS AND TYPES:\n"
@@ -2957,9 +3010,13 @@ public final class ConceptualInstanceModelWorkflow {
   private JsonNode blueprintTargetIndex(Blueprint blueprint, JsonNode current, ModelLevel level) {
     var result = JsonNodeFactory.instance.objectNode();
     result.put("rootId", contracts.rootType(level));
-    Map<String, String> persisted = new LinkedHashMap<>();
-    collectCurrentTypes(current, persisted);
-    persisted.forEach(result::put);
+    for (JsonNode element : persistedContext(level, current, blueprint).path("elements")) {
+      result.put(element.path("id").asText(), element.path("type").asText());
+    }
+    Map<String, String> persisted = currentElementTypes(current);
+    for (String id : blueprintIds(blueprint.json().path("objects"))) {
+      if (persisted.containsKey(id)) result.put(id, persisted.get(id));
+    }
     for (BlueprintObject object : blueprint.objects()) {
       result.put(object.instanceId(), object.type());
     }
@@ -3128,7 +3185,8 @@ public final class ConceptualInstanceModelWorkflow {
                     plan.path("blueprint").toString(),
                     contracts,
                     level,
-                    currentElementTypes(current).keySet()))
+                    currentElementTypes(current).keySet(),
+                    current.path("id").asText("")))
         .orElse(null);
   }
 
@@ -3303,43 +3361,6 @@ public final class ConceptualInstanceModelWorkflow {
         + " Account for every supplied relevant source unit. Return a corrected COMPLETE conceptual"
         + " model after diagnostics, preserving every valid object and association from the prior"
         + " response. Do not include reasoning or markdown.";
-  }
-
-  private String prompt(
-      String request, JsonNode current, String metamodel, String correction, String previous) {
-    StringBuilder prompt =
-        new StringBuilder(
-                "METAMODEL (complete authoritative Ecore-derived contracts selected for this"
-                    + " response and their construction/required-reference closure; a=attributes,"
-                    + " c=containments, r=references, *=required):\n")
-            .append(metamodel)
-            .append(
-                "\n\n"
-                    + "CURRENT MODEL (complete persisted semantic inventory; nested owner/feature"
-                    + " and outgoing references are authoritative):\n")
-            .append(compactSnapshot(current))
-            .append("\n\nREQUEST AND SOURCE SPECIFICATION:\n")
-            .append(request == null ? "" : request);
-    boolean sourceBacked =
-        request != null && request.contains("SOURCE SPECIFICATION (authoritative input)");
-    prompt.append(
-        "\n\nCONTEXT-SIZE BOUNDARY: Return at most "
-            + (sourceBacked ? "8" : "10")
-            + " semantically important objects in this atomic response. Prefer meaningful"
-            + " relationships, complete supplied-source evidence, and required features; omit"
-            + " optional decorative attributes. Every supplied source-unit id must occur in"
-            + " evidence, and one object may cite multiple source units. Further coherent growth"
-            + " belongs in a durable slice.");
-    if (correction != null && !correction.isBlank()) {
-      prompt
-          .append("\n\nREJECTED COMPLETE CONCEPTUAL MODEL:\n")
-          .append(previous == null ? "" : previous)
-          .append("\n\nCOMPILER DIAGNOSTIC AND REPAIR REQUIREMENT:\n")
-          .append(correction);
-    }
-    return prompt
-        .append("\n\nReturn one complete JSON object keyed by instanceID. No markdown fences.")
-        .toString();
   }
 
   private Set<String> selectMetamodelTypes(
@@ -3591,67 +3612,32 @@ public final class ConceptualInstanceModelWorkflow {
     return String.join(",", types);
   }
 
-  private JsonNode currentElementIndex(JsonNode current) {
-    var result = JsonNodeFactory.instance.arrayNode();
-    if (current == null || !current.isContainer()) return result;
-    List<SnapshotElement> elements = new ArrayList<>();
-    Set<String> indexed = new LinkedHashSet<>();
-    collectElements(current, null, null, elements);
-    for (SnapshotElement element : elements) {
-      if (element.ownerId() == null) continue;
-      JsonNode node = element.node();
-      String id = node.path("id").asText("").trim();
-      String type = node.path("eClass").asText("").trim();
-      if (id.isBlank() || type.isBlank() || !indexed.add(id)) continue;
-      var item = result.addObject();
-      item.put("id", id);
-      item.put("type", type);
-      for (String attribute : List.of("name", "term", "stateName")) {
-        String value = node.path(attribute).asText("").trim();
-        if (!value.isBlank()) item.put(attribute, value);
-      }
-      item.put("ownerId", element.ownerId());
-      if (element.ownerFeature() != null) item.put("ownerFeature", element.ownerFeature());
-      var relationships = item.putArray("relationships");
-      node.properties()
-          .forEach(
-              property -> {
-                if ("diagram".equals(property.getKey()) || "graph".equals(property.getKey())) {
-                  return;
-                }
-                JsonNode value = property.getValue();
-                if (value.isArray()) {
-                  for (JsonNode target : value) {
-                    appendIndexedRelationship(relationships, property.getKey(), target);
-                  }
-                } else {
-                  appendIndexedRelationship(relationships, property.getKey(), value);
-                }
-              });
-    }
-    return result;
+  private JsonNode persistedContext(ModelLevel level, JsonNode current, Blueprint blueprint) {
+    return persistedContext(
+        level, current, blueprint.types(), blueprintIds(blueprint.json().path("objects")));
   }
 
-  private static void appendIndexedRelationship(
-      tools.jackson.databind.node.ArrayNode relationships, String feature, JsonNode target) {
-    if (target == null || !target.isObject()) return;
-    String targetId = target.path("id").asText("").trim();
-    String targetType = target.path("eClass").asText("").trim();
-    if (targetId.isBlank() || targetType.isBlank()) return;
-    var relationship = relationships.addObject();
-    relationship.put("feature", feature);
-    relationship.put("targetId", targetId);
-    relationship.put("targetType", targetType);
+  private JsonNode persistedContext(
+      ModelLevel level, JsonNode current, Set<String> focusTypes, Set<String> pinnedIds) {
+    return new PersistedModelContext(level, contracts, current, properties.maxPromptTokens())
+        .view(focusTypes, pinnedIds);
+  }
+
+  private Set<String> blueprintIds(JsonNode objects) {
+    Set<String> ids = new LinkedHashSet<>();
+    for (JsonNode object : objects) {
+      ids.add(object.path("instanceId").asText());
+      ids.add(object.path("ownerInstanceId").asText());
+      object.path("plannedReferences").forEach(link -> ids.add(link.path("targetId").asText()));
+      object.path("referenceTargets").forEach(id -> ids.add(id.asText()));
+    }
+    return ids;
   }
 
   private boolean hasPersistedElements(JsonNode current) {
-    for (JsonNode element : currentElementIndex(current)) {
-      // A fresh PIM is initialized with this platform-owned structural profile. It is not
-      // user-authored architecture and must not turn an empty-canvas generation into an expensive
-      // existing-model critique/evolution loop.
-      if (!"ImplementationProfile".equals(element.path("type").asText(""))) return true;
-    }
-    return false;
+    // A fresh PIM contains a platform-owned structural profile.
+    return currentElementTypes(current).values().stream()
+        .anyMatch(type -> !"ImplementationProfile".equals(type));
   }
 
   private String conceptualPlanningSkills(ModelLevel level, JsonNode current) {
@@ -3813,42 +3799,6 @@ public final class ConceptualInstanceModelWorkflow {
     }
   }
 
-  private String compactSnapshot(JsonNode current) {
-    if (current == null || !current.isContainer()) return "{}";
-    List<SnapshotElement> elements = new ArrayList<>();
-    collectElements(current, null, null, elements);
-    var root = JsonNodeFactory.instance.objectNode();
-    root.put("rootId", current.path("id").asText("rootId"));
-    root.put("rootType", current.path("eClass").asText(""));
-    var result = root.putArray("elements");
-    for (SnapshotElement element : elements) {
-      var item = result.addObject();
-      item.put("id", element.node().path("id").asText());
-      item.put("type", element.node().path("eClass").asText());
-      if (element.ownerId() != null) item.put("ownerId", element.ownerId());
-      if (element.ownerFeature() != null) item.put("ownerFeature", element.ownerFeature());
-      var attributes = item.putObject("attributes");
-      var references = item.putObject("references");
-      element
-          .node()
-          .properties()
-          .forEach(
-              entry -> {
-                String name = entry.getKey();
-                JsonNode value = entry.getValue();
-                if (name.equals("id") || name.equals("eClass") || value.isNull()) return;
-                if (value.isValueNode()) {
-                  attributes.set(name, value.deepCopy());
-                } else if (isIdReference(value)) {
-                  references.set(name, value.deepCopy());
-                }
-              });
-      if (attributes.isEmpty()) item.remove("attributes");
-      if (references.isEmpty()) item.remove("references");
-    }
-    return root.toString();
-  }
-
   private void collectElements(
       JsonNode node, String ownerId, String ownerFeature, List<SnapshotElement> result) {
     if (node == null) return;
@@ -3873,21 +3823,6 @@ public final class ConceptualInstanceModelWorkflow {
     }
     if (node.isContainer())
       node.forEach(child -> collectElements(child, ownerId, ownerFeature, result));
-  }
-
-  private boolean isIdReference(JsonNode value) {
-    if (value == null) return false;
-    if (value.isTextual()) return !value.asText().isBlank();
-    if (!value.isArray() || value.isEmpty()) return false;
-    for (JsonNode item : value) if (!item.isTextual()) return false;
-    return true;
-  }
-
-  private String repairInstruction(String message) {
-    return "The deterministic Ecore compiler rejected the response below. Return a corrected"
-        + " complete conceptual model, preserving all valid content and exact existing IDs."
-        + " Do not return a delta, explanation, or partial fragment. Diagnostic:\n"
-        + safe(message);
   }
 
   private static String safe(String message) {
@@ -4091,7 +4026,10 @@ public final class ConceptualInstanceModelWorkflow {
                   + ". Use the exact persisted id and EClass together.");
         }
         types.put(id, type);
-        attributes.put(id, attributes(id, entry.getValue().path("attributes"), type));
+        attributes.put(
+            id,
+            attributes(
+                id, entry.getValue().path("attributes"), type, existingTypes.containsKey(id)));
       }
 
       Map<String, Placement> placements = new LinkedHashMap<>(plannedPlacements);
@@ -4487,7 +4425,8 @@ public final class ConceptualInstanceModelWorkflow {
       return result;
     }
 
-    private static Map<String, JsonNode> attributes(String id, JsonNode node, TypeContract type) {
+    private static Map<String, JsonNode> attributes(
+        String id, JsonNode node, TypeContract type, boolean existing) {
       Map<String, AttributeContract> legal = new LinkedHashMap<>();
       type.attributes().forEach(attribute -> legal.put(attribute.name(), attribute));
       Map<String, JsonNode> result = new LinkedHashMap<>();
@@ -4549,7 +4488,7 @@ public final class ConceptualInstanceModelWorkflow {
               .filter(AttributeContract::required)
               .map(AttributeContract::name)
               .filter(name -> !"id".equals(name))
-              .filter(name -> !result.containsKey(name) || result.get(name).isNull())
+              .filter(name -> result.containsKey(name) ? result.get(name).isNull() : !existing)
               .toList();
       if (!missingRequired.isEmpty()) {
         throw new PlatformException(
@@ -4720,7 +4659,8 @@ public final class ConceptualInstanceModelWorkflow {
         String content,
         TypeContractService contracts,
         ModelLevel level,
-        Set<String> persistedIds) {
+        Set<String> persistedIds,
+        String savedRootId) {
       String jsonText = content == null ? "" : content.trim();
       if (jsonText.startsWith("```")) {
         jsonText =
@@ -4774,12 +4714,17 @@ public final class ConceptualInstanceModelWorkflow {
         }
         if (slice < 1)
           throw new PlatformException(422, "Conceptual blueprint slice numbers must be positive.");
+        String owner = item.path("ownerInstanceId").asText("");
+        if (!owner.isBlank() && owner.equals(savedRootId)) {
+          owner = "rootId";
+          ((tools.jackson.databind.node.ObjectNode) item).put("ownerInstanceId", owner);
+        }
         objects.add(
             new BlueprintObject(
                 id,
                 exactType,
                 item.path("purpose").asText(""),
-                item.path("ownerInstanceId").asText(""),
+                owner,
                 item.path("containment").asText(""),
                 strings(item.path("referenceTargets")),
                 plannedReferences(item.path("plannedReferences")),

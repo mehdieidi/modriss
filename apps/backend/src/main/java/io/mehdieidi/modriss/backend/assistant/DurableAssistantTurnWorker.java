@@ -685,6 +685,7 @@ public final class DurableAssistantTurnWorker {
                 .filter(plan -> plan.path("blueprint").isObject())
                 .isPresent();
         if (automaticContinuationEnabled
+            && !turnFailure.invalidPersistedModel()
             && shouldAutomaticallyRecover(
                 turnFailure.progressiveRecovery(),
                 hasDurableConceptualProgress,

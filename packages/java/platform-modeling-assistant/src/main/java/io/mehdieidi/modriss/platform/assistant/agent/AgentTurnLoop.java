@@ -412,7 +412,7 @@ public final class AgentTurnLoop {
       String user = initialUser;
       AssistantModelProvider.AssistantReply reply = null;
       ModelService.ValidationResult validation = null;
-      boolean fullModelInspected = false;
+      boolean modelInspected = false;
       boolean editPlanReady = false;
       boolean enforcedInspectionReady = false;
       boolean editNeedsDecision = false;
@@ -479,7 +479,7 @@ public final class AgentTurnLoop {
         exactContracts = compactContracts(patchContracts);
         editPlanReady = true;
         enforcedInspectionReady = true;
-        fullModelInspected = true;
+        modelInspected = true;
         system =
             executorSystemPrompt(level, sourceBacked, sourceBlueprintPresent, existingModelContent);
         editInspectionContext =
@@ -720,14 +720,14 @@ public final class AgentTurnLoop {
                   422,
                   "The assistant asked for an existing element even though the model is empty.");
             }
-            if (action.tool() == AgentAction.Kind.ASK_USER && !fullModelInspected) {
+            if (action.tool() == AgentAction.Kind.ASK_USER && !modelInspected) {
               // The compact inventory is intentionally small. Before asking the user for any
               // identifier or owner, make the agent inspect the authoritative persisted model.
               // A subsequent ask remains available for a genuine business ambiguity.
               user =
                   followUpContext(userMessage, sourceDocument)
                       + "\n\nBefore asking the user for input, return inspect_model with an"
-                      + " empty id and inspect the complete persisted model. Existing ids and"
+                      + " selector relevant to your question. Existing ids and"
                       + " ownership are backend facts, not user input. After inspection, extend"
                       + " an existing compatible aggregate when one exists; ask only if a real"
                       + " business decision is still unspecified.";
@@ -869,7 +869,7 @@ public final class AgentTurnLoop {
                         + selected
                         + "\n3. Neighborhoods:\n"
                         + neighborhoods;
-                fullModelInspected = true;
+                modelInspected = true;
                 enforcedInspectionReady = true;
                 patchContracts =
                     resumeContracts(level, workspace, turnTools, modelingPlan, capabilities);
@@ -1050,14 +1050,9 @@ public final class AgentTurnLoop {
               check(canceled, deadline, cancellationRequested, stopReason);
               String id = action.arguments().path("id").asText("");
               AgentModelTools.InspectionSelector selector = inspectionSelector(action.arguments());
-              if (id.isBlank()
-                  && selector.ids().isEmpty()
-                  && selector.eClasses().isEmpty()
-                  && selector.ownerIds().isEmpty()
-                  && (selector.query() == null || selector.query().isBlank()))
-                fullModelInspected = true;
               JsonNode inspection =
-                  id.isBlank() ? turnTools.inspectModel(selector) : turnTools.readModel(id);
+                  id.isBlank() ? turnTools.inspectModel(selector) : turnTools.inspectElement(id);
+              modelInspected = true;
               String inspectionGuidance =
                   readOnlyMode
                       ? "You now have the required model facts. Return answer_user. Do not mutate,"
@@ -1068,12 +1063,10 @@ public final class AgentTurnLoop {
               if (id.isBlank()
                   && inspection.path("total").asInt(-1) == 0
                   && !hasNoModelElements(workspace)) {
-                fullModelInspected = true;
                 inspection = turnTools.inspectModel(AgentModelTools.InspectionSelector.all());
                 inspectionGuidance =
-                    "Your selected inspection matched zero elements, but the model is not empty."
-                        + " The fallback inspection above is authoritative current-model"
-                        + " context. Do not conclude that the PIM/CIM has no elements. Extend the"
+                    "Your selected inspection matched zero elements. The page above shows"
+                        + " other saved model elements. Extend the"
                         + " compatible existing elements when possible; otherwise create the"
                         + " missing feature slice with structurally valid nodes and edges.";
               }
@@ -2083,9 +2076,9 @@ A newly-created or empty model already has authoritative rootId; do not ask the 
 ids or owners that can be constructed in the same batch. For CIM generation, update rootId with a
 source-grounded domainName when missing.
 The prompt includes a compact current-model inventory. Use it directly for ordinary questions
-and explanations. Call inspect_model with an empty id only when the inventory lacks facts
-needed to answer; its result contains the complete current model. Do not inspect the same
-model repeatedly.
+and explanations. When you need additional facts, call inspect_model with exact ids, EClasses,
+ownerIds, or a focused query. Inventory results are paged; use total and nextPage to understand
+their coverage. A single id returns the element's own attributes and a reference preview.
 When the inventory is sufficient, select answer_user in your first response. Do not use
 describe_types merely to explain the current model: that tool is for exact contracts needed
 to plan a mutation.
@@ -2202,7 +2195,7 @@ You are a read-only %s modeling explainer. Return exactly one JSON object:
 Never return prose outside that object.
 
 Use the compact current-model inventory directly when it is sufficient. For current-model
-questions, call inspect_model only for exact elements, neighborhoods, or full inventory details
+questions, call inspect_model only for exact elements or a focused inventory page
 that are missing from the prompt. For metamodel questions, call describe_types with exact type
 names; call describe_types with an empty names array only when the exact type name is unknown.
 
@@ -2299,10 +2292,14 @@ validation.
     var diagnostic = mapper.createObjectNode();
     diagnostic.put("status", failure.status());
     diagnostic.put("category", actionFailureReason(failure));
-    diagnostic.put("message", failure.getMessage() == null ? "" : failure.getMessage());
+    String failureMessage = failure.getMessage() == null ? "" : failure.getMessage();
+    diagnostic.put("message", failureMessage.substring(0, Math.min(1800, failureMessage.length())));
     if (failure instanceof ModelWorkspace.StructuralValidationException structural
         && structural.validation() != null) {
-      diagnostic.set("structuralIssues", mapper.valueToTree(structural.validation().issues()));
+      diagnostic.put("structuralIssueCount", structural.validation().issues().size());
+      diagnostic.set(
+          "structuralIssues",
+          mapper.valueToTree(structural.validation().issues().stream().limit(12).toList()));
       var elements = diagnostic.putArray("affectedExistingElements");
       var affectedIds = new LinkedHashSet<String>();
       structural.validation().issues().stream()
@@ -2323,15 +2320,17 @@ validation.
                             String id = element.path("id").asText("");
                             if (!id.isBlank()) affectedIds.add(id);
                           }));
-      affectedIds.forEach(
-          id -> {
-            try {
-              elements.add(turnTools.readModel(id));
-            } catch (PlatformException missing) {
-              // Newly generated objects are present in the rejected batch, not the saved model.
-              if (missing.status() != 404) throw missing;
-            }
-          });
+      affectedIds.stream()
+          .limit(4)
+          .forEach(
+              id -> {
+                try {
+                  elements.add(turnTools.inspectElement(id));
+                } catch (PlatformException missing) {
+                  // Newly generated objects are present in the rejected batch, not the saved model.
+                  if (missing.status() != 404) throw missing;
+                }
+              });
     }
     diagnostic.put(
         "requiredAction",
@@ -3508,6 +3507,10 @@ validation.
 
     public boolean progressiveRecovery() {
       return progressiveRecovery;
+    }
+
+    public boolean invalidPersistedModel() {
+      return getCause() instanceof ConceptualInstanceModelWorkflow.InvalidPersistedModelException;
     }
   }
 }

@@ -703,16 +703,16 @@ function childElementsForContainment(parent, entry, graph, typeKey) {
       children.push(candidate);
     }
   };
-  if (!entry.relationshipOnly) {
-    graph.elementsById?.forEach(addCandidate);
-  }
-  graph.relationshipsById?.forEach(addCandidate);
+  graph.relationshipsById?.forEach((candidate) => {
+    if (!candidate.visualOnly && !candidate.containment) addCandidate(candidate);
+  });
   // Trace links are kept in their own runtime index because they are not ordinary
   // diagram relationships. They are nevertheless the authoritative children of a
   // TraceModel containment and must be available when the semantic root is rebuilt.
   if (entry.relationshipOnly) {
     graph.traceLinksById?.forEach(addCandidate);
   }
+  graph.elementsById?.forEach(addCandidate);
   return children;
 }
 
@@ -839,6 +839,9 @@ export function semanticGraphHasChanges(typeKey, root, graph) {
       String(relationship?.id || "").trim(),
     ),
   ]);
+  for (const [id, element] of originalById) {
+    if (isRelationshipElementType(typeKey, modelTypeOf(element))) originalEntityIds.add(id);
+  }
   const runtimeEntityIds = new Set();
   graph.elementsById.forEach((element) => {
     const id = String(element?.id || "").trim();
@@ -874,12 +877,10 @@ export function semanticGraphHasChanges(typeKey, root, graph) {
     }
   }
   for (const element of graph.elementsById.values()) {
-    if (isRelationshipElementType(typeKey, modelTypeOf(element))) {
-      continue;
-    }
     const id = String(element?.id || "").trim();
     const original = id ? originalById.get(id) : null;
     if (!original) {
+      if (isRelationshipElementType(typeKey, modelTypeOf(element))) continue;
       return true;
     }
     if (
@@ -943,9 +944,10 @@ function attachNestedContainments(typeKey, copy, sourceElement, graph, visited =
     const children = childElementsForContainment(sourceElement, entry, graph, typeKey);
     const copies = [];
     children.forEach((child) => {
-      const childCopy = isRelationshipElementType(typeKey, modelTypeOf(child))
-        ? relationshipSemanticCopy(typeKey, child, graph)
-        : stripRuntimeFields(typeKey, child);
+      const childCopy =
+        graph.relationshipsById?.get(child.id) === child
+          ? relationshipSemanticCopy(typeKey, child, graph)
+          : stripRuntimeFields(typeKey, child);
       attachNestedContainments(typeKey, childCopy, child, graph, visited);
       if (entry.relationshipOnly) {
         appendRelationshipCopy(typeKey, { [entry.feature]: copies }, entry.feature, childCopy);
@@ -974,7 +976,7 @@ export function populateRootContainments(typeKey, root, graph) {
       return;
     }
     const containment = rootContainmentForType(typeKey, modelTypeOf(element));
-    if (!containment || containment.relationshipOnly) {
+    if (!containment) {
       return;
     }
     const copy = mergeSemanticObjectWithOriginal(
@@ -1031,7 +1033,7 @@ export async function populateRootContainmentsAsync(typeKey, root, graph) {
       continue;
     }
     const containment = rootContainmentForType(typeKey, modelTypeOf(element));
-    if (!containment || containment.relationshipOnly) {
+    if (!containment) {
       continue;
     }
     const copy = mergeSemanticObjectWithOriginal(

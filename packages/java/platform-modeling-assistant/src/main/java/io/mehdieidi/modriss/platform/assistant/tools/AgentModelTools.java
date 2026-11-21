@@ -32,6 +32,7 @@ import tools.jackson.databind.node.ObjectNode;
 /** Schema-validated editing and inspection tools exposed to the modeling agent. */
 public final class AgentModelTools {
 
+  private static final int INSPECTION_CHARS = 10_000;
   private final TypeContractService contracts;
   private final ModelService models;
   private final ModelCommandCompiler commandCompiler;
@@ -95,6 +96,42 @@ public final class AgentModelTools {
     return id == null || id.isBlank() ? model : find(model, id);
   }
 
+  /** Returns one element's own attributes and reference IDs for a provider-facing inspection. */
+  public JsonNode inspectElement(String id) {
+    if (id == null || id.isBlank()) throw new PlatformException(400, "Element id is required.");
+    JsonNode element = readModel(id);
+    var result = tools.jackson.databind.node.JsonNodeFactory.instance.objectNode();
+    result.put("id", element.path("id").asText());
+    String type = element.path("eClass").asText();
+    result.put("eClass", type);
+    result.put("preconditionHash", elementHash(element));
+    var attributes = result.putObject("attributes");
+    var omitted = result.putArray("omittedAttributes");
+    TypeContract contract = contracts.require(active().level(), type);
+    int remaining = INSPECTION_CHARS / 4;
+    for (AttributeContract attribute : contract.attributes()) {
+      JsonNode value = element.get(attribute.name());
+      if (value == null) continue;
+      int size = attribute.name().length() + value.toString().length() + 4;
+      if (size > remaining) {
+        omitted.add(attribute.name());
+      } else {
+        attributes.set(attribute.name(), value);
+        remaining -= size;
+      }
+    }
+    var outgoing = result.putArray("outgoingReferences");
+    List<String> references = new ArrayList<>();
+    contract.references().stream()
+        .filter(reference -> !reference.containment())
+        .forEach(
+            reference ->
+                collectReferenceIds(element.get(reference.name()), reference.name(), references));
+    appendReferencePreview(outgoing, references);
+    result.put("outgoingReferenceCount", references.size());
+    return result;
+  }
+
   /** Returns root, type counts, and top-level owned elements for enforced edit inspection. */
   public JsonNode inspectSummary() {
     JsonNode root = active().workspace().snapshot();
@@ -117,7 +154,8 @@ public final class AgentModelTools {
               ObjectNode record = owned.addObject();
               record.put("id", item.id());
               record.put("eClass", item.eClass());
-              if (item.name() != null && !item.name().isBlank()) record.put("name", item.name());
+              if (item.name() != null && !item.name().isBlank())
+                record.put("name", preview(item.name()));
               if (item.ownerFeature() != null) record.put("ownerFeature", item.ownerFeature());
             });
     return result;
@@ -125,45 +163,69 @@ public final class AgentModelTools {
 
   /** Returns owner, children, and references near already selected/edit-relevant elements. */
   public JsonNode inspectNeighborhoods(List<String> ids) {
+    ObjectNode result = tools.jackson.databind.node.JsonNodeFactory.instance.objectNode();
+    ArrayNode neighborhoods = result.putArray("neighborhoods");
+    if (ids == null || ids.isEmpty()) return result;
     JsonNode root = active().workspace().snapshot();
     List<InspectedElement> elements = new ArrayList<>();
     collectInspected(root, null, null, elements);
     Map<String, InspectedElement> byId = new LinkedHashMap<>();
     elements.forEach(item -> byId.put(item.id(), item));
-    ObjectNode result = tools.jackson.databind.node.JsonNodeFactory.instance.objectNode();
-    ArrayNode neighborhoods = result.putArray("neighborhoods");
-    for (String id : ids == null ? List.<String>of() : ids) {
+    int remaining = INSPECTION_CHARS;
+    for (String id : ids) {
       if (id == null || id.isBlank() || !byId.containsKey(id)) continue;
       InspectedElement center = byId.get(id);
-      ObjectNode record = neighborhoods.addObject();
-      appendInspectionRecord(record.putObject("center"), center, root);
+      ObjectNode record = neighborhoods.objectNode();
+      appendInspectionRecord(record.putObject("center"), center);
       if (center.ownerId() != null && byId.containsKey(center.ownerId())) {
-        appendInspectionRecord(record.putObject("owner"), byId.get(center.ownerId()), root);
+        appendInspectionRecord(record.putObject("owner"), byId.get(center.ownerId()));
       }
       ArrayNode children = record.putArray("containedChildren");
       elements.stream()
           .filter(item -> id.equals(item.ownerId()))
-          .limit(40)
-          .forEach(item -> appendInspectionRecord(children.addObject(), item, root));
+          .limit(8)
+          .forEach(item -> appendInspectionRecord(children.addObject(), item));
       ArrayNode inbound = record.putArray("inboundReferences");
       elements.stream()
           .filter(
               item -> item.outgoingReferences().stream().anyMatch(ref -> ref.endsWith("=" + id)))
-          .limit(40)
-          .forEach(item -> appendInspectionRecord(inbound.addObject(), item, root));
+          .limit(8)
+          .forEach(item -> appendInspectionRecord(inbound.addObject(), item));
+      int size = record.toString().length() + 1;
+      if (size > remaining) {
+        record.remove(List.of("containedChildren", "inboundReferences"));
+        result.put("truncated", true);
+        size = record.toString().length() + 1;
+      }
+      if (size > remaining) break;
+      neighborhoods.add(record);
+      remaining -= size;
     }
     return result;
   }
 
-  private void appendInspectionRecord(ObjectNode record, InspectedElement item, JsonNode root) {
+  private void appendInspectionRecord(ObjectNode record, InspectedElement item) {
     record.put("id", item.id());
     record.put("eClass", item.eClass());
-    if (item.name() != null && !item.name().isBlank()) record.put("name", item.name());
+    if (item.name() != null && !item.name().isBlank()) record.put("name", preview(item.name()));
     if (item.ownerId() != null) record.put("ownerId", item.ownerId());
     if (item.ownerFeature() != null) record.put("ownerFeature", item.ownerFeature());
-    record.put("preconditionHash", elementHash(find(root, item.id())));
+    record.put("preconditionHash", elementHash(item.node()));
     ArrayNode outgoing = record.putArray("outgoingReferences");
-    item.outgoingReferences().forEach(outgoing::add);
+    appendReferencePreview(outgoing, item.outgoingReferences());
+    record.put("outgoingReferenceCount", item.outgoingReferences().size());
+  }
+
+  private void appendReferencePreview(ArrayNode outgoing, List<String> references) {
+    references.stream()
+        .filter(reference -> reference.length() <= 256)
+        .limit(8)
+        .forEach(outgoing::add);
+  }
+
+  private String preview(String text) {
+    int length = text.codePointCount(0, text.length());
+    return length <= 120 ? text : text.substring(0, text.offsetByCodePoints(0, 119)) + "…";
   }
 
   /**
@@ -184,19 +246,35 @@ public final class AgentModelTools {
                     effective.eClasses().isEmpty() || effective.eClasses().contains(item.eClass()))
             .filter(
                 item ->
-                    effective.ownerIds().isEmpty() || effective.ownerIds().contains(item.ownerId()))
+                    effective.ownerIds().isEmpty()
+                        || (item.ownerId() != null
+                            && effective.ownerIds().contains(item.ownerId())))
             .filter(item -> matchesSelectorQuery(item, effective.query()))
             .toList();
-    int pageSize = Math.max(1, Math.min(effective.pageSize(), 100));
-    int from = Math.min(Math.max(0, effective.page()) * pageSize, filtered.size());
+    int pageSize = Math.max(1, Math.min(effective.pageSize(), 25));
+    int from = (int) Math.min((long) Math.max(0, effective.page()) * pageSize, filtered.size());
     int to = Math.min(from + pageSize, filtered.size());
     ObjectNode result = tools.jackson.databind.node.JsonNodeFactory.instance.objectNode();
     result.put("total", filtered.size());
     result.put("page", Math.max(0, effective.page()));
     result.put("pageSize", pageSize);
     ArrayNode records = result.putArray("elements");
+    if (to < filtered.size()) result.put("nextPage", Math.max(0, effective.page()) + 1);
+    int recordBudget = INSPECTION_CHARS / pageSize;
     for (InspectedElement item : filtered.subList(from, to)) {
-      appendInspectionRecord(records.addObject(), item, root);
+      ObjectNode record = result.objectNode();
+      appendInspectionRecord(record, item);
+      if (record.toString().length() >= recordBudget) {
+        record.remove("outgoingReferences");
+      }
+      if (record.toString().length() >= recordBudget) {
+        record.remove("name");
+      }
+      if (record.toString().length() >= recordBudget) {
+        result.put("truncated", true);
+        continue;
+      }
+      records.add(record);
     }
     return result;
   }
@@ -228,18 +306,23 @@ public final class AgentModelTools {
       ArrayNode candidates = group.putArray("candidates");
       elements.stream()
           .filter(element -> eligibleContainments(element.eClass(), childType).size() > 0)
-          .limit(80)
+          .limit(8)
           .forEach(
               element -> {
                 ObjectNode candidate = candidates.addObject();
                 candidate.put("id", element.id());
                 candidate.put("eClass", element.eClass());
                 if (element.name() != null && !element.name().isBlank()) {
-                  candidate.put("name", element.name());
+                  candidate.put("name", preview(element.name()));
                 }
                 ArrayNode containments = candidate.putArray("containments");
                 eligibleContainments(element.eClass(), childType).forEach(containments::add);
               });
+      if (result.toString().length() > INSPECTION_CHARS) {
+        groups.remove(groups.size() - 1);
+        result.put("truncated", true);
+        break;
+      }
     }
     return result;
   }
@@ -302,7 +385,8 @@ public final class AgentModelTools {
                 node.path("name").asText(node.path("label").asText("")),
                 ownerId,
                 ownerFeature,
-                outgoing));
+                outgoing,
+                node));
         forEachModelField(
             node, (feature, child) -> collectInspectionRecords(child, id, feature, items));
         return;
@@ -375,7 +459,7 @@ public final class AgentModelTools {
           String name = node.path("name").asText(node.path("label").asText("")).trim();
           String description = node.path("description").asText("").replaceAll("\\s+", " ").trim();
           StringBuilder item = new StringBuilder("id=").append(id).append(", type=").append(type);
-          if (!name.isEmpty()) item.append(", name=").append(name);
+          if (!name.isEmpty()) item.append(", name=").append(preview(name));
           if (!description.isEmpty())
             item.append(", description=")
                 .append(description, 0, Math.min(description.length(), 240));
@@ -1155,5 +1239,6 @@ public final class AgentModelTools {
       String name,
       String ownerId,
       String ownerFeature,
-      List<String> outgoingReferences) {}
+      List<String> outgoingReferences,
+      JsonNode node) {}
 }
