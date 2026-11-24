@@ -507,6 +507,35 @@
   color: var(--muted);
 }
 
+.chat-sample-prompts {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.chat-sample-prompt {
+  max-width: 100%;
+  padding: 7px 14px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface-2);
+  color: var(--text);
+  font: 600 13px/1.3 var(--font-ui);
+  cursor: pointer;
+}
+
+.chat-sample-prompt:hover {
+  border-color: var(--accent);
+  background: var(--surface-3);
+}
+
+.chat-sample-prompt:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
 .chat-msg {
   display: flex;
   gap: 8px;

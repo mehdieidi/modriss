@@ -1124,6 +1124,7 @@ export function handleChatSendButtonClick() {
 }
 
 export function initChatComposer() {
+  resetChatMessagesUi();
   stripLegacyThinkingCancelButtons();
   el.chatMessages?.addEventListener("scroll", updateChatScrollIntent, { passive: true });
   updateChatScrollIntent();
@@ -1793,12 +1794,47 @@ function handleChatRealtimeEvent(scopeKey, generation, typeKey, eventType, paylo
 
 // ── Chat UI ───────────────────────────────────────────────────────────────────
 
+const CHAT_SAMPLE_PROMPTS = [
+  {
+    title: "Create a library management model",
+    prompt:
+      "Create a model for a library management system that covers catalog search, book loans, returns, and reservations.",
+  },
+  {
+    title: "Explain this model",
+    prompt:
+      "Explain what the current model represents, which elements are most important, and how they work together.",
+  },
+  {
+    title: "Assess serverless suitability",
+    prompt:
+      "Assess whether serverless is a good fit for a vending machine network that tracks inventory and processes payments. Consider intermittent connectivity, latency, and cost.",
+  },
+];
+
 export function buildChatWelcomeCard() {
   const welcome = document.createElement("div");
   welcome.className = "chat-welcome";
   welcome.innerHTML = `<span aria-hidden="true" class="chat-welcome-icon icon-svg icon-mask" style="--icon-src: url('/assets/icons/chatbot.svg');"></span>
     <div class="chat-welcome-title">Modeling Assistant</div>
-    <div class="chat-welcome-text">Describe the model you want to create, ask for changes, or discuss an existing design. You can also share a project specification for a serverless suitability assessment.</div>`;
+    <div class="chat-welcome-text">Choose a sample prompt or write your own.</div>`;
+
+  const samples = document.createElement("div");
+  samples.className = "chat-sample-prompts";
+  for (const { title, prompt } of CHAT_SAMPLE_PROMPTS) {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "chat-sample-prompt";
+    button.textContent = title;
+    button.addEventListener("click", () => {
+      const input = el.chatInput;
+      input.value = prompt;
+      input.focus();
+      input.dispatchEvent(new Event("input", { bubbles: true }));
+    });
+    samples.appendChild(button);
+  }
+  welcome.appendChild(samples);
   return welcome;
 }
 
