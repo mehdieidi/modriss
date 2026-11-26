@@ -19,10 +19,10 @@ mvn -pl apps/backend -am spring-boot:run
 Defaults in `src/main/resources/application.yml`; overrides via environment or `.env`.
 Copy [`.env.example`](../../.env.example) at the repo root.
 
-| Concern      | Variables                                                                                                              |
-| ------------ | ---------------------------------------------------------------------------------------------------------------------- |
-| Database     | `MODRISS_DB_URL`, `MODRISS_DB_USER`, `MODRISS_DB_PASSWORD`                                                             |
-| AI assistant | `MODRISS_AI_ENABLED`, `MODRISS_AI_PROVIDER`, and provider keys                                                          |
+| Concern      | Variables                                                      |
+| ------------ | -------------------------------------------------------------- |
+| Database     | `MODRISS_DB_URL`, `MODRISS_DB_USER`, `MODRISS_DB_PASSWORD`     |
+| AI assistant | `MODRISS_AI_ENABLED`, `MODRISS_AI_PROVIDER`, and provider keys |
 
 Start only Postgres: `docker compose up -d postgres`
 
@@ -40,7 +40,6 @@ private archive at `.idea/docs/api/openapi/openapi.yaml`.
 
 Impact analysis routes are implemented under `/api/impact/**`. Planned admin workspace routes under
 `/api/admin/**` return `501`.
-
 
 # Model synchronization API
 

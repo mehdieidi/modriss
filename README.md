@@ -92,13 +92,13 @@ From the repository root:
 ./scripts/dev.sh
 ```
 
-| Service                        | Address                                 |
-| ------------------------------ | --------------------------------------- |
-| Modeling workbench             | <http://127.0.0.1:8082>                 |
-| Backend health                 | <http://127.0.0.1:8080/api/health>      |
-| Research landing page          | <http://127.0.0.1:8083>                 |
-| Container logs                 | <http://127.0.0.1:9999>                 |
-| AWS emulator, Floci by default | <http://127.0.0.1:4566>                 |
+| Service                        | Address                            |
+| ------------------------------ | ---------------------------------- |
+| Modeling workbench             | <http://127.0.0.1:8082>            |
+| Backend health                 | <http://127.0.0.1:8080/api/health> |
+| Research landing page          | <http://127.0.0.1:8083>            |
+| Container logs                 | <http://127.0.0.1:9999>            |
+| AWS emulator, Floci by default | <http://127.0.0.1:4566>            |
 
 For a first workflow, register a user, create a project, and open the CIM workspace. Create a
 model or import [`methodology/modeling-framework/samples/cim.xmi`](methodology/modeling-framework/samples/cim.xmi), validate it, then generate and review

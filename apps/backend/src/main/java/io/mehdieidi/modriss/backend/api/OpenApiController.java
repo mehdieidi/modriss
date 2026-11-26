@@ -20,7 +20,8 @@ import tools.jackson.dataformat.yaml.YAMLFactory;
 public class OpenApiController {
 
   private static final ObjectMapper OPENAPI_YAML = new ObjectMapper(new YAMLFactory());
-  private static final Path OPENAPI_SPEC = Path.of(".idea", "docs", "api", "openapi", "openapi.yaml");
+  private static final Path OPENAPI_SPEC =
+      Path.of(".idea", "docs", "api", "openapi", "openapi.yaml");
 
   /** Finds the private specification when running from the repository root or backend module. */
   public static Path findLocalSpec() {
