@@ -6,10 +6,8 @@ RUN --mount=type=cache,id=modriss-landing-npm,target=/root/.npm,sharing=locked \
 COPY . .
 ARG VITE_BACKEND_BASE_URL=
 ARG VITE_APP_URL=
-ARG VITE_DOCS_URL=
 ENV VITE_BACKEND_BASE_URL=$VITE_BACKEND_BASE_URL
 ENV VITE_APP_URL=$VITE_APP_URL
-ENV VITE_DOCS_URL=$VITE_DOCS_URL
 RUN npm run build
 
 FROM nginx:1.27-alpine

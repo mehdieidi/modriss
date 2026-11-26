@@ -38,7 +38,7 @@ if docker compose "${compose_args[@]}" config | grep -Eq '(POSTGRES_PASSWORD|GF_
   exit 1
 fi
 
-if docker compose "${compose_args[@]}" config | grep -Eq '(MODRISS_FRONTEND_BACKEND_BASE_URL|MODRISS_FRONTEND_DOCS_URL|MODRISS_ADMIN_BACKEND_BASE_URL|MODRISS_ALLOWED_ORIGINS|VITE_BACKEND_BASE_URL|VITE_APP_URL|VITE_DOCS_URL):.*(localhost|127\.0\.0\.1)'; then
+if docker compose "${compose_args[@]}" config | grep -Eq '(MODRISS_FRONTEND_BACKEND_BASE_URL|MODRISS_ADMIN_BACKEND_BASE_URL|MODRISS_ALLOWED_ORIGINS|VITE_BACKEND_BASE_URL|VITE_APP_URL):.*(localhost|127\.0\.0\.1)'; then
   echo "Refusing production deployment: rendered browser configuration contains localhost or 127.0.0.1." >&2
   echo "Set the production URL and CORS values in .env." >&2
   exit 1

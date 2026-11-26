@@ -117,7 +117,6 @@ services:
       context: ../apps/frontend
     environment:
       MODRISS_FRONTEND_BACKEND_BASE_URL: ${MODRISS_FRONTEND_BACKEND_BASE_URL:-}
-      MODRISS_FRONTEND_DOCS_URL: ${MODRISS_DOCS_URL:-}
     restart: unless-stopped
 
   admin:

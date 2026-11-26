@@ -131,7 +131,7 @@ try {
       }
       if (url.pathname === "/backend-config.js") {
         response.setHeader("Content-Type", "text/javascript");
-        response.end('window.MODRISS_BACKEND_BASE_URL = ""; window.MODRISS_DOCS_URL = "";');
+        response.end('window.MODRISS_BACKEND_BASE_URL = "";');
         return;
       }
       const path = resolve(root, `.${url.pathname === "/" ? "/index.html" : url.pathname}`);

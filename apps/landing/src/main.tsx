@@ -12,15 +12,13 @@ import './styles.css'
 const appUrl = import.meta.env.VITE_APP_URL ?? window.location.origin
 const workbenchUrl = import.meta.env.VITE_APP_URL ?? 'https://editor.modriss.site/'
 const backendUrl = (import.meta.env.VITE_BACKEND_BASE_URL ?? window.location.origin).replace(/\/$/, '')
-const docsUrl = import.meta.env.VITE_DOCS_URL ?? 'https://docs.modriss.site'
-const processDocsUrl = `${docsUrl.replace(/\/$/, '')}/guides/full-lifecycle-method/`
 const githubUrl = import.meta.env.VITE_GITHUB_URL ?? 'https://github.com/mehdieidi/modriss'
 const labUrl = 'https://www.sharif.ir/en/web/me_ce/home'
 const universityProfileUrl = 'https://www.sharif.ir/en/web/me_ce/w/mehdi-eidi'
 const researcherUrl = 'https://mehdieidi.github.io/'
 const paperUrl = 'https://www.scitepress.org/Link.aspx?doi=10.5220/0014634200004058'
 
-type IconName = 'arrow' | 'book' | 'code' | 'downArrow' | 'github' | 'layers' | 'model' | 'process' | 'spark' | 'transform'
+type IconName = 'arrow' | 'code' | 'downArrow' | 'github' | 'layers' | 'model' | 'process' | 'spark' | 'transform'
 
 async function sendLandingVisit() {
   const body = JSON.stringify({
@@ -51,7 +49,6 @@ function Icon({ name, size = 20 }: { name: IconName; size?: number }) {
   const common = { width: size, height: size, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 1.7, strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const, 'aria-hidden': true }
   const paths: Record<IconName, React.ReactNode> = {
     arrow: <><path d="M5 12h14" /><path d="m13 6 6 6-6 6" /></>,
-    book: <><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v16H6.5A2.5 2.5 0 0 0 4 21.5v-16Z" /><path d="M4 19a2.5 2.5 0 0 1 2.5-2.5H20" /></>,
     code: <><path d="m8 9-3 3 3 3M16 9l3 3-3 3M14 5l-4 14" /></>,
     downArrow: <><path d="M12 5v14" /><path d="m6 13 6 6 6-6" /></>,
     github: <><path d="M15 22v-3.9c.04-1.01-.3-2-.95-2.78 3.16-.35 6.48-1.55 6.48-7A5.5 5.5 0 0 0 19.1 4.5 5.1 5.1 0 0 0 19 1s-1.2-.38-3.94 1.5a13.6 13.6 0 0 0-7.17 0C5.15.62 3.95 1 3.95 1a5.1 5.1 0 0 0-.1 3.5 5.5 5.5 0 0 0-1.43 3.81c0 5.44 3.31 6.64 6.47 7-.64.78-.98 1.77-.95 2.78V22" /><path d="M9 19c-3 .92-3-1.5-4.2-1.84" /></>,
@@ -101,7 +98,6 @@ function App() {
         <a href="#process" onClick={closeMenu}>Process</a>
         <a href="#publication" onClick={closeMenu}>Publications</a>
         <a className="button primary nav-workbench" href={workbenchUrl} onClick={closeMenu}>Open Workbench</a>
-        <a className="nav-icon" href={docsUrl} onClick={closeMenu} aria-label="Documentation" title="Documentation"><Icon name="book" size={18} /></a>
         <a className="nav-icon" href={githubUrl} aria-label="MODRISS source code on GitHub"><Icon name="github" size={18} /></a>
       </div>
     </nav>
@@ -182,7 +178,6 @@ function App() {
         <div className="section-label"><span>04</span> Modeling framework</div>
         <h2>Domain-specific languages made usable in a web-based workbench</h2>
         <p>The browser platform is the concrete research artefact through which the methodology can be enacted and examined. It makes the DSMLs available as visual editors and connects them with validation, transformation, generation, traceability, and project management functions.</p>
-        <a className="text-link" href={docsUrl}>Examine the technical documentation <Icon name="arrow" size={15} /></a>
       </div>
       <div className="framework-list">
         {frameworkItems.map(([title, body], index) => <article key={title}>
@@ -200,7 +195,6 @@ function App() {
         <div className="process-summary">
           <p>The process has three phases: inception, active product development, and retirement. During active development, teams plan increments, model the domain, design the serverless architecture and cloud resources, and generate, complete, and test code. Accepted increments form releases while ongoing maintenance sustains the live service.</p>
           <p>Each handoff names its evidence and decision owner. Release responsibility starts before the first production traffic; retirement closes the live service while retained records move to accepted, funded custody.</p>
-          <a className="text-link" href={processDocsUrl}>Study the full lifecycle process <Icon name="arrow" size={15} /></a>
         </div>
       </div>
 
@@ -227,7 +221,7 @@ function App() {
       </div>
       <div className="assistant-grid">
         <div className="prose"><p>The assistant supports modeling activity through natural-language interaction. It can use the current model and uploaded source material to create, inspect, explain, or modify CIM and PIM models. The live Ecore metamodel provides its modeling vocabulary and structural contract.</p></div>
-        <div className="prose"><p>Requests run as durable turns. The LLM selects a permitted strategy and proposes model content or tool actions; the backend stages and checks mutations before committing a model checkpoint.</p><a className="text-link" href={`${docsUrl.replace(/\/$/, '')}/guides/ai-assistant/`}>Examine the assistant design <Icon name="arrow" size={15} /></a></div>
+        <div className="prose"><p>Requests run as durable turns. The LLM selects a permitted strategy and proposes model content or tool actions; the backend stages and checks mutations before committing a model checkpoint.</p></div>
       </div>
       <AssistantDiagram />
     </section>
@@ -252,7 +246,7 @@ function App() {
       <div>
         <p>MODRISS is under active research and development. The repository includes the three modeling languages, formal validation rules, transformation profiles, code generation, modeling subprocesses, lifecycle material, and the web platform. Evaluation and refinement of the methodology and assistant continue as part of the thesis work.</p>
         <p>Generated projects are research outputs and engineering baselines. They still require human review, completion of recorded manual actions, testing, and deployment-specific decisions.</p>
-        <div className="status-links"><a href={githubUrl}><Icon name="github" size={17} /> Source repository</a><a href={docsUrl}><Icon name="book" size={17} /> Research documentation</a><a href={appUrl}><Icon name="model" size={17} /> Modeling prototype</a></div>
+        <div className="status-links"><a href={githubUrl}><Icon name="github" size={17} /> Source repository</a><a href={appUrl}><Icon name="model" size={17} /> Modeling prototype</a></div>
       </div>
     </section> */}
 

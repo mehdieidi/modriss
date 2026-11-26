@@ -42,14 +42,12 @@ services:
       - |
         cp -a /app/. /srv/
         printf '%s\n' "window.MODRISS_BACKEND_BASE_URL = \"$${MODRISS_FRONTEND_BACKEND_BASE_URL}\";" > /srv/backend-config.js
-        printf '%s\n' "window.MODRISS_DOCS_URL = \"$${MODRISS_FRONTEND_DOCS_URL}\";" >> /srv/backend-config.js
         exec python3 -m http.server --bind 0.0.0.0 8082 --directory /srv
     volumes:
       - ../apps/frontend:/app:ro
     restart: unless-stopped
     environment:
       MODRISS_FRONTEND_BACKEND_BASE_URL: ${MODRISS_FRONTEND_BACKEND_BASE_URL:-http://api.localhost:8088}
-      MODRISS_FRONTEND_DOCS_URL: ${MODRISS_DOCS_URL:-http://docs.localhost:8088}
     ports:
       - "${MODRISS_DEV_BIND_ADDRESS:-127.0.0.1}:${FRONTEND_PORT:-8082}:8082"
 
@@ -64,7 +62,6 @@ services:
       args:
         VITE_BACKEND_BASE_URL: ${MODRISS_PUBLIC_URL:-http://localhost:8088}
         VITE_APP_URL: ${MODRISS_EDITOR_URL:-http://editor.localhost:8088}
-        VITE_DOCS_URL: ${MODRISS_DOCS_URL:-http://docs.localhost:8088}
     ports:
       - "${MODRISS_DEV_BIND_ADDRESS:-127.0.0.1}:${LANDING_PORT:-8083}:8083"
 
