@@ -5,6 +5,7 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Map;
+import java.util.function.Supplier;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -23,6 +24,16 @@ public class OpenApiController {
   private static final Path OPENAPI_SPEC =
       Path.of(".idea", "docs", "api", "openapi", "openapi.yaml");
 
+  private final Supplier<Path> specPath;
+
+  public OpenApiController() {
+    this(OpenApiController::findLocalSpec);
+  }
+
+  OpenApiController(Supplier<Path> specPath) {
+    this.specPath = specPath;
+  }
+
   /** Finds the private specification when running from the repository root or backend module. */
   public static Path findLocalSpec() {
     return Files.isRegularFile(OPENAPI_SPEC)
@@ -30,8 +41,8 @@ public class OpenApiController {
         : Path.of("..", "..").resolve(OPENAPI_SPEC);
   }
 
-  private static Path requireLocalSpec() {
-    Path spec = findLocalSpec();
+  private Path requireLocalSpec() {
+    Path spec = specPath.get();
     if (!Files.isRegularFile(spec)) {
       throw new ResponseStatusException(HttpStatus.NOT_FOUND, "API documentation is disabled.");
     }
