@@ -16,5 +16,4 @@ updates that model after confirmation. Visual notation is optional and has its o
 structurally minimal and does not attempt to satisfy all native PIM semantic constraints.
 
 Run `python methodology/modeling-framework/samples/custom-psm-azure/package.py` from the repository
-root to rebuild the three uploadable ZIPs. See the [custom platform guide](../../../../docs/public-docs/docs/guides/custom-cloud-platforms.md)
-for the complete package contract and execution requirements.
+root to rebuild the three uploadable ZIPs.

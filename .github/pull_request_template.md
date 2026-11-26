@@ -13,11 +13,10 @@
 ## Checklist
 
 - [ ] Applicable development checks documented in `CONTRIBUTING.md` pass locally
-- [ ] OpenAPI updated (`docs/api/openapi/openapi.yaml`) if REST endpoints changed
+- [ ] Local OpenAPI contract updated if REST endpoints changed and the archive is available
 - [ ] Flyway migration added if PostgreSQL schema changed
 - [ ] Sample models under `methodology/modeling-framework/samples/` updated if validation rules changed
-- [ ] Public docs / diagrams updated when behavior or architecture changed
-- [ ] Architecture or guide docs updated for significant design decisions (`docs/diagrams/`, `docs/public-docs/`, `docs/internal/`)
+- [ ] Local docs and diagrams updated for significant changes when the archive is available
 
 ## Test plan
 

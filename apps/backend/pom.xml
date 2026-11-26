@@ -12,13 +12,6 @@
         <directory>src/main/resources</directory>
       </resource>
       <resource>
-        <directory>${project.basedir}/../../docs/api/openapi</directory>
-        <targetPath>static</targetPath>
-        <includes>
-          <include>openapi.yaml</include>
-        </includes>
-      </resource>
-      <resource>
         <directory>../../packages/java/platform-storage-postgres/src/main/resources/db/migration</directory>
         <targetPath>db/migration</targetPath>
         <includes>

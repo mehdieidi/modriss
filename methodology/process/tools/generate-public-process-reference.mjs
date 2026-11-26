@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-/** Generate the exhaustive public process reference from canonical JSON definitions. */
+/** Generate the local process reference from canonical JSON definitions. */
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -8,10 +8,14 @@ import { generatePublicProcessDiagrams, processFigure } from "./lib/public-proce
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../..");
 const DEFINITIONS = path.join(ROOT, "methodology/process/definitions");
-const OUTPUT = path.join(ROOT, "docs/public-docs/docs/process-reference");
+const OUTPUT = path.join(ROOT, ".idea/docs/public-docs/docs/process-reference");
+if (!fs.existsSync(OUTPUT)) {
+  console.log("The private process reference is unavailable. Skipping reference generation.");
+  process.exit(0);
+}
 const publicGuide = path.join(OUTPUT, "development-delivery.md");
 if (fs.existsSync(publicGuide) && fs.readFileSync(publicGuide, "utf8").includes("<!-- Process documentation is maintained by hand. -->")) {
-  console.log("Public process documentation is maintained by hand. Skipping legacy catalogs and diagrams.");
+  console.log("The process reference is maintained by hand. Skipping legacy catalogs and diagrams.");
   process.exit(0);
 }
 const levels = ["end-to-end", "cim", "pim", "psm", "artifact"];

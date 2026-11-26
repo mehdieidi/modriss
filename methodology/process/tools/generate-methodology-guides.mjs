@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Regenerates SPEM task-catalog sections in public modeling-process guides from process definitions.
+ * Regenerates SPEM task-catalog sections in local modeling-process guides from process definitions.
  * Keeps prose above <!-- TASK-CATALOG:START -->; replaces everything until <!-- TASK-CATALOG:END -->.
  */
 import fs from "node:fs";
@@ -11,7 +11,11 @@ import { collectProcessTasks } from "./lib/process-walk.mjs";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, "../../..");
 const DEFS = path.join(ROOT, "methodology/process/definitions");
-const GUIDES = path.join(ROOT, "docs/public-docs/docs/guides");
+const GUIDES = path.join(ROOT, ".idea/docs/public-docs/docs/guides");
+if (!fs.existsSync(GUIDES)) {
+  console.log("The private modeling-process guides are unavailable. Skipping guide generation.");
+  process.exit(0);
+}
 
 const GUIDE_MAP = {
   cim: "cim-modeling-methodology.md",

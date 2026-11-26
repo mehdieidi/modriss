@@ -1,12 +1,11 @@
 # Contributing to MODRISS
 
-Thank you for helping improve MODRISS. This file is the short entry point; detailed guides
-live in the public documentation site.
+Thank you for helping improve MODRISS.
 
 ## Before You Start
 
-1. Read the [change guide](docs/public-docs/docs/contributing/change-guide.md), language and
-   persistence changes must stay synchronized across metamodels, validation, UI, API, and tests.
+1. Keep language and persistence changes synchronized across metamodels, validation, UI, API,
+   and tests.
 2. Copy [`.env.example`](.env.example) to `.env` for local overrides (never commit `.env`).
 3. Install tooling hooks:
 
@@ -41,7 +40,8 @@ run `python scripts/format-emf.py`; see the
 
 - Keep PRs focused; link related issues when applicable.
 - Use the [pull request template](.github/pull_request_template.md).
-- Update OpenAPI (`docs/api/openapi/openapi.yaml`) when REST endpoints change.
+- Update the local OpenAPI contract in `.idea/docs/api/openapi/openapi.yaml` when REST endpoints
+  change and the archive is available.
 - Add a Flyway migration when the PostgreSQL schema changes. Use
   `python scripts/flyway-next-migration.py "<description>"` instead of choosing the version
   manually, because Flyway versions are global across all backend migration locations.
@@ -50,16 +50,13 @@ run `python scripts/format-emf.py`; see the
 
 ## Architecture Decisions
 
-Significant design choices are documented in `docs/diagrams/`, `docs/internal/`, and the public
-MkDocs site. Update the relevant architecture and guide pages when changing core technology,
-layering, or security posture.
+If you have the local documentation archive, update the relevant architecture and guide pages
+when changing core technology, layering, or security posture.
 
 ## Documentation
 
-- Public docs: `docs/public-docs/` (MkDocs)
-- Engineering deep-dives: `docs/internal/` (storage, AI, artifacts, MDE impact guides)
-- Architecture diagrams: `docs/diagrams/`
-- API reference: `docs/api/openapi/openapi.yaml`
+- Private documentation archive: `.idea/docs/`
+- MkDocs disabled notice: `deploy/docs/`
 - Deployment and observability: `deploy/`, `infra/`
 - Tooling configuration: `config/`
 

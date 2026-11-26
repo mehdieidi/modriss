@@ -1,5 +1,8 @@
 package io.mehdieidi.modriss.backend.api.contract;
 
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
+
+import io.mehdieidi.modriss.backend.api.OpenApiController;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -14,7 +17,7 @@ import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandl
 import tools.jackson.databind.ObjectMapper;
 import tools.jackson.dataformat.yaml.YAMLFactory;
 
-/** Compares Spring MVC handler mappings with the checked-in OpenAPI specification. */
+/** Compares Spring MVC handler mappings with the local OpenAPI specification. */
 final class OpenApiContractSupport {
 
   private static final Pattern PATH_VARIABLE_PATTERN = Pattern.compile("\\{([^}:]+)(?::[^}]+)?\\}");
@@ -31,7 +34,8 @@ final class OpenApiContractSupport {
    */
   @SuppressWarnings("unchecked")
   static Set<String> loadOpenApiOperations() throws IOException {
-    Path specPath = resolveOpenApiSpec();
+    Path specPath = OpenApiController.findLocalSpec();
+    assumeTrue(Files.isRegularFile(specPath), "The private OpenAPI specification is unavailable.");
     ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
     Map<String, Object> document = mapper.readValue(specPath.toFile(), Map.class);
     Map<String, Object> paths = (Map<String, Object>) document.get("paths");
@@ -98,19 +102,6 @@ final class OpenApiContractSupport {
         new TreeSet<>(operations)
             .stream().collect(Collectors.joining(System.lineSeparator() + "  "));
     return title + " (" + operations.size() + "):" + System.lineSeparator() + "  " + listing;
-  }
-
-  private static Path resolveOpenApiSpec() {
-    Path fromModule = Path.of("..", "..", "docs", "api", "openapi", "openapi.yaml");
-    Path fromRoot = Path.of("docs", "api", "openapi", "openapi.yaml");
-    if (Files.exists(fromModule)) {
-      return fromModule.normalize();
-    }
-    if (Files.exists(fromRoot)) {
-      return fromRoot.normalize();
-    }
-    throw new IllegalStateException(
-        "OpenAPI specification not found at docs/api/openapi/openapi.yaml");
   }
 
   private static boolean isHttpMethod(String value) {

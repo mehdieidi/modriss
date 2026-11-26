@@ -65,8 +65,7 @@ public final class LexicalRetrievalIndex {
 
   private static Path discoverRepositoryRoot(Path start) {
     for (Path current = start; current != null; current = current.getParent()) {
-      if (Files.isDirectory(current.resolve("methodology"))
-          && Files.isDirectory(current.resolve("docs"))) {
+      if (Files.isDirectory(current.resolve("methodology"))) {
         return current;
       }
     }
@@ -142,13 +141,10 @@ public final class LexicalRetrievalIndex {
    * transformations are not biased toward sample domains or wording.
    */
   private List<ContextSnippet> loadCorpus(ModelLevel level) {
-    List<Path> paths = new ArrayList<>();
-    paths.add(repositoryRoot.resolve("docs/public-docs/docs/guides/modeling-workflow.md"));
-    paths.add(
-        repositoryRoot.resolve(
-            "docs/public-docs/docs/guides/" + level.apiName() + "-modeling-methodology.md"));
+    Path guides = repositoryRoot.resolve(".idea/docs/public-docs/docs/guides");
     List<ContextSnippet> snippets = new ArrayList<>();
-    for (Path path : paths) appendChunks(snippets, path);
+    appendChunks(snippets, guides.resolve("modeling-workflow.md"));
+    appendChunks(snippets, guides.resolve(level.apiName() + "-modeling-methodology.md"));
     return List.copyOf(snippets);
   }
 

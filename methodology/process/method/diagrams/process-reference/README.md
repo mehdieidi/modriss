@@ -2,7 +2,7 @@
 
 These 20 explanatory diagrams accompany the MkDocs complete process reference.
 Each `.html` is a self-contained source preview. The matching SVGs live in
-`docs/public-docs/docs/assets/diagrams/process-reference/`.
+`.idea/docs/public-docs/docs/assets/diagrams/process-reference/` in the private archive.
 
 Regenerate the previews, SVGs, and reference-page placements from the repository
 root with:
@@ -35,7 +35,7 @@ criterion, not an activity-flow edge between the two processes.
 ## Style
 
 The Diagram Design skill's minimal light treatment is adapted to the existing
-MODRISS figures and `docs/public-docs/docs/stylesheets/extra.css`:
+MODRISS figures and `.idea/docs/public-docs/docs/stylesheets/extra.css`:
 
 | Role                         | Value                                     |
 | ---------------------------- | ----------------------------------------- |
@@ -64,4 +64,4 @@ the subset from the original font before regenerating.
 Review generated figures as browser-rendered images after changing content or
 geometry. Check text bounds, connector crossings, input/output completeness,
 embedded fonts, and the surrounding MkDocs page. Build the docs with
-`python -m mkdocs build --strict --config-file docs/public-docs/mkdocs.yml`.
+`python -m mkdocs build --strict --config-file .idea/docs/public-docs/mkdocs.yml`.

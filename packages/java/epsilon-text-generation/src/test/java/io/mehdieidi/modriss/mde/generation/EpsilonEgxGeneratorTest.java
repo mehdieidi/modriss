@@ -1354,15 +1354,17 @@ final class EpsilonEgxGeneratorTest {
   }
 
   /**
-   * Keeps the checked-in generator coverage matrix synchronized with EGX rule IDs.
+   * Keeps the local generator coverage matrix synchronized with EGX rule IDs.
    *
    * @throws Exception when the EGX module or matrix cannot be read
    */
   @Test
   void generatorCoverageMatrixListsEveryEgxRule() throws Exception {
-    String matrix =
-        Files.readString(
-            REPOSITORY_ROOT.resolve("docs/internal/artifacts/aws-psm-code-generator-coverage.md"));
+    Path coverageReport =
+        REPOSITORY_ROOT.resolve(".idea/docs/internal/artifacts/aws-psm-code-generator-coverage.md");
+    Assumptions.assumeTrue(
+        Files.isRegularFile(coverageReport), "The private coverage report is unavailable.");
+    String matrix = Files.readString(coverageReport);
 
     for (EgxRule rule : egxArtifactRules()) {
       assertTrue(

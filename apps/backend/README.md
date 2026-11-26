@@ -12,7 +12,7 @@ mvn -pl apps/backend -am spring-boot:run
 
 - API: <http://127.0.0.1:8080>
 - Health: <http://127.0.0.1:8080/api/health>
-- Swagger UI: <http://127.0.0.1:8080/swagger-ui.html>
+- Swagger UI for source runs with the private OpenAPI file present: <http://127.0.0.1:8080/swagger-ui.html>
 
 ## Configuration
 
@@ -22,7 +22,7 @@ Copy [`.env.example`](../../.env.example) at the repo root.
 | Concern      | Variables                                                                                                              |
 | ------------ | ---------------------------------------------------------------------------------------------------------------------- |
 | Database     | `MODRISS_DB_URL`, `MODRISS_DB_USER`, `MODRISS_DB_PASSWORD`                                                             |
-| AI assistant | `MODRISS_AI_ENABLED`, `MODRISS_AI_PROVIDER`, provider keys: see [assistant setup](../../docs/internal/ai/assistant.md) |
+| AI assistant | `MODRISS_AI_ENABLED`, `MODRISS_AI_PROVIDER`, and provider keys                                                          |
 
 Start only Postgres: `docker compose up -d postgres`
 
@@ -33,21 +33,14 @@ Start only Postgres: `docker compose up -d postgres`
 | Platform schema (V1), MDE job metadata (V5) | `platform-storage-postgres`   |
 | Assistant schema (V2–V4, V6–V8)             | `platform-modeling-assistant` |
 
-Details: [postgres-storage](../../docs/internal/operations/postgres-storage.md) ·
-[data model](../../docs/public-docs/docs/reference/data-storage.md)
-
 ## API surface
 
-Controllers live in `src/main/java/.../backend/api/`. Checked-in contract:
-[`docs/api/openapi/openapi.yaml`](../../docs/api/openapi/openapi.yaml)
+Controllers live in `src/main/java/.../backend/api/`. The local OpenAPI contract lives in the
+private archive at `.idea/docs/api/openapi/openapi.yaml`.
 
 Impact analysis routes are implemented under `/api/impact/**`. Planned admin workspace routes under
 `/api/admin/**` return `501`.
 
-## Docs
-
-- [REST API](../../docs/api/rest-api.md)
-- [Repository layout](../../docs/public-docs/docs/reference/repository-layout.md)
 
 # Model synchronization API
 

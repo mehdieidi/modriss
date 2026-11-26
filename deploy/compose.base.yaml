@@ -211,7 +211,7 @@ services:
 
   docs:
     build:
-      context: ../docs/public-docs
+      context: ./docs
       dockerfile: Dockerfile
     healthcheck:
       test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1/ || exit 1"]

@@ -238,11 +238,18 @@ for (const [label, diagram] of [['exported primary SVG', lifecycleSvg], ['export
 
 const methodContent = read('methodology/process/method/spem/method-content.md');
 const spemReadme = read('methodology/process/method/spem/README.md');
-const developmentDelivery = read('docs/public-docs/docs/process-reference/development-delivery.md');
 requireText(methodContent, 'The end-to-end process distinguishes two repeatable Activities', 'SPEM method-content narrative');
 requireText(methodContent, 'Process is ongoing and event-driven', 'SPEM method-content narrative');
 requireText(spemReadme, 'The enclosing process is explicitly ongoing and event-driven', 'SPEM package narrative');
-requireText(developmentDelivery, 'independent Operations and Maintenance Process sustains accepted live baselines', 'public development-delivery reference');
+const referencePath = '.idea/docs/public-docs/docs/guides/full-lifecycle-method.md';
+const hasReference = fs.existsSync(path.join(root, referencePath));
+if (hasReference) {
+  requireText(
+    read(referencePath),
+    'Operations and Maintenance starts when the first release receives operational acceptance at G7. It runs alongside later development',
+    'local lifecycle guide',
+  );
+}
 
 const xml = read('methodology/process/method/spem/modriss-method-library.spem.xml');
 requireText(xml, 'modriss:sourceId="modriss.end-to-end.release-cycle"', 'generated SPEM XML');
@@ -265,5 +272,5 @@ console.log(JSON.stringify({
   checkedBoundRoles: roleBindings.size,
   checkedPlantUmlViews: plantUmlPaths.length,
   checkedPublicationSourcesAndExports: 6,
-  checkedNarratives: 3,
+  checkedNarratives: hasReference ? 3 : 2,
 }, null, 2));

@@ -1,0 +1,7 @@
+site_name: MODRISS Documentation
+site_url: https://docs.modriss.site
+theme:
+  name: material
+plugins: []
+nav:
+  - Home: index.md

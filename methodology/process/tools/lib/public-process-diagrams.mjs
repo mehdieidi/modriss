@@ -371,11 +371,12 @@ export function processFigure(slug, depth = 2) {
 export function generatePublicProcessDiagrams(root, definitions) {
   addCanonicalViews(definitions);
   const source = path.join(root, "methodology/process/method/diagrams/process-reference");
-  const output = path.join(root, "docs/public-docs/docs/assets/diagrams/process-reference");
+  const assets = path.join(root, ".idea/docs/public-docs/docs/assets");
+  const output = path.join(assets, "diagrams/process-reference");
   fs.mkdirSync(source, { recursive: true });
   fs.mkdirSync(output, { recursive: true });
   // Embed the local brand face because SVGs loaded through <img> cannot fetch web fonts.
-  const font = fs.readFileSync(path.join(root, "docs/public-docs/docs/assets/fonts/SpaceGrotesk-Diagrams.woff2")).toString("base64");
+  const font = fs.readFileSync(path.join(assets, "fonts/SpaceGrotesk-Diagrams.woff2")).toString("base64");
   for (const item of figures.values()) {
     const c = new Canvas(item.slug);
     item.draw(c);

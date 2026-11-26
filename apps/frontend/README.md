@@ -52,8 +52,3 @@ recorded trace edges and exact file contributors, and exercises the editor in Ch
 It covers filtering, trace rules, pagination, file opening, cross-level navigation, mobile
 width, request races, closing during loading, and failure/retry. Screenshots and measured
 API timing go to `apps/backend/target/impact-verification`; the temporary project is deleted.
-
-## Docs
-
-- [Frontend architecture](../../docs/public-docs/docs/architecture/frontend.md)
-- [Modeling workflow](../../docs/public-docs/docs/guides/modeling-workflow.md)

@@ -46,8 +46,6 @@ The methodology has two connected parts:
 
 ## Modeling path
 
-![MODRISS model-driven modeling path](docs/diagrams/34-mde-modeling-path.svg)
-
 - **CIM, Computation-Independent Model**: domain concepts, actors, capabilities, events,
   processes, policies, governance, and requirements without a software or cloud commitment.
 - **PIM, Platform-Independent Model**: serverless services, functions, contracts, data, events,
@@ -74,9 +72,7 @@ package. Each custom package maintains one PSM; regenerating it updates that mod
 previous artifact bundles. The provider tab and Artifacts tab let users switch between the
 models and their generated projects without recreating the business or serverless models.
 
-The [custom cloud platforms guide](docs/public-docs/docs/guides/custom-cloud-platforms.md)
-describes the package contract and workflow. A
-[minimal Azure example](methodology/modeling-framework/samples/custom-psm-azure/)
+A [minimal Azure example](methodology/modeling-framework/samples/custom-psm-azure/)
 demonstrates the extension mechanism with small text outputs.
 
 ## Run the platform
@@ -100,7 +96,6 @@ From the repository root:
 | ------------------------------ | --------------------------------------- |
 | Modeling workbench             | <http://127.0.0.1:8082>                 |
 | Backend health                 | <http://127.0.0.1:8080/api/health>      |
-| API explorer                   | <http://127.0.0.1:8080/swagger-ui.html> |
 | Research landing page          | <http://127.0.0.1:8083>                 |
 | Container logs                 | <http://127.0.0.1:9999>                 |
 | AWS emulator, Floci by default | <http://127.0.0.1:4566>                 |
@@ -115,8 +110,6 @@ For the built-in AWS target, **Deploy to Test Environment** builds a saved, deve
 artifact snapshot on the backend and provisions it in a dedicated Floci instance for that project.
 Application bearer-token headers reach the API unchanged. The **Test** workspace exposes APIs,
 functions, workflows, events, source scripts, storage, logs, and exportable execution evidence.
-See the [Floci and Test workspace guide](docs/public-docs/docs/guides/floci-emulator.md) for setup,
-supported actions, source ZIP imports, and case-study evidence limits.
 
 For a compact scenario intended for expert and user evaluation, use
 [Community Workshops](methodology/modeling-framework/samples/community-workshops/).
@@ -126,9 +119,6 @@ diagram, an importable CIM reference model, and deterministic end-to-end evaluat
 For an ecommerce scenario, [Corner Shop](methodology/modeling-framework/samples/corner-shop/)
 models a small stationery shop with multi-item orders, stock holds, online payment, cancellation
 and full refunds, and store collection, with the same CIM and evaluation materials.
-
-See the [quickstart](docs/public-docs/docs/getting-started/quickstart.md) and
-[local-development guide](docs/public-docs/docs/getting-started/local-development.md).
 
 To study the framework independently, run `npm --prefix apps/academy run dev` and open
 <http://127.0.0.1:8085>. [MODRISS Framework Study](apps/academy/README.md) provides a DSML
@@ -146,18 +136,12 @@ It supports CIM and PIM sessions; PSM chatbot sessions are outside the implement
 Assistant-generated actions, patches, proposals, checkpoints, and model output are gated only by
 structural Ecore/EMF conformance before they are applied or committed.
 
-Read the [AI assistant guide](docs/public-docs/docs/guides/ai-assistant.md) before enabling it.
-
 ## Production and research-use notice
 
 MODRISS is under active research and development. Generated projects are engineering baselines. Before production deployment, the responsible team
 must review generated code and infrastructure, complete recorded manual actions and protected
 regions, test the artifact, manage secrets, establish security and operational controls, and make
 deployment-specific decisions. The project documentation does not replace those responsibilities.
-
-For operations guidance, see [deployment](docs/public-docs/docs/operations/deployment.md),
-[security](docs/public-docs/docs/operations/security.md), and
-[testing](docs/public-docs/docs/operations/testing.md).
 
 ## Repository map
 
@@ -167,13 +151,11 @@ For operations guidance, see [deployment](docs/public-docs/docs/operations/deplo
 | [`methodology/`](methodology/)     | Development process and modeling framework                                        |
 | [`packages/java/`](packages/java/) | Platform modules, MDE runners, assistant, and PostgreSQL adapter                  |
 | [`tools/`](tools/)                 | Standalone CLIs for Ecore compilation, validation, transformation, and generation |
-| [`docs/`](docs/)                   | Public documentation, API contracts, diagrams, and engineering references         |
 | [`deploy/`](deploy/)               | Docker Compose stack and container definitions                                    |
 | [`scripts/`](scripts/)             | Development, deployment, database backup/restore, and repository automation       |
 | [`infra/`](infra/)                 | Observability dashboards and alert rules                                          |
 
-The [repository layout reference](docs/public-docs/docs/reference/repository-layout.md) explains
-the module structure and Maven dependency direction. The formal sources of truth are located in
+The formal modeling sources are located in
 [`methodology/modeling-framework/metamodels/`](methodology/modeling-framework/metamodels/), [`methodology/modeling-framework/validation/`](methodology/modeling-framework/validation/),
 [`methodology/modeling-framework/transformations/`](methodology/modeling-framework/transformations/), and
 [`methodology/modeling-framework/generation/awspsm-to-artifacts/`](methodology/modeling-framework/generation/awspsm-to-artifacts/).
@@ -184,14 +166,9 @@ contains metamodels, notation, validation, transformations, generation, and samp
 
 ## Documentation
 
-- [Public documentation](docs/public-docs/)
-- [Model-driven engineering concepts](docs/public-docs/docs/concepts/model-driven-engineering.md)
+Public documentation is disabled.
+
 - [Full-lifecycle software development process](methodology/process/software-development-process.md)
-- [Capability-increment process](docs/public-docs/docs/guides/end-to-end-modeling-methodology.md)
-- [REST API reference](docs/public-docs/docs/reference/rest-api.md)
-- [OpenAPI contract](docs/api/openapi/openapi.yaml)
-- [Generated artifact guide](docs/public-docs/docs/guides/generated-artifacts.md)
-- [Architecture documentation](docs/public-docs/docs/architecture/system.md)
 
 ## Research output
 

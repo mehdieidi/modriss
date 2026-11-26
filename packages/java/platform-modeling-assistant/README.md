@@ -206,6 +206,6 @@ evidence covers explanation, source-to-CIM, fresh CIM/PIM, and existing-PIM evol
 preservation. The required repeated reliability and visual UX campaigns remain incomplete;
 structural validity alone is not semantic success. See:
 
-- `docs/internal/ai/current-llm-workflow.md`
-- `docs/internal/ai/live-eval-gate-report.md`
-- `docs/internal/ai/assistant.md`
+- `.idea/docs/internal/ai/current-llm-workflow.md`
+- `.idea/docs/internal/ai/live-eval-gate-report.md`
+- `.idea/docs/internal/ai/assistant.md`

@@ -178,7 +178,7 @@ function Architecture({ compact = false }: { compact?: boolean }) {
   </svg>
 }
 
-/** Source-to-figure mapping: docs/internal/ai/landing-assistant-diagram.md. */
+/** Source-to-figure mapping: .idea/docs/internal/ai/landing-assistant-diagram.md. */
 export function AssistantDiagram() {
   return <figure className="assistant-figure" aria-label="MODRISS conversational modeling loop">
     <Architecture />

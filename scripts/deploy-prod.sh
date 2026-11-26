@@ -79,6 +79,20 @@ check_url "https://editor.modriss.site"
 check_url "https://admin.modriss.site"
 check_url "https://api.modriss.site/actuator/health/readiness"
 
+if ! curl --fail --silent --show-error --max-time 15 https://docs.modriss.site/ \
+  | grep -F 'Documentation is disabled' >/dev/null; then
+  echo "The documentation site did not show the disabled notice." >&2
+  exit 1
+fi
+
+docs_status=$(curl --silent --show-error --max-time 15 --output /dev/null \
+  --write-out '%{http_code}' https://docs.modriss.site/getting-started/quickstart/)
+if [ "$docs_status" != 410 ]; then
+  echo "The retired documentation URL returned $docs_status. Expected 410." >&2
+  exit 1
+fi
+echo "OK  documentation is disabled"
+
 echo "Checking internal endpoints are blocked at the production edge..."
 for host in modriss.site editor.modriss.site admin.modriss.site api.modriss.site; do
   for path in /actuator /actuator/health /actuator/info /actuator/prometheus /swagger-ui.html /v3/api-docs; do

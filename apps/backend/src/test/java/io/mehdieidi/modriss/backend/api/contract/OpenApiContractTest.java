@@ -15,7 +15,7 @@ import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
-/** Ensures Spring MVC handlers and the checked-in OpenAPI spec stay synchronized. */
+/** Ensures Spring MVC handlers and the local OpenAPI spec stay synchronized. */
 @SpringBootTest
 @ActiveProfiles("test")
 @Testcontainers(disabledWithoutDocker = true)

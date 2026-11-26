@@ -1,8 +1,0 @@
-.env
-.env.*
-**/.env
-**/.env.*
-.git
-site
-__pycache__
-.venv
