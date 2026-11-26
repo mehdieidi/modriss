@@ -14177,8 +14177,12 @@ function Le() {
               }),
             ],
           }),
-          (0, p.jsx)(`p`, {
-            children: `A research project at the Methodology Engineering Laboratory, Department of Computer Engineering, Sharif University of Technology.`,
+          (0, p.jsxs)(`p`, {
+            children: [
+              `A research project at the Methodology Engineering Laboratory, Department of Computer Engineering, Sharif University of Technology.`,
+              (0, p.jsx)(`br`, {}),
+              `© 2026 Mehdi Eidi. All rights reserved.`,
+            ],
           }),
           (0, p.jsxs)(`div`, {
             className: `footer-links`,

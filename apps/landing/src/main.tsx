@@ -252,7 +252,11 @@ function App() {
 
     <footer>
       <div className="footer-brand"><img src={modrissLogoWhite} alt="" /><div><b>MODRISS</b><span>Model-Driven Methodology for Serverless Software Development</span></div></div>
-      <p>A research project at the Methodology Engineering Laboratory, Department of Computer Engineering, Sharif University of Technology.</p>
+      <p>
+        A research project at the Methodology Engineering Laboratory, Department of Computer Engineering, Sharif University of Technology.
+        <br />
+        © 2026 Mehdi Eidi. All rights reserved.
+      </p>
       <div className="footer-links"><a href={labUrl}>Laboratory</a><a href={universityProfileUrl}>Lab profile</a><a href={researcherUrl}>Researcher</a><a href={githubUrl}>Repository</a></div>
     </footer>
   </main>

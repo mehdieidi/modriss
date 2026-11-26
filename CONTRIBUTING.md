@@ -60,7 +60,9 @@ when changing core technology, layering, or security posture.
 - Deployment and observability: `deploy/`, `infra/`
 - Tooling configuration: `config/`
 
-## License
+## Contribution rights
 
-By contributing, you agree that your contributions are licensed under the
-[MIT License](LICENSE).
+See the [MODRISS copyright notice](LICENSE) for the project's terms. Before submitting
+code or research material for inclusion in MODRISS, contact the maintainer to agree
+in writing on permission to incorporate and distribute your contribution. Include the
+applicable license and attribution for any third-party material you submit.

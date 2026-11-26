@@ -204,6 +204,7 @@ Format the Emfatic metamodels with `python scripts/format-emf.py` from the proje
 Use `--check` to check without writing or `--diff` to preview changes. See the
 [Emfatic formatter guide](scripts/README-emf-formatting.md) for rules and options.
 
-## License
+## Copyright
 
-MODRISS is released under the [MIT License](LICENSE). Copyright © 2026 Mehdi Eidi.
+Copyright © 2026 Mehdi Eidi. All rights reserved. See the [copyright notice](LICENSE)
+for the scope of these terms and how they apply to earlier versions and third-party materials.
